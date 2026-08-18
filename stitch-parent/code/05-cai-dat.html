@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cài đặt</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#adc6ff",
+                        "on-secondary-fixed": "#341100",
+                        "tertiary-fixed-dim": "#eec200",
+                        "on-primary-container": "#fefcff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-highest": "#e8e1da",
+                        "on-primary": "#ffffff",
+                        "surface-bright": "#fff8f1",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-container": "#5c2400",
+                        "secondary": "#9d4300",
+                        "on-background": "#1e1b17",
+                        "on-surface-variant": "#424754",
+                        "surface-container-low": "#f9f3eb",
+                        "on-secondary-fixed-variant": "#783200",
+                        "on-tertiary-fixed": "#231b00",
+                        "on-error-container": "#93000a",
+                        "tertiary-container": "#cea700",
+                        "surface": "#fff8f1",
+                        "surface-container-high": "#eee7df",
+                        "outline-variant": "#c2c6d6",
+                        "inverse-on-surface": "#f7f0e8",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "secondary-fixed-dim": "#ffb690",
+                        "primary": "#0058be",
+                        "on-primary-fixed-variant": "#004395",
+                        "tertiary-fixed": "#ffe083",
+                        "surface-container": "#f4ede5",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-primary-fixed": "#001a42",
+                        "primary-container": "#2170e4",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#735c00",
+                        "on-surface": "#1e1b17",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#33302b",
+                        "primary-fixed": "#d8e2ff",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#ffdbca",
+                        "secondary-container": "#fd761a",
+                        "surface-tint": "#005ac2",
+                        "outline": "#727785",
+                        "surface-variant": "#e8e1da",
+                        "surface-dim": "#dfd9d1",
+                        "on-tertiary-container": "#4e3e00",
+                        "background": "#fff8f1",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "bottom-action-height": "80px",
+                        "gutter-card": "0.75rem",
+                        "margin-page": "1rem",
+                        "stack-tight": "0.5rem",
+                        "tap-target-min": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "body-sm": ["Quicksand"],
+                        "body-lg": ["Quicksand"],
+                        "label-caps": ["Quicksand"],
+                        "headline-md": ["Quicksand"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased min-h-screen flex flex-col font-body-lg">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface border-b border-surface-container-highest shadow-sm flex justify-between items-center px-margin-page h-14 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant shrink-0 active:scale-95 transition-transform">
+<img alt="Ảnh đại diện của bé" class="w-full h-full object-cover" data-alt="A close-up portrait of a smiling young Asian child in a brightly lit, modern home setting, serving as a cute profile avatar. The lighting is soft and warm, complementing the cream and white UI palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5g9QPiLDxjJgBOR3kBCTFYkl6WRwrxfhpUSbgED4KAZEGGN-TQ4yIWCGtd2sQHyBjcd3sTwnn0YeNuRbqvk-ZnAcq-hHEKtVTs7gQDxKgfYs8IH6gR3TLlDGsEflqpxzUleXvnF70gesfdyTfZ_hVAnydprA3Gr_-HdAqlAQbhhjGfPVKQ_XD5aQ596HWYaJdiUerSvD4ACb0eyKgYVlm3n2ZSTM6W4N0uSAz1pzqlkBvb8BtzgoeHg"/>
+</div>
+<h1 class="font-headline-md text-headline-md-mobile text-primary tracking-tight">Bài Tập Về Nhà</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low active:scale-95 transition-all text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 pt-[72px] pb-[100px] px-margin-page flex flex-col gap-6 w-full max-w-md mx-auto">
+<!-- Page Title -->
+<div class="pt-2">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background">Cài đặt</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Quản lý tài khoản và tuỳ chọn của bạn</p>
+</div>
+<!-- Parent Profile Summary Card -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-surface-variant flex items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center text-primary text-2xl font-bold shrink-0">
+                P
+            </div>
+<div class="flex-1">
+<h3 class="font-headline-md text-headline-md-mobile text-on-surface">Phụ huynh</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">parent@email.com</p>
+</div>
+<button class="text-primary p-2 hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined text-xl">edit</span>
+</button>
+</div>
+<!-- Settings Bento Grid -->
+<div class="grid grid-cols-1 gap-4">
+<!-- Group: Family -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-surface-variant overflow-hidden flex flex-col">
+<button class="flex items-center gap-4 p-4 hover:bg-surface-container-low transition-colors min-h-[56px] text-left w-full group">
+<div class="w-10 h-10 rounded-lg bg-secondary-container/20 flex items-center justify-center text-secondary group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined" data-icon="child_care">child_care</span>
+</div>
+<div class="flex-1">
+<span class="font-body-lg text-body-lg text-on-surface block">Hồ sơ của bé</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</button>
+</div>
+<!-- Group: Preferences -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-surface-variant overflow-hidden flex flex-col">
+<button class="flex items-center gap-4 p-4 hover:bg-surface-container-low transition-colors min-h-[56px] text-left w-full group border-b border-surface-variant">
+<div class="w-10 h-10 rounded-lg bg-primary-container/20 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined" data-icon="notifications_active">notifications_active</span>
+</div>
+<div class="flex-1">
+<span class="font-body-lg text-body-lg text-on-surface block">Thông báo</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</button>
+<button class="flex items-center gap-4 p-4 hover:bg-surface-container-low transition-colors min-h-[56px] text-left w-full group">
+<div class="w-10 h-10 rounded-lg bg-tertiary-container/20 flex items-center justify-center text-tertiary group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined" data-icon="card_membership">card_membership</span>
+</div>
+<div class="flex-1">
+<span class="font-body-lg text-body-lg text-on-surface block">Gói đăng ký</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</button>
+</div>
+<!-- Group: Actions -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-error-container overflow-hidden flex flex-col mt-2">
+<button class="flex items-center gap-4 p-4 hover:bg-error-container/20 transition-colors min-h-[56px] text-left w-full group">
+<div class="w-10 h-10 rounded-lg bg-error-container/30 flex items-center justify-center text-error group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+</div>
+<div class="flex-1">
+<span class="font-body-lg text-body-lg text-error block">Đăng xuất</span>
+</div>
+</button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full h-bottom-action-height flex justify-around items-center px-2 pb-safe bg-surface shadow-[0_-2px_8px_rgba(0,0,0,0.05)] rounded-t-xl z-50 md:hidden">
+<!-- Tab 1: Trang chủ (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:opacity-80 active:scale-90 transition-transform h-full min-w-[tap-target-min]">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-label-caps text-label-caps">Trang chủ</span>
+</button>
+<!-- Tab 2: Chụp ảnh (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:opacity-80 active:scale-90 transition-transform h-full min-w-[tap-target-min]">
+<span class="material-symbols-outlined mb-1" data-icon="photo_camera">photo_camera</span>
+<span class="font-label-caps text-label-caps">Chụp ảnh</span>
+</button>
+<!-- Tab 3: Nhiệm vụ (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:opacity-80 active:scale-90 transition-transform h-full min-w-[tap-target-min]">
+<span class="material-symbols-outlined mb-1" data-icon="checklist">checklist</span>
+<span class="font-label-caps text-label-caps">Nhiệm vụ</span>
+</button>
+<!-- Tab 4: Cài đặt (Active) -->
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-2 hover:opacity-80 active:scale-90 transition-transform min-w-[tap-target-min]">
+<span class="material-symbols-outlined mb-1" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-label-caps text-label-caps">Cài đặt</span>
+</button>
+</nav>
+</body></html>

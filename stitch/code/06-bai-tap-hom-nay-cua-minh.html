@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bài tập hôm nay của Minh</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#ffe083",
+                    "on-tertiary-fixed": "#231b00",
+                    "surface-container-high": "#eee7df",
+                    "primary-fixed-dim": "#adc6ff",
+                    "error-container": "#ffdad6",
+                    "error": "#ba1a1a",
+                    "surface-container": "#f4ede5",
+                    "tertiary-fixed-dim": "#eec200",
+                    "on-tertiary-fixed-variant": "#574500",
+                    "tertiary": "#735c00",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-container": "#5c2400",
+                    "surface-container-low": "#f9f3eb",
+                    "primary-fixed": "#d8e2ff",
+                    "surface-tint": "#005ac2",
+                    "on-primary-container": "#fefcff",
+                    "inverse-primary": "#adc6ff",
+                    "on-secondary-fixed-variant": "#783200",
+                    "on-surface": "#1e1b17",
+                    "on-secondary-fixed": "#341100",
+                    "secondary-container": "#fd761a",
+                    "outline": "#727785",
+                    "on-tertiary-container": "#4e3e00",
+                    "secondary": "#9d4300",
+                    "surface-bright": "#fff8f1",
+                    "inverse-surface": "#33302b",
+                    "tertiary-container": "#cea700",
+                    "secondary-fixed-dim": "#ffb690",
+                    "on-error": "#ffffff",
+                    "surface": "#fff8f1",
+                    "on-error-container": "#93000a",
+                    "primary": "#0058be",
+                    "on-background": "#1e1b17",
+                    "primary-container": "#2170e4",
+                    "surface-dim": "#dfd9d1",
+                    "on-surface-variant": "#424754",
+                    "inverse-on-surface": "#f7f0e8",
+                    "outline-variant": "#c2c6d6",
+                    "on-tertiary": "#ffffff",
+                    "background": "#fff8f1",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed": "#ffdbca",
+                    "surface-variant": "#e8e1da",
+                    "surface-container-highest": "#e8e1da",
+                    "on-primary-fixed-variant": "#004395",
+                    "on-primary-fixed": "#001a42",
+                    "success": "#22c55e",
+                    "success-container": "#dcfce7",
+                    "on-success-container": "#14532d"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "2xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "32px",
+                    "touch-target-min": "64px",
+                    "margin-edge": "48px",
+                    "stack-gap": "24px"
+            },
+            "fontFamily": {
+                    "label-bold": [
+                            "Quicksand"
+                    ],
+                    "body-md": [
+                            "Quicksand"
+                    ],
+                    "headline-lg": [
+                            "Quicksand"
+                    ],
+                    "display-hero": [
+                            "Quicksand"
+                    ],
+                    "body-lg": [
+                            "Quicksand"
+                    ]
+            },
+            "fontSize": {
+                    "label-bold": [
+                            "18px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-md": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "display-hero": [
+                            "48px",
+                            {
+                                    "lineHeight": "60px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "500"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Quicksand', sans-serif; background-color: #FFF8F1; }
+        .soft-shadow { box-shadow: 0 8px 20px 0 rgba(0, 0, 0, 0.05); }
+        .interactive-shadow { box-shadow: 0 12px 24px 0 rgba(0, 0, 0, 0.08); transition: transform 0.1s, box-shadow 0.1s; }
+        .interactive-shadow:active { transform: translateY(4px); box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.04); }
+        .btn-bottom-border { border-bottom: 4px solid #004395; }
+        .btn-bottom-border:active { border-bottom-width: 0px; transform: translateY(4px); }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col p-margin-edge">
+<!-- Header -->
+<header class="flex items-center gap-6 mb-stack-gap h-touch-target-min">
+<button class="w-16 h-16 bg-surface-container rounded-2xl flex items-center justify-center interactive-shadow text-primary">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">arrow_back</span>
+</button>
+<img class="w-16 h-16 rounded-full object-cover border-4 border-surface-container shadow-sm" data-alt="A brightly lit, high-quality photograph of a cheerful 6-year-old boy named Minh, smiling warmly. He has short dark hair and is wearing a colorful, playful t-shirt. The background is a soft, solid pastel yellow color. The lighting is soft and even, highlighting his joyful expression. Designed for a playful, educational kids app UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0IPojCay97PIN4FnwFHClOS5dyVdqZXHhKkH5v_rdONFNvOcVDoOTG2DwkZdtULwXkdcmoYyeltJ9xco-8B1N_CTt0JWSqwgAwArkRu08UrYslya2Zi7YWO3KUUHfwDbCShwlw3K42HIMQvXkGXkayqtf4A-cPFpZoeDMmJJAoCZ5CkGezJMWLbuAwSYnLC5h0dXq7l1qTZApCs5fCjQnqT9AeHUeWJ7d7wUvJaBRQQpBJV0_4v9y"/>
+<h1 class="font-display-hero text-display-hero text-primary ml-2">Bài tập hôm nay của Minh</h1>
+</header>
+<!-- Progress Tracker -->
+<section class="bg-surface-container-low rounded-2xl p-6 mb-stack-gap flex items-center gap-gutter soft-shadow">
+<div class="flex gap-4">
+<div class="w-16 h-16 rounded-xl bg-success flex items-center justify-center text-white shadow-md">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="w-16 h-16 rounded-xl bg-success flex items-center justify-center text-white shadow-md">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="w-16 h-16 rounded-xl bg-success flex items-center justify-center text-white shadow-md">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="w-16 h-16 rounded-xl border-4 border-dashed border-outline-variant flex items-center justify-center bg-surface">
+</div>
+<div class="w-16 h-16 rounded-xl border-4 border-dashed border-outline-variant flex items-center justify-center bg-surface">
+</div>
+</div>
+<div class="font-headline-lg text-headline-lg text-on-surface">3/5 bài đã xong</div>
+</section>
+<!-- Body Content Grid -->
+<main class="grid grid-cols-2 gap-gutter pb-gutter">
+<!-- Card 1 (Done) -->
+<div class="bg-success-container rounded-[32px] p-6 flex items-center justify-between opacity-80 soft-shadow relative overflow-hidden h-[160px]">
+<div class="absolute top-4 left-4 w-12 h-12 bg-success rounded-full flex items-center justify-center text-white shadow-sm z-10">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="flex items-center gap-6 z-10 ml-12">
+<div class="text-6xl">📖</div>
+<div>
+<div class="font-body-md text-body-md text-on-success-container uppercase tracking-wider mb-2">Tiếng Việt</div>
+<div class="font-headline-lg text-headline-lg text-on-success-container">Đọc bài trang 10</div>
+</div>
+</div>
+<img class="w-24 h-24 rounded-2xl object-cover border-4 border-white/50 z-10 opacity-70" data-alt="A stylized, colorful 3D rendering of an open storybook with a magical glow coming from the pages. The book is resting on a soft, rounded green surface. The style is playful and appealing to young children, with soft neomorphic lighting and rounded shapes. High contrast and vibrant colors." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzo4al6Q2E3sp5p3wW7vJb6oxEDy9EtN1wXBP6EbERELenBnhH4ob56HUPGYTVJR8a3QyhOBn0az-gbBMw1SYkmRDajum7TZOLVON289KucpCVExiGm7fuxZUPHfCqXBsZV_kkksnjMvlWiQR3GRVhgZZlow2lPGDGVrIbttd0Fs8GeVKW_GkWsQs20ueK6aqJuMGCdmT7lx3c-UYN6286K4RrORq8yszvje0ZqYMWYHsRDI1k1pnZ"/>
+</div>
+<!-- Card 2 (Done) -->
+<div class="bg-success-container rounded-[32px] p-6 flex items-center justify-between opacity-80 soft-shadow relative overflow-hidden h-[160px]">
+<div class="absolute top-4 left-4 w-12 h-12 bg-success rounded-full flex items-center justify-center text-white shadow-sm z-10">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="flex items-center gap-6 z-10 ml-12">
+<div class="text-6xl">🔢</div>
+<div>
+<div class="font-body-md text-body-md text-on-success-container uppercase tracking-wider mb-2">Toán</div>
+<div class="font-headline-lg text-headline-lg text-on-success-container">Làm phép cộng 1-10</div>
+</div>
+</div>
+<img class="w-24 h-24 rounded-2xl object-cover border-4 border-white/50 z-10 opacity-70" data-alt="A colorful, 3D rendered illustration of chunky, rounded wooden number blocks (1, 2, 3) scattered playfully. The scene is brightly lit with soft, child-friendly neomorphic lighting on a subtle green background. The blocks have distinct primary colors and look highly tactile and inviting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyD9nPUoe15sFBxBeHaa9CdMmTHglT2ln4UYmS5wy9Q3I9EmJ9Pw7Sb6KNj4m9cfiBR-w4TuWFKxNBMrQ2UF91Fs-InrNV7if71QPytyLMh4Lvud49Wkxka3Gn4x7kz3-a8z0lW-Qwlfurn-MomqUI0OFtslSI8MZzz9KQz_ll7YIbvp6zo9fSmkUSzrbwSfHkceUz_gdwj0vKiv4ID42lAKWcowut94ihaW45MgxxEM1ZfEdbTRrA"/>
+</div>
+<!-- Card 3 (Not Done) -->
+<div class="bg-surface rounded-[32px] p-6 flex items-center justify-between border-[6px] border-primary interactive-shadow h-[160px] cursor-pointer">
+<div class="flex items-center gap-6">
+<div class="text-6xl">🔤</div>
+<div>
+<div class="font-body-md text-body-md text-primary uppercase tracking-wider mb-2 font-bold">Tiếng Anh</div>
+<div class="font-headline-lg text-headline-lg text-on-surface">Học từ vựng màu sắc</div>
+</div>
+</div>
+<img class="w-24 h-24 rounded-2xl object-cover border-4 border-surface-container-highest shadow-sm" data-alt="A vibrant, stylized 3D illustration of a palette of bright, chunky paint colors (red, blue, yellow, green) arranged in a circle. The style is playful and tactile, resembling soft plastic or clay, set against a pristine white background. The lighting is soft and neomorphic, designed for a high-quality educational app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4ClHhbP9nXlixt9LdgpmAyKHFuIaAui3VuwkIjKy43oYOWKRkOtOeaO8-YrsiKe3dxjjxUJIRu351XHzJjXVIgFebjp-EAkvBZ_OkCTcCFQ22RNdDJbTrz_IlskLMy3H3Sj4O0Nt_9_9iFGmisjRNtBhCJ2ba-OEyVt8v-ycK433NL8aAfnwMqPOJSJwAaxlEslKQaKG_M4IyQhqgSW4PR_wLhdFWBOlsCtcUfJZ4972SVKXwCPAd"/>
+</div>
+<!-- Card 4 (Not Done) -->
+<div class="bg-surface rounded-[32px] p-6 flex items-center justify-between border-[6px] border-primary interactive-shadow h-[160px] cursor-pointer">
+<div class="flex items-center gap-6">
+<div class="text-6xl">🎨</div>
+<div>
+<div class="font-body-md text-body-md text-primary uppercase tracking-wider mb-2 font-bold">Vẽ</div>
+<div class="font-headline-lg text-headline-lg text-on-surface">Vẽ hình ngôi nhà</div>
+</div>
+</div>
+<img class="w-24 h-24 rounded-2xl object-cover border-4 border-surface-container-highest shadow-sm" data-alt="A cute, stylized 3D rendering of a small, colorful house with a red roof, yellow walls, and a blue door. The house looks like a physical toy block model, sitting on a clean white surface. The lighting is soft, warm, and inviting, creating a tactile and playful neomorphic aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEywwpx1UxUeYnU_9lSkXA4bjhlicY_RUNCS14tTl0yiIN4Un9GOtkYBKiUfE1-kEaaew2dhLn4bfJivTGEf7cws3jAYOPlfs3H8upiHD6YnKS6a4Tg28t6HxqbJ8GeeP1wEU_RssY1nUZgewSBAc3FbyVMUorChBo4LPn5_3eCnpCUh9Dk4WPgBpdjjQ3jTUqYDf8CL_1Vx6fj3jNcJP3avdMOunYASn0UL9VfvKAByvdiWL5A51Y"/>
+</div>
+<!-- Card 5 (Not Done) -->
+<div class="bg-surface rounded-[32px] p-6 flex items-center justify-between border-[6px] border-primary interactive-shadow h-[160px] cursor-pointer">
+<div class="flex items-center gap-6">
+<div class="text-6xl">🔍</div>
+<div>
+<div class="font-body-md text-body-md text-primary uppercase tracking-wider mb-2 font-bold">Khám phá</div>
+<div class="font-headline-lg text-headline-lg text-on-surface">Tìm hiểu về loài ong</div>
+</div>
+</div>
+<img class="w-24 h-24 rounded-2xl object-cover border-4 border-surface-container-highest shadow-sm" data-alt="A detailed, macro-style 3D illustration of a friendly, cartoonish bumblebee hovering over a bright yellow sunflower. The bee has a soft, fuzzy texture and large, expressive eyes. The background is a clean white to emphasize the colorful subject. The lighting is bright and cheerful, fitting a high-end kids educational app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGIg4y6oW03SeSGgso0kPbi6k-7KFK6Js6IFk0ipaeVoxnslUtqAsnZi91p-Zp1p0_zCJuH9XKfp1HpUL0TjF32cITHsA6bAtvzN-S-REudEDoT6s_L4S6lwni4t52tB23HBfgnXN_XWtPneR7zfZCe4KqXaM4p1MLA9p3H8vvPfCRcUkP99M7qMe97GrkMjsKu-CqDWwcRLfhWpLq1prQ0eZw-Cb2GgcfSkVXR0O_E4neUeKa69Qy"/>
+</div>
+</main>
+</body></html>

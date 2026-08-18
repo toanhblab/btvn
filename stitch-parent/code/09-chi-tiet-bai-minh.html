@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BÀI TẬP CỦA MINH</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-highest": "#e8e1da",
+                      "on-tertiary-fixed-variant": "#574500",
+                      "primary-fixed-dim": "#adc6ff",
+                      "on-tertiary-container": "#4e3e00",
+                      "secondary-fixed": "#ffdbca",
+                      "background": "#fff8f1",
+                      "outline": "#727785",
+                      "inverse-primary": "#adc6ff",
+                      "on-background": "#1e1b17",
+                      "on-secondary-fixed-variant": "#783200",
+                      "secondary-container": "#fd761a",
+                      "on-primary-fixed": "#001a42",
+                      "outline-variant": "#c2c6d6",
+                      "secondary-fixed-dim": "#ffb690",
+                      "inverse-surface": "#33302b",
+                      "on-error-container": "#93000a",
+                      "tertiary-fixed-dim": "#eec200",
+                      "surface-dim": "#dfd9d1",
+                      "primary-fixed": "#d8e2ff",
+                      "tertiary-fixed": "#ffe083",
+                      "surface-bright": "#fff8f1",
+                      "on-secondary-fixed": "#341100",
+                      "on-error": "#ffffff",
+                      "on-primary-container": "#fefcff",
+                      "primary-container": "#2170e4",
+                      "on-secondary-container": "#5c2400",
+                      "tertiary-container": "#cea700",
+                      "on-surface": "#1e1b17",
+                      "on-primary": "#ffffff",
+                      "on-secondary": "#ffffff",
+                      "on-primary-fixed-variant": "#004395",
+                      "on-tertiary": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "surface-variant": "#e8e1da",
+                      "on-tertiary-fixed": "#231b00",
+                      "surface-container": "#f4ede5",
+                      "surface-container-lowest": "#ffffff",
+                      "inverse-on-surface": "#f7f0e8",
+                      "secondary": "#9d4300",
+                      "surface-container-low": "#f9f3eb",
+                      "on-surface-variant": "#424754",
+                      "error": "#ba1a1a",
+                      "primary": "#0058be",
+                      "tertiary": "#735c00",
+                      "surface-tint": "#005ac2",
+                      "surface-container-high": "#eee7df",
+                      "surface": "#fff8f1"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter-card": "0.75rem",
+                      "stack-tight": "0.5rem",
+                      "bottom-action-height": "80px",
+                      "margin-page": "1rem",
+                      "tap-target-min": "48px"
+              },
+              "fontFamily": {
+                      "headline-lg": [
+                              "Quicksand"
+                      ],
+                      "body-lg": [
+                              "Quicksand"
+                      ],
+                      "headline-md": [
+                              "Quicksand"
+                      ],
+                      "headline-lg-mobile": [
+                              "Quicksand"
+                      ],
+                      "label-caps": [
+                              "Quicksand"
+                      ],
+                      "body-sm": [
+                              "Quicksand"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "22px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-caps": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.5px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "500"
+                              }
+                      ]
+              }
+            },
+          }
+        }
+    </script>
+<style>
+        body { font-family: 'Quicksand', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+        /* Custom checkbox styles */
+        .checkbox-custom:checked + label .checkbox-icon {
+            background-color: #22c55e;
+            border-color: #22c55e;
+        }
+        .checkbox-custom:checked + label .checkbox-icon .check-mark {
+            opacity: 1;
+        }
+        
+        /* Swipe to reveal animation setup */
+        .swipe-item {
+            position: relative;
+            overflow: hidden;
+        }
+        .swipe-content {
+            position: relative;
+            z-index: 2;
+            background-color: white;
+            transition: transform 0.3s ease;
+        }
+        .swipe-actions {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 1;
+            display: flex;
+        }
+        
+        /* Just a slight visual hint for the swipeable item */
+        .swipe-hint {
+            animation: slight-jiggle 2s infinite ease-in-out;
+            animation-delay: 1s;
+        }
+        
+        @keyframes slight-jiggle {
+            0%, 100% { transform: translateX(0); }
+            5% { transform: translateX(-4px); }
+            10% { transform: translateX(0); }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col pb-[100px] antialiased">
+<!-- Top Navigation (Back button + Content context) -->
+<header class="flex justify-between items-center px-margin-page h-14 w-full bg-surface">
+<button class="h-tap-target-min w-tap-target-min flex items-center justify-center -ml-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</button>
+<div class="flex-1 text-center font-headline-md text-headline-md-mobile text-on-surface">
+            Chi tiết học tập
+        </div>
+<div class="h-tap-target-min w-tap-target-min flex items-center justify-center -mr-2">
+<!-- Empty placeholder for balance -->
+</div>
+</header>
+<!-- Header Section: Child Info & Filter -->
+<section class="px-margin-page pt-2 pb-4">
+<div class="flex items-center gap-4 mb-6">
+<div class="relative">
+<img alt="Ảnh đại diện của bé" class="w-16 h-16 rounded-full object-cover border-4 border-primary shadow-sm" data-alt="A small, high-quality, professional headshot photo of an optimistic 7-year-old Vietnamese boy with short dark hair, wearing a clean, modern school uniform polo shirt, smiling warmly against a soft, bright cream background. Lighting is soft, high-key, and flattering. Focus is sharp on the face with a slight background blur." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDE3xel4bBGdBEaawEw8-DfeiZV8I2S_eaBryW4Y14xiPQAe5jrn7pIdYzQwu2wcxpZmMINUy0OrGT6SISk-7vQNwjdqARwOccGocUzJZXZ8UfLlpuLsWMBWhJN2UtScvT9zTU4POx7n_m0-nB_ViTEBlwzxcY1Q2ROGZ9W6FiVDm3h2VdXHOR-x9Tdjvp5bLohG1Zsg231vawPFoaeoQnBqMh1cFTaXNNoz3PharTPclx2YPGcdTnBjg"/>
+</div>
+<div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-1">Minh — Lớp 1</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Trường Tiểu học Nguyễn Khuyến</p>
+</div>
+</div>
+<!-- Segmented Control -->
+<div class="flex bg-surface-container-high rounded-full p-1 shadow-sm mb-6">
+<button class="flex-1 py-2 font-body-sm text-body-sm rounded-full bg-surface text-primary shadow-sm border border-surface-container-highest font-bold text-center">Hôm nay</button>
+<button class="flex-1 py-2 font-body-sm text-body-sm rounded-full text-on-surface-variant text-center transition-colors">Tuần này</button>
+</div>
+<!-- Progress Summary -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm">
+<div class="flex justify-between items-end mb-2">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Tiến độ hôm nay</span>
+<span class="font-headline-md text-headline-md-mobile text-primary">3/5 <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">bài đã xong</span></span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-500 ease-out" style="width: 60%"></div>
+</div>
+</div>
+</section>
+<!-- Main Content: Task List -->
+<main class="flex-1 px-margin-page space-y-6">
+<!-- Group: Toán -->
+<section>
+<h2 class="font-headline-md text-headline-md-mobile text-on-surface mb-3 flex items-center gap-2">
+<span>🔢</span> Toán
+            </h2>
+<div class="space-y-stack-tight">
+<!-- Task 1 (Done) -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-l-4 border-l-primary flex items-start gap-3">
+<div class="pt-1">
+<input checked="" class="peer hidden checkbox-custom" id="task-math-1" type="checkbox"/>
+<label class="cursor-pointer flex items-center justify-center w-6 h-6 rounded-md border-2 border-outline-variant bg-surface-container-lowest transition-colors checkbox-icon" for="task-math-1">
+<span class="material-symbols-outlined text-white text-sm check-mark opacity-0 transition-opacity">check</span>
+</label>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-body-lg text-body-lg text-on-surface line-through decoration-outline-variant text-on-surface-variant">Làm bài tập nhân số có 2 chữ số</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">trang 34, bài 3</p>
+<div class="flex items-center gap-3 mt-3">
+<img alt="Ảnh bài tập" class="w-10 h-10 rounded-lg object-cover border border-outline-variant" data-alt="A tiny thumbnail photo showing a close-up of a neatly handwritten math assignment in a lined notebook, written in blue ink. The photo looks like it was taken by a smartphone under warm indoor lighting. Focus is on the numbers." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxJ8yDNu2L22VL-qsYxvs2sMHpd-dZwOHOStFj69zCJFN2xoXxCqVNXbiCUbz725Sf7ddEkfBJy3f6mBluTwJueWwAWG8xPnqyqrRDN2mM3k75EvFnUxrSuyBU9b5mXXIue0q39RUcUuPdWOx3gR3UZjSuP4icbBW8kiqhaHRwi_YcYyEETVXkrsqxHSPQGkAS8Z0VhpLMTIXpyga6dWIK2pMAhnbthNx1SUn3chKTvRPWNt6Nhy6T3g"/>
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-size: 14px;">schedule</span>
+<span class="font-label-caps text-label-caps font-normal lowercase">Xong lúc 20:15</span>
+</div>
+</div>
+</div>
+<button class="h-tap-target-min w-10 flex items-center justify-center text-outline transition-colors hover:text-on-surface">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<!-- Task 2 (To Do) -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-l-4 border-l-primary flex items-start gap-3">
+<div class="pt-1">
+<input class="peer hidden checkbox-custom" id="task-math-2" type="checkbox"/>
+<label class="cursor-pointer flex items-center justify-center w-6 h-6 rounded-md border-2 border-outline-variant bg-surface-container-lowest transition-colors checkbox-icon" for="task-math-2">
+<span class="material-symbols-outlined text-white text-sm check-mark opacity-0 transition-opacity">check</span>
+</label>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-body-lg text-body-lg text-on-surface">Giải bài tập trang 35</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">bài 1, 2</p>
+<div class="flex items-center gap-3 mt-3">
+<img alt="Chưa có ảnh bài làm" class="w-10 h-10 rounded-lg object-cover border border-outline-variant opacity-70 grayscale" data-alt="A tiny thumbnail photo showing a blank page of a math workbook with printed problems, ready to be filled out. Soft overhead lighting, modern cream aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5aqqjdjL7bLZny63YxBUOvIEsQDCIJzkQuWf7m18DV8ri6lDzFSGufb3T7RUHsteHCsFPxzkZAw3ovzAbsBEG7Tgpus2YcRbGsB9BX0idZDLARz1JiTSbZL6FN9TZ82zaQAsdfsWh-ZMwYpeZCawV4uMrMrx-WlL4Z9536c12uamdFV5u4BJ5MmeZ5nox33huslejR6_N3V2LV3R4H8lfw1Xcrk2GhvBNm5tRems1G-q0-FUJt-Zl7g"/>
+</div>
+</div>
+<button class="h-tap-target-min w-10 flex items-center justify-center text-outline transition-colors hover:text-on-surface">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Group: Tiếng Việt -->
+<section>
+<h2 class="font-headline-md text-headline-md-mobile text-on-surface mb-3 flex items-center gap-2">
+<span>📖</span> Tiếng Việt
+            </h2>
+<div class="space-y-stack-tight">
+<!-- Task 1 (Done) -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-l-4 border-l-tertiary-container flex items-start gap-3">
+<div class="pt-1">
+<input checked="" class="peer hidden checkbox-custom" id="task-vn-1" type="checkbox"/>
+<label class="cursor-pointer flex items-center justify-center w-6 h-6 rounded-md border-2 border-outline-variant bg-surface-container-lowest transition-colors checkbox-icon" for="task-vn-1">
+<span class="material-symbols-outlined text-white text-sm check-mark opacity-0 transition-opacity">check</span>
+</label>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-body-lg text-body-lg text-on-surface line-through decoration-outline-variant text-on-surface-variant">Viết đoạn văn về gia đình</p>
+<div class="flex items-center gap-3 mt-3">
+<img alt="Ảnh bài tập" class="w-10 h-10 rounded-lg object-cover border border-outline-variant" data-alt="A tiny thumbnail photo showing neat Vietnamese handwriting on grid paper, describing a family. High key lighting, warm tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqymx6m6bcTH8bbe5jIw0054hXbbWROMdW1FNTb8sTg5wpTONj4ozS_gO52SnaxSrs5zhk_QjRyUlbF9MiTUlkgPYT0aUEfJZPeIrNRVeLH_HnTJUw2hxObJhpDM89wHCvyuc7mc-h7hGiAVa8tnrXA_bjlwV9ufT2eZsUi4lxkO7eUf5Fwa7Fu3xEiYaR26_6s7ZyUEhnT9mcN060x_KRWR2oamwJ6n4Cdao8HXPSEAX-SG2_UQ6bWA"/>
+</div>
+</div>
+<button class="h-tap-target-min w-10 flex items-center justify-center text-outline transition-colors hover:text-on-surface">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<!-- Task 2 (Overdue) -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-l-4 border-l-tertiary-container flex items-start gap-3">
+<div class="pt-1">
+<input class="peer hidden checkbox-custom" id="task-vn-2" type="checkbox"/>
+<label class="cursor-pointer flex items-center justify-center w-6 h-6 rounded-md border-2 border-outline-variant bg-surface-container-lowest transition-colors checkbox-icon" for="task-vn-2">
+<span class="material-symbols-outlined text-white text-sm check-mark opacity-0 transition-opacity">check</span>
+</label>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-body-lg text-body-lg text-on-surface">Học thuộc lòng bài thơ 'Mẹ'</p>
+<div class="mt-3">
+<span class="inline-flex items-center px-2 py-1 rounded-full bg-error-container text-on-error-container font-label-caps text-label-caps">
+                                Quá hạn
+                            </span>
+</div>
+</div>
+<button class="h-tap-target-min w-10 flex items-center justify-center text-outline transition-colors hover:text-on-surface">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Group: Tiếng Anh (Swipe Hinted) -->
+<section>
+<h2 class="font-headline-md text-headline-md-mobile text-on-surface mb-3 flex items-center gap-2">
+<span>🔤</span> Tiếng Anh
+            </h2>
+<div class="space-y-stack-tight">
+<!-- Task 1 (Swipeable) -->
+<div class="swipe-item rounded-xl bg-surface-container-highest overflow-hidden">
+<!-- Background Actions (Revealed on Swipe) -->
+<div class="swipe-actions">
+<button class="w-16 h-full bg-primary flex flex-col items-center justify-center text-on-primary">
+<span class="material-symbols-outlined mb-1 text-[20px]">edit</span>
+<span class="font-label-caps text-[10px]">Sửa</span>
+</button>
+<button class="w-16 h-full bg-error flex flex-col items-center justify-center text-on-error">
+<span class="material-symbols-outlined mb-1 text-[20px]">delete</span>
+<span class="font-label-caps text-[10px]">Xoá</span>
+</button>
+</div>
+<!-- Foreground Content -->
+<div class="swipe-content swipe-hint bg-surface-container-lowest p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-l-4 border-l-secondary-container flex items-start gap-3 h-full rounded-l-xl" style="transform: translateX(-16px);"> <!-- Slightly shifted to hint swipe -->
+<div class="pt-1">
+<input class="peer hidden checkbox-custom" id="task-eng-1" type="checkbox"/>
+<label class="cursor-pointer flex items-center justify-center w-6 h-6 rounded-md border-2 border-outline-variant bg-surface-container-lowest transition-colors checkbox-icon" for="task-eng-1">
+<span class="material-symbols-outlined text-white text-sm check-mark opacity-0 transition-opacity">check</span>
+</label>
+</div>
+<div class="flex-1 min-w-0 flex items-center min-h-[44px]">
+<p class="font-body-lg text-body-lg text-on-surface">Học từ vựng Unit 4</p>
+</div>
+<div class="h-tap-target-min w-10 flex items-center justify-center text-outline">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Fixed Bottom Action Area -->
+<div class="fixed bottom-0 left-0 w-full px-margin-page py-4 bg-surface/90 backdrop-blur-sm border-t border-surface-container-highest z-50">
+<button class="w-full h-tap-target-min bg-primary text-on-primary font-body-lg text-body-lg font-bold rounded-xl shadow-[0_4px_12px_rgba(33,112,228,0.3)] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined font-bold">add</span>
+            Thêm bài tập cho Minh
+        </button>
+</div>
+</body></html>

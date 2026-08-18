@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Danh sách bài tập</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#adc6ff",
+                    "on-secondary-fixed": "#341100",
+                    "tertiary-fixed-dim": "#eec200",
+                    "on-primary-container": "#fefcff",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-highest": "#e8e1da",
+                    "on-primary": "#ffffff",
+                    "surface-bright": "#fff8f1",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-container": "#5c2400",
+                    "secondary": "#9d4300",
+                    "on-background": "#1e1b17",
+                    "on-surface-variant": "#424754",
+                    "surface-container-low": "#f9f3eb",
+                    "on-secondary-fixed-variant": "#783200",
+                    "on-tertiary-fixed": "#231b00",
+                    "on-error-container": "#93000a",
+                    "tertiary-container": "#cea700",
+                    "surface": "#fff8f1",
+                    "surface-container-high": "#eee7df",
+                    "outline-variant": "#c2c6d6",
+                    "inverse-on-surface": "#f7f0e8",
+                    "on-tertiary-fixed-variant": "#574500",
+                    "secondary-fixed-dim": "#ffb690",
+                    "primary": "#0058be",
+                    "on-primary-fixed-variant": "#004395",
+                    "tertiary-fixed": "#ffe083",
+                    "surface-container": "#f4ede5",
+                    "primary-fixed-dim": "#adc6ff",
+                    "on-primary-fixed": "#001a42",
+                    "primary-container": "#2170e4",
+                    "on-secondary": "#ffffff",
+                    "tertiary": "#735c00",
+                    "on-surface": "#1e1b17",
+                    "error": "#ba1a1a",
+                    "inverse-surface": "#33302b",
+                    "primary-fixed": "#d8e2ff",
+                    "on-error": "#ffffff",
+                    "secondary-fixed": "#ffdbca",
+                    "secondary-container": "#fd761a",
+                    "surface-tint": "#005ac2",
+                    "outline": "#727785",
+                    "surface-variant": "#e8e1da",
+                    "surface-dim": "#dfd9d1",
+                    "on-tertiary-container": "#4e3e00",
+                    "background": "#fff8f1",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "bottom-action-height": "80px",
+                    "gutter-card": "0.75rem",
+                    "margin-page": "1rem",
+                    "stack-tight": "0.5rem",
+                    "tap-target-min": "48px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": [
+                            "Quicksand"
+                    ],
+                    "headline-lg": [
+                            "Quicksand"
+                    ],
+                    "body-sm": [
+                            "Quicksand"
+                    ],
+                    "body-lg": [
+                            "Quicksand"
+                    ],
+                    "label-caps": [
+                            "Quicksand"
+                    ],
+                    "headline-md": [
+                            "Quicksand"
+                    ]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": [
+                            "22px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-sm": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-lg": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "label-caps": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.5px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-md": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "700"
+                            }
+                    ]
+            }
+          },
+        }
+      }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+        }
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: theme('colors.outline-variant');
+            border-radius: theme('borderRadius.full');
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="antialiased min-h-screen flex flex-col pt-14 pb-bottom-action-height md:pb-0 md:pt-16">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim border-b border-surface-container-highest dark:border-outline-variant shadow-sm flex justify-between items-center px-margin-page h-14 w-full">
+<div class="flex items-center gap-3">
+<button class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center active:scale-95 transition-transform">
+<img class="w-full h-full object-cover" data-alt="A close-up portrait of an adorable, happy Vietnamese child, around 8 years old, smiling brightly. The lighting is soft and warm, conveying a cheerful and innocent mood. The background is slightly blurred and bright, fitting a modern, family-oriented app interface. The image should be highly detailed and realistic, capturing the child's joyful expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdlAyU3i144gAUf5vPUnNvJ6o6nIlFgO-C_Um2T8OhpvIy99bquqxbnClmJnKW3tVSN-441nRhWieyhJy-yI4iXwgYiWMUB5Wz6xO7w82C9elgYB5sWtdzA73MvU1Pp4TKqltDcDVSvo8EVbF_2_W2toE1yTtLT0j3wK3vJcTjH680QGgi0x7T8Ymz7Q2RqvxBQ-vbGLeIFv1igzyTtxlXbV4v00VqwKMPiohQp_QvqhLctfyNCSeV0Q"/>
+</button>
+<h1 class="font-headline-md text-headline-md-mobile text-primary dark:text-primary-fixed-dim">Bà Tà P Vế Nhâ</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant dark:text-outline hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow px-margin-page py-6 max-w-2xl mx-auto w-full flex flex-col gap-6">
+<!-- Header Section -->
+<div class="flex items-center justify-between mb-2">
+<div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background">Danh sách bài tập</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Bé Minh Hoàng • Hôm nay</p>
+</div>
+<div class="bg-surface-container-high rounded-full px-3 py-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-tertiary-container" data-icon="kid_star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">kid_star</span>
+<span class="font-label-caps text-label-caps text-on-surface">2/5 Hoàn thành</span>
+</div>
+</div>
+<!-- Task List -->
+<div class="flex flex-col gap-stack-tight">
+<!-- Task Card: Overdue -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-4 relative overflow-hidden flex items-start gap-4 active:scale-[0.98] transition-transform cursor-pointer">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-error"></div>
+<div class="flex-grow">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-caps text-label-caps text-error bg-error-container px-2 py-0.5 rounded-sm uppercase">Toán</span>
+<span class="font-label-caps text-label-caps text-error flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> Hạn chót: Hôm qua
+                        </span>
+</div>
+<h3 class="font-body-lg text-body-lg text-on-background mb-1">Giải bài tập trang 45</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-1">Phép nhân và phép chia trong phạm vi 100.</p>
+</div>
+<div class="mt-1">
+<div class="w-6 h-6 rounded border-2 border-outline-variant flex items-center justify-center"></div>
+</div>
+</div>
+<!-- Task Card: Pending -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-4 relative overflow-hidden flex items-start gap-4 active:scale-[0.98] transition-transform cursor-pointer">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-tertiary-container"></div>
+<div class="flex-grow">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-caps text-label-caps text-tertiary-container bg-tertiary-fixed px-2 py-0.5 rounded-sm uppercase">Tiếng Việt</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> Hạn chót: Hôm nay, 20:00
+                        </span>
+</div>
+<h3 class="font-body-lg text-body-lg text-on-background mb-1">Viết đoạn văn ngắn về gia đình</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-1">Khoảng 5-7 câu, chú ý lỗi chính tả.</p>
+</div>
+<div class="mt-1">
+<div class="w-6 h-6 rounded border-2 border-outline-variant flex items-center justify-center"></div>
+</div>
+</div>
+<!-- Task Card: Pending -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-4 relative overflow-hidden flex items-start gap-4 active:scale-[0.98] transition-transform cursor-pointer">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="flex-grow">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-caps text-label-caps text-primary bg-primary-fixed px-2 py-0.5 rounded-sm uppercase">Tiếng Anh</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> Hạn chót: Ngày mai
+                        </span>
+</div>
+<h3 class="font-body-lg text-body-lg text-on-background mb-1">Học từ vựng Unit 3</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-1">Chủ đề: Colors and Shapes.</p>
+</div>
+<div class="mt-1">
+<div class="w-6 h-6 rounded border-2 border-outline-variant flex items-center justify-center"></div>
+</div>
+</div>
+<!-- Task Card: Done -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-4 relative overflow-hidden flex items-start gap-4 opacity-75">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-outline"></div>
+<div class="flex-grow">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-caps text-label-caps text-on-surface-variant bg-surface-variant px-2 py-0.5 rounded-sm uppercase">Toán</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Đã nộp
+                        </span>
+</div>
+<h3 class="font-body-lg text-body-lg text-on-surface-variant mb-1 line-through">Luyện tập chung trang 40</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-1">Hoàn thành bài 1, 2, 3.</p>
+</div>
+<div class="mt-1">
+<div class="w-6 h-6 rounded bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[18px]">check</span>
+</div>
+</div>
+</div>
+<!-- Task Card: Done -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.05)] p-4 relative overflow-hidden flex items-start gap-4 opacity-75">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-outline"></div>
+<div class="flex-grow">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-caps text-label-caps text-on-surface-variant bg-surface-variant px-2 py-0.5 rounded-sm uppercase">Khác</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Đã nộp
+                        </span>
+</div>
+<h3 class="font-body-lg text-body-lg text-on-surface-variant mb-1 line-through">Chuẩn bị đồ dùng học tập</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-1">Gọt bút chì, soạn sách vở theo TKB.</p>
+</div>
+<div class="mt-1">
+<div class="w-6 h-6 rounded bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[18px]">check</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Action Button (Mobile) -->
+<div class="fixed bottom-bottom-action-height left-0 w-full px-margin-page pb-4 bg-gradient-to-t from-background to-transparent md:hidden z-40">
+<button class="w-full h-tap-target-min bg-primary text-on-primary rounded-xl font-body-lg text-body-lg flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+            Thêm bài tập mới
+        </button>
+</div>
+<!-- Bottom Action Button (Desktop - Floating) -->
+<div class="hidden md:block fixed bottom-8 right-8 z-40">
+<button class="h-tap-target-min px-6 bg-primary text-on-primary rounded-full font-body-lg text-body-lg flex items-center justify-center shadow-lg hover:shadow-xl hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95 gap-2">
+<span class="material-symbols-outlined text-[20px]">add</span> Thêm bài tập mới
+        </button>
+</div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full h-bottom-action-height flex justify-around items-center px-2 pb-safe bg-surface dark:bg-surface-container-lowest shadow-[0_-2px_8px_rgba(0,0,0,0.05)] z-50 rounded-t-xl md:hidden">
+<!-- Nhiệm vụ (Active semantic match) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:opacity-80 active:scale-90 transition-transform">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-label-caps text-label-caps">Trang ch\u1ee7</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:opacity-80 active:scale-90 transition-transform">
+<span class="material-symbols-outlined mb-1" data-icon="photo_camera">photo_camera</span>
+<span class="font-label-caps text-label-caps">Ch\u1ee5p \u1ea3nh</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-full px-4 py-1 hover:opacity-80 active:scale-90 transition-transform">
+<span class="material-symbols-outlined mb-1" data-icon="checklist" data-weight="fill" style="font-variation-settings: 'FILL' 1;">checklist</span>
+<span class="font-label-caps text-label-caps">Nhi\u1ec7m v\u1ee5</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:opacity-80 active:scale-90 transition-transform">
+<span class="material-symbols-outlined mb-1" data-icon="settings">settings</span>
+<span class="font-label-caps text-label-caps">C\u00e0i \u0111\u1eb7t</span>
+</button>
+</nav>
+</body></html>

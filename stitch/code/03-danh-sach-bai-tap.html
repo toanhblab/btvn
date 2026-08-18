@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Bé Học Bài - Bảng Điều Khiển</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "error": "#ba1a1a",
+                            "surface-variant": "#e8e1da",
+                            "surface": "#fff8f1",
+                            "secondary-fixed-dim": "#ffb690",
+                            "on-primary-fixed-variant": "#004395",
+                            "secondary-container": "#fd761a",
+                            "secondary": "#9d4300",
+                            "on-tertiary": "#ffffff",
+                            "tertiary-fixed": "#ffe083",
+                            "surface-tint": "#005ac2",
+                            "on-surface": "#1e1b17",
+                            "background": "#fff8f1",
+                            "on-secondary-container": "#5c2400",
+                            "on-secondary-fixed": "#341100",
+                            "on-error": "#ffffff",
+                            "primary": "#0058be",
+                            "inverse-on-surface": "#f7f0e8",
+                            "primary-container": "#2170e4",
+                            "inverse-surface": "#33302b",
+                            "on-primary-container": "#fefcff",
+                            "on-background": "#1e1b17",
+                            "surface-bright": "#fff8f1",
+                            "on-tertiary-container": "#4e3e00",
+                            "on-tertiary-fixed": "#231b00",
+                            "surface-container-high": "#eee7df",
+                            "on-secondary-fixed-variant": "#783200",
+                            "outline-variant": "#c2c6d6",
+                            "tertiary-container": "#cea700",
+                            "error-container": "#ffdad6",
+                            "on-primary": "#ffffff",
+                            "primary-fixed-dim": "#adc6ff",
+                            "inverse-primary": "#adc6ff",
+                            "surface-container-highest": "#e8e1da",
+                            "surface-container": "#f4ede5",
+                            "tertiary": "#735c00",
+                            "on-secondary": "#ffffff",
+                            "tertiary-fixed-dim": "#eec200",
+                            "surface-container-low": "#f9f3eb",
+                            "surface-dim": "#dfd9d1",
+                            "on-tertiary-fixed-variant": "#574500",
+                            "surface-container-lowest": "#ffffff",
+                            "on-primary-fixed": "#001a42",
+                            "on-error-container": "#93000a",
+                            "primary-fixed": "#d8e2ff",
+                            "on-surface-variant": "#424754",
+                            "secondary-fixed": "#ffdbca",
+                            "outline": "#727785"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px",
+                            "card": "24px"
+                    },
+                    "spacing": {
+                            "stack-gap": "24px",
+                            "margin-edge": "48px",
+                            "gutter": "32px",
+                            "touch-target-min": "64px"
+                    },
+                    "fontFamily": {
+                            "body-md": ["Quicksand"],
+                            "label-bold": ["Quicksand"],
+                            "headline-lg": ["Quicksand"],
+                            "display-hero": ["Quicksand"],
+                            "body-lg": ["Quicksand"]
+                    },
+                    "fontSize": {
+                            "body-md": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                            "label-bold": ["18px", {"lineHeight": "24px", "fontWeight": "700"}],
+                            "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                            "display-hero": ["48px", {"lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                            "body-lg": ["24px", {"lineHeight": "32px", "fontWeight": "500"}]
+                    },
+                    "boxShadow": {
+                        "soft": "0 8px 20px 0 rgba(0,0,0,0.05)",
+                        "chunky": "0 12px 24px 0 rgba(0,0,0,0.1), 0 4px 0 0 #005ac2",
+                        "chunky-pressed": "0 4px 8px 0 rgba(0,0,0,0.1), 0 0px 0 0 #005ac2"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #FFF8F0;
+            overscroll-behavior-y: none;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 48;
+        }
+        /* Custom scrollbar for horizontal scrolling area */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .touch-feedback:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="text-on-background font-body-md overflow-x-hidden min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-margin-edge py-6 docked full-width top-0 bg-transparent no-border flat no shadows z-40">
+<div class="flex items-center gap-4 hover:scale-105 active:translate-y-1 transition-all duration-150 cursor-pointer">
+<span class="material-symbols-outlined text-primary text-4xl" data-icon="arrow_back">arrow_back</span>
+</div>
+<div class="font-headline-lg text-headline-lg text-primary text-center flex-1">
+            Bé Học Bài
+        </div>
+<div class="flex items-center gap-4 hover:scale-105 active:translate-y-1 transition-all duration-150 cursor-pointer">
+<span class="material-symbols-outlined text-tertiary-container text-4xl" data-icon="star" data-weight="fill">star</span>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 flex flex-col px-margin-edge pb-32 w-full max-w-[1200px] mx-auto">
+<!-- Header Text -->
+<h1 class="font-display-hero text-display-hero text-primary text-center mt-4 mb-stack-gap">
+            Bài tập của bé
+        </h1>
+<!-- Progress Widget (Minimalist) -->
+<div class="w-full max-w-2xl mx-auto bg-surface-container-low rounded-full h-8 mb-12 shadow-soft flex items-center px-2 border-2 border-surface-container-high">
+<div class="bg-tertiary-container h-5 rounded-full w-2/3 flex justify-end items-center px-2 transition-all duration-1000 ease-in-out relative">
+<span class="material-symbols-outlined text-on-tertiary text-lg absolute -right-3 bg-tertiary-container rounded-full p-1" data-icon="star" data-weight="fill">star</span>
+</div>
+</div>
+<!-- Subject Cards Grid (Large, Touchable, Visual) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter mt-8">
+<!-- Card 1: Toán học -->
+<button class="bg-white rounded-card shadow-soft p-6 flex flex-col items-center justify-center gap-6 touch-feedback transition-all duration-200 border-4 border-transparent focus:border-primary active:border-primary hover:scale-[1.02] min-h-[320px] relative overflow-hidden group">
+<div class="absolute inset-0 bg-primary opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
+<div class="w-48 h-48 rounded-full bg-primary-container flex items-center justify-center shadow-inner relative">
+<img alt="Toán học" class="w-full h-full object-cover rounded-full z-10" data-alt="A vibrant, stylized 3D illustration of colorful wooden number blocks (1, 2, 3) and simple math symbols (+, =) sitting on a soft cloud. Playful and nurturing light-mode aesthetic, primary colors on a soft blue background. Suitable for early childhood education interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4hkFk-5XHpXQQ1JgnCcbA91QNC1RoitfnmpqbJjqXkwUSF59wDdBm_Qh9kmrbCKV0DQNsuePxUPbYbkcTaX9Atrlo1hCgVmOx96-FRdwpxj9BLpVx1n-_HLaNuSyJaI0BtWuAVqRubsTJaEBIp581p7jOhSNKAJkNikff4O1v4WuW5oDJkkEwY5NpXGgUJyRmoqc4gAxftMjD6ZcKa84bMjzLTLWutMi3dqTOfDXZbbey-FIgeODG"/>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Toán học</h2>
+<!-- Decorative completion badge -->
+<div class="absolute top-4 right-4 bg-tertiary-container text-on-tertiary rounded-full w-12 h-12 flex items-center justify-center shadow-md transform rotate-12 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl" data-icon="check" data-weight="fill">check</span>
+</div>
+</button>
+<!-- Card 2: Tiếng Việt -->
+<button class="bg-white rounded-card shadow-soft p-6 flex flex-col items-center justify-center gap-6 touch-feedback transition-all duration-200 border-4 border-transparent focus:border-primary active:border-primary hover:scale-[1.02] min-h-[320px] relative overflow-hidden group">
+<div class="absolute inset-0 bg-secondary-container opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
+<div class="w-48 h-48 rounded-full bg-secondary-fixed flex items-center justify-center shadow-inner relative">
+<img alt="Tiếng Việt" class="w-full h-full object-cover rounded-full z-10" data-alt="A vibrant, stylized 3D illustration of an open alphabet book with large, friendly letters bouncing out of the pages. Surrounded by soft glowing sparkles. Warm, nurturing light-mode aesthetic, using soft oranges and whites. Playful educational concept for young children." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjhFcgm5Gp83J4au4l4W7NKd0K8OsPb6qvxJGfo0WXKLgieQ4-ah9bplOhfvXFLvB2use9Fq-XpljTyCYOsDimoJ2BA8YftlweodrDSsHIoWXQ8bMayU2MFISpm7C3XA7f4EjCOgtW06ILW9zoOf8MEvXKM5aTeuzUJA-67ea9DJoPF8yHUl3g2LQ-Mhfgkrd2G9q6zecVK-_G-hMt-PAQa9cWfBtIpKp7Y9XI6U9azWqIRqX61ja9"/>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Tiếng Việt</h2>
+</button>
+<!-- Card 3: Khám phá -->
+<button class="bg-white rounded-card shadow-soft p-6 flex flex-col items-center justify-center gap-6 touch-feedback transition-all duration-200 border-4 border-transparent focus:border-primary active:border-primary hover:scale-[1.02] min-h-[320px] relative overflow-hidden group">
+<div class="absolute inset-0 bg-tertiary-container opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
+<div class="w-48 h-48 rounded-full bg-tertiary-fixed flex items-center justify-center shadow-inner relative">
+<img alt="Khám phá" class="w-full h-full object-cover rounded-full z-10" data-alt="A vibrant, stylized 3D illustration of a friendly magnifying glass examining a cute, chubby green leaf and a small, smiling ladybug. Bright, nurturing light-mode aesthetic with soft greens and yellows. Nature exploration concept designed for early childhood learning." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrcwh00A6gNGyQhUcde3GXQcr7ZJUorNwvgAUhK9O18Xf2otVt2kc2iX0V9oKv67zRw0s9IMPwT74TE2h5G3457EU3GEvbCeF68y-6H6Ij-J3W6BlGf8E0NmqWiay0POrdi_q-kP4CgP1Usbr0bRSv7Id9xaaDgw87nWF8O606eyFKa-2Y5ORMMCDCL228BrIQwO28pmpXKBdin15cNAaso3CBvKPM80uN_d2dfdaCc4ECqE_fHowE"/>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Khám phá</h2>
+<!-- New task indicator -->
+<div class="absolute top-4 right-4 bg-error text-on-error rounded-full w-6 h-6 flex items-center justify-center shadow-md animate-pulse">
+</div>
+</button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-margin-edge h-24 bg-surface-container-low rounded-t-[48px] shadow-[0_-8px_20px_0_rgba(0,0,0,0.05)] md:hidden">
+<!-- Inactive: Trang chủ -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant h-[64px] hover:bg-surface-container-highest active:scale-95 transition-transform duration-100 cursor-pointer px-4 rounded-3xl">
+<span class="material-symbols-outlined text-3xl mb-1" data-icon="home">home</span>
+<span class="font-label-bold text-label-bold">Trang chủ</span>
+</div>
+<!-- Active: Bài tập -->
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-8 py-4 h-[64px] hover:bg-surface-container-highest active:scale-95 transition-transform duration-100 cursor-pointer shadow-md">
+<span class="material-symbols-outlined text-3xl mb-1" data-icon="edit_note" data-weight="fill">edit_note</span>
+<span class="font-label-bold text-label-bold">Bài tập</span>
+</div>
+<!-- Inactive: Thành tích -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant h-[64px] hover:bg-surface-container-highest active:scale-95 transition-transform duration-100 cursor-pointer px-4 rounded-3xl">
+<span class="material-symbols-outlined text-3xl mb-1" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-label-bold text-label-bold">Thành tích</span>
+</div>
+</nav>
+<!-- Decorative ambient background blobs (Soft Neomorphism & Nurturing feeling) -->
+<div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+<div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary-fixed-dim opacity-30 rounded-full blur-3xl mix-blend-multiply"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-tertiary-fixed-dim opacity-20 rounded-full blur-3xl mix-blend-multiply"></div>
+</div>
+</body></html>

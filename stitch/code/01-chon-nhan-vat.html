@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bé Học Bài - Chọn Hồ Sơ</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e8e1da",
+                        "surface": "#fff8f1",
+                        "secondary-fixed-dim": "#ffb690",
+                        "on-primary-fixed-variant": "#004395",
+                        "secondary-container": "#fd761a",
+                        "secondary": "#9d4300",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed": "#ffe083",
+                        "surface-tint": "#005ac2",
+                        "on-surface": "#1e1b17",
+                        "background": "#fff8f1",
+                        "on-secondary-container": "#5c2400",
+                        "on-secondary-fixed": "#341100",
+                        "on-error": "#ffffff",
+                        "primary": "#0058be",
+                        "inverse-on-surface": "#f7f0e8",
+                        "primary-container": "#2170e4",
+                        "inverse-surface": "#33302b",
+                        "on-primary-container": "#fefcff",
+                        "on-background": "#1e1b17",
+                        "surface-bright": "#fff8f1",
+                        "on-tertiary-container": "#4e3e00",
+                        "on-tertiary-fixed": "#231b00",
+                        "surface-container-high": "#eee7df",
+                        "on-secondary-fixed-variant": "#783200",
+                        "outline-variant": "#c2c6d6",
+                        "tertiary-container": "#cea700",
+                        "error-container": "#ffdad6",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#adc6ff",
+                        "inverse-primary": "#adc6ff",
+                        "surface-container-highest": "#e8e1da",
+                        "surface-container": "#f4ede5",
+                        "tertiary": "#735c00",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#eec200",
+                        "surface-container-low": "#f9f3eb",
+                        "surface-dim": "#dfd9d1",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed": "#001a42",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#d8e2ff",
+                        "on-surface-variant": "#424754",
+                        "secondary-fixed": "#ffdbca",
+                        "outline": "#727785"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "playful": "24px"
+                    },
+                    "spacing": {
+                        "stack-gap": "24px",
+                        "margin-edge": "48px",
+                        "gutter": "32px",
+                        "touch-target-min": "64px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Quicksand"],
+                        "label-bold": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "display-hero": ["Quicksand"],
+                        "body-lg": ["Quicksand"]
+                    },
+                    "fontSize": {
+                        "body-md": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "label-bold": ["18px", { "lineHeight": "24px", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "display-hero": ["48px", { "lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["24px", { "lineHeight": "32px", "fontWeight": "500" }]
+                    },
+                    "boxShadow": {
+                        "soft": "0 8px 20px 0 rgba(0,0,0,0.05)",
+                        "chunky": "0 12px 24px 0 rgba(0,0,0,0.08), 0 4px 8px 0 rgba(0,0,0,0.04)"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #FFF8F0;
+        }
+        .chunky-shadow {
+            box-shadow: 0 8px 20px 0 rgba(0,0,0,0.05);
+            transition: all 0.2s ease-in-out;
+        }
+        .chunky-shadow:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 10px 0 rgba(0,0,0,0.05);
+        }
+        .border-bottom-blue { border-bottom: 6px solid #2563eb; }
+        .border-bottom-orange { border-bottom: 6px solid #ea580c; }
+        .border-bottom-yellow { border-bottom: 6px solid #ca8a04; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-body-md text-on-surface selection:bg-primary-container selection:text-on-primary-container overflow-hidden">
+<!-- Top Navigation (Suppressed per logic: Linear/Transactional selection screen) -->
+<!-- Main Canvas -->
+<main class="flex-grow flex flex-col items-center justify-center p-margin-edge w-full max-w-7xl mx-auto relative z-10">
+<!-- Header -->
+<header class="text-center mb-16 animate-[fadeInDown_0.5s_ease-out]">
+<h1 class="font-display-hero text-display-hero text-primary mb-4">Chào bé!</h1>
+<p class="font-headline-lg text-headline-lg text-on-surface-variant">Bé là ai nhỉ?</p>
+</header>
+<!-- Profile Selection Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter w-full max-w-5xl">
+<!-- Profile 1: Bi -->
+<button class="chunky-shadow bg-surface-container-lowest rounded-playful flex flex-col items-center p-8 gap-6 border-bottom-blue group relative overflow-hidden animate-[fadeInUp_0.5s_ease-out_0.1s_both]">
+<div class="absolute inset-0 bg-[#3B82F6] opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
+<div class="w-48 h-48 rounded-full bg-[#E0F2FE] flex items-center justify-center shadow-inner relative z-10">
+<img class="w-40 h-40 object-cover rounded-full" data-alt="A brightly colored, high-quality 3D rendered cartoon character avatar for a young child's profile. The character is a cheerful little boy with messy hair, wearing a vibrant blue (#3B82F6) t-shirt. The style is soft, round, and highly tactile, resembling modern vinyl toys or high-end animated films. Set against a clean, plain background to ensure the character stands out clearly. Lighting is soft, warm, and inviting, creating a friendly and playful mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3DsW0OyaCaMsrkrWi9hNO_PPK-645ab7_3U-MZ8FTWFCHWuGw58vInTpyvCCTGVWvU-dCajlH0M3Mhbf8iJ12SyjSMlkt8mdoD_HQojXsS1WLNijoaCbUIsXvDMQUEz8r_Q6jPE1ikACWXrf1ezU4CPNbDUrlCRs2sbFTVT1uUs19i1hacch4ORRlTu8FUpUMlN2hXLbDpCfleOusKEjhU3t8a4HAxXvPSBEZRj-sm-UlKCLq_xb9"/>
+</div>
+<span class="font-headline-lg text-headline-lg text-[#3B82F6] relative z-10">Bi</span>
+</button>
+<!-- Profile 2: Bún -->
+<button class="chunky-shadow bg-surface-container-lowest rounded-playful flex flex-col items-center p-8 gap-6 border-bottom-orange group relative overflow-hidden animate-[fadeInUp_0.5s_ease-out_0.2s_both]">
+<div class="absolute inset-0 bg-[#F97316] opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
+<div class="w-48 h-48 rounded-full bg-[#FFEDD5] flex items-center justify-center shadow-inner relative z-10">
+<img class="w-40 h-40 object-cover rounded-full" data-alt="A brightly colored, high-quality 3D rendered cartoon character avatar for a young child's profile. The character is an energetic little girl with pigtails, wearing a vibrant orange (#F97316) dress. The style is soft, round, and highly tactile, resembling modern vinyl toys or high-end animated films. Set against a clean, plain background to ensure the character stands out clearly. Lighting is soft, warm, and inviting, creating a friendly and playful mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkaorcQdJ-4OeAgp5BBiX0GjPYVT5pl6s4AEE1rCPp9JnDqq_hYJZAaRlN4DT8ESm-oAHMHhKcW-4-CnKsbXMemFYt5MibUjGL9N90Al9NOpVBB-ynp5HhKF5fqE2THbxcVTz6yoPVa_VUQxC6Un0w1pVA0pwKd02-Zz89AdfdygophHpi5JQj4_rWczOEAyBT5t2WDmZinLx_gA9GOoYA3ec7t06FUWOk5yWeSHA8Rq_b9fRo8KFd"/>
+</div>
+<span class="font-headline-lg text-headline-lg text-[#F97316] relative z-10">Bún</span>
+</button>
+<!-- Profile 3: Bơ -->
+<button class="chunky-shadow bg-surface-container-lowest rounded-playful flex flex-col items-center p-8 gap-6 border-bottom-yellow group relative overflow-hidden animate-[fadeInUp_0.5s_ease-out_0.3s_both]">
+<div class="absolute inset-0 bg-[#FACC15] opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
+<div class="w-48 h-48 rounded-full bg-[#FEF9C3] flex items-center justify-center shadow-inner relative z-10">
+<img class="w-40 h-40 object-cover rounded-full" data-alt="A brightly colored, high-quality 3D rendered cartoon character avatar for a young child's profile. The character is a cute, chubby little bear cub wearing a vibrant yellow (#FACC15) scarf. The style is soft, round, and highly tactile, resembling modern vinyl toys or high-end animated films. Set against a clean, plain background to ensure the character stands out clearly. Lighting is soft, warm, and inviting, creating a friendly and playful mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVq-5EkiqLfxYmicvrHiChWLhjpLvCXYH7a167JqYxQlMimWn8EKoPrbMbIHjr-NIfibNi6tBTbLw0d3ajz_kBiJVCLu4jHzfzqeV-zDsL1gAVu3FMwIU84Ct-j1giLM4rfNr8MSkVppNz7TYm2Q4Ta3dhOCrRkc5XgzFgPYxczoMAzZ4Vsu1s82lpp4jArB3pF2gF5t26jVEAPFwrjuk7GybP0B-UjQync7JFeNU3JWjnIIT-P00M"/>
+</div>
+<span class="font-headline-lg text-headline-lg text-[#EAB308] relative z-10">Bơ</span>
+</button>
+</div>
+<!-- Add New Profile Button (Optional, but good UX) -->
+<button class="mt-16 flex items-center justify-center w-20 h-20 bg-surface-container-high rounded-full chunky-shadow text-on-surface-variant hover:text-primary hover:bg-primary-container transition-colors duration-200 animate-[fadeIn_1s_ease-out_0.5s_both]">
+<span class="material-symbols-outlined text-[40px]">add</span>
+</button>
+</main>
+</body></html>

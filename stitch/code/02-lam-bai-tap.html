@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bé Học Bài - Làm Bài Tập</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e8e1da",
+                        "surface": "#fff8f1",
+                        "secondary-fixed-dim": "#ffb690",
+                        "on-primary-fixed-variant": "#004395",
+                        "secondary-container": "#fd761a",
+                        "secondary": "#9d4300",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed": "#ffe083",
+                        "surface-tint": "#005ac2",
+                        "on-surface": "#1e1b17",
+                        "background": "#fff8f1",
+                        "on-secondary-container": "#5c2400",
+                        "on-secondary-fixed": "#341100",
+                        "on-error": "#ffffff",
+                        "primary": "#0058be",
+                        "inverse-on-surface": "#f7f0e8",
+                        "primary-container": "#2170e4",
+                        "inverse-surface": "#33302b",
+                        "on-primary-container": "#fefcff",
+                        "on-background": "#1e1b17",
+                        "surface-bright": "#fff8f1",
+                        "on-tertiary-container": "#4e3e00",
+                        "on-tertiary-fixed": "#231b00",
+                        "surface-container-high": "#eee7df",
+                        "on-secondary-fixed-variant": "#783200",
+                        "outline-variant": "#c2c6d6",
+                        "tertiary-container": "#cea700",
+                        "error-container": "#ffdad6",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#adc6ff",
+                        "inverse-primary": "#adc6ff",
+                        "surface-container-highest": "#e8e1da",
+                        "surface-container": "#f4ede5",
+                        "tertiary": "#735c00",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#eec200",
+                        "surface-container-low": "#f9f3eb",
+                        "surface-dim": "#dfd9d1",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed": "#001a42",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#d8e2ff",
+                        "on-surface-variant": "#424754",
+                        "secondary-fixed": "#ffdbca",
+                        "outline": "#727785",
+                        "success-green": "#22C55E",
+                        "success-green-dark": "#16a34a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "card": "24px"
+                    },
+                    "spacing": {
+                        "stack-gap": "24px",
+                        "margin-edge": "48px",
+                        "gutter": "32px",
+                        "touch-target-min": "64px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Quicksand"],
+                        "label-bold": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "display-hero": ["Quicksand"],
+                        "body-lg": ["Quicksand"]
+                    },
+                    "fontSize": {
+                        "body-md": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "label-bold": ["18px", { "lineHeight": "24px", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "display-hero": ["48px", { "lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["24px", { "lineHeight": "32px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        .chunky-shadow {
+            box-shadow: 0 8px 0 0 rgba(0,0,0,0.1);
+        }
+        .chunky-shadow:active {
+            box-shadow: 0 0 0 0 rgba(0,0,0,0.1);
+            transform: translateY(8px);
+        }
+        
+        .soft-card-shadow {
+            box-shadow: 0 8px 20px 0 rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md select-none">
+<!-- TopAppBar (Transactional - Hidden Navigation Shell, Only Back Button) -->
+<header class="flex justify-between items-center w-full px-margin-edge py-6 bg-transparent sticky top-0 z-10">
+<button class="w-[64px] h-[64px] flex items-center justify-center rounded-full bg-surface-container-high text-on-surface-variant hover:scale-105 active:scale-95 transition-all shadow-sm">
+<span class="material-symbols-outlined text-3xl" data-icon="arrow_back">arrow_back</span>
+</button>
+<div class="flex-1 flex justify-center">
+<!-- Progress Bar -->
+<div class="w-1/2 max-w-md h-6 bg-surface-container-high rounded-full overflow-hidden flex items-center">
+<div class="h-full bg-secondary-container w-2/3 rounded-full transition-all duration-500 ease-in-out relative">
+<span class="material-symbols-outlined absolute right-1 top-1/2 -translate-y-1/2 text-tertiary-fixed text-sm" data-icon="star" data-weight="fill">star</span>
+</div>
+</div>
+</div>
+<!-- Spacer for centering -->
+<div class="w-[64px]"></div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col items-center justify-center px-margin-edge py-gutter max-w-6xl mx-auto w-full relative z-0">
+<!-- Instruction Text -->
+<h1 class="font-display-hero text-display-hero text-on-surface mb-stack-gap text-center">Bé hãy chọn hình đúng nhé!</h1>
+<!-- Activity Area: Bento-style selection cards -->
+<div class="grid grid-cols-2 gap-gutter w-full max-w-4xl mb-stack-gap">
+<!-- Option Card 1 -->
+<div class="bg-surface-container-lowest rounded-card soft-card-shadow p-6 flex flex-col items-center justify-center cursor-pointer transition-transform hover:-translate-y-2 active:translate-y-0 border-4 border-transparent hover:border-primary-fixed-dim relative group h-[300px]">
+<img class="w-48 h-48 object-contain mb-4 pointer-events-none" data-alt="A brightly colored, high-contrast, stylized illustration of a happy cartoon cat sitting. The style is 2D vector art with thick outlines, designed for young children. Soft neomorphism style lighting, warm cream background (#FFF8F0). Playful and inviting mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDi5ovbjiOM-NrRZiJGoE0kjygtIZsi-VnKP4soD0QOP-h2kab8klkiCyGrTXo39qjQ7o00fjbu2viySREAZckCowD0mXI1sScCkY7EY5SM6dm8tcx0lvoCjU9JPSI3BuW5__JtAgh6IFZ9g4p9WUQL9ObXgKRRPTD0p4EesjKbUVLnHM8Jpub9csk1JlmOPrYTVp95rph-X-Cqo2I96cMVnJj1PYQTzCknXbY1o6bOuZkOXj-NGOhz"/>
+<div class="absolute top-4 right-4 opacity-0 group-[.selected]:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-success-green text-5xl" data-icon="check_circle" data-weight="fill">check_circle</span>
+</div>
+</div>
+<!-- Option Card 2 -->
+<div class="bg-surface-container-lowest rounded-card soft-card-shadow p-6 flex flex-col items-center justify-center cursor-pointer transition-transform hover:-translate-y-2 active:translate-y-0 border-4 border-transparent hover:border-primary-fixed-dim relative group h-[300px] selected">
+<img class="w-48 h-48 object-contain mb-4 pointer-events-none" data-alt="A brightly colored, high-contrast, stylized illustration of a playful cartoon dog jumping. The style is 2D vector art with thick outlines, designed for young children. Soft neomorphism style lighting, warm cream background (#FFF8F0). Playful and inviting mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEDrP0o84OfRPJdL2svSyHws__RWJDCsZXzRvsbK2n0uWyl8hm8QJwTEyUeLVqDMnactUA1CzT-IBFvnGSHaqHTRu54hfSQ11jKY7EZh2wN2-sDar8VlcDQxjhqDN3MS6d7D4LQ4SpfSsukCsEMd0W0qoD3QwxrLq9_X7mhdK7xM25H_d1Yk-yvYG4NDiur4k4RHFkqKSn1FuuAB3m2oPf60mbaIpJ8xAxRblve2FdsNUUU41oYNYh"/>
+<div class="absolute top-4 right-4 opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-success-green text-5xl" data-icon="check_circle" data-weight="fill">check_circle</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Action Area -->
+<div class="w-full px-margin-edge pb-margin-edge flex justify-center sticky bottom-0 z-10 bg-gradient-to-t from-background via-background to-transparent pt-8">
+<button class="bg-[#22C55E] hover:bg-[#16a34a] text-white font-headline-lg text-headline-lg rounded-[24px] px-16 py-6 min-h-[64px] min-w-[300px] flex items-center justify-center chunky-shadow transition-all border-b-[6px] border-[#16a34a]">
+            Xong
+        </button>
+</div>
+<!-- Script for simple interaction -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.rounded-card');
+            cards.forEach(card => {
+                card.addEventListener('click', () => {
+                    // Remove selected state from all
+                    cards.forEach(c => {
+                        c.classList.remove('selected', 'border-primary');
+                        c.classList.add('border-transparent');
+                        const check = c.querySelector('.opacity-100');
+                        if(check) {
+                            check.classList.replace('opacity-100', 'opacity-0');
+                        }
+                    });
+                    
+                    // Add selected state to clicked
+                    card.classList.add('selected', 'border-primary');
+                    card.classList.remove('border-transparent');
+                    const check = card.querySelector('.opacity-0');
+                    if(check) {
+                         check.classList.replace('opacity-0', 'opacity-100');
+                    }
+                });
+            });
+            
+            // Initialize the pre-selected card styling
+            const preSelected = document.querySelector('.selected');
+            if(preSelected) {
+                preSelected.classList.add('border-primary');
+                preSelected.classList.remove('border-transparent');
+            }
+        });
+    </script>
+</body></html>

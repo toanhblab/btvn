@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Bài tập của con</title>
+
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+
+<script>
+  // Hop nhat config cua 5 man Stitch: 47 mau chung + 3 mau "success" chi co o man 06.
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "background": "#fff8f1",
+          "error": "#ba1a1a",
+          "error-container": "#ffdad6",
+          "inverse-on-surface": "#f7f0e8",
+          "inverse-primary": "#adc6ff",
+          "inverse-surface": "#33302b",
+          "on-background": "#1e1b17",
+          "on-error": "#ffffff",
+          "on-error-container": "#93000a",
+          "on-primary": "#ffffff",
+          "on-primary-container": "#fefcff",
+          "on-primary-fixed": "#001a42",
+          "on-primary-fixed-variant": "#004395",
+          "on-secondary": "#ffffff",
+          "on-secondary-container": "#5c2400",
+          "on-secondary-fixed": "#341100",
+          "on-secondary-fixed-variant": "#783200",
+          "on-success-container": "#14532d",
+          "on-surface": "#1e1b17",
+          "on-surface-variant": "#424754",
+          "on-tertiary": "#ffffff",
+          "on-tertiary-container": "#4e3e00",
+          "on-tertiary-fixed": "#231b00",
+          "on-tertiary-fixed-variant": "#574500",
+          "outline": "#727785",
+          "outline-variant": "#c2c6d6",
+          "primary": "#0058be",
+          "primary-container": "#2170e4",
+          "primary-fixed": "#d8e2ff",
+          "primary-fixed-dim": "#adc6ff",
+          "secondary": "#9d4300",
+          "secondary-container": "#fd761a",
+          "secondary-fixed": "#ffdbca",
+          "secondary-fixed-dim": "#ffb690",
+          "success": "#22c55e",
+          "success-container": "#dcfce7",
+          "surface": "#fff8f1",
+          "surface-bright": "#fff8f1",
+          "surface-container": "#f4ede5",
+          "surface-container-high": "#eee7df",
+          "surface-container-highest": "#e8e1da",
+          "surface-container-low": "#f9f3eb",
+          "surface-container-lowest": "#ffffff",
+          "surface-dim": "#dfd9d1",
+          "surface-tint": "#005ac2",
+          "surface-variant": "#e8e1da",
+          "tertiary": "#735c00",
+          "tertiary-container": "#cea700",
+          "tertiary-fixed": "#ffe083",
+          "tertiary-fixed-dim": "#eec200"
+        },
+        borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+        spacing: { "margin-edge": "48px", "gutter": "32px", "touch-target-min": "64px", "stack-gap": "24px" },
+        fontFamily: {
+          "display-hero": ["Quicksand"], "headline-lg": ["Quicksand"],
+          "body-lg": ["Quicksand"], "label-bold": ["Quicksand"], "body-md": ["Quicksand"]
+        },
+        fontSize: {
+          "display-hero": ["48px", { lineHeight: "60px", letterSpacing: "-0.02em", fontWeight: "700" }],
+          "headline-lg": ["32px", { lineHeight: "40px", fontWeight: "700" }],
+          "body-lg":     ["24px", { lineHeight: "32px", fontWeight: "500" }],
+          "body-md":     ["20px", { lineHeight: "28px", fontWeight: "500" }],
+          "label-bold":  ["18px", { lineHeight: "24px", fontWeight: "700" }]
+        }
+      }
+    }
+  }
+</script>
+<link rel="stylesheet" href="theme.css">
+</head>
+
+<body class="bg-background text-on-background font-body-md antialiased">
+
+<!-- ============ VIEW 1: Chon con (nen man Stitch 05) ============ -->
+<section id="view-picker" hidden
+         class="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+  <div class="absolute top-[-10%] left-[-5%] w-[40vw] h-[40vw] rounded-full bg-primary-fixed opacity-40 blur-3xl -z-10 pointer-events-none"></div>
+  <div class="absolute bottom-[-10%] right-[-5%] w-[50vw] h-[50vw] rounded-full bg-tertiary-fixed opacity-30 blur-3xl -z-10 pointer-events-none"></div>
+  <div class="absolute top-[20%] right-[10%] w-[20vw] h-[20vw] rounded-full bg-secondary-fixed opacity-40 blur-3xl -z-10 pointer-events-none"></div>
+
+  <main class="w-full max-w-[1024px] mx-auto px-margin-edge py-gutter flex flex-col items-center justify-center flex-1 relative z-10">
+    <header class="mb-10 text-center">
+      <h1 class="font-display-hero text-display-hero text-on-surface drop-shadow-sm">Hôm nay con là ai?</h1>
+    </header>
+    <!-- 3 avatar do app.js dung tu data.json -->
+    <div id="picker-list" class="flex flex-row justify-center items-start gap-[48px] w-full px-8"></div>
+  </main>
+
+  <div class="absolute bottom-8 right-8 z-20">
+    <button id="btn-parent"
+            class="flex items-center gap-2 px-6 py-4 rounded-full text-outline hover:text-on-surface-variant hover:bg-surface-container-low transition-colors focus:outline-none focus:ring-2 focus:ring-outline min-h-touch-target-min">
+      <span aria-hidden="true" class="material-symbols-outlined text-[24px]">settings</span>
+      <span class="font-label-bold text-label-bold uppercase tracking-wider text-sm">Bố mẹ</span>
+    </button>
+  </div>
+</section>
+
+<!-- ============ VIEW 2: Danh sach bai hom nay (nen man Stitch 06) ============ -->
+<section id="view-list" hidden class="min-h-screen flex flex-col p-margin-edge">
+  <header class="flex items-center gap-6 mb-stack-gap shrink-0">
+    <button data-nav="picker"
+            class="w-16 h-16 bg-surface-container rounded-2xl flex items-center justify-center interactive-shadow text-primary shrink-0">
+      <span class="material-symbols-outlined text-4xl" style="font-variation-settings:'FILL' 1;">arrow_back</span>
+    </button>
+    <img id="list-avatar" alt="" class="w-16 h-16 rounded-full object-cover border-4 border-surface-container shadow-sm shrink-0">
+    <h1 id="list-title" class="font-display-hero text-display-hero text-primary ml-2"></h1>
+  </header>
+
+  <section class="bg-surface-container-low rounded-2xl p-6 mb-stack-gap flex items-center gap-gutter soft-shadow shrink-0">
+    <div id="list-progress-boxes" class="flex gap-4 flex-wrap"></div>
+    <div id="list-progress-text" class="font-headline-lg text-headline-lg text-on-surface"></div>
+  </section>
+
+  <main id="list-cards" class="grid grid-cols-2 gap-gutter pb-gutter"></main>
+</section>
+
+<!-- ============ VIEW 3: Chi tiet bai tap (nen man Stitch 07) ============ -->
+<section id="view-detail" hidden class="h-screen flex flex-col p-margin-edge overflow-hidden">
+  <div class="w-full max-w-[1200px] mx-auto flex justify-between items-center mb-stack-gap shrink-0">
+    <button id="detail-back"
+            class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-container rounded-full pr-4 py-2 transition-colors min-h-touch-target-min">
+      <span class="material-symbols-outlined text-4xl" style="font-variation-settings:'FILL' 1;">arrow_back_ios_new</span>
+      <span class="font-headline-lg text-headline-lg">Quay lại</span>
+    </button>
+  </div>
+
+  <main class="w-full max-w-[1200px] mx-auto flex-1 flex flex-row gap-gutter min-h-0">
+    <!-- Trai: anh de bai -->
+    <section class="flex-[2] relative rounded-[32px] overflow-hidden bg-white soft-shadow border-4 border-transparent min-h-0">
+      <img id="detail-image" alt="Ảnh bài tập" class="w-full h-full object-cover rounded-[28px]">
+    </section>
+
+    <!-- Phai: de bai + nut -->
+    <section class="flex-1 flex flex-col justify-between py-2 min-h-0 overflow-y-auto">
+      <div class="flex flex-col gap-stack-gap">
+        <div class="self-start px-6 py-3 bg-tertiary-fixed rounded-full inline-flex items-center gap-2 soft-shadow">
+          <span id="detail-subject" class="font-headline-lg text-headline-lg text-on-tertiary-fixed"></span>
+        </div>
+        <h1 id="detail-content" class="font-headline-lg text-headline-lg text-on-background"></h1>
+        <p id="detail-note" class="font-body-md text-body-md text-on-surface-variant"></p>
+
+        <button id="btn-speak"
+                class="btn-3d-primary bg-primary text-on-primary rounded-[24px] flex items-center justify-center gap-4 px-6 h-[80px] w-full mt-2 shrink-0">
+          <span class="material-symbols-outlined text-4xl">volume_up</span>
+          <span class="font-headline-lg text-headline-lg">Nghe đề bài</span>
+        </button>
+        <p id="speak-warning" hidden class="font-body-md text-body-md text-error"></p>
+      </div>
+
+      <div class="flex flex-col items-center gap-4 mt-6 shrink-0">
+        <button id="btn-done"
+                class="btn-3d-success text-white rounded-[32px] flex items-center justify-center gap-4 px-8 h-[96px] w-full">
+          <span class="material-symbols-outlined text-5xl" style="font-variation-settings:'FILL' 1;">check_circle</span>
+          <span class="font-headline-lg text-headline-lg whitespace-nowrap">Đã làm xong</span>
+        </button>
+        <button id="btn-undone"
+                class="font-body-lg text-body-lg text-outline hover:text-on-surface-variant transition-colors p-4 min-h-touch-target-min flex items-center justify-center">
+          Chưa làm xong
+        </button>
+      </div>
+    </section>
+  </main>
+</section>
+
+<!-- Overlay "Gioi qua!" (nen man Stitch 07) -->
+<div id="success-overlay" hidden
+     class="fixed inset-0 bg-white/80 backdrop-blur-md z-50 flex-col items-center justify-center p-margin-edge opacity-0 transition-opacity duration-300">
+  <div id="success-card" class="bg-white rounded-[40px] p-12 flex flex-col items-center gap-8 soft-shadow transform scale-90 transition-transform duration-500">
+    <span class="material-symbols-outlined text-[120px] text-success animate-bounce" style="font-variation-settings:'FILL' 1;">star</span>
+    <h2 class="font-display-hero text-display-hero text-on-background text-center">Giỏi quá!</h2>
+    <button id="success-continue" class="btn-3d-primary bg-primary text-on-primary rounded-[24px] px-12 h-[80px] font-headline-lg text-headline-lg mt-4">Tiếp tục</button>
+  </div>
+</div>
+
+<!-- ============ VIEW 4: Hom nay khong co bai (nen man Stitch 08) ============ -->
+<section id="view-empty" hidden class="h-screen w-screen overflow-hidden relative flex items-center justify-center">
+  <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="absolute top-[15%] left-[20%] w-16 h-8 bg-primary-fixed rounded-full opacity-60 animate-float-1 rotate-12"></div>
+    <div class="absolute top-[25%] right-[25%] w-12 h-12 bg-tertiary-fixed rounded-full opacity-70 animate-float-2 -rotate-12"></div>
+    <div class="absolute bottom-[20%] left-[30%] w-20 h-10 bg-secondary-fixed rounded-full opacity-50 animate-float-3 rotate-45"></div>
+    <div class="absolute bottom-[30%] right-[20%] w-8 h-8 bg-inverse-primary rounded-full opacity-80 animate-float-1"></div>
+    <div class="absolute top-[60%] left-[10%] w-14 h-7 bg-tertiary-fixed-dim rounded-full opacity-60 animate-float-2 -rotate-45"></div>
+  </div>
+  <main class="relative z-10 flex flex-col items-center justify-center text-center px-margin-edge w-full max-w-4xl mx-auto">
+    <div class="mb-stack-gap relative">
+      <div class="absolute inset-0 bg-white/40 blur-3xl rounded-full scale-125 -z-10"></div>
+      <img src="assets/img/be-vui-khong-co-bai.jpg" alt="" class="w-[260px] h-[260px] object-contain drop-shadow-xl rounded-full">
+    </div>
+    <h1 class="font-display-hero text-display-hero text-on-background mb-4 tracking-tight drop-shadow-sm">Hôm nay không có bài tập 🎉</h1>
+    <p id="empty-sub" class="font-headline-lg text-headline-lg text-on-surface-variant mb-8 max-w-2xl opacity-90">Con đi chơi thôi!</p>
+    <button data-nav="picker"
+            class="h-touch-target-min min-w-[280px] rounded-[24px] border-[4px] border-primary bg-transparent text-primary font-label-bold text-label-bold flex items-center justify-center px-12 transition-all duration-200 hover:bg-primary-fixed active:scale-95 focus:outline-none focus:ring-4 focus:ring-primary/20">
+      <span class="mr-3 material-symbols-outlined text-[28px]">home</span>Về trang chính
+    </button>
+  </main>
+</section>
+
+<!-- ============ VIEW 5: Xong het bai (nen man Stitch 04) ============ -->
+<section id="view-done" hidden class="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+  <canvas id="confetti-canvas"></canvas>
+  <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+    <span class="material-symbols-outlined absolute top-[15%] left-[15%] text-[64px] text-tertiary-fixed-dim animate-float-slow">kid_star</span>
+    <span class="material-symbols-outlined absolute bottom-[25%] left-[10%] text-[48px] text-primary-fixed-dim animate-float-fast">auto_awesome</span>
+    <span class="material-symbols-outlined absolute top-[20%] right-[15%] text-[72px] text-secondary-fixed-dim animate-float-fast" style="animation-delay:1s;">stars</span>
+    <span class="material-symbols-outlined absolute bottom-[20%] right-[12%] text-[56px] text-tertiary-container animate-float-slow" style="animation-delay:.5s;">kid_star</span>
+  </div>
+  <main class="relative z-10 flex flex-col items-center max-w-4xl w-full px-margin-edge text-center">
+    <div class="w-64 h-64 mb-6 animate-pulse-glow">
+      <img src="assets/img/cup-chuc-mung.jpg" alt="" class="w-full h-full object-contain drop-shadow-2xl rounded-full">
+    </div>
+    <h1 id="done-title" class="font-display-hero text-display-hero text-primary mb-4"></h1>
+    <p class="font-body-lg text-body-lg text-on-surface-variant mb-8 max-w-2xl">Con làm hết bài hôm nay rồi. Đi chơi thôi!</p>
+    <button data-nav="picker"
+            class="group relative flex items-center justify-center gap-4 bg-primary text-on-primary font-headline-lg text-headline-lg h-[80px] px-12 rounded-[40px] border-b-[8px] border-on-primary-fixed-variant active:border-b-0 active:translate-y-[8px] transition-all duration-150 focus:outline-none focus:ring-4 focus:ring-primary-fixed">
+      <span class="material-symbols-outlined text-[40px]">arrow_back</span><span>Quay lại</span>
+    </button>
+  </main>
+</section>
+
+<!-- Bao loi tai du lieu -->
+<div id="fatal" hidden class="min-h-screen flex flex-col items-center justify-center gap-4 p-margin-edge text-center">
+  <span class="material-symbols-outlined text-[80px] text-error">cloud_off</span>
+  <h1 class="font-headline-lg text-headline-lg">Không tải được bài tập</h1>
+  <p id="fatal-msg" class="font-body-md text-body-md text-on-surface-variant max-w-xl"></p>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

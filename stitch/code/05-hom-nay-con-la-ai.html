@@ -1,0 +1,218 @@
+<!DOCTYPE html><html lang="vi"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Bé Học Bài - Chọn Hồ Sơ</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#e8e1da",
+                        "surface-tint": "#005ac2",
+                        "secondary-fixed": "#ffdbca",
+                        "primary-fixed-dim": "#adc6ff",
+                        "surface-dim": "#dfd9d1",
+                        "on-secondary-fixed-variant": "#783200",
+                        "on-background": "#1e1b17",
+                        "secondary-fixed-dim": "#ffb690",
+                        "on-secondary": "#ffffff",
+                        "on-surface": "#1e1b17",
+                        "on-secondary-container": "#5c2400",
+                        "surface": "#fff8f1",
+                        "surface-variant": "#e8e1da",
+                        "on-primary-fixed": "#001a42",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#fd761a",
+                        "outline-variant": "#c2c6d6",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-container-high": "#eee7df",
+                        "on-secondary-fixed": "#341100",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-container": "#fefcff",
+                        "tertiary-fixed": "#ffe083",
+                        "tertiary-fixed-dim": "#eec200",
+                        "surface-bright": "#fff8f1",
+                        "primary-container": "#2170e4",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#231b00",
+                        "surface-container-low": "#f9f3eb",
+                        "on-tertiary-container": "#4e3e00",
+                        "outline": "#727785",
+                        "on-primary-fixed-variant": "#004395",
+                        "tertiary": "#735c00",
+                        "inverse-primary": "#adc6ff",
+                        "primary": "#0058be",
+                        "inverse-surface": "#33302b",
+                        "surface-container": "#f4ede5",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#f7f0e8",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#424754",
+                        "background": "#fff8f1",
+                        "secondary": "#9d4300",
+                        "tertiary-container": "#cea700"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-edge": "48px",
+                        "gutter": "32px",
+                        "touch-target-min": "64px",
+                        "stack-gap": "24px"
+                    },
+                    "fontFamily": {
+                        "display-hero": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "body-lg": ["Quicksand"],
+                        "label-bold": ["Quicksand"],
+                        "body-md": ["Quicksand"]
+                    },
+                    "fontSize": {
+                        "display-hero": ["48px", { "lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-lg": ["24px", { "lineHeight": "32px", "fontWeight": "500" }],
+                        "label-bold": ["18px", { "lineHeight": "24px", "fontWeight": "700" }],
+                        "body-md": ["20px", { "lineHeight": "28px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            /* Prevent rubber banding on iOS */
+            overscroll-behavior: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        /* Subtle continuous pulse for interactive elements to draw child's attention */
+        @keyframes subtle-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        
+        .avatar-hover-effect:hover {
+            animation: subtle-pulse 2s infinite ease-in-out;
+            transform: translateY(-8px);
+            box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .avatar-hover-effect:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.1);
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen flex flex-col items-center justify-center relative overflow-hidden font-body-lg text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- Decorative background blobs (Soft Neomorphism) -->
+<div class="absolute top-[-10%] left-[-5%] w-[40vw] h-[40vw] rounded-full bg-primary-fixed opacity-40 blur-3xl -z-10 pointer-events-none"></div>
+<div class="absolute bottom-[-10%] right-[-5%] w-[50vw] h-[50vw] rounded-full bg-tertiary-fixed opacity-30 blur-3xl -z-10 pointer-events-none"></div>
+<div class="absolute top-[20%] right-[10%] w-[20vw] h-[20vw] rounded-full bg-secondary-fixed opacity-40 blur-3xl -z-10 pointer-events-none"></div>
+<!-- Main Content Area (iPad Landscape optimized) -->
+<main class="w-full max-w-[1024px] mx-auto px-margin-edge py-gutter flex flex-col items-center justify-center flex-1 h-screen relative z-10">
+<!-- Headline -->
+<header class="mb-16 text-center">
+<h1 class="font-display-hero text-display-hero text-on-surface drop-shadow-sm">
+                Hôm nay con là ai?
+            </h1>
+</header>
+<!-- Avatar Selection Grid (Bento/Card-like structure) -->
+<div class="flex flex-row justify-center items-end gap-[48px] w-full max-w-5xl px-8">
+<!-- Profile 1: Minh (Blue) -->
+<button class="avatar-hover-effect group relative flex flex-col items-center transition-all duration-300 ease-out focus:outline-none focus:ring-4 focus:ring-primary focus:ring-offset-8 focus:ring-offset-background rounded-3xl p-4">
+<!-- Avatar Container -->
+<div class="relative mb-6">
+<!-- Thick border ring -->
+<div class="w-[220px] h-[220px] rounded-full bg-surface-container-lowest border-[8px] border-primary shadow-[0_12px_24px_rgba(0,0,0,0.08)] flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105">
+<img class="w-full h-full object-cover" data-alt="A friendly, high-quality 3D render of a young boy with messy black hair, wearing a bright blue t-shirt with a small yellow star. He has a warm, inviting smile and big expressive eyes. The style is playful and tactile, resembling premium vinyl toys or modern animated films, set against a solid, soft cream background with soft studio lighting that creates gentle shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQ_vPY_UtVDQikIQZpn3HtUfS2Wf72FKTkT_kO64pNCkv-ku_ubTCXw5d51UZUcRhdokt9gulC1YFmvKBJZdpRKWl1qrLb0CMzCACgaHKmMNhkhOtdTnQVXj0S34357jYC0a08tgb_TOOQNZK5A2qRjCY0FdeyTYG-gOVvA_VOT-x0VYvd4ZwG4-zddjvFG3wUKXTS_87ezORISEywNSX373abDueQFQYg2cvK2xmcGvQl4lGV-hpn">
+</div>
+<!-- Notification Badge -->
+<div class="absolute -top-2 -right-2 bg-[#4CAF50] text-white font-label-bold text-label-bold px-4 py-2 rounded-full shadow-md border-4 border-surface-container-lowest transform rotate-6 group-hover:rotate-12 transition-transform duration-300">Xong hết 🎉</div>
+</div>
+<!-- Name Plate -->
+<div class="bg-surface-container-lowest px-8 py-3 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border-b-4 border-surface-container-high transition-transform duration-200 group-active:translate-y-1 group-active:border-b-0 group-active:mt-[4px]">
+<span class="font-headline-lg text-headline-lg text-primary text-center block">Minh</span>
+</div>
+</button>
+<!-- Profile 2: An (Orange) -->
+<button class="avatar-hover-effect group relative flex flex-col items-center transition-all duration-300 ease-out focus:outline-none focus:ring-4 focus:ring-secondary focus:ring-offset-8 focus:ring-offset-background rounded-3xl p-4">
+<!-- Avatar Container -->
+<div class="relative mb-6">
+<!-- Thick border ring -->
+<div class="w-[220px] h-[220px] rounded-full bg-surface-container-lowest border-[8px] border-secondary shadow-[0_12px_24px_rgba(0,0,0,0.08)] flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105">
+<img class="w-full h-full object-cover" data-alt="A cheerful, high-quality 3D render of a young boy with short brown hair, wearing a bright orange hoodie. He is laughing joyfully, with a playful expression. The character design is soft, chunky, and inviting, suitable for a children's educational app. The lighting is soft and warm, casting gentle shadows that emphasize the 3D volume, set against a soft cream background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBg8KzKvp8rY2AQ58nth6lvAVz4css_GRQqKL7lPG8CuXsVreG9-oBmZ-H-w-30xKt6PCXJsd-KpL2KDKBLvx-6cPNa43pj-jqfEJJ_9o8ik7ZoAcYdAMNq9g_5PWNb0b8b-X4Gwuh8LREiMmXmCPgVtB6lW4IcOmKRAfnQuQ6DaxhvpBofkQvSrYd651olejibDh1SL10CziU4Ys11L8c04Mh6xFxHl-50B99KEaB65E9QTxy2r2Us">
+</div>
+<!-- Notification Badge -->
+<div class="absolute -top-2 -right-2 bg-[#4CAF50] text-white font-label-bold text-label-bold px-4 py-2 rounded-full shadow-md border-4 border-surface-container-lowest transform -rotate-6 group-hover:-rotate-12 transition-transform duration-300">Xong hết 🎉</div>
+</div>
+<!-- Name Plate -->
+<div class="bg-surface-container-lowest px-8 py-3 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border-b-4 border-surface-container-high transition-transform duration-200 group-active:translate-y-1 group-active:border-b-0 group-active:mt-[4px]">
+<span class="font-headline-lg text-headline-lg text-secondary text-center block">An</span>
+</div>
+</button>
+<!-- Profile 3: Bé Na (Yellow) -->
+<button class="avatar-hover-effect group relative flex flex-col items-center transition-all duration-300 ease-out focus:outline-none focus:ring-4 focus:ring-tertiary-container focus:ring-offset-8 focus:ring-offset-background rounded-3xl p-4">
+<!-- Avatar Container -->
+<div class="relative mb-6">
+<!-- Thick border ring -->
+<div class="w-[220px] h-[220px] rounded-full bg-surface-container-lowest border-[8px] border-tertiary-container shadow-[0_12px_24px_rgba(0,0,0,0.08)] flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105">
+<img class="w-full h-full object-cover" data-alt="An adorable, high-quality 3D render of a little girl with pigtails tied with yellow ribbons. She is wearing a cute yellow dress with white polka dots. She has a sweet, curious expression with big round eyes. The style is soft, tactile, and reminiscent of premium children's animations, featuring smooth textures and bright, optimistic lighting against a solid cream background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuYfwHs4vcjRSNU1F3dBjBH7iq_63eJ1P708ez9_Duk3uuQlSR42o1plnPfsQLlKdtQX2SVCMBsmKbQkO6gdonQu23O2ElzbieLfmGeRUMYzIAWxlv50csNxLitbARDoODb3tMGX-GgwG9r9Ig6Mu5sBdnL57OQVLv--iHKS5moG4sC4sygYyBiztOwIFfGpo3jwXLnQZCBbV69ocLLAW5xjfrPf_5LGS7ZCdWfQmez8i_oCJ8iRb4">
+</div>
+<!-- Notification Badge -->
+<div class="absolute -top-2 -right-2 bg-[#4CAF50] text-white font-label-bold text-label-bold px-4 py-2 rounded-full shadow-md border-4 border-surface-container-lowest transform rotate-3 group-hover:rotate-6 transition-transform duration-300">Xong hết 🎉</div>
+</div>
+<!-- Name Plate -->
+<div class="bg-surface-container-lowest px-8 py-3 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] border-b-4 border-surface-container-high transition-transform duration-200 group-active:translate-y-1 group-active:border-b-0 group-active:mt-[4px]">
+<span class="font-headline-lg text-headline-lg text-tertiary text-center block">Bé Na</span>
+</div>
+</button>
+</div>
+</main>
+<!-- Parent Access Link -->
+<div class="absolute bottom-margin-edge right-margin-edge z-20">
+<button class="flex items-center gap-2 px-6 py-4 rounded-full text-outline hover:text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-outline min-h-touch-target-min">
+<span aria-hidden="true" class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 0;">settings</span>
+<span class="font-label-bold text-label-bold uppercase tracking-wider text-sm">Bố mẹ</span>
+</button>
+</div>
+<!-- Top Left Back button placeholder (hidden as per constraints 'no menus', but structurally sound for iPad layout) -->
+<!-- 
+    <div class="absolute top-margin-edge left-margin-edge z-20">
+        <button class="w-touch-target-min h-touch-target-min bg-surface-container-lowest rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex items-center justify-center text-outline hover:text-primary transition-colors">
+            <span class="material-symbols-outlined text-[32px]">arrow_back</span>
+        </button>
+    </div>
+    -->
+<script>
+        // Simple touch interaction feedback script (tactile feel)
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('touchstart', () => {
+                btn.style.transform = 'scale(0.96)';
+            }, {passive: true});
+            
+            btn.addEventListener('touchend', () => {
+                btn.style.transform = 'scale(1)';
+                // Slight bounce back
+                setTimeout(() => {
+                    btn.style.transform = '';
+                }, 150);
+            }, {passive: true});
+        });
+    </script>
+
+
+</body></html>

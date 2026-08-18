@@ -1,0 +1,127 @@
+/* Design system gom tu 5 man Stitch (04, 05, 06, 07, 08).
+   Mau sac / font / spacing nam trong khoi tailwind.config o index.html;
+   file nay chi giu phan CSS thuan ma Tailwind khong bieu dien duoc. */
+
+body {
+  /* Chan rubber-banding cua iOS va chan boi den chu khi tre quet tay */
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background-color: #fff8f1;
+}
+
+/* ---------- Bong do ---------- */
+
+.soft-shadow {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+.interactive-shadow {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.interactive-shadow:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Nut 3D (man 07) ---------- */
+
+.btn-3d-primary {
+  box-shadow: 0 4px 0 0 #004395;
+  transition: all 0.1s ease;
+}
+
+.btn-3d-primary:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 0 #004395;
+}
+
+.btn-3d-success {
+  background-color: #22c55e;
+  box-shadow: 0 6px 0 0 #16a34a;
+  transition: all 0.1s ease;
+}
+
+.btn-3d-success:active {
+  transform: translateY(6px);
+  box-shadow: 0 0 0 0 #16a34a;
+}
+
+/* ---------- Avatar chon con (man 05) ---------- */
+
+@keyframes subtle-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.02); }
+}
+
+.avatar-hover-effect:hover {
+  animation: subtle-pulse 2s infinite ease-in-out;
+  transform: translateY(-8px);
+  box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.15);
+}
+
+.avatar-hover-effect:active {
+  transform: translateY(4px);
+  box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.1);
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---------- Hoa tiet troi noi (man 04 va 08) ---------- */
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-20px) rotate(6deg); }
+}
+
+@keyframes float-fast {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-14px) rotate(-8deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 0 rgba(34, 197, 94, 0)); }
+  50%      { transform: scale(1.04); filter: drop-shadow(0 0 24px rgba(34, 197, 94, 0.35)); }
+}
+
+.animate-float-slow  { animation: float-slow 6s ease-in-out infinite; }
+.animate-float-fast  { animation: float-fast 4s ease-in-out infinite; }
+.animate-pulse-glow  { animation: pulse-glow 3s ease-in-out infinite; }
+.animate-float-1     { animation: float-slow 7s ease-in-out infinite; }
+.animate-float-2     { animation: float-fast 5s ease-in-out infinite; }
+.animate-float-3     { animation: float-slow 9s ease-in-out infinite; }
+
+/* Confetti man 04 phu toan man hinh, nam duoi noi dung */
+#confetti-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---------- Chuyen man ---------- */
+
+/* Cac view an bang [hidden]; can !important vi Tailwind dat display tren class */
+[hidden] { display: none !important; }
+
+.view-enter {
+  animation: view-fade 0.25s ease-out;
+}
+
+@keyframes view-fade {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Tre bam nhanh va nhieu lan -> tat hieu ung neu he thong yeu cau giam chuyen dong */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

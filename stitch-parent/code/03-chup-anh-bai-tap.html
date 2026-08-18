@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Chụp ảnh bài tập</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#adc6ff",
+                    "on-secondary-fixed": "#341100",
+                    "tertiary-fixed-dim": "#eec200",
+                    "on-primary-container": "#fefcff",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-highest": "#e8e1da",
+                    "on-primary": "#ffffff",
+                    "surface-bright": "#fff8f1",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-container": "#5c2400",
+                    "secondary": "#9d4300",
+                    "on-background": "#1e1b17",
+                    "on-surface-variant": "#424754",
+                    "surface-container-low": "#f9f3eb",
+                    "on-secondary-fixed-variant": "#783200",
+                    "on-tertiary-fixed": "#231b00",
+                    "on-error-container": "#93000a",
+                    "tertiary-container": "#cea700",
+                    "surface": "#fff8f1",
+                    "surface-container-high": "#eee7df",
+                    "outline-variant": "#c2c6d6",
+                    "inverse-on-surface": "#f7f0e8",
+                    "on-tertiary-fixed-variant": "#574500",
+                    "secondary-fixed-dim": "#ffb690",
+                    "primary": "#0058be",
+                    "on-primary-fixed-variant": "#004395",
+                    "tertiary-fixed": "#ffe083",
+                    "surface-container": "#f4ede5",
+                    "primary-fixed-dim": "#adc6ff",
+                    "on-primary-fixed": "#001a42",
+                    "primary-container": "#2170e4",
+                    "on-secondary": "#ffffff",
+                    "tertiary": "#735c00",
+                    "on-surface": "#1e1b17",
+                    "error": "#ba1a1a",
+                    "inverse-surface": "#33302b",
+                    "primary-fixed": "#d8e2ff",
+                    "on-error": "#ffffff",
+                    "secondary-fixed": "#ffdbca",
+                    "secondary-container": "#fd761a",
+                    "surface-tint": "#005ac2",
+                    "outline": "#727785",
+                    "surface-variant": "#e8e1da",
+                    "surface-dim": "#dfd9d1",
+                    "on-tertiary-container": "#4e3e00",
+                    "background": "#fff8f1",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "bottom-action-height": "80px",
+                    "gutter-card": "0.75rem",
+                    "margin-page": "1rem",
+                    "stack-tight": "0.5rem",
+                    "tap-target-min": "48px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Quicksand"],
+                    "headline-lg": ["Quicksand"],
+                    "body-sm": ["Quicksand"],
+                    "body-lg": ["Quicksand"],
+                    "label-caps": ["Quicksand"],
+                    "headline-md": ["Quicksand"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["22px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "700"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}]
+            }
+          },
+        }
+      }
+    </script>
+<style>
+        body { font-family: 'Quicksand', sans-serif; }
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: rgba(33, 112, 228, 0.7);
+            box-shadow: 0 0 10px rgba(33, 112, 228, 0.8);
+            animation: scan 2s infinite linear;
+            display: none;
+        }
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .is-scanning .scan-line { display: block; }
+        .is-scanning .upload-text { display: none; }
+        .is-scanning .processing-text { display: flex; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased h-screen overflow-hidden flex flex-col">
+<!-- Task-focused Header (Supressing standard TopAppBar) -->
+<header class="flex items-center justify-between px-margin-page h-14 shrink-0 bg-surface z-20">
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container hover:bg-surface-container-high transition-colors active:scale-95 text-on-surface">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">close</span>
+</button>
+<h1 class="font-headline-md text-headline-md-mobile text-on-surface">Thêm nhiệm vụ</h1>
+<div class="w-10 h-10"></div> <!-- Spacer for centering -->
+</header>
+<!-- Scrollable Content Canvas -->
+<main class="flex-1 overflow-y-auto pb-bottom-action-height px-margin-page flex flex-col gap-6 pt-4">
+<!-- Capture / Upload Area -->
+<section class="flex flex-col gap-stack-tight">
+<div class="relative w-full h-48 bg-surface-container-lowest rounded-xl border-2 border-dashed border-outline-variant flex flex-col items-center justify-center overflow-hidden active:bg-surface-container transition-colors shadow-sm" id="capture-zone">
+<!-- Simulated Image Background (Hidden initially) -->
+<div class="absolute inset-0 bg-cover bg-center opacity-0 transition-opacity duration-300" data-alt="A brightly lit, slightly tilted photograph of a child's handwritten math worksheet resting on a modern wooden desk. The paper has blue grid lines and neat pencil writing. The lighting is warm and natural, casting soft shadows, conveying a sense of focused afternoon study time in a cozy home environment." id="preview-image" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAORGSFYq0Tl0mEj3pP3TEgawxu6jDVwN3KoseAVl4_T6bn2eEBeDHQset46AU5fJuUaWPYpCjN5SGnhoqjaoC6Bl0_ItStqlCgmDDaTMICOS43EO4669BefDBmVs82Qrxr3gzNNycJzpsnnaMVysnLHA8cLWt3C4T2cSa6Gt8pUxrSS9592B3FSm4SdMI0oDgx2E-lsg3v2-1V63XfLxQpqvdlgxKjGLEmQWvstKPPDU7dBs1gfm2HEw')"></div>
+<div class="scan-line z-10"></div>
+<div class="flex flex-col items-center gap-2 z-20 upload-text pointer-events-none">
+<div class="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">photo_camera</span>
+</div>
+<span class="font-body-lg text-body-lg font-bold text-primary">Chụp ảnh bài tập</span>
+</div>
+<div class="hidden flex-col items-center gap-2 z-20 processing-text pointer-events-none bg-surface/80 p-3 rounded-lg backdrop-blur-sm">
+<span class="material-symbols-outlined animate-spin text-primary">progress_activity</span>
+<span class="font-body-sm text-body-sm text-primary font-bold">Đang xử lý...</span>
+</div>
+</div>
+<button class="w-full h-tap-target-min bg-[#0068FF]/10 text-[#0068FF] border border-[#0068FF]/20 rounded-lg flex items-center justify-center gap-2 font-body-lg font-bold active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">chat</span>
+                Tải lên từ Zalo
+            </button>
+</section>
+<!-- Form Area (Auto-fills after scan) -->
+<section class="flex flex-col gap-4 bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-surface-variant/50 relative overflow-hidden">
+<!-- Decorative Accent -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary rounded-l-xl"></div>
+<h2 class="font-headline-md text-headline-md-mobile text-on-surface mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">edit_document</span>
+                Chi tiết bài tập
+            </h2>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant ml-1">TIÊU ĐỀ</label>
+<input class="w-full h-tap-target-min bg-surface border border-outline-variant rounded-lg px-4 font-body-lg text-body-lg text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" placeholder="Nhập tiêu đề..." type="text" value="Toán: Phép nhân số có hai chữ số"/>
+</div>
+<div class="flex gap-3">
+<div class="flex flex-col gap-1 flex-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant ml-1">MÔN HỌC</label>
+<select class="w-full h-tap-target-min bg-surface border border-outline-variant rounded-lg px-4 font-body-lg text-body-lg text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none appearance-none">
+<option>Toán học</option>
+<option>Tiếng Việt</option>
+<option>Ngoại ngữ</option>
+</select>
+</div>
+<div class="flex flex-col gap-1 flex-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant ml-1">HẠN CHÓT</label>
+<input class="w-full h-tap-target-min bg-surface border border-outline-variant rounded-lg px-4 font-body-lg text-body-lg text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none" type="date" value="2023-10-26"/>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant ml-1">GIAO CHO</label>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-3 py-2 bg-primary-container text-on-primary-container rounded-full border border-primary/20 text-body-sm font-bold">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="A tiny profile picture of a young boy smiling brightly, wearing a yellow t-shirt. Studio lighting, soft and warm." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqPSZeaaEhl2etz2Jv_WpKd3K8eEy6OxAecVs13pJL78R8jedFMjik1BcKjSTluEtc7bbQo3ihWwaYohpd2IiTWM9DwfpJ_Un7j9PRw1jxiBf1dRqelSupyCvvfdNU1t7w1UO0GeEW8o6St4ssiJcljvtDgOV7tO8pUvSd8Gzflv4ivh9GGan1qfe2gy0P7MHFH0upJ0L9rFhKHJK3nQk3Xltrzd3GKFMeJazaDzBAcFIGnn8XU8AL7A"/>
+                        Bé Bi
+                    </button>
+<button class="flex items-center gap-2 px-3 py-2 bg-surface border border-outline-variant text-on-surface-variant rounded-full text-body-sm font-medium">
+<div class="w-6 h-6 rounded-full bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</div>
+                        Thêm
+                    </button>
+</div>
+</div>
+</section>
+<div class="h-6"></div> <!-- Extra scroll space -->
+</main>
+<!-- Fixed Bottom Action (Contextual FAB / Primary CTA) -->
+<div class="fixed bottom-0 left-0 w-full p-margin-page pb-safe bg-gradient-to-t from-surface via-surface to-transparent pt-8 pointer-events-none z-30">
+<button class="w-full h-tap-target-min bg-primary text-on-primary font-body-lg font-bold rounded-full shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 pointer-events-auto">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+            Lưu nhiệm vụ
+        </button>
+</div>
+<script>
+        // Micro-interaction for demonstration: Simulate scan on click
+        const captureZone = document.getElementById('capture-zone');
+        const previewImage = document.getElementById('preview-image');
+        
+        captureZone.addEventListener('click', () => {
+            if(captureZone.classList.contains('is-scanning')) return;
+            
+            captureZone.classList.add('is-scanning');
+            previewImage.style.opacity = '0.5';
+            
+            setTimeout(() => {
+                captureZone.classList.remove('is-scanning');
+                previewImage.style.opacity = '1';
+                previewImage.classList.add('brightness-110', 'contrast-125'); // Simulate enhanced scan
+            }, 2500);
+        });
+    </script>
+</body></html>

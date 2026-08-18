@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Parent PIN Entry</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "secondary-fixed": "#ffdbca",
+                        "inverse-surface": "#33302b",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#1e1b17",
+                        "tertiary-container": "#cea700",
+                        "surface": "#fff8f1",
+                        "on-secondary-fixed": "#341100",
+                        "surface-tint": "#005ac2",
+                        "secondary-fixed-dim": "#ffb690",
+                        "primary": "#0058be",
+                        "background": "#fff8f1",
+                        "on-surface-variant": "#424754",
+                        "surface-variant": "#e8e1da",
+                        "outline": "#727785",
+                        "surface-container-highest": "#e8e1da",
+                        "surface-container-high": "#eee7df",
+                        "on-secondary-container": "#5c2400",
+                        "outline-variant": "#c2c6d6",
+                        "surface-container": "#f4ede5",
+                        "tertiary-fixed-dim": "#eec200",
+                        "surface-bright": "#fff8f1",
+                        "inverse-primary": "#adc6ff",
+                        "primary-fixed-dim": "#adc6ff",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#dfd9d1",
+                        "surface-container-low": "#f9f3eb",
+                        "on-secondary-fixed-variant": "#783200",
+                        "tertiary-fixed": "#ffe083",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#fefcff",
+                        "primary-fixed": "#d8e2ff",
+                        "tertiary": "#735c00",
+                        "secondary": "#9d4300",
+                        "on-tertiary-container": "#4e3e00",
+                        "inverse-on-surface": "#f7f0e8",
+                        "secondary-container": "#fd761a",
+                        "on-background": "#1e1b17",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed": "#231b00",
+                        "on-primary-fixed": "#001a42",
+                        "primary-container": "#2170e4",
+                        "on-primary-fixed-variant": "#004395"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "tap-target-min": "48px",
+                        "stack-tight": "0.5rem",
+                        "gutter-card": "0.75rem",
+                        "margin-page": "1rem",
+                        "bottom-action-height": "80px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Quicksand"],
+                        "headline-lg-mobile": ["Quicksand"],
+                        "headline-md": ["Quicksand"],
+                        "label-caps": ["Quicksand"],
+                        "body-lg": ["Quicksand"],
+                        "headline-lg": ["Quicksand"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Quicksand', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col items-center justify-center p-margin-page selection:bg-primary-container selection:text-on-primary-container">
+<div class="w-full max-w-sm mx-auto flex flex-col h-full flex-grow py-8">
+<!-- Header Section -->
+<div class="flex-grow flex flex-col items-center justify-center mb-8">
+<div class="w-16 h-16 bg-surface-container-low rounded-full flex items-center justify-center mb-6 shadow-sm border border-surface-container-highest">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="lock" style="font-variation-settings: 'FILL' 1;">lock</span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-center mb-8 text-on-surface">Nhập mã PIN của bố mẹ</h1>
+<!-- PIN Boxes -->
+<div class="flex justify-center gap-4 mb-6">
+<div class="w-14 h-16 bg-surface-container-lowest border-2 border-primary rounded-xl flex items-center justify-center shadow-sm">
+<div class="w-3 h-3 bg-primary rounded-full"></div>
+</div>
+<div class="w-14 h-16 bg-surface-container-lowest border-2 border-outline-variant rounded-xl flex items-center justify-center shadow-sm"></div>
+<div class="w-14 h-16 bg-surface-container-lowest border-2 border-outline-variant rounded-xl flex items-center justify-center shadow-sm"></div>
+<div class="w-14 h-16 bg-surface-container-lowest border-2 border-outline-variant rounded-xl flex items-center justify-center shadow-sm"></div>
+</div>
+<!-- Checkbox -->
+<label class="flex items-center justify-center gap-3 cursor-pointer p-2">
+<input checked="" class="w-6 h-6 rounded-md border-outline text-primary focus:ring-primary focus:ring-offset-surface bg-surface-container-lowest" type="checkbox"/>
+<span class="font-body-lg text-body-lg text-on-surface-variant">Nhớ trên thiết bị này</span>
+</label>
+</div>
+<!-- Keypad -->
+<div class="grid grid-cols-3 gap-y-6 gap-x-4 mb-8 mt-auto px-4">
+<!-- Row 1 -->
+<button class="h-16 w-16 mx-auto rounded-full flex items-center justify-center font-headline-lg-mobile text-headline-lg-mobile bg-surface-container-lowest shadow-sm hover:bg-surface-container-low active:scale-95 transition-all text-on-surface border border-surface-container-highest">1</button>
+<button class="h-16 w-16 mx-auto rounded-full flex items-center justify-center font-headline-lg-mobile text-headline-lg-mobile bg-surface-container-lowest shadow-sm hover:bg-surface-container-low active:scale-95 transition-all text-on-surface border border-surface-container-highest">2</button>
+<button class="h-16 w-16 mx-auto rounded-full flex items-center justify-center font-headline-lg-mobile text-headline-lg-mobile bg-surface-container-lowest shadow-sm hover:bg-surface-container-low active:scale-95 transition-all text-on-surface border border-surface-container-highest">3</button>
+<!-- Row 2 -->
+<button class="h-16 w-16 mx-auto rounded-full flex items-center justify-center font-headline-lg-mobile text-headline-lg-mobile bg-surface-container-lowest shadow-sm hover:bg-surface-container-low active:scale-95 transition-all text-on-surface border border-surface-container-highest">4</button>
+<button class="h-16 w-16 mx-auto rounded-full flex items-center justify-center font-headline-lg-mobile text-headline-lg-mobile bg-surface-container-lowest shadow-sm hover:bg-surface-container-low active:scale-95 transition-all text-on-surface border border-surface-container-highest">5</button>
+<button class="h-16 w-16 mx-auto rounded-full flex items-center justify-center font-headline-lg-mobile text-headline-lg-mobile bg-surface-container-lowest shadow-sm hover:bg-surface-container-low active:scale-95 transition-all text-on-surface border border-surface-container-highest">6</button>
+<!-- Row 3 -->
+<button class="h-16 w-16 mx-auto rounded-full flex items-center justify-center font-headline-lg-mobile text-headline-lg-mobile bg-surface-container-lowest shadow-sm hover:bg-surface-container-low active:scale-95 transition-all text-on-surface border border-surface-container-highest">7</button>
+<button class="h-16 w-16 mx-auto rounded-full flex items-center justify-center font-headline-lg-mobile text-headline-lg-mobile bg-surface-container-lowest shadow-sm hover:bg-surface-container-low active:scale-95 transition-all text-on-surface border border-surface-container-highest">8</button>
+<button class="h-16 w-16 mx-auto rounded-full flex items-center justify-center font-headline-lg-mobile text-headline-lg-mobile bg-surface-container-lowest shadow-sm hover:bg-surface-container-low active:scale-95 transition-all text-on-surface border border-surface-container-highest">9</button>
+<!-- Row 4 -->
+<div class="h-16 w-16 mx-auto"></div>
+<button class="h-16 w-16 mx-auto rounded-full flex items-center justify-center font-headline-lg-mobile text-headline-lg-mobile bg-surface-container-lowest shadow-sm hover:bg-surface-container-low active:scale-95 transition-all text-on-surface border border-surface-container-highest">0</button>
+<button class="h-16 w-16 mx-auto rounded-full flex items-center justify-center bg-transparent active:scale-95 transition-all text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-2xl" data-icon="backspace">backspace</span>
+</button>
+</div>
+<!-- Footer -->
+<p class="font-body-sm text-body-sm text-center text-outline mt-4">Chỉ bố mẹ dùng phần này</p>
+</div>
+<script>
+        // Simple script to handle PIN input interaction
+        document.addEventListener('DOMContentLoaded', () => {
+            const pinBoxes = document.querySelectorAll('.gap-4 > div');
+            const keys = document.querySelectorAll('.grid button');
+            let currentPin = '1'; // Simulate one digit entered
+            
+            function updateDisplay() {
+                pinBoxes.forEach((box, index) => {
+                    if (index < currentPin.length) {
+                        box.classList.add('border-primary');
+                        box.classList.remove('border-outline-variant');
+                        box.innerHTML = '<div class="w-3 h-3 bg-primary rounded-full"></div>';
+                    } else if (index === currentPin.length) {
+                        box.classList.add('border-primary');
+                        box.classList.remove('border-outline-variant');
+                        box.innerHTML = '';
+                    } else {
+                        box.classList.remove('border-primary');
+                        box.classList.add('border-outline-variant');
+                        box.innerHTML = '';
+                    }
+                });
+            }
+
+            keys.forEach(key => {
+                key.addEventListener('click', () => {
+                    const value = key.textContent.trim();
+                    const icon = key.querySelector('.material-symbols-outlined');
+                    
+                    if (icon && icon.getAttribute('data-icon') === 'backspace') {
+                        if (currentPin.length > 0) {
+                            currentPin = currentPin.slice(0, -1);
+                        }
+                    } else if (value && currentPin.length < 4) {
+                        currentPin += value;
+                        // In a real app, check PIN if length is 4
+                    }
+                    updateDisplay();
+                });
+            });
+            
+            // Initial call to set state based on default HTML
+            updateDisplay();
+        });
+    </script>
+</body></html>

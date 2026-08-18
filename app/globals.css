@@ -1,0 +1,239 @@
+@import "tailwindcss";
+
+/* ===========================================================================
+   Design tokens — gop tu 2 bo Stitch:
+   - Bo cua tre  (iPad landscape) : stitch/code/*.html
+   - Bo cua bo me (dien thoai)    : stitch-parent/code/*.html
+
+   47 mau giong het nhau nen dung chung. Rieng thang chu va spacing thi hai ben
+   dung cung ten nhung khac gia tri (headline-lg 32px vs 24px, body-lg 24px vs
+   16px, tap target 64px vs 48px) nen phai them tien to:
+     k-* = kid (man cua tre)      p-* = parent (man cua bo me)
+   =========================================================================== */
+
+@theme {
+  /* ---------- Mau dung chung ---------- */
+  --color-background: #fff8f1;
+  --color-surface: #fff8f1;
+  --color-surface-bright: #fff8f1;
+  --color-surface-dim: #dfd9d1;
+  --color-surface-tint: #005ac2;
+  --color-surface-variant: #e8e1da;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f9f3eb;
+  --color-surface-container: #f4ede5;
+  --color-surface-container-high: #eee7df;
+  --color-surface-container-highest: #e8e1da;
+
+  --color-on-background: #1e1b17;
+  --color-on-surface: #1e1b17;
+  --color-on-surface-variant: #424754;
+
+  --color-primary: #0058be;
+  --color-primary-container: #2170e4;
+  --color-primary-fixed: #d8e2ff;
+  --color-primary-fixed-dim: #adc6ff;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #fefcff;
+  --color-on-primary-fixed: #001a42;
+  --color-on-primary-fixed-variant: #004395;
+  --color-inverse-primary: #adc6ff;
+
+  --color-secondary: #9d4300;
+  --color-secondary-container: #fd761a;
+  --color-secondary-fixed: #ffdbca;
+  --color-secondary-fixed-dim: #ffb690;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #5c2400;
+  --color-on-secondary-fixed: #341100;
+  --color-on-secondary-fixed-variant: #783200;
+
+  --color-tertiary: #735c00;
+  --color-tertiary-container: #cea700;
+  --color-tertiary-fixed: #ffe083;
+  --color-tertiary-fixed-dim: #eec200;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #4e3e00;
+  --color-on-tertiary-fixed: #231b00;
+  --color-on-tertiary-fixed-variant: #574500;
+
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #93000a;
+
+  /* Bo bo me dung #2e7d32, bo tre dung #22c55e — chot lay ban cua tre,
+     tuong phan tot hon tren nen kem va dung chung duoc ca hai ben. */
+  --color-success: #22c55e;
+  --color-success-container: #dcfce7;
+  --color-on-success: #ffffff;
+  --color-on-success-container: #14532d;
+
+  --color-outline: #727785;
+  --color-outline-variant: #c2c6d6;
+  --color-inverse-surface: #33302b;
+  --color-inverse-on-surface: #f7f0e8;
+
+  /* ---------- Chu: man cua tre (to, doc xa, tre 4-6 tuoi) ---------- */
+  --text-k-hero: 48px;
+  --text-k-hero--line-height: 60px;
+  --text-k-hero--letter-spacing: -0.02em;
+  --text-k-hero--font-weight: 700;
+
+  --text-k-headline: 32px;
+  --text-k-headline--line-height: 40px;
+  --text-k-headline--font-weight: 700;
+
+  --text-k-body: 24px;
+  --text-k-body--line-height: 32px;
+  --text-k-body--font-weight: 500;
+
+  --text-k-body-sm: 20px;
+  --text-k-body-sm--line-height: 28px;
+  --text-k-body-sm--font-weight: 500;
+
+  --text-k-label: 18px;
+  --text-k-label--line-height: 24px;
+  --text-k-label--font-weight: 700;
+
+  /* ---------- Chu: man cua bo me (dac hon, xem tren dien thoai) ---------- */
+  --text-p-headline: 24px;
+  --text-p-headline--line-height: 32px;
+  --text-p-headline--font-weight: 700;
+
+  --text-p-headline-mobile: 22px;
+  --text-p-headline-mobile--line-height: 28px;
+  --text-p-headline-mobile--font-weight: 700;
+
+  --text-p-headline-md: 20px;
+  --text-p-headline-md--line-height: 28px;
+  --text-p-headline-md--font-weight: 700;
+
+  --text-p-body: 16px;
+  --text-p-body--line-height: 24px;
+  --text-p-body--font-weight: 500;
+
+  --text-p-body-sm: 14px;
+  --text-p-body-sm--line-height: 20px;
+  --text-p-body-sm--font-weight: 500;
+
+  --text-p-label: 12px;
+  --text-p-label--line-height: 16px;
+  --text-p-label--letter-spacing: 0.5px;
+  --text-p-label--font-weight: 700;
+
+  /* ---------- Spacing ---------- */
+  /* Tre: ngon tay be, vung bam toi thieu 64px (PRD muc 4.3) */
+  --spacing-k-tap: 64px;
+  --spacing-k-edge: 48px;
+  --spacing-k-gutter: 32px;
+  --spacing-k-stack: 24px;
+  /* Bo me: mot tay, ngon cai, toi thieu 48px */
+  --spacing-p-tap: 48px;
+  --spacing-p-page: 16px;
+  --spacing-p-card: 12px;
+  --spacing-p-tight: 8px;
+  --spacing-p-action: 80px;
+
+  --radius-card: 16px;
+  --radius-kid: 32px;
+}
+
+/* ===========================================================================
+   CSS thuan — port tu legacy-static/theme.css (gop tu 5 man Stitch cua tre)
+   =========================================================================== */
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  font-family: Quicksand, ui-rounded, system-ui, sans-serif;
+  font-weight: 500;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Chi chan boi den o phan cua tre — bo me con can chon/sua text */
+.kid-scope {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+}
+.icon-fill { font-variation-settings: "FILL" 1; }
+
+/* ---------- Bong do ---------- */
+.soft-shadow { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05); }
+.card-shadow { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10); }
+
+.interactive-shadow {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.interactive-shadow:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Nut 3D (man chi tiet bai cua tre) ---------- */
+.btn-3d-primary { box-shadow: 0 4px 0 0 #004395; transition: all 0.1s ease; }
+.btn-3d-primary:active { transform: translateY(4px); box-shadow: 0 0 0 0 #004395; }
+
+.btn-3d-success {
+  background-color: #22c55e;
+  box-shadow: 0 6px 0 0 #16a34a;
+  transition: all 0.1s ease;
+}
+.btn-3d-success:active { transform: translateY(6px); box-shadow: 0 0 0 0 #16a34a; }
+
+/* ---------- Avatar chon con ---------- */
+@keyframes subtle-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.02); }
+}
+.avatar-tap:hover {
+  animation: subtle-pulse 2s infinite ease-in-out;
+  transform: translateY(-8px);
+  box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.15);
+}
+.avatar-tap:active {
+  transform: translateY(4px);
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---------- Hoa tiet troi noi (man chuc mung / khong co bai) ---------- */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-20px) rotate(6deg); }
+}
+@keyframes float-fast {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-14px) rotate(-8deg); }
+}
+@keyframes pulse-glow {
+  0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 0 rgba(34,197,94,0)); }
+  50%      { transform: scale(1.04); filter: drop-shadow(0 0 24px rgba(34,197,94,.35)); }
+}
+.animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
+.animate-float-fast { animation: float-fast 4s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

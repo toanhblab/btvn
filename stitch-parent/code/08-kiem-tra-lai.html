@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kiểm tra lại - Homework App</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#004395",
+                        "tertiary-container": "#cea700",
+                        "inverse-primary": "#adc6ff",
+                        "surface-container-high": "#eee7df",
+                        "surface-container-highest": "#e8e1da",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-variant": "#e8e1da",
+                        "error-container": "#ffdad6",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-secondary-fixed": "#341100",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "surface": "#fff8f1",
+                        "on-secondary-container": "#5c2400",
+                        "surface-bright": "#fff8f1",
+                        "outline-variant": "#c2c6d6",
+                        "on-primary-container": "#fefcff",
+                        "secondary-fixed-dim": "#ffb690",
+                        "secondary-fixed": "#ffdbca",
+                        "on-secondary": "#ffffff",
+                        "outline": "#727785",
+                        "on-tertiary-container": "#4e3e00",
+                        "on-background": "#1e1b17",
+                        "primary-container": "#2170e4",
+                        "on-secondary-fixed-variant": "#783200",
+                        "primary": "#0058be",
+                        "tertiary": "#735c00",
+                        "surface-container-low": "#f9f3eb",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#001a42",
+                        "secondary": "#9d4300",
+                        "on-surface-variant": "#424754",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "surface-tint": "#005ac2",
+                        "tertiary-fixed-dim": "#eec200",
+                        "secondary-container": "#fd761a",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#dfd9d1",
+                        "background": "#fff8f1",
+                        "on-tertiary-fixed": "#231b00",
+                        "tertiary-fixed": "#ffe083",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#1e1b17",
+                        "surface-container": "#f4ede5",
+                        "inverse-surface": "#33302b",
+                        "inverse-on-surface": "#f7f0e8",
+                        "success": "#2e7d32",
+                        "on-success": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-tight": "0.5rem",
+                        "margin-page": "1rem",
+                        "gutter-card": "0.75rem",
+                        "bottom-action-height": "80px",
+                        "tap-target-min": "48px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Quicksand"],
+                        "headline-md": ["Quicksand"],
+                        "body-lg": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "label-caps": ["Quicksand"],
+                        "headline-lg-mobile": ["Quicksand"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }]
+                    },
+                    "boxShadow": {
+                        "card": "0 2px 8px -2px rgba(0, 0, 0, 0.1)"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Quicksand', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen pb-bottom-action-height antialiased">
+<!-- Header -->
+<header class="fixed top-0 w-full z-50 bg-surface border-b border-surface-container-highest shadow-sm pt-safe-top">
+<div class="flex items-center px-margin-page h-14 w-full">
+<button aria-label="Quay lại" class="w-10 h-10 flex items-center justify-center text-on-surface hover:bg-surface-container-low rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div class="flex-1 ml-2">
+<h1 class="font-headline-md text-headline-md text-on-surface">Kiểm tra lại</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">AI đã tách được 4 bài tập từ ảnh của con</p>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="pt-20 px-margin-page flex flex-col gap-4">
+<!-- Original Images Accordion -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-card border border-surface-container-high">
+<div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('img-container').classList.toggle('hidden')">
+<h2 class="font-body-sm text-body-sm font-bold text-on-surface">Ảnh gốc (2)</h2>
+<span class="material-symbols-outlined text-outline">expand_more</span>
+</div>
+<div class="hidden mt-3 flex gap-2 overflow-x-auto pb-1" id="img-container">
+<img alt="Zalo screenshot" class="h-20 w-auto rounded-lg object-cover border border-surface-variant shrink-0" data-alt="A small thumbnail showing a screenshot of a Vietnamese messaging app (like Zalo) with text messages about homework. Warm lighting, modern UI style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhRy-TUAx5gHEQbDzMql9fvUGutnbklU7u0xVhra8E04Cj_MN-Sa-FewaYLmnnovumTdMHv5ACRo7sbjyOHeV1pRZsj2Af7yZxQsOZR6895peE9tc_S5LHPLK_yPRb6W93NKtw2LP8dTaXsyJkGrGA9aUai-o3VOWxPqsHSvbYpqn9ccXYmaWb1Ny0OuqSBN2qL1GrCyG5yGvgDD3x4UxkH6eHb_Q0dsraYbDWUgU2E_qvvf6khDLXAQ"/>
+<img alt="Textbook page" class="h-20 w-auto rounded-lg object-cover border border-surface-variant shrink-0" data-alt="A small thumbnail showing a photograph of a Vietnamese math textbook page lying on a wooden table. Warm, natural lighting, clear text." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-1g6J-Q519hJdnRmd4JzewiXZ9-q89T3WzCQkQy-P8fkqYPRcvyI04niZW582njWBKvhihlaVrVD22ReYBZPEuulmQqrmBIR6zmBmrfcLVcRe-sC-yH5VGI8ayhht1SecWO0DPAReueO0q298dHNmdMIqFmQ-L6l4pEUnXdtmDVZDNJSfRw0n-hOZ023aKD-sUG2A6YAAjHsN6hLQev7QvoSggh9wPKl5EfF4RpKvT4tXTbqTD2x5aA"/>
+</div>
+</div>
+<!-- Task List -->
+<div class="flex flex-col gap-3">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-card flex relative border-l-4 border-primary-container group transition-transform active:scale-[0.98]">
+<div class="mr-3 flex items-center text-outline-variant cursor-grab active:cursor-grabbing">
+<span class="material-symbols-outlined">drag_indicator</span>
+</div>
+<div class="flex-1 flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<textarea class="w-full bg-transparent border-0 border-b border-dashed border-outline-variant focus:border-primary focus:ring-0 p-0 font-body-lg text-body-lg text-on-surface resize-none overflow-hidden" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" rows="1">Làm bài tập nhân số có 2 chữ số</textarea>
+<button class="text-outline hover:text-error transition-colors p-1 ml-2"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+</div>
+<div class="flex flex-wrap gap-2 mt-1">
+<span class="inline-flex items-center gap-1 bg-surface-container px-2 py-1 rounded-full font-label-caps text-label-caps text-on-surface-variant">
+<span>🔢</span> Toán
+                        </span>
+</div>
+</div>
+</div>
+<!-- In-between Action -->
+<div class="flex items-center justify-center -my-1 relative z-10">
+<div class="flex items-center gap-2 bg-surface px-2">
+<button class="text-primary font-label-caps text-label-caps flex items-center gap-1 hover:opacity-80"><span class="material-symbols-outlined text-[16px]">add</span> Thêm bài</button>
+<span class="text-outline-variant text-xs">•</span>
+<button class="text-on-surface-variant font-label-caps text-label-caps hover:opacity-80">Gộp với bài trên</button>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-card flex relative border-l-4 border-secondary-container group transition-transform active:scale-[0.98]">
+<div class="mr-3 flex items-center text-outline-variant cursor-grab active:cursor-grabbing">
+<span class="material-symbols-outlined">drag_indicator</span>
+</div>
+<div class="flex-1 flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<textarea class="w-full bg-transparent border-0 border-b border-dashed border-outline-variant focus:border-primary focus:ring-0 p-0 font-body-lg text-body-lg text-on-surface resize-none overflow-hidden" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" rows="2">Viết đoạn văn về gia đình</textarea>
+<button class="text-outline hover:text-error transition-colors p-1 ml-2"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+</div>
+<div class="flex flex-wrap gap-2 mt-1">
+<span class="inline-flex items-center gap-1 bg-surface-container px-2 py-1 rounded-full font-label-caps text-label-caps text-on-surface-variant">
+<span>🇻🇳</span> Tiếng Việt
+                        </span>
+<span class="inline-flex items-center gap-1 bg-error-container text-on-error-container px-2 py-1 rounded-full font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[14px]">warning</span> AI không chắc
+                        </span>
+</div>
+</div>
+</div>
+<!-- In-between Action -->
+<div class="flex items-center justify-center -my-1 relative z-10">
+<div class="flex items-center gap-2 bg-surface px-2">
+<button class="text-primary font-label-caps text-label-caps flex items-center gap-1 hover:opacity-80"><span class="material-symbols-outlined text-[16px]">add</span> Thêm bài</button>
+<span class="text-outline-variant text-xs">•</span>
+<button class="text-on-surface-variant font-label-caps text-label-caps hover:opacity-80">Gộp với bài trên</button>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-card flex relative border-l-4 border-tertiary-container group transition-transform active:scale-[0.98]">
+<div class="mr-3 flex items-center text-outline-variant cursor-grab active:cursor-grabbing">
+<span class="material-symbols-outlined">drag_indicator</span>
+</div>
+<div class="flex-1 flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<textarea class="w-full bg-transparent border-0 border-b border-dashed border-outline-variant focus:border-primary focus:ring-0 p-0 font-body-lg text-body-lg text-on-surface resize-none overflow-hidden" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" rows="1">Học từ vựng Unit 4</textarea>
+<button class="text-outline hover:text-error transition-colors p-1 ml-2"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+</div>
+<div class="flex flex-wrap gap-2 mt-1">
+<span class="inline-flex items-center gap-1 bg-surface-container px-2 py-1 rounded-full font-label-caps text-label-caps text-on-surface-variant">
+<span>🇬🇧</span> Tiếng Anh
+                        </span>
+</div>
+</div>
+</div>
+<!-- In-between Action -->
+<div class="flex items-center justify-center -my-1 relative z-10">
+<div class="flex items-center gap-2 bg-surface px-2">
+<button class="text-primary font-label-caps text-label-caps flex items-center gap-1 hover:opacity-80"><span class="material-symbols-outlined text-[16px]">add</span> Thêm bài</button>
+<span class="text-outline-variant text-xs">•</span>
+<button class="text-on-surface-variant font-label-caps text-label-caps hover:opacity-80">Gộp với bài trên</button>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-card flex relative border-l-4 border-primary group transition-transform active:scale-[0.98]">
+<div class="mr-3 flex items-center text-outline-variant cursor-grab active:cursor-grabbing">
+<span class="material-symbols-outlined">drag_indicator</span>
+</div>
+<div class="flex-1 flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<textarea class="w-full bg-transparent border-0 border-b border-dashed border-outline-variant focus:border-primary focus:ring-0 p-0 font-body-lg text-body-lg text-on-surface resize-none overflow-hidden" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" rows="1">Giải bài tập trang 34</textarea>
+<button class="text-outline hover:text-error transition-colors p-1 ml-2"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+</div>
+<div class="flex flex-wrap gap-2 mt-1">
+<span class="inline-flex items-center gap-1 bg-surface-container px-2 py-1 rounded-full font-label-caps text-label-caps text-on-surface-variant">
+<span>🔢</span> Toán
+                        </span>
+<span class="inline-flex items-center gap-1 bg-surface-container px-2 py-1 rounded-full font-label-caps text-label-caps text-on-surface-variant border border-outline-variant">
+<span class="material-symbols-outlined text-[14px]">sticky_note_2</span> trang 34, bài 3
+                        </span>
+</div>
+</div>
+</div>
+<!-- Bottom Add Action -->
+<button class="w-full h-12 flex items-center justify-center gap-2 border-2 border-dashed border-outline-variant rounded-xl text-primary font-body-lg text-body-lg mt-2 active:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">add</span>
+                Thêm bài mới
+            </button>
+</div>
+</main>
+<!-- Fixed Bottom Action Bar -->
+<div class="fixed bottom-0 left-0 w-full bg-surface/90 backdrop-blur-sm border-t border-surface-container-highest p-4 flex gap-3 z-50">
+<button class="flex-1 h-12 rounded-xl border border-outline text-on-surface font-body-lg text-body-lg active:bg-surface-container-low transition-colors">
+            Huỷ
+        </button>
+<button class="flex-[2] h-12 rounded-xl bg-[#2e7d32] text-[#ffffff] font-body-lg text-body-lg active:scale-95 transition-transform shadow-md">
+            Lưu 4 bài tập
+        </button>
+</div>
+</body></html>

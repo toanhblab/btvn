@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tổng quan - Family Homework</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#adc6ff",
+                        "on-secondary-fixed": "#341100",
+                        "tertiary-fixed-dim": "#eec200",
+                        "on-primary-container": "#fefcff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-highest": "#e8e1da",
+                        "on-primary": "#ffffff",
+                        "surface-bright": "#fff8f1",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-container": "#5c2400",
+                        "secondary": "#9d4300",
+                        "on-background": "#1e1b17",
+                        "on-surface-variant": "#424754",
+                        "surface-container-low": "#f9f3eb",
+                        "on-secondary-fixed-variant": "#783200",
+                        "on-tertiary-fixed": "#231b00",
+                        "on-error-container": "#93000a",
+                        "tertiary-container": "#cea700",
+                        "surface": "#fff8f1",
+                        "surface-container-high": "#eee7df",
+                        "outline-variant": "#c2c6d6",
+                        "inverse-on-surface": "#f7f0e8",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "secondary-fixed-dim": "#ffb690",
+                        "primary": "#0058be",
+                        "on-primary-fixed-variant": "#004395",
+                        "tertiary-fixed": "#ffe083",
+                        "surface-container": "#f4ede5",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-primary-fixed": "#001a42",
+                        "primary-container": "#2170e4",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#735c00",
+                        "on-surface": "#1e1b17",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#33302b",
+                        "primary-fixed": "#d8e2ff",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#ffdbca",
+                        "secondary-container": "#fd761a",
+                        "surface-tint": "#005ac2",
+                        "outline": "#727785",
+                        "surface-variant": "#e8e1da",
+                        "surface-dim": "#dfd9d1",
+                        "on-tertiary-container": "#4e3e00",
+                        "background": "#fff8f1",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "bottom-action-height": "80px",
+                        "gutter-card": "0.75rem",
+                        "margin-page": "1rem",
+                        "stack-tight": "0.5rem",
+                        "tap-target-min": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "body-sm": ["Quicksand"],
+                        "body-lg": ["Quicksand"],
+                        "label-caps": ["Quicksand"],
+                        "headline-md": ["Quicksand"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["22px", {"lineHeight": "28px", "fontWeight": "700"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "700"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-lg min-h-screen pb-[100px]">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim border-b border-surface-container-highest dark:border-outline-variant shadow-sm flex justify-between items-center px-margin-page h-14">
+<div class="flex items-center gap-3">
+<img alt="Logo" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0p2nxz-_pWYKc_KXZdzn8T13E1eVgynqTTrW8RcqyxHyI3mILNKiZtl6q5OFzTgsxWcDGndDQiNaLdTdgSkTyHVFEkX_XNC6Ov3rj5KPI4F9YPX8KUzxc6XFSivKSF6QBu6w-Vg8kjexRDGk7UB87u8VQEt52ns8L5QJCWVeaGPWfOExAWTSHz4cd8wbEIROjyI0DCDbwXVZ5qHHAQe2xcIHdwPsiz4xPhipKTt9OQOSbdiBbcSGvfg"/>
+<h1 class="font-headline-md text-headline-md-mobile text-primary dark:text-primary-fixed-dim">Tổng quan</h1>
+</div>
+<button class="w-tap-target-min h-tap-target-min flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-full active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</header>
+<main class="pt-[72px] px-margin-page max-w-3xl mx-auto space-y-6">
+<!-- Stats Summary Section -->
+<section>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile mb-4">Tình trạng chung</h2>
+<div class="grid grid-cols-3 gap-3">
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-surface-container-low flex flex-col items-center">
+<span class="font-headline-lg text-headline-lg text-primary">12</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1 text-center">Hoàn thành</span>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-tertiary-container flex flex-col items-center relative overflow-hidden">
+<div class="absolute inset-0 bg-tertiary-fixed opacity-10"></div>
+<span class="font-headline-lg text-headline-lg text-tertiary-container z-10">5</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1 text-center z-10">Đang chờ</span>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-error flex flex-col items-center relative overflow-hidden">
+<div class="absolute inset-0 bg-error-container opacity-20"></div>
+<span class="font-headline-lg text-headline-lg text-error z-10">2</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1 text-center z-10">Quá hạn</span>
+</div>
+</div>
+</section>
+<!-- Children Overview -->
+<section>
+<div class="flex justify-between items-end mb-4">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile">Các con</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Child 1: Minh -->
+<div class="bg-surface-container-lowest rounded-xl p-gutter-card shadow-sm border border-surface-container-low flex gap-4 items-center">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-primary-container shrink-0">
+<img class="w-full h-full object-cover" data-alt="Portrait of a young Vietnamese boy named Minh, around 8 years old, smiling brightly, wearing a casual blue t-shirt. Soft, warm, natural light. Minimalist home environment background. High quality, friendly, bright aesthetic matching the cream and blue app theme." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPHnLMWQ4-oQ5EG8Fm8D4BNSpof_U-7sl0kVnZsxaKge95ybxfoSX0jd4qF9eNy1eYPYOX8ijxt4seoGilrJLW6YOJvJv9YMrMT38nja6NlK7tBNEjs4UJX4MnWmb71YIOJTE3A5UD08QE2VHrli4qMWKOmogstKJHT6GjpptUO45-lFnX5cs6jfJo-s5X_zXzGFFcXqteXV1kireapE07GL-q3eoGI0ua4u8GboEVBJAdCsqbox0cRw"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-headline-md text-headline-md-mobile">Minh</h3>
+<div class="flex gap-2 mt-2">
+<span class="bg-surface-container px-2 py-1 rounded-full font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> 8
+                            </span>
+<span class="bg-tertiary-fixed-dim bg-opacity-20 px-2 py-1 rounded-full font-label-caps text-label-caps text-tertiary-container flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">pending_actions</span> 3
+                            </span>
+</div>
+</div>
+</div>
+<!-- Child 2: Lan -->
+<div class="bg-surface-container-lowest rounded-xl p-gutter-card shadow-sm border border-surface-container-low flex gap-4 items-center">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-secondary-container shrink-0">
+<img class="w-full h-full object-cover" data-alt="Portrait of a young Vietnamese girl named Lan, around 10 years old, wearing glasses and a neat orange polo shirt. Focused and calm expression. Soft, warm, natural light. Minimalist home environment background. High quality, friendly, bright aesthetic matching the cream and orange app theme." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyUBZxq-iPqx8nKu37FbdQ_wg8AY9ERD5NCYJYBuq-MHVPFRnPt4-rYclzDdohR-lmXeogkEb3jfpapVtMc6w2Nma4BHcKDmy0zXpFxMtKnf-HgHUchUsAIYvv0SzZUgMlQNV-ukJAG_z9suvFCtRyBk-rcd_KW6hzTm6Y6ubglqE-IxPNXjhFJle0YfsTjwb_ofUEHmNYR8qyjEEkPYT05LIJXVUB72wA0r5Yl5wQH34X5w5aiCdNAQ"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-headline-md text-headline-md-mobile">Lan</h3>
+<div class="flex gap-2 mt-2">
+<span class="bg-surface-container px-2 py-1 rounded-full font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> 4
+                            </span>
+<span class="bg-error-container bg-opacity-30 px-2 py-1 rounded-full font-label-caps text-label-caps text-error flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">warning</span> 2
+                            </span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Today's Tasks -->
+<section>
+<div class="flex justify-between items-center mb-4">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile flex items-center gap-2">
+                    Nhiệm vụ hôm nay <span class="bg-primary text-on-primary font-label-caps text-label-caps px-2 py-1 rounded-full">7</span>
+</h2>
+</div>
+<div class="space-y-stack-tight">
+<!-- Task 1 (Minh) -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm border border-surface-container-low flex gap-3 items-start relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary-container"></div>
+<button class="w-6 h-6 rounded-full border-2 border-outline-variant flex-shrink-0 mt-1"></button>
+<div class="flex-grow">
+<h4 class="font-body-lg text-body-lg text-on-surface">Toán - Bài tập tuần 4</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Minh • Cần nộp trước 20:00</p>
+</div>
+<span class="bg-tertiary-fixed-dim bg-opacity-20 text-tertiary-container px-2 py-1 rounded font-label-caps text-label-caps shrink-0">Đang chờ</span>
+</div>
+<!-- Task 2 (Lan - Overdue) -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm border border-error-container flex gap-3 items-start relative overflow-hidden bg-error-container bg-opacity-5">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary-container"></div>
+<button class="w-6 h-6 rounded-full border-2 border-error flex-shrink-0 mt-1"></button>
+<div class="flex-grow">
+<h4 class="font-body-lg text-body-lg text-on-surface">Tập làm văn - Tả cảnh</h4>
+<p class="font-body-sm text-body-sm text-error">Lan • Quá hạn 2 ngày</p>
+</div>
+<span class="bg-error-container text-error px-2 py-1 rounded font-label-caps text-label-caps shrink-0">Quá hạn</span>
+</div>
+<!-- Task 3 (Minh) -->
+<div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm border border-surface-container-low flex gap-3 items-start relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary-container"></div>
+<button class="w-6 h-6 rounded-full border-2 border-outline-variant flex-shrink-0 mt-1"></button>
+<div class="flex-grow">
+<h4 class="font-body-lg text-body-lg text-on-surface">Đọc tiếng Việt</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Minh • Cần nộp trước 21:00</p>
+</div>
+<span class="bg-tertiary-fixed-dim bg-opacity-20 text-tertiary-container px-2 py-1 rounded font-label-caps text-label-caps shrink-0">Đang chờ</span>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full h-bottom-action-height flex justify-around items-center px-2 pb-safe z-50 rounded-t-xl bg-surface dark:bg-surface-container-lowest shadow-[0_-2px_8px_rgba(0,0,0,0.05)] md:hidden">
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-full px-4 py-1 hover:opacity-80 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-caps text-label-caps mt-1">Trang chủ</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:opacity-80 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">photo_camera</span>
+<span class="font-label-caps text-label-caps mt-1">Chụp ảnh</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:opacity-80 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">checklist</span>
+<span class="font-label-caps text-label-caps mt-1">Nhiệm vụ</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:opacity-80 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-caps text-label-caps mt-1">Cài đặt</span>
+</a>
+</nav>
+</body></html>

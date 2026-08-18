@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Thêm bài tập</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#e8e1da",
+                        "secondary-container": "#fd761a",
+                        "primary-fixed": "#d8e2ff",
+                        "inverse-primary": "#adc6ff",
+                        "on-primary-fixed": "#001a42",
+                        "surface-tint": "#005ac2",
+                        "surface-container": "#f4ede5",
+                        "error": "#ba1a1a",
+                        "on-background": "#1e1b17",
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#1e1b17",
+                        "tertiary-fixed": "#ffe083",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-surface-variant": "#424754",
+                        "primary-container": "#2170e4",
+                        "tertiary-fixed-dim": "#eec200",
+                        "surface-container-high": "#eee7df",
+                        "outline": "#727785",
+                        "inverse-surface": "#33302b",
+                        "on-tertiary-fixed": "#231b00",
+                        "surface": "#fff8f1",
+                        "on-secondary-fixed": "#341100",
+                        "on-tertiary-container": "#4e3e00",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed": "#ffdbca",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#f7f0e8",
+                        "tertiary": "#735c00",
+                        "primary": "#0058be",
+                        "on-secondary-fixed-variant": "#783200",
+                        "surface-dim": "#dfd9d1",
+                        "outline-variant": "#c2c6d6",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "on-primary-container": "#fefcff",
+                        "secondary-fixed-dim": "#ffb690",
+                        "surface-container-low": "#f9f3eb",
+                        "primary-fixed-dim": "#adc6ff",
+                        "surface-container-highest": "#e8e1da",
+                        "surface-bright": "#fff8f1",
+                        "secondary": "#9d4300",
+                        "background": "#fff8f1",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#5c2400",
+                        "tertiary-container": "#cea700",
+                        "on-primary-fixed-variant": "#004395"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-tight": "0.5rem",
+                        "gutter-card": "0.75rem",
+                        "margin-page": "1rem",
+                        "bottom-action-height": "80px",
+                        "tap-target-min": "48px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Quicksand"],
+                        "headline-lg-mobile": ["Quicksand"],
+                        "body-lg": ["Quicksand"],
+                        "label-caps": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "headline-md": ["Quicksand"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "700" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        .safe-area-pt { padding-top: env(safe-area-inset-top, 0px); }
+        body { -webkit-tap-highlight-color: transparent; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-lg min-h-screen flex flex-col relative pb-[calc(80px+env(safe-area-inset-bottom,20px))]">
+<!-- Header -->
+<header class="flex justify-between items-center px-margin-page h-14 w-full bg-surface border-b border-surface-container-highest shadow-sm fixed top-0 z-50 safe-area-pt">
+<button aria-label="Go back" class="w-tap-target-min h-tap-target-min flex items-center justify-start text-on-surface-variant active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="arrow_back" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md text-primary truncate flex-1 text-center">Thêm bài tập</h1>
+<div class="w-tap-target-min h-tap-target-min"></div> <!-- Placeholder for balance -->
+</header>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col gap-gutter-card p-margin-page mt-[calc(56px+env(safe-area-inset-top,0px))]">
+<!-- Section 1: Upload Image -->
+<section class="bg-surface-container-lowest rounded-xl p-gutter-card shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-surface-variant flex flex-col gap-stack-tight">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant">ẢNH BÀI TẬP</h2>
+<button class="w-full h-32 rounded-lg border-2 border-dashed border-outline-variant bg-surface-container-low flex flex-col items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined text-4xl text-primary" data-icon="photo_camera" style="font-variation-settings: 'FILL' 0;">photo_camera</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-center px-4">Chụp ảnh hoặc chọn ảnh từ Zalo</span>
+</button>
+<div class="flex gap-2 overflow-x-auto py-1 scrollbar-hide">
+<div class="relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden shadow-sm border border-surface-variant">
+<img alt="Homework thumbnail 1" class="w-full h-full object-cover" data-alt="A small thumbnail showing a closely cropped, slightly blurry view of handwritten math homework on lined paper. The light is warm and natural. Soft tactility, cream aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCb5-QcVesd0JgiNf5NzNfxe2doa-IHuUpfkU6td9FenlCrIfdOdZ6VMpVz1FDkwAWfbwUExPevvr_0tVLEerh5VwDvn5DLVoG1-GJGopPNA4vGkSRHVSfLwzWA6zR0YuWQdxmqgI6sVLyaHPBRtdQzrdFfLUyvy_AgMe6d7wBEH9Bf6bixW4-ZYfhFcR5QgvYG0UGhYKq0SUF6Fz5tdKB3ikIkj0u65p1oyke6OtkI6RXNuOS53xTPzw"/>
+<button class="absolute top-1 right-1 w-5 h-5 bg-inverse-surface/80 rounded-full flex items-center justify-center text-on-tertiary shadow-sm active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[14px]" data-icon="close">close</span>
+</button>
+</div>
+<div class="relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden shadow-sm border border-surface-variant">
+<img alt="Homework thumbnail 2" class="w-full h-full object-cover" data-alt="A small thumbnail showing a printed school worksheet with multiple choice questions. The lighting is bright and clear. Modern minimalist cream and white palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmJcBn9ndI7RXcoSFN2v3Sd4xOSWFWWw6TWrvZQ7YFRlxmQNOXpvYc00sEM60XNkIstNB6YfMPCzWKDkHRNPgz1-D8Q94Ma6atpjC-erIPlkQpe2IUaCwbMePciT9-AL_AkPeo10k0I9mDhuLl8kL1XIsg5ZQEB9b-0E8R_5uvuCnGmrlUkBOeIV6Rb8RcKqm5_vkcQiFkdTQwcPcVCQWiFEI3zzI_rJRXWA6eDHECrTDmdebIkJ9lQw"/>
+<button class="absolute top-1 right-1 w-5 h-5 bg-inverse-surface/80 rounded-full flex items-center justify-center text-on-tertiary shadow-sm active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[14px]" data-icon="close">close</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Section 2: Text Input -->
+<section class="bg-surface-container-lowest rounded-xl p-gutter-card shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-surface-variant flex flex-col gap-stack-tight">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant">HOẶC DÁN NỘI DUNG</h2>
+<textarea class="w-full h-24 rounded-lg bg-surface-container-low border-none focus:ring-2 focus:ring-primary font-body-sm text-body-sm text-on-background placeholder-outline p-3 resize-none" placeholder="Dán tin nhắn của cô giáo vào đây..."></textarea>
+</section>
+<!-- Section 3: Assign to Children -->
+<section class="bg-surface-container-lowest rounded-xl p-gutter-card shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-surface-variant flex flex-col gap-stack-tight">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant">GIAO CHO CON NÀO</h2>
+<div class="grid grid-cols-3 gap-2">
+<!-- Selected Child 1 -->
+<button class="flex flex-col items-center gap-2 p-2 rounded-lg bg-primary-container border-2 border-primary active:scale-95 transition-transform relative">
+<div class="absolute top-1 right-1 bg-primary text-on-primary rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[14px]" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<img alt="Minh" class="w-12 h-12 rounded-full object-cover shadow-sm" data-alt="A round avatar photo of a young Vietnamese boy named Minh smiling brightly. He has short black hair. Soft warm lighting, warm cream and white UI context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0DAwY9I38hWHZS9avjicVdMUgmqFt_SePtFD3aOnbgZiQQeRi3XY1aOliuKvGO00xsxahzG6nkVNlSRibYipWmHJR5voWDTaBsdgYt3UH5WhyjamUcTGXWISIK1U2L7-K-OuR_F7f4pBBtnm0-VaYoyzzuclBXu1wXEOOac8SJCuWLgtfAkzhJTMroXmWFSnmCvk4fxH47HRlKnhjfoUBZsNDnr2ozdycJZi_LFfwrru66F_PlREOgA"/>
+<span class="font-body-sm text-body-sm text-on-primary-container text-center w-full truncate">Minh</span>
+</button>
+<!-- Selected Child 2 -->
+<button class="flex flex-col items-center gap-2 p-2 rounded-lg bg-primary-container border-2 border-primary active:scale-95 transition-transform relative">
+<div class="absolute top-1 right-1 bg-primary text-on-primary rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[14px]" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<img alt="An" class="w-12 h-12 rounded-full object-cover shadow-sm" data-alt="A round avatar photo of a young Vietnamese boy named An looking thoughtful. He is wearing a blue polo shirt. Soft warm lighting, warm cream and white UI context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPUJbOrpXW7cwP4gdMx98Q-ZstPDyO1Cd-nzSMpy7imW1WCVzZCLKYpnAnnRCVVnsr6j941inkqs2mS-zoxiaY_r8Z5390M2usWplLU2rHjgrTGct-09TOXNWAcSo43lb35Ume3eJyIKRhXeGemW8QDlXjsRNCmwoYfwgwKqh-5_TM3lpxw1MQEhXrTDlTBxfxQrXykCfGj5H5Pswmh3ZdGDtM4jEip3IWPtCADwUgQ02KYjJjsj9l9Q"/>
+<span class="font-body-sm text-body-sm text-on-primary-container text-center w-full truncate">An</span>
+</button>
+<!-- Unselected Child -->
+<button class="flex flex-col items-center gap-2 p-2 rounded-lg bg-surface-container-low border-2 border-transparent hover:bg-surface-container active:scale-95 transition-transform">
+<img alt="Bé Na" class="w-12 h-12 rounded-full object-cover shadow-sm opacity-80" data-alt="A round avatar photo of a young Vietnamese girl named Bé Na with a small bow in her hair. Soft warm lighting, minimalist cream and white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBaUnIz92-WFs250_pCUriXA452LvizHnHjrf9NK5efDN774suxSD3YUw1ucPmadjbNtUKfKITWTJFDSLW9hTvubRTTK9ngLP_HqlYaC4uTZYXrjg8nOVWboZPdVbAWgEj_Q10VEsYfBBwZLBv3cqEgGxw6gRwwaIP0ICIy6gN-ACTVtjowt3ZK-PwpGzSAfoenC9jYQi6SXirk_veQrdVxsEnJJgJAwTPZSEbfgjB0X1wrSbcjNobHMw"/>
+<span class="font-body-sm text-body-sm text-on-surface-variant text-center w-full truncate">Bé Na</span>
+</button>
+</div>
+<p class="font-body-sm text-body-sm text-outline mt-1 text-center bg-surface-container py-1.5 px-3 rounded-md">Hai bé sinh đôi học cùng lớp nên được chọn sẵn</p>
+</section>
+<!-- Section 4: Deadline -->
+<section class="bg-surface-container-lowest rounded-xl p-gutter-card shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-surface-variant flex flex-col gap-stack-tight">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant">HẠN HOÀN THÀNH</h2>
+<div class="flex gap-2">
+<button class="flex-1 h-tap-target-min bg-primary text-on-primary rounded-full font-body-sm text-body-sm flex items-center justify-center shadow-sm active:scale-95 transition-transform">
+                    Hôm nay
+                </button>
+<button class="flex-1 h-tap-target-min bg-surface-container text-on-surface rounded-full font-body-sm text-body-sm flex items-center justify-center hover:bg-surface-container-high active:scale-95 transition-transform border border-outline-variant">
+                    Mai
+                </button>
+<button class="flex-1 h-tap-target-min bg-surface-container text-on-surface rounded-full font-body-sm text-body-sm flex items-center justify-center hover:bg-surface-container-high active:scale-95 transition-transform border border-outline-variant gap-1">
+<span class="material-symbols-outlined text-[18px]" data-icon="calendar_month">calendar_month</span>
+                    Chọn ngày
+                </button>
+</div>
+</section>
+</main>
+<!-- Fixed Bottom Action -->
+<div class="fixed bottom-0 left-0 w-full bg-surface-container-lowest/90 backdrop-blur-sm border-t border-surface-variant p-margin-page safe-area-pb z-50 shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
+<button class="w-full h-[56px] bg-primary text-on-primary rounded-xl font-headline-md text-headline-md flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined text-[24px]" data-icon="auto_awesome" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+            ✨ Tách bài tập
+        </button>
+</div>
+</body></html>

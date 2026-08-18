@@ -1,0 +1,85 @@
+import { NextResponse } from 'next/server';
+import { isParent } from '@/lib/auth';
+import { deleteAllAssignments, getFamily, listAssignments, saveSubmission, todayISO } from '@/lib/store';
+import type { DraftAssignment } from '@/lib/types';
+import { iconFor } from '@/lib/types';
+
+export const dynamic = 'force-dynamic';
+
+/**
+ * GET /api/assignments?childId=minh&date=2026-08-18
+ *     ...?childId=minh&from=...&to=...
+ * Khong can PIN — man cua tre phai doc duoc ma khong dang nhap (PRD 4.5).
+ */
+export async function GET(req: Request) {
+  const q = new URL(req.url).searchParams;
+  const assignments = await listAssignments({
+    childId: q.get('childId') ?? undefined,
+    date: q.get('date') ?? undefined,
+    from: q.get('from') ?? undefined,
+    to: q.get('to') ?? undefined,
+  });
+  return NextResponse.json({ assignments });
+}
+
+/**
+ * POST /api/assignments — luu ca dot sau khi bo me duyet o man "Kiem tra lai".
+ * CAN PIN: chi bo me duoc them bai.
+ *
+ * Body: { childIds: string[], dueDate, rawText?, imageUrls?, drafts: DraftAssignment[] }
+ * Mot lan goi sinh ra bai RIENG cho tung con trong childIds (PRD 4.2 — hai be
+ * sinh doi hoc cung lop, nhap mot lan ra bai cho ca hai).
+ */
+export async function POST(req: Request) {
+  if (!(await isParent())) {
+    return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+  }
+
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Dữ liệu gửi lên không đọc được.' }, { status: 400 });
+
+  const childIds: string[] = Array.isArray(body.childIds) ? body.childIds : [];
+  const drafts: DraftAssignment[] = Array.isArray(body.drafts) ? body.drafts : [];
+
+  if (childIds.length === 0) {
+    return NextResponse.json({ error: 'Chưa chọn con nào.' }, { status: 400 });
+  }
+  if (drafts.length === 0) {
+    return NextResponse.json({ error: 'Chưa có bài tập nào để lưu.' }, { status: 400 });
+  }
+
+  const family = await getFamily();
+  if (!family) return NextResponse.json({ error: 'Chưa có dữ liệu gia đình.' }, { status: 500 });
+
+  const created = await saveSubmission({
+    familyId: family.id,
+    rawText: body.rawText ?? null,
+    imageUrls: Array.isArray(body.imageUrls) ? body.imageUrls : [],
+    childIds,
+    dueDate: body.dueDate || todayISO(),
+    drafts: drafts.map((d) => ({
+      subject: d.subject || 'Khác',
+      icon: d.icon || iconFor(d.subject || 'Khác'),
+      content: d.content,
+      note: d.note || null,
+      lang: d.lang === 'en' ? 'en' : 'vi',
+      confidence: d.confidence ?? 1,
+    })),
+  });
+
+  return NextResponse.json({ created, count: created.length });
+}
+
+/**
+ * DELETE /api/assignments — xoa sach bai tap cua ca nha. CAN PIN.
+ *
+ * Khong the hoan tac nen giao dien phai hoi lai truoc khi goi (xem XoaTatCa).
+ * Con khong bao gio goi duoc duong nay: PIN chi bo me co (PRD 4.5).
+ */
+export async function DELETE() {
+  if (!(await isParent())) {
+    return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+  }
+  const deleted = await deleteAllAssignments();
+  return NextResponse.json({ ok: true, deleted });
+}

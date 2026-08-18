@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Chảo con! - Chi tiết bài tập</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container": "#f4ede5",
+                    "secondary-fixed-dim": "#ffb690",
+                    "on-primary-fixed": "#001a42",
+                    "surface-container-highest": "#e8e1da",
+                    "surface": "#fff8f1",
+                    "tertiary-fixed": "#ffe083",
+                    "on-background": "#1e1b17",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#004395",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed-dim": "#eec200",
+                    "background": "#fff8f1",
+                    "surface-bright": "#fff8f1",
+                    "on-tertiary-container": "#4e3e00",
+                    "tertiary-container": "#cea700",
+                    "on-surface-variant": "#424754",
+                    "primary-fixed": "#d8e2ff",
+                    "primary-container": "#2170e4",
+                    "surface-container-low": "#f9f3eb",
+                    "on-error": "#ffffff",
+                    "inverse-surface": "#33302b",
+                    "inverse-primary": "#adc6ff",
+                    "secondary-container": "#fd761a",
+                    "inverse-on-surface": "#f7f0e8",
+                    "on-tertiary-fixed": "#231b00",
+                    "on-tertiary-fixed-variant": "#574500",
+                    "on-primary-container": "#fefcff",
+                    "on-primary": "#ffffff",
+                    "on-secondary-fixed-variant": "#783200",
+                    "secondary": "#9d4300",
+                    "surface-variant": "#e8e1da",
+                    "outline": "#727785",
+                    "surface-container-high": "#eee7df",
+                    "secondary-fixed": "#ffdbca",
+                    "tertiary": "#735c00",
+                    "error": "#ba1a1a",
+                    "primary-fixed-dim": "#adc6ff",
+                    "outline-variant": "#c2c6d6",
+                    "primary": "#0058be",
+                    "surface-dim": "#dfd9d1",
+                    "surface-tint": "#005ac2",
+                    "on-secondary-fixed": "#341100",
+                    "error-container": "#ffdad6",
+                    "on-secondary-container": "#5c2400",
+                    "on-surface": "#1e1b17",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "32px",
+                    "margin-edge": "48px",
+                    "stack-gap": "24px",
+                    "touch-target-min": "64px"
+            },
+            "fontFamily": {
+                    "display-hero": [
+                            "Quicksand"
+                    ],
+                    "body-md": [
+                            "Quicksand"
+                    ],
+                    "headline-lg": [
+                            "Quicksand"
+                    ],
+                    "body-lg": [
+                            "Quicksand"
+                    ],
+                    "label-bold": [
+                            "Quicksand"
+                    ]
+            },
+            "fontSize": {
+                    "display-hero": [
+                            "48px",
+                            {
+                                    "lineHeight": "60px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-md": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "label-bold": [
+                            "18px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "700"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #fff8f1; /* Using tailwind theme background directly for robustness */
+        }
+        
+        /* Custom styles for 3D buttons as per design system */
+        .btn-3d-primary {
+            box-shadow: 0px 4px 0px 0px #004395; /* shadow matches on-primary-fixed-variant */
+            transition: all 0.1s ease;
+        }
+        .btn-3d-primary:active {
+            transform: translateY(4px);
+            box-shadow: 0px 0px 0px 0px #004395;
+        }
+
+        .btn-3d-success {
+            /* Using a green color outside the strict palette for the specific "success" requirement in prompt, 
+               but ideally would map to a custom theme color if provided. Using a vibrant green suitable for kids. */
+            background-color: #22c55e;
+            box-shadow: 0px 6px 0px 0px #16a34a; 
+            transition: all 0.1s ease;
+        }
+        .btn-3d-success:active {
+            transform: translateY(6px);
+            box-shadow: 0px 0px 0px 0px #16a34a;
+        }
+        
+        .soft-shadow {
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen flex flex-col items-center justify-center p-margin-edge overflow-hidden">
+<!-- Back Navigation - Simple, task-focused top area -->
+<div class="w-full max-w-[1200px] flex justify-between items-center mb-stack-gap">
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-container rounded-full pr-4 py-2 transition-colors touch-target-min">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">arrow_back_ios_new</span>
+<span class="font-headline-lg text-headline-lg">Quay lại</span>
+</button>
+</div>
+<!-- Main Content Canvas - Large-Scale Component Grid (iPad Landscape) -->
+<main class="w-full max-w-[1200px] flex-1 flex flex-row gap-gutter h-full min-h-[600px]">
+<!-- Left: 2/3 Image Area -->
+<section class="flex-[2] relative rounded-[32px] overflow-hidden bg-white soft-shadow group cursor-pointer border-4 border-transparent hover:border-primary transition-colors">
+<!-- Homework Image -->
+<img alt="Hình ảnh bài tập" class="w-full h-full object-cover rounded-[28px]" data-alt="A brightly lit, top-down photograph of a child's school notebook page resting on a light wooden desk. The notebook has distinct square grid lines (ô ly) typical in Vietnamese primary schools. There are some simple math problems written in neat, large, playful handwriting using a blue ink pen. The lighting is soft and warm, creating a welcoming, educational light-mode aesthetic suitable for a learning app interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAm6k4lHY5xsaN93XS0pHRtIoyL3h7P5GYBje9KnSYGDWKlKlR0Xj5yca08ODouL5IDHnKvr7F6461BR3qfIbxQzG2Rf_qvf8pLKfWMqzL_f1ia7rOHMXxgGVLKcJzDak7at0hDNA2f5DMYK05hqSopx36PwtyUDCSZzRDQZTxoz0uRuitF9_5Je_6tONI1sEUq0asWorlpFuDahz9zSghPSWj8SZx1qLEGbeql22nQS2-HErVi9glt"/>
+<!-- Magnifying Glass Icon -->
+<div class="absolute bottom-6 right-6 w-16 h-16 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center soft-shadow pointer-events-none group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1;">search</span>
+</div>
+</section>
+<!-- Right: 1/3 Action Area -->
+<section class="flex-1 flex flex-col justify-between py-4">
+<div class="flex flex-col gap-stack-gap">
+<!-- Subject Chip -->
+<div class="self-start px-6 py-3 bg-tertiary-fixed rounded-full inline-flex items-center gap-2 soft-shadow">
+<span class="font-headline-lg text-headline-lg text-on-tertiary-fixed">🔢 Toán</span>
+</div>
+<!-- Assignment Text -->
+<h1 class="font-display-hero text-display-hero text-on-background">
+                    Làm bài 3 trang 34.<br/>
+                    Viết vào vở ô ly.
+                </h1>
+<!-- Read Aloud Button -->
+<button class="btn-3d-primary bg-primary text-on-primary rounded-[24px] flex items-center justify-center gap-4 px-6 h-[80px] w-full mt-4">
+<span class="material-symbols-outlined text-4xl">volume_up</span>
+<span class="font-headline-lg text-headline-lg">Nghe đề bài</span>
+</button>
+</div>
+<!-- Bottom Actions -->
+<div class="flex flex-col items-center gap-6 mt-auto pt-8">
+<!-- Success Button -->
+<button class="btn-3d-success text-white rounded-[32px] flex items-center justify-center gap-4 px-8 h-[96px] w-full" onclick="showSuccessFeedback()">
+<span class="material-symbols-outlined text-5xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-display-hero text-display-hero whitespace-nowrap">Đã làm xong</span>
+</button>
+<!-- Quiet Secondary Action -->
+<button class="font-body-lg text-body-lg text-outline hover:text-on-surface-variant transition-colors p-4 touch-target-min flex items-center justify-center">
+                    Chưa làm xong
+                </button>
+</div>
+</section>
+</main>
+<!-- Success Feedback Overlay (Hidden by default) -->
+<div class="fixed inset-0 bg-white/80 backdrop-blur-md z-50 hidden flex-col items-center justify-center p-margin-edge opacity-0 transition-opacity duration-300" id="success-overlay">
+<div class="bg-white rounded-[40px] p-12 flex flex-col items-center gap-8 soft-shadow transform scale-90 transition-transform duration-500" id="success-card">
+<span class="material-symbols-outlined text-[120px] text-[#22c55e] animate-bounce" style="font-variation-settings: 'FILL' 1;">star</span>
+<h2 class="font-display-hero text-display-hero text-on-background text-center">Giỏi quá!</h2>
+<button class="btn-3d-primary bg-primary text-on-primary rounded-[24px] px-12 h-[80px] font-headline-lg text-headline-lg mt-4" onclick="hideSuccessFeedback()">
+                Tiếp tục
+            </button>
+</div>
+</div>
+<script>
+        function showSuccessFeedback() {
+            const overlay = document.getElementById('success-overlay');
+            const card = document.getElementById('success-card');
+            
+            overlay.classList.remove('hidden');
+            // Small delay to allow display:block to apply before animating opacity
+            setTimeout(() => {
+                overlay.classList.remove('opacity-0');
+                card.classList.remove('scale-90');
+                card.classList.add('scale-100');
+            }, 10);
+        }
+
+        function hideSuccessFeedback() {
+            const overlay = document.getElementById('success-overlay');
+            const card = document.getElementById('success-card');
+            
+            overlay.classList.add('opacity-0');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-90');
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 300); // Wait for transition to finish
+        }
+    </script>
+</body></html>

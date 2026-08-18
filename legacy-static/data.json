@@ -1,0 +1,156 @@
+{
+  "_ghiChu": "Du lieu mau. Ten truong bam theo PRD muc 7 de sau nay chuyen sang DB that khong phai doi. Trang thai da-lam-xong KHONG nam o day ma o localStorage. dueDate nhan today/yesterday/tomorrow (du lieu mau, khong bi cu di theo thoi gian) hoac ngay ISO that dang YYYY-MM-DD.",
+
+  "children": [
+    {
+      "id": "minh",
+      "name": "Minh",
+      "color": "primary",
+      "avatar": "assets/img/avatar-minh.jpg",
+      "grade": "Lớp 1",
+      "order": 1
+    },
+    {
+      "id": "an",
+      "name": "An",
+      "color": "secondary",
+      "avatar": "assets/img/avatar-an.jpg",
+      "grade": "Lớp 1",
+      "order": 2
+    },
+    {
+      "id": "bena",
+      "name": "Bé Na",
+      "color": "tertiary",
+      "avatar": "assets/img/avatar-bena.jpg",
+      "grade": "Mẫu giáo",
+      "order": 3
+    }
+  ],
+
+  "assignments": [
+    {
+      "id": "minh-01",
+      "childId": "minh",
+      "subject": "Tiếng Việt",
+      "icon": "📖",
+      "content": "Đọc bài trang 10, đọc to cho bố mẹ nghe.",
+      "note": "Sách Tiếng Việt tập 1",
+      "lang": "vi",
+      "dueDate": "today",
+      "image": "assets/img/bai-doc-sach.jpg"
+    },
+    {
+      "id": "minh-02",
+      "childId": "minh",
+      "subject": "Toán",
+      "icon": "🔢",
+      "content": "Làm bài 3 trang 34. Viết vào vở ô ly.",
+      "note": "Trang 34, bài 3",
+      "lang": "vi",
+      "dueDate": "today",
+      "image": "assets/img/bai-toan-vo-o-ly.jpg"
+    },
+    {
+      "id": "minh-03",
+      "childId": "minh",
+      "subject": "Tiếng Anh",
+      "icon": "🔤",
+      "content": "Learn the colors: red, blue, yellow, green. Say each color out loud three times.",
+      "note": "Lớp tiếng Anh thứ Ba",
+      "lang": "en",
+      "dueDate": "today",
+      "image": "assets/img/bai-mau-sac.jpg"
+    },
+    {
+      "id": "minh-04",
+      "childId": "minh",
+      "subject": "Vẽ",
+      "icon": "🎨",
+      "content": "Vẽ ngôi nhà của em, tô màu cho thật đẹp.",
+      "note": "Giấy A4",
+      "lang": "vi",
+      "dueDate": "today",
+      "image": "assets/img/bai-ngoi-nha.jpg"
+    },
+    {
+      "id": "minh-05",
+      "childId": "minh",
+      "subject": "Tự nhiên",
+      "icon": "🐝",
+      "content": "Quan sát con ong, kể lại cho cô nghe con ong làm gì.",
+      "note": "",
+      "lang": "vi",
+      "dueDate": "today",
+      "image": "assets/img/bai-con-ong.jpg"
+    },
+
+    {
+      "id": "an-01",
+      "childId": "an",
+      "subject": "Tiếng Việt",
+      "icon": "📖",
+      "content": "Đọc bài trang 10, đọc to cho bố mẹ nghe.",
+      "note": "Sách Tiếng Việt tập 1",
+      "lang": "vi",
+      "dueDate": "today",
+      "image": "assets/img/bai-doc-sach.jpg"
+    },
+    {
+      "id": "an-02",
+      "childId": "an",
+      "subject": "Toán",
+      "icon": "🔢",
+      "content": "Làm bài 3 trang 34. Viết vào vở ô ly.",
+      "note": "Trang 34, bài 3",
+      "lang": "vi",
+      "dueDate": "today",
+      "image": "assets/img/bai-toan-vo-o-ly.jpg"
+    },
+    {
+      "id": "an-03",
+      "childId": "an",
+      "subject": "Tiếng Anh",
+      "icon": "🔤",
+      "content": "Learn the colors: red, blue, yellow, green. Say each color out loud three times.",
+      "note": "Lớp tiếng Anh thứ Ba",
+      "lang": "en",
+      "dueDate": "today",
+      "image": "assets/img/bai-mau-sac.jpg"
+    },
+    {
+      "id": "an-04",
+      "childId": "an",
+      "subject": "Vẽ",
+      "icon": "🎨",
+      "content": "Vẽ ngôi nhà của em, tô màu cho thật đẹp.",
+      "note": "Giấy A4",
+      "lang": "vi",
+      "dueDate": "today",
+      "image": "assets/img/bai-ngoi-nha.jpg"
+    },
+    {
+      "id": "an-05",
+      "childId": "an",
+      "subject": "Tự nhiên",
+      "icon": "🐝",
+      "content": "Quan sát con ong, kể lại cho cô nghe con ong làm gì.",
+      "note": "",
+      "lang": "vi",
+      "dueDate": "today",
+      "image": "assets/img/bai-con-ong.jpg"
+    },
+
+    {
+      "id": "bena-01",
+      "childId": "bena",
+      "subject": "Tiếng Anh",
+      "icon": "🔤",
+      "content": "Point at the picture and say: cat, dog, bird.",
+      "note": "Bài hôm qua, đã học ở lớp",
+      "lang": "en",
+      "dueDate": "yesterday",
+      "image": "assets/img/bai-con-ong.jpg"
+    }
+  ]
+}
