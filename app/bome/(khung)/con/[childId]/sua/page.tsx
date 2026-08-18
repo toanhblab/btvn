@@ -1,5 +1,6 @@
-import { notFound } from 'next/navigation';
-import { getChild, listChildren } from '@/lib/store';
+import { notFound, redirect } from 'next/navigation';
+import { parentFamilyId } from '@/lib/auth';
+import { getChild, listAssignments, listChildren } from '@/lib/store';
 import SuaHoSo from './SuaHoSo';
 
 export const dynamic = 'force-dynamic';
@@ -11,9 +12,25 @@ export const dynamic = 'force-dynamic';
  */
 export default async function Page({ params }: { params: Promise<{ childId: string }> }) {
   const { childId } = await params;
-  const [child, all] = await Promise.all([getChild(childId), listChildren()]);
+  const familyId = await parentFamilyId();
+  if (!familyId) redirect('/bome/pin');
+
+  const [child, all, cuaCon] = await Promise.all([
+    getChild(familyId, childId),
+    listChildren(familyId),
+    // Xoa con la xoa luon bai tap cua con do (ON DELETE CASCADE) nen phai noi ro
+    // con so truoc khi hoi
+    listAssignments(familyId, { childId }),
+  ]);
   if (!child) notFound();
 
   // Truyen ca nha sang de canh bao khi hai con trung mau (xem SuaHoSo).
-  return <SuaHoSo child={child} others={all.filter((c) => c.id !== child.id)} />;
+  return (
+    <SuaHoSo
+      child={child}
+      others={all.filter((c) => c.id !== child.id)}
+      soBai={cuaCon.length}
+      laConCuoi={all.length === 1}
+    />
+  );
 }

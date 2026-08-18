@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { parentFamilyId } from '@/lib/auth';
 import { countAssignments, listAssignments, listChildren, todayISO } from '@/lib/store';
 import XoaBai from '../con/[childId]/XoaBai';
 import XoaTatCa from './XoaTatCa';
@@ -7,13 +9,16 @@ export const dynamic = 'force-dynamic';
 
 /** Danh sach nhiem vu ca nha — nen tu stitch-parent 04. */
 export default async function DanhSachNhiemVu() {
+  const familyId = await parentFamilyId();
+  if (!familyId) redirect('/bome/pin');
+
   const today = todayISO();
   const [children, items, total] = await Promise.all([
-    listChildren(),
-    listAssignments({ from: todayISO(-7), to: todayISO(7) }),
+    listChildren(familyId),
+    listAssignments(familyId, { from: todayISO(-7), to: todayISO(7) }),
     // Man nay chi liet ke 7 ngay quanh hom nay; nut xoa het phai noi dung tong
     // so bai trong DB chu khong phai so bai dang nhin thay.
-    countAssignments(),
+    countAssignments(familyId),
   ]);
 
   const nameOf = new Map(children.map((c) => [c.id, c]));

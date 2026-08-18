@@ -6,8 +6,11 @@ import { NextResponse, type NextRequest } from 'next/server';
  * Next 16 doi ten quy uoc "middleware" thanh "proxy".
  *
  * Chi kiem tra cookie CO MAT hay khong — day la lop chan tho cho dieu huong.
- * Viec doi chieu gia tri that nam o lib/auth.ts va duoc goi lai trong tung
- * route handler, vi lop nay chay o Edge nen khong dung duoc DB.
+ * Viec doi chieu chu ky va xac dinh LA NHA NAO nam o lib/auth.ts va duoc goi lai
+ * trong tung route handler / page, vi lop nay chay o Edge nen khong dung duoc DB.
+ *
+ * Cookie gia mao khong di duoc xa hon day: no qua duoc buoc nay nhung parentFamilyId()
+ * se khong go duoc chu ky nen moi trang /bome deu day ve man nhap PIN.
  */
 export default function proxy(req: NextRequest) {
   const hasCookie = Boolean(req.cookies.get('btvn_parent')?.value);
@@ -21,6 +24,7 @@ export default function proxy(req: NextRequest) {
 }
 
 export const config = {
-  // Chan tat ca /bome/* tru chinh man nhap PIN
-  matcher: ['/bome', '/bome/((?!pin).*)'],
+  // Chan tat ca /bome/* tru man nhap PIN va man tao nha moi — nha chua ton tai
+  // thi lam gi co PIN ma nhap.
+  matcher: ['/bome', '/bome/((?!pin|tao-nha).*)'],
 };

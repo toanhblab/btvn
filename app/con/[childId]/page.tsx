@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { viewingFamilyId } from '@/lib/auth';
 import { getChild, listAssignments, todayISO } from '@/lib/store';
 import type { Assignment } from '@/lib/types';
 
@@ -21,14 +22,19 @@ function nhanNgay(date: string, today: string, tomorrow: string): string {
 /** Bai tap tu hom nay tro di cua mot con — nen tu Stitch 06, kem man trong tu Stitch 08. */
 export default async function BaiHomNay({ params }: { params: Promise<{ childId: string }> }) {
   const { childId } = await params;
-  const child = await getChild(childId);
+  const familyId = await viewingFamilyId();
+  if (!familyId) redirect('/vao');
+
+  // getChild loc theo nha: con cua nha khac coi nhu khong ton tai, du co dung
+  // dung link. Cac con khong dang nhap nen day la lop chan duy nhat.
+  const child = await getChild(familyId, childId);
   if (!child) notFound();
 
   const today = todayISO();
   const tomorrow = todayISO(1);
 
   // Tu hom nay tro di: bai qua han khong hien nua, khong thi danh sach cu dai mai
-  const items = await listAssignments({ childId, from: today });
+  const items = await listAssignments(familyId, { childId, from: today });
   const todayItems = items.filter((a) => a.dueDate === today);
   const done = todayItems.filter((a) => a.status === 'done').length;
 

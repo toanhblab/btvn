@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { parentFamilyId } from '@/lib/auth';
 import { getChild, listAssignments, todayISO } from '@/lib/store';
 import XoaBai from './XoaBai';
 
@@ -17,13 +18,16 @@ export default async function ChiTietCon({
   const { pham_vi } = await searchParams;
   const tuanNay = pham_vi === 'tuan';
 
-  const child = await getChild(childId);
+  const familyId = await parentFamilyId();
+  if (!familyId) redirect('/bome/pin');
+
+  const child = await getChild(familyId, childId);
   if (!child) notFound();
 
   const today = todayISO();
   const items = tuanNay
-    ? await listAssignments({ childId, from: todayISO(-6), to: todayISO(6) })
-    : await listAssignments({ childId, date: today });
+    ? await listAssignments(familyId, { childId, from: todayISO(-6), to: todayISO(6) })
+    : await listAssignments(familyId, { childId, date: today });
 
   const done = items.filter((a) => a.status === 'done').length;
   const pct = items.length ? Math.round((done / items.length) * 100) : 0;

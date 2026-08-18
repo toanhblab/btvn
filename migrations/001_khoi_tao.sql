@@ -1,5 +1,9 @@
--- Lươc do DB — bam theo PRD muc 7.
+-- Lươc do ban dau — bam theo PRD muc 7.
 -- Chay duoc tren ca Neon Postgres lan PGlite (dev).
+--
+-- Day la migration dau tien. DB dang chay tu truoc khi co he thong migration cung
+-- di qua file nay khong sao ca: moi cau deu IF NOT EXISTS nen chi la mot vong
+-- khong lam gi, roi duoc ghi vao bang _migrations.
 
 CREATE TABLE IF NOT EXISTS families (
   id              TEXT PRIMARY KEY,

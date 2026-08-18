@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { viewingFamilyId } from '@/lib/auth';
 import { getChild } from '@/lib/store';
 import Confetti from './Confetti';
 
@@ -8,7 +9,10 @@ export const dynamic = 'force-dynamic';
 /** Xong het bai hom nay — nen tu Stitch 04. */
 export default async function Xong({ params }: { params: Promise<{ childId: string }> }) {
   const { childId } = await params;
-  const child = await getChild(childId);
+  const familyId = await viewingFamilyId();
+  if (!familyId) redirect('/vao');
+
+  const child = await getChild(familyId, childId);
   if (!child) notFound();
 
   return (

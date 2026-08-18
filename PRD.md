@@ -28,7 +28,8 @@ Hệ quả:
 
 - Không thay thế ứng dụng của trường, không tích hợp / crawl Zalo.
 - Không chấm điểm, không dạy học, không giải bài cho con.
-- Không dành cho nhiều gia đình / nhiều lớp / giáo viên. Bản đầu chỉ dùng trong gia đình.
+- Không dành cho lớp học / giáo viên. Đơn vị dùng là **một gia đình**.
+- Không quản lý người dùng: nhiều gia đình dùng chung một bản deploy được (xem mục 4.5), nhưng không có tài khoản, không mời, không phân quyền trong nhà.
 
 ## 3. Người dùng
 
@@ -95,20 +96,27 @@ Thiết kế cho trẻ 4–6 tuổi, chưa đọc thạo, dùng iPad:
 Nguyên tắc: **không có tài khoản, không email, không mật khẩu.**
 
 - **Các con: không cần đăng nhập.** Mở web là thấy ngay danh sách các con trong gia đình → bấm vào tên mình → vào màn hình bài tập của mình. Tick "đã làm xong" được luôn.
-- **Phụ huynh: chỉ cần một mã PIN** (4–6 số, dùng chung cho cả bố và mẹ). PIN chỉ dùng để mở các chức năng của phụ huynh: thêm bài tập, sửa, xoá, xem tổng quan.
+- **Phụ huynh: chỉ cần một mã PIN** (4 số, dùng chung cho cả bố và mẹ). PIN chỉ dùng để mở các chức năng của phụ huynh: thêm bài tập, sửa, xoá, xem tổng quan.
 - PIN được nhớ trên **điện thoại của bố mẹ** để không phải nhập lại mỗi lần — nhưng **không nhớ trên iPad của các con** (iPad là thiết bị dùng chung, nếu nhớ PIN ở đó thì coi như không còn tác dụng).
 - Đây là ứng dụng trong nhà nên PIN chỉ để **tránh con tự sửa/xoá bài tập của mình**, không nhằm mục đích bảo mật mạnh.
 
-Đánh đổi đã chấp nhận: ai có link đều mở được màn hình bài tập của các con. Nếu sau này thấy cần, thêm một PIN chung cho cả nhà ở cửa vào (xem mục 5).
+**Nhiều gia đình trên cùng một bản deploy.** Bố mẹ chia sẻ app cho bạn bè (cỡ mươi nhà), nên:
+
+- Mã PIN vừa là mật khẩu vừa là **danh tính** của nhà: nhập PIN ra đúng một nhà. Vì vậy **hai nhà không được trùng PIN** — ai chọn trùng thì được yêu cầu chọn mã khác.
+- Nhà mới **tự tạo lấy**: mở web → "Tạo nhà mới" → đặt tên nhà + chọn PIN → thêm hồ sơ các con. Không cần mời, không cần duyệt.
+- Mỗi nhà chỉ thấy con và bài tập của mình. Biết id của nhà khác cũng không đọc/sửa được.
+- **iPad của các con** được "gắn" vào một nhà đúng một lần, bằng link `/nha/<mã nhà>` (bố mẹ copy ở Cài đặt) hoặc nhập PIN một lần ở màn "Đây là máy của nhà nào?". Máy nhớ một năm; **việc gắn máy không mở phần của bố mẹ**, nên nhập PIN trên iPad ở màn này vẫn an toàn.
+
+Đánh đổi đã chấp nhận: ai có link `/nha/<mã nhà>` đều mở được màn hình bài tập của các con nhà đó. Mã nhà là chuỗi ngẫu nhiên, không đoán được. Đổi PIN được ở Cài đặt, nhưng **không** đăng xuất các thiết bị khác.
 
 ## 5. Ngoài phạm vi MVP (để sau)
 
 - Nhắc nhở tự động (thông báo/push, "8h tối rồi, còn 2 bài chưa xong").
 - Upload ảnh bài con đã làm để bố mẹ kiểm tra.
 - Thống kê dài hạn, streak, phần thưởng / huy hiệu.
-- Nhiều gia đình, chia sẻ với giáo viên, lớp học.
-- Tài khoản thật (email/Google) — chỉ cần khi mở cho gia đình khác dùng.
-- PIN chung ở cửa vào cho cả nhà, nếu muốn người ngoài không mở được link.
+- Chia sẻ với giáo viên, lớp học.
+- Tài khoản thật (email/Google), lấy lại PIN khi quên, phân quyền trong nhà.
+- Chặn dò PIN ở mức hạ tầng (hiện chỉ đếm số lần sai trong RAM của từng instance).
 - Thời khoá biểu, lịch thi.
 - App mobile native (MVP dùng web responsive).
 
@@ -171,9 +179,12 @@ Nguyên tắc: **không có tài khoản, không email, không mật khẩu.**
 - Tiếng Việt toàn bộ giao diện. Chữ to (≥ 20px cho con), vùng bấm ≥ 64px.
 - Tách bài xong trong khoảng **≤ 10 giây** cho một ảnh.
 - Dữ liệu riêng tư theo từng gia đình; ảnh chụp có thể chứa tên và thông tin của học sinh khác → không public, không cho search engine index.
+- Nhiều nhà dùng chung một DB: **mọi truy vấn phải lọc theo gia đình**, kể cả đường không cần PIN (con tick bài xong). Biết id của nhà khác không được phép đọc hay sửa gì.
 - Vì app chạy trên `*.vercel.app` (internet công khai) và màn hình của con không có đăng nhập: đặt ở **đường dẫn khó đoán**, chặn index (`robots.txt` + `noindex`), không hiển thị gì ngoài ảnh/tên các con và bài tập.
 - Ảnh bài tập lưu ở link **không đoán được** và không liệt kê được từ bên ngoài.
-- PIN của phụ huynh lưu dạng hash; giới hạn số lần nhập sai để con không thử mò được.
+- PIN của phụ huynh lưu dạng hash; giới hạn số lần nhập sai để con không thử mò được. Cookie phiên có chữ ký, sửa tay không dùng được.
+- `PIN_SECRET` là gốc của cả hash PIN lẫn chữ ký cookie → **đặt một lần rồi không đổi**: đổi nó là PIN của mọi nhà thành vô hiệu.
+- Thay đổi lược đồ đi bằng migration có đánh số trong `migrations/`, chạy tự động ở bước build khi deploy; migration lỗi thì dừng deploy chứ không để code mới chạy trên DB cũ.
 - Hoạt động ổn khi mạng chậm; nếu tách bài lỗi (kể cả do hết quota Gemini) thì vẫn cho phụ huynh nhập bài tập thủ công.
 
 ## 11. Đã chốt
@@ -183,6 +194,7 @@ Nguyên tắc: **không có tài khoản, không email, không mật khẩu.**
 - **Hosting:** Vercel, tên miền `*.vercel.app`.
 - **AI tách bài:** Google AI Studio / Gemini API, free tier, gửi ảnh ra ngoài — đã chấp nhận.
 - **Đăng nhập:** con không cần đăng nhập; phụ huynh dùng một mã PIN dùng chung.
+- **Chia sẻ cho bạn bè:** mỗi nhà tự tạo và tự chọn PIN, PIN không được trùng nhau; iPad của con gắn vào nhà bằng link riêng của nhà đó.
 - **Bé 4 tuổi có bài tập thật** — học thêm tiếng Anh → cả 3 con đều là người dùng thật, đề bài có cả tiếng Việt và tiếng Anh, phải đọc thành tiếng đúng giọng.
 
 ## 12. Còn cần chốt

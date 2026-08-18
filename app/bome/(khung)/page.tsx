@@ -1,11 +1,16 @@
 import Link from 'next/link';
-import { progressUpcoming } from '@/lib/store';
+import { redirect } from 'next/navigation';
+import { parentFamilyId } from '@/lib/auth';
+import { getFamilyById, progressUpcoming } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 
 /** Bang dieu khien — nen tu stitch-parent 02. Ban Stitch chi co 2 con, PRD muc 11 co 3. */
 export default async function BangDieuKhien() {
-  const rows = await progressUpcoming();
+  const familyId = await parentFamilyId();
+  if (!familyId) redirect('/bome/pin');
+
+  const [family, rows] = await Promise.all([getFamilyById(familyId), progressUpcoming(familyId)]);
 
   const totalDone = rows.reduce((s, r) => s + r.done, 0);
   const totalTodo = rows.reduce((s, r) => s + (r.total - r.done), 0);
@@ -20,7 +25,12 @@ export default async function BangDieuKhien() {
   return (
     <main className="px-p-page pt-4">
       <header className="flex items-center justify-between mb-5">
-        <h1 className="text-p-headline text-on-background">Tổng quan</h1>
+        <div className="min-w-0">
+          <h1 className="text-p-headline text-on-background">Tổng quan</h1>
+          {/* Ten nha: dam bao bo me biet dang mo dung nha minh, nhat la khi da
+              tung nhap PIN nha khac tren may nay */}
+          <p className="text-p-body-sm text-on-surface-variant truncate">{family?.name}</p>
+        </div>
         <Link
           href="/con"
           className="flex items-center gap-1.5 text-p-body-sm text-primary min-h-p-tap px-3
@@ -50,6 +60,26 @@ export default async function BangDieuKhien() {
       </section>
 
       <h2 className="text-p-headline-md text-on-background mb-3">Các con</h2>
+
+      {/* Nha moi tao chua co con nao: nhap bai luc nay se khong giao duoc cho ai,
+          nen day han bo me sang buoc them con truoc */}
+      {rows.length === 0 && (
+        <div className="bg-primary-fixed rounded-card p-3 mb-6">
+          <p className="text-p-body text-on-primary-fixed font-bold mb-0.5">Chưa có con nào</p>
+          <p className="text-p-body-sm text-on-primary-fixed mb-3">
+            Thêm hồ sơ cho các con trước, rồi mới nhập được bài tập.
+          </p>
+          <Link
+            href="/bome/them-con"
+            className="flex items-center justify-center gap-2 bg-primary text-on-primary rounded-card
+                       min-h-p-tap h-12 text-p-body font-bold"
+          >
+            <span className="material-symbols-outlined">person_add</span>
+            Thêm con
+          </Link>
+        </div>
+      )}
+
       <div className="flex flex-col gap-p-tight mb-6">
         {rows.map(({ child, total, done, overdue }) => (
           <Link
@@ -86,14 +116,16 @@ export default async function BangDieuKhien() {
         ))}
       </div>
 
-      <Link
-        href="/bome/them"
-        className="flex items-center justify-center gap-2 bg-primary text-on-primary rounded-card
-                   min-h-p-tap h-14 text-p-body font-bold card-shadow"
-      >
-        <span className="material-symbols-outlined">add</span>
-        Thêm bài tập
-      </Link>
+      {rows.length > 0 && (
+        <Link
+          href="/bome/them"
+          className="flex items-center justify-center gap-2 bg-primary text-on-primary rounded-card
+                     min-h-p-tap h-14 text-p-body font-bold card-shadow"
+        >
+          <span className="material-symbols-outlined">add</span>
+          Thêm bài tập
+        </Link>
+      )}
     </main>
   );
 }

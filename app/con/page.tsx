@@ -1,11 +1,22 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { viewingFamilyId } from '@/lib/auth';
 import { progressUpcoming } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 
-/** Man "Hom nay con la ai?" — nen tu Stitch 05. */
+/**
+ * Man "Hom nay con la ai?" — nen tu Stitch 05.
+ *
+ * Chi hien cac con CUA NHA GAN VOI MAY NAY. May chua gan nha nao (mo lan dau,
+ * hoac xoa du lieu trinh duyet) thi phai chon nha truoc — bang link /nha/<slug>
+ * hoac nhap PIN mot lan.
+ */
 export default async function ChonCon() {
-  const rows = await progressUpcoming();
+  const familyId = await viewingFamilyId();
+  if (!familyId) redirect('/vao');
+
+  const rows = await progressUpcoming(familyId);
 
   const RING: Record<string, string> = {
     primary: 'border-primary',
@@ -24,7 +35,17 @@ export default async function ChonCon() {
       <div className="absolute top-[-10%] left-[-5%] w-[40vw] h-[40vw] rounded-full bg-primary-fixed opacity-40 blur-3xl -z-10 pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-5%] w-[50vw] h-[50vw] rounded-full bg-tertiary-fixed opacity-30 blur-3xl -z-10 pointer-events-none" />
 
-      <h1 className="text-k-hero text-on-surface mb-10 text-center px-6">Hôm nay con là ai?</h1>
+      <h1 className="text-k-hero text-on-surface mb-10 text-center px-6">
+        {rows.length === 0 ? 'Chưa có bạn nào ở đây' : 'Hôm nay con là ai?'}
+      </h1>
+
+      {/* Nha vua tao xong thi chua co con nao — noi ro bo me phai lam gi, khong
+          de man hinh trong khong (PRD 4.3: khong bao gio de man trong tay khong) */}
+      {rows.length === 0 && (
+        <p className="text-k-headline text-on-surface-variant text-center px-10 max-w-2xl">
+          Bố mẹ vào phần &quot;Bố mẹ&quot; ở góc dưới, thêm hồ sơ cho các con trước nhé.
+        </p>
+      )}
 
       <div className="flex flex-row flex-wrap justify-center items-start gap-12 px-8">
         {rows.map(({ child, total, done }) => {

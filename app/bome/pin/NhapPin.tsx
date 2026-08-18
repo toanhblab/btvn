@@ -3,10 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import BanPhimPin from '../../_components/BanPhimPin';
 
-const LEN = 4;
-
-/** Man nhap PIN — nen tu stitch-parent 06. */
+/**
+ * Man nhap PIN — nen tu stitch-parent 06.
+ *
+ * PIN o day khong chi la "dung/sai": no quyet dinh mo ra NHA NAO. Moi nha mot ma
+ * rieng nen nhap dung la vao dung nha minh.
+ */
 export default function NhapPin({ next }: { next: string }) {
   const router = useRouter();
   const [pin, setPin] = useState('');
@@ -39,13 +43,6 @@ export default function NhapPin({ next }: { next: string }) {
     }
   }
 
-  function press(d: string) {
-    if (busy || pin.length >= LEN) return;
-    const next = pin + d;
-    setPin(next);
-    if (next.length === LEN) submit(next);
-  }
-
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-p-page py-8">
       <Link
@@ -63,21 +60,11 @@ export default function NhapPin({ next }: { next: string }) {
 
       <h1 className="text-p-headline text-on-background mb-6">Nhập mã PIN của bố mẹ</h1>
 
-      <div className="flex gap-3 mb-4">
-        {Array.from({ length: LEN }, (_, i) => (
-          <div
-            key={i}
-            className={`w-14 h-16 rounded-xl border-2 flex items-center justify-center bg-surface-container-lowest
-                        ${i < pin.length ? 'border-primary' : 'border-outline-variant'}`}
-          >
-            {i < pin.length && <div className="w-3 h-3 rounded-full bg-primary" />}
-          </div>
-        ))}
-      </div>
+      <BanPhimPin value={pin} onChange={setPin} onFull={submit} disabled={busy} />
 
-      {error && <p className="text-p-body text-error mb-3 text-center max-w-xs">{error}</p>}
+      {error && <p className="text-p-body text-error mt-4 mb-1 text-center max-w-xs">{error}</p>}
 
-      <label className="flex items-start gap-3 mb-6 max-w-xs cursor-pointer">
+      <label className="flex items-start gap-3 mt-6 max-w-xs cursor-pointer">
         <input
           type="checkbox"
           checked={remember}
@@ -91,36 +78,14 @@ export default function NhapPin({ next }: { next: string }) {
         </span>
       </label>
 
-      <div className="grid grid-cols-3 gap-3">
-        {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((d) => (
-          <button
-            key={d}
-            onClick={() => press(d)}
-            className="w-20 h-20 rounded-full bg-surface-container-lowest card-shadow
-                       text-p-headline text-on-surface active:bg-surface-container transition-colors"
-          >
-            {d}
-          </button>
-        ))}
-        <div />
-        <button
-          onClick={() => press('0')}
-          className="w-20 h-20 rounded-full bg-surface-container-lowest card-shadow
-                     text-p-headline text-on-surface active:bg-surface-container transition-colors"
-        >
-          0
-        </button>
-        <button
-          onClick={() => setPin((p) => p.slice(0, -1))}
-          className="w-20 h-20 rounded-full flex items-center justify-center text-on-surface-variant
-                     active:bg-surface-container transition-colors"
-          aria-label="Xoá"
-        >
-          <span className="material-symbols-outlined text-3xl">backspace</span>
-        </button>
-      </div>
+      <Link
+        href="/bome/tao-nha"
+        className="text-p-body text-primary font-bold min-h-p-tap flex items-center px-3 mt-6"
+      >
+        Nhà mình chưa có — tạo nhà mới
+      </Link>
 
-      <p className="text-p-body-sm text-outline mt-8">Chỉ bố mẹ dùng phần này</p>
+      <p className="text-p-body-sm text-outline mt-2">Chỉ bố mẹ dùng phần này</p>
     </main>
   );
 }

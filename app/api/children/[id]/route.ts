@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { isParent } from '@/lib/auth';
-import { getChild, updateChild } from '@/lib/store';
+import { parentFamilyId } from '@/lib/auth';
+import { deleteChild, getChild, updateChild } from '@/lib/store';
 import type { ChildColor } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -16,23 +16,25 @@ const COLORS: ChildColor[] = ['primary', 'secondary', 'tertiary'];
  * Con chi duoc xem chu khong duoc sua ho so cua minh (PRD 4.5) nen o day khong
  * co duong nao bo qua PIN, khac voi PATCH bai tap (tre tu tick xong duoc).
  *
+ * getChild loc theo nha nen con cua nha khac tra ve 404 — nha nay khong sua duoc
+ * ho so con nha khac du co biet id.
+ *
  * Cot name/avatar_url la NOT NULL va color co CHECK trong schema. Kiem o day de
  * bo me nhan duoc loi tieng Viet doc hieu duoc thay vi loi Postgres 500.
  */
 export async function PATCH(req: Request, { params }: Ctx) {
-  if (!(await isParent())) {
-    return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
-  }
+  const familyId = await parentFamilyId();
+  if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
 
   const { id } = await params;
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: 'Dữ liệu không đọc được.' }, { status: 400 });
 
-  if (!(await getChild(id))) {
+  if (!(await getChild(familyId, id))) {
     return NextResponse.json({ error: 'Không tìm thấy con này.' }, { status: 404 });
   }
 
-  const patch: Parameters<typeof updateChild>[1] = {};
+  const patch: Parameters<typeof updateChild>[2] = {};
 
   if (body.name !== undefined) {
     const name = String(body.name).trim();
@@ -62,5 +64,24 @@ export async function PATCH(req: Request, { params }: Ctx) {
     patch.grade = grade || null;
   }
 
-  return NextResponse.json({ child: await updateChild(id, patch) });
+  return NextResponse.json({ child: await updateChild(familyId, id, patch) });
+}
+
+/**
+ * DELETE /api/children/:id — xoa mot con. CAN PIN.
+ *
+ * Bai tap cua con do di theo (ON DELETE CASCADE) nen giao dien phai hoi lai va
+ * noi ro so bai se mat.
+ */
+export async function DELETE(_req: Request, { params }: Ctx) {
+  const familyId = await parentFamilyId();
+  if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+
+  const { id } = await params;
+  if (!(await getChild(familyId, id))) {
+    return NextResponse.json({ error: 'Không tìm thấy con này.' }, { status: 404 });
+  }
+
+  await deleteChild(familyId, id);
+  return NextResponse.json({ ok: true });
 }

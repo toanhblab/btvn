@@ -13,9 +13,13 @@ import { SUBJECTS, iconFor } from '@/lib/types';
  */
 export default function NhapTay({ children: kids }: { children: Child[] }) {
   const router = useRouter();
-  const twins = kids.filter((c) => c.grade === 'Lớp 1').map((c) => c.id);
+  // Tick san nhung con hoc cung lop voi con dau tien (PRD 4.2 — sinh doi cung
+  // lop la truong hop dung nhieu nhat). Khong do chu ten lop cua nha nao ca.
+  const cungLop = kids.filter((c) => c.grade && c.grade === kids[0]?.grade).map((c) => c.id);
 
-  const [chosen, setChosen] = useState<string[]>(twins.length ? twins : kids.slice(0, 1).map((c) => c.id));
+  const [chosen, setChosen] = useState<string[]>(
+    cungLop.length > 1 ? cungLop : kids.map((c) => c.id)
+  );
   const [subject, setSubject] = useState('Toán');
   const [content, setContent] = useState('');
   const [note, setNote] = useState('');

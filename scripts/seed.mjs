@@ -1,13 +1,23 @@
 /**
- * Tao bang va nap du lieu ban dau.
+ * Tao bang va nap du lieu mau de DEV — xoa sach du lieu cu truoc khi nap.
  *   npm run db:seed              -> PIN mac dinh 1234
  *   PARENT_PIN=8520 npm run db:seed
  *
- * Chay lai duoc nhieu lan: xoa sach du lieu cu roi nap lai.
+ * CANH BAO: tu khi app dung cho nhieu gia dinh, "xoa sach" nghia la xoa CA CAC
+ * NHA CUA BAN BE. Nen khi co DATABASE_URL (tuc la dang tro vao DB that) thi
+ * script tu chan lai, phai them --force moi chay. Muon nang DB that len ban moi
+ * ma giu du lieu thi dung scripts/migrate.mjs.
  */
 
-import { readFileSync, mkdirSync } from 'node:fs';
-import { neon } from '@neondatabase/serverless';
+import { chayMigrations, moKetNoi, CONN } from './db.mjs';
+
+const FORCE = process.argv.includes('--force');
+if (CONN && !FORCE) {
+  console.error('✗ Dang tro vao DATABASE_URL that. Seed se XOA HET moi gia dinh trong DB do.');
+  console.error('  Muon nang DB len ban moi ma giu du lieu : node scripts/migrate.mjs');
+  console.error('  Van muon xoa sach va nap lai du lieu mau: npm run db:seed -- --force');
+  process.exit(1);
+}
 
 const PIN = process.env.PARENT_PIN || '1234';
 const SECRET = process.env.PIN_SECRET || 'dev-secret-doi-truoc-khi-deploy';
@@ -15,20 +25,6 @@ const SECRET = process.env.PIN_SECRET || 'dev-secret-doi-truoc-khi-deploy';
 async function sha256(text) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Cung mot ham query nhu lib/db.ts, viet lai o day vi script chay ngoai Next.
-async function makeQuery() {
-  if (process.env.DATABASE_URL) {
-    const sql = neon(process.env.DATABASE_URL);
-    console.log('DB: Neon Postgres');
-    return (t, p = []) => sql.query(t, p);
-  }
-  const { PGlite } = await import('@electric-sql/pglite');
-  mkdirSync('./.data/pg', { recursive: true });   // PGlite khong tu tao thu muc cha
-  const db = await PGlite.create('./.data/pg');
-  console.log('DB: PGlite (local, .data/pg)');
-  return async (t, p = []) => (await db.query(t, p)).rows;
 }
 
 const id = (prefix) => `${prefix}_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`;
@@ -40,12 +36,12 @@ function dateOffset(days) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-const query = await makeQuery();
+const db = await moKetNoi();
+const query = db.query;
+console.log(`DB: ${db.ten}`);
 
-// 1. Tao bang
-for (const stmt of readFileSync('./schema.sql', 'utf8').split(/;\s*$/m)) {
-  if (stmt.trim()) await query(stmt);
-}
+// 1. Tao bang — dung chung bo migration voi ban that, khong ta lai luoc do o day
+await chayMigrations(db);
 console.log('✓ Da tao bang');
 
 // 2. Xoa du lieu cu
@@ -118,6 +114,6 @@ await query(
 n++;
 
 console.log(`✓ 1 gia đình, ${children.length} con, ${n} bài tập`);
-console.log(`  PIN bố mẹ : ${PIN}`);
-console.log(`  slug       : ${slug}`);
+console.log(`  PIN bố mẹ      : ${PIN}`);
+console.log(`  Link cho iPad  : /nha/${slug}`);
 process.exit(0);

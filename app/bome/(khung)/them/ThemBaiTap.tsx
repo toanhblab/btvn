@@ -11,10 +11,14 @@ type Han = 'today' | 'tomorrow' | 'custom';
 export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
   const router = useRouter();
 
-  // PRD 4.2: hai be sinh doi hoc cung lop nen mac dinh tick san CA HAI.
-  // Day la truong hop dung nhieu nhat, khong duoc bat bo me nhap hai lan.
-  const twins = kids.filter((c) => c.grade === 'Lớp 1').map((c) => c.id);
-  const [chosen, setChosen] = useState<string[]>(twins.length ? twins : kids.slice(0, 1).map((c) => c.id));
+  // PRD 4.2: hai be sinh doi hoc cung lop nen mac dinh tick san CA HAI. Truoc day
+  // cho nay do chu "Lop 1" — dung voi nha cua tac gia, sai voi moi nha khac dung
+  // app. Gio tick san nhung con HOC CUNG LOP voi con dau tien; khong ai cung lop
+  // thi tick tat ca, bo me bo tick con khong can.
+  const cungLop = kids.filter((c) => c.grade && c.grade === kids[0]?.grade).map((c) => c.id);
+  const [chosen, setChosen] = useState<string[]>(
+    cungLop.length > 1 ? cungLop : kids.map((c) => c.id)
+  );
 
   const [text, setText] = useState('');
   const [images, setImages] = useState<{ url: string; name: string }[]>([]);
@@ -190,9 +194,10 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
             );
           })}
         </div>
-        {twins.length > 1 && (
+        {cungLop.length > 1 && (
           <p className="text-p-body-sm text-on-surface-variant bg-surface-container rounded-lg p-2 mt-2">
-            Hai bé sinh đôi học cùng lớp nên được chọn sẵn. Mỗi bé vẫn có bài riêng để tự tick.
+            Các con học cùng {kids[0]?.grade} được chọn sẵn. Mỗi con vẫn có bài
+            riêng để tự tick.
           </p>
         )}
       </section>
