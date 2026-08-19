@@ -70,7 +70,7 @@ export default async function ChonCon() {
                     Phan biet ro "xong het" (co bai va da lam xong) voi "khong co bai"
                     (hom nay khong duoc giao gi) — hai chuyen khac han nhau. */}
                 <span
-                  className={`absolute -top-2 -right-2 text-k-label px-4 py-2 rounded-full rotate-6
+                  className={`absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-k-label px-4 py-2 rounded-full
                               border-4 border-surface-container-lowest
                               ${
                                 total === 0
