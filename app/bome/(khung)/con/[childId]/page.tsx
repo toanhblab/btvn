@@ -125,10 +125,22 @@ export default async function ChiTietCon({
                         {a.content}
                       </p>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        {a.note && <span className="text-p-body-sm text-on-surface-variant">{a.note}</span>}
+                        {/* Cung mot bieu tuong sach nhu o man cua con va danh sach
+                            nhiem vu, de bo me nhan ra ngay day la sach/trang */}
+                        {a.note && (
+                          <span className="flex items-start gap-1 text-p-body-sm text-on-surface-variant">
+                            <span className="material-symbols-outlined text-base shrink-0">menu_book</span>
+                            {a.note}
+                          </span>
+                        )}
                         {a.lang === 'en' && (
                           <span className="text-p-label px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed">
                             🇬🇧 Giọng Anh
+                          </span>
+                        )}
+                        {a.media.length > 0 && (
+                          <span className="text-p-label px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed">
+                            📎 {a.media.length} đính kèm
                           </span>
                         )}
                         {overdue && (
@@ -141,6 +153,14 @@ export default async function ChiTietCon({
                         )}
                       </div>
                     </div>
+                    {/* Sua duoc sau khi giao: doi de bai, han, video… (/bome/bai/<id>) */}
+                    <Link
+                      href={`/bome/bai/${a.id}`}
+                      className="text-outline hover:text-primary min-h-p-tap px-1 shrink-0 flex items-center"
+                      aria-label="Sửa bài tập"
+                    >
+                      <span className="material-symbols-outlined">edit</span>
+                    </Link>
                     <XoaBai id={a.id} />
                   </div>
                 );

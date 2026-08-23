@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { Assignment } from '@/lib/types';
+import type { Assignment, Lang } from '@/lib/types';
+import { pickVoice, splitSpeech } from '@/lib/speech';
 
 /**
  * Chi tiet mot bai — nen tu Stitch 07.
@@ -26,7 +27,16 @@ export default function ChiTietBai({
   const [showSuccess, setShowSuccess] = useState(false);
   const [voiceWarning, setVoiceWarning] = useState('');
 
-  const wantLang = assignment.lang === 'en' ? 'en' : 'vi';
+  /* De hay tron hai thu tieng ("Viết các từ: apple, banana") -> tach thanh doan
+     vi/en, moi doan doc bang dung giong; tu tieng Anh phat am chuan cho be hoc theo. */
+  const segments = useMemo(
+    () => splitSpeech(assignment.content, assignment.lang === 'en' ? 'en' : 'vi'),
+    [assignment.content, assignment.lang]
+  );
+  const neededLangs = useMemo(
+    () => [...new Set(segments.map((s) => s.lang))] as Lang[],
+    [segments]
+  );
 
   /* Safari tra danh sach giong rong o lan goi dau -> nghe them su kien voiceschanged */
   useEffect(() => {
@@ -35,13 +45,14 @@ export default function ChiTietBai({
       return;
     }
     const check = () => {
-      const has = speechSynthesis
-        .getVoices()
-        .some((v) => v.lang.toLowerCase().startsWith(wantLang));
+      const voices = speechSynthesis.getVoices();
+      const missing = neededLangs.filter(
+        (lang) => !voices.some((v) => v.lang.toLowerCase().startsWith(lang))
+      );
       setVoiceWarning(
-        has
+        missing.length === 0
           ? ''
-          : wantLang === 'en'
+          : missing.includes('en')
             ? 'Máy chưa có giọng tiếng Anh. Bố mẹ vào Cài đặt → Trợ năng → Nội dung đọc để tải thêm giọng.'
             : 'Máy chưa có giọng tiếng Việt. Bố mẹ vào Cài đặt → Trợ năng → Nội dung đọc để tải giọng vi-VN.'
       );
@@ -49,7 +60,7 @@ export default function ChiTietBai({
     check();
     speechSynthesis.addEventListener('voiceschanged', check);
     return () => speechSynthesis.removeEventListener('voiceschanged', check);
-  }, [wantLang]);
+  }, [neededLangs]);
 
   // Dung doc khi roi man, khong thi giong con vang theo sang trang khac
   useEffect(() => () => speechSynthesis?.cancel(), []);
@@ -57,12 +68,16 @@ export default function ChiTietBai({
   function speak() {
     if (!('speechSynthesis' in window)) return;
     speechSynthesis.cancel();             // tre hay bam lien tuc -> chan doc chong nhau
-    const u = new SpeechSynthesisUtterance(assignment.content);
-    u.lang = assignment.lang === 'en' ? 'en-US' : 'vi-VN';
-    u.rate = 0.85;                        // cham lai cho tre nghe kip
-    const v = speechSynthesis.getVoices().find((x) => x.lang.toLowerCase().startsWith(wantLang));
-    if (v) u.voice = v;
-    speechSynthesis.speak(u);
+    const voices = speechSynthesis.getVoices();
+    for (const seg of segments) {
+      const u = new SpeechSynthesisUtterance(seg.text);
+      // en-GB de khi khong tim duoc giong cu the, engine van nghieng ve giong Anh-Anh
+      u.lang = seg.lang === 'en' ? 'en-GB' : 'vi-VN';
+      u.rate = 0.85;                      // cham lai cho tre nghe kip
+      const v = pickVoice(voices, seg.lang);
+      if (v) u.voice = v;
+      speechSynthesis.speak(u);           // hang doi tu dong doc noi tiep nhau
+    }
   }
 
   async function setStatus(nextDone: boolean) {
@@ -115,7 +130,10 @@ export default function ChiTietBai({
 
           <h1 className="text-k-headline text-on-background">{assignment.content}</h1>
           {assignment.note && (
-            <p className="text-k-body-sm text-on-surface-variant">{assignment.note}</p>
+            <p className="flex items-center gap-2 text-k-body-sm text-on-surface-variant">
+              <span className="material-symbols-outlined text-2xl shrink-0">menu_book</span>
+              {assignment.note}
+            </p>
           )}
 
           <button
@@ -127,6 +145,51 @@ export default function ChiTietBai({
             <span className="text-k-headline">Nghe đề bài</span>
           </button>
           {voiceWarning && <p className="text-k-body-sm text-error">{voiceWarning}</p>}
+
+          {/* Tep bo me dinh kem — video luyen phat am, ghi am co doc mau, anh bang
+              chu cai... Nut play cua trinh duyet du to cho tre, chi can khung ro
+              rang va nhan de hieu; anh thi hien thang ra, khong bat bam gi ca. */}
+          {assignment.media.length > 0 && (
+            <div className="flex flex-col gap-4 mt-2">
+              <p className="flex items-center gap-3 text-k-headline text-on-background">
+                <span className="material-symbols-outlined text-4xl text-tertiary icon-fill">
+                  attach_file
+                </span>
+                Cô gửi kèm bài này
+              </p>
+              {assignment.media.map((m) =>
+                m.kind === 'image' ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={m.url}
+                    src={m.url}
+                    alt=""
+                    className="w-full max-h-[60vh] object-contain rounded-3xl soft-shadow
+                               bg-surface-container"
+                  />
+                ) : m.kind === 'audio' ? (
+                  <div
+                    key={m.url}
+                    className="bg-surface-container rounded-3xl soft-shadow p-5 flex items-center gap-4"
+                  >
+                    <span className="material-symbols-outlined text-5xl text-tertiary icon-fill shrink-0">
+                      music_note
+                    </span>
+                    <audio src={m.url} controls preload="metadata" className="w-full" />
+                  </div>
+                ) : (
+                  <video
+                    key={m.url}
+                    src={m.url}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="w-full max-h-[50vh] rounded-3xl soft-shadow bg-black"
+                  />
+                )
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col items-center gap-4 mt-6 shrink-0">

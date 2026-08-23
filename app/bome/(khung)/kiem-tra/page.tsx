@@ -9,5 +9,10 @@ export default async function Page() {
   const familyId = await parentFamilyId();
   if (!familyId) redirect('/bome/pin');
 
-  return <KiemTraLai children={await listChildren(familyId)} />;
+  return (
+    <KiemTraLai
+      children={await listChildren(familyId)}
+      blobEnabled={Boolean(process.env.BLOB_READ_WRITE_TOKEN)}
+    />
+  );
 }

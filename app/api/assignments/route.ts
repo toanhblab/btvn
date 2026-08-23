@@ -69,6 +69,15 @@ export async function POST(req: Request) {
       note: d.note || null,
       lang: d.lang === 'en' ? 'en' : 'vi',
       confidence: d.confidence ?? 1,
+      // Tep dinh kem: chi giu phan tu co url that; kind la thi khong doan bua,
+      // coi nhu video de it nhat con trinh phat de bam
+      media: (Array.isArray(d.media) ? d.media : [])
+        .filter((m) => typeof m?.url === 'string' && m.url.length > 0)
+        .map((m) => ({
+          url: m.url,
+          name: typeof m.name === 'string' ? m.name : '',
+          kind: m.kind === 'audio' || m.kind === 'image' ? m.kind : 'video',
+        })),
     })),
   });
 

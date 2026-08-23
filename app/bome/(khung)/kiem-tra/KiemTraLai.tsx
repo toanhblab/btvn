@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Child, DraftAssignment } from '@/lib/types';
 import { SUBJECTS, iconFor } from '@/lib/types';
+import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 interface Payload {
   drafts: DraftAssignment[];
@@ -17,11 +18,19 @@ interface Payload {
 }
 
 /** Man kiem tra lai — nen tu stitch-parent 08. Ban nhap se KHONG luu neu bo me chua bam. */
-export default function KiemTraLai({ children: kids }: { children: Child[] }) {
+export default function KiemTraLai({
+  children: kids,
+  blobEnabled,
+}: {
+  children: Child[];
+  blobEnabled: boolean;
+}) {
   const router = useRouter();
   const [payload, setPayload] = useState<Payload | null>(null);
   const [drafts, setDrafts] = useState<DraftAssignment[]>([]);
   const [busy, setBusy] = useState(false);
+  // Bai nao dang tai tep len — de khoa nut Luu va hien "Đang tải…" dung cho
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -29,7 +38,7 @@ export default function KiemTraLai({ children: kids }: { children: Child[] }) {
     if (!raw) { router.replace('/bome/them'); return; }
     const p = JSON.parse(raw) as Payload;
     setPayload(p);
-    setDrafts(p.drafts);
+    setDrafts(p.drafts.map((d) => ({ ...d, media: d.media ?? [] })));
   }, [router]);
 
   if (!payload) return null;
@@ -44,8 +53,35 @@ export default function KiemTraLai({ children: kids }: { children: Child[] }) {
   const addBlank = () =>
     setDrafts((ds) => [
       ...ds,
-      { subject: 'Khác', icon: iconFor('Khác'), content: '', note: null, lang: 'vi', confidence: 1 },
+      {
+        subject: 'Khác', icon: iconFor('Khác'), content: '', note: null, lang: 'vi',
+        confidence: 1, media: [],
+      },
     ]);
+
+  /** Tai tep len va dinh vao DUNG MOT bai — vi du video phat am cho bai tieng Anh. */
+  async function addMedia(i: number, files: FileList | null) {
+    if (!files?.length) return;
+    setUploadingIdx(i);
+    setError('');
+    try {
+      for (const file of Array.from(files)) {
+        const m = await uploadMediaFile(file, blobEnabled);
+        setDrafts((ds) =>
+          ds.map((d, j) => (j === i ? { ...d, media: [...(d.media ?? []), m] } : d))
+        );
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Không tải được tệp.');
+    } finally {
+      setUploadingIdx(null);
+    }
+  }
+
+  const removeMedia = (i: number, url: string) =>
+    setDrafts((ds) =>
+      ds.map((d, j) => (j === i ? { ...d, media: (d.media ?? []).filter((m) => m.url !== url) } : d))
+    );
 
   /** Gop bai nay vao bai ngay tren — AI hay tach nham mot bai thanh hai dong. */
   const mergeUp = (i: number) =>
@@ -53,7 +89,12 @@ export default function KiemTraLai({ children: kids }: { children: Child[] }) {
       ds.reduce<DraftAssignment[]>((acc, d, j) => {
         if (j === i && acc.length) {
           const prev = acc[acc.length - 1];
-          acc[acc.length - 1] = { ...prev, content: `${prev.content} ${d.content}`.trim() };
+          // Tep dinh kem lay hop cua hai bai, khong nhan doi tep trung URL
+          const media = [
+            ...(prev.media ?? []),
+            ...(d.media ?? []).filter((m) => !(prev.media ?? []).some((x) => x.url === m.url)),
+          ];
+          acc[acc.length - 1] = { ...prev, content: `${prev.content} ${d.content}`.trim(), media };
           return acc;
         }
         return [...acc, d];
@@ -184,12 +225,14 @@ export default function KiemTraLai({ children: kids }: { children: Child[] }) {
                   <option value="en">🇬🇧 Đọc giọng Anh</option>
                 </select>
 
+                {/* Ten sach hien tren the bai tap o man cua con nen o nay phai du
+                    rong de doc duoc ca ten sach, khong chi so trang */}
                 <input
                   value={d.note ?? ''}
                   onChange={(e) => patch(i, 'note', e.target.value || null)}
-                  placeholder="trang, bài…"
+                  placeholder="sách, trang…"
                   className="text-p-body-sm rounded-full bg-surface-container px-3 py-1.5 text-on-surface
-                             placeholder:text-outline w-28"
+                             placeholder:text-outline flex-1 min-w-[10rem]"
                 />
 
                 {/* Chi con ban tach tho theo dong (0.3) moi roi xuong duoi nguong */}
@@ -199,6 +242,46 @@ export default function KiemTraLai({ children: kids }: { children: Child[] }) {
                     Tách tạm, chưa qua AI
                   </span>
                 )}
+              </div>
+
+              {/* Tep dinh kem cua RIENG bai nay — video phat am, ghi am mau doc,
+                  anh bang chu cai... Tai o day chu khong phai man truoc, de khong
+                  bao gio co chuyen video phat am dinh nham vao bai Toan. */}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                {(d.media ?? []).map((m) => (
+                  <span
+                    key={m.url}
+                    className="inline-flex items-center gap-1 text-p-body-sm rounded-full pl-3 pr-1 py-1
+                               bg-tertiary-fixed text-on-tertiary-fixed max-w-full"
+                  >
+                    <span className="material-symbols-outlined text-base shrink-0">{MEDIA_ICON[m.kind]}</span>
+                    <span className="truncate">{m.name}</span>
+                    <button
+                      onClick={() => removeMedia(i, m.url)}
+                      className="min-h-p-tap px-1 flex items-center"
+                      aria-label={`Bỏ tệp ${m.name}`}
+                    >
+                      <span className="material-symbols-outlined text-base">close</span>
+                    </button>
+                  </span>
+                ))}
+                <label
+                  className="inline-flex items-center gap-1 text-p-body-sm rounded-full px-3 py-1.5
+                             border border-dashed border-outline-variant text-on-surface-variant cursor-pointer"
+                >
+                  <input
+                    type="file"
+                    accept={MEDIA_ACCEPT}
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      addMedia(i, e.target.files);
+                      e.target.value = ''; // chon lai cung mot tep van phai chay
+                    }}
+                  />
+                  <span className="material-symbols-outlined text-base">attach_file</span>
+                  {uploadingIdx === i ? 'Đang tải…' : 'Video / ghi âm / ảnh'}
+                </label>
               </div>
             </div>
           </div>
@@ -225,7 +308,7 @@ export default function KiemTraLai({ children: kids }: { children: Child[] }) {
         </Link>
         <button
           onClick={save}
-          disabled={busy}
+          disabled={busy || uploadingIdx !== null}
           className="flex-[2] flex items-center justify-center gap-2 bg-success text-white rounded-card
                      h-14 min-h-p-tap text-p-body font-bold card-shadow disabled:opacity-60"
         >

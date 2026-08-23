@@ -16,6 +16,20 @@ export interface Child {
   sortOrder: number;
 }
 
+/** Loai tep dinh kem — quyet dinh trinh phat nao hien o man cua con. */
+export type MediaKind = 'video' | 'audio' | 'image';
+
+/**
+ * Tep bo me dinh kem vao bai: video luyen phat am, ghi am mau doc cua co,
+ * anh bang chu cai...
+ */
+export interface AttachedMedia {
+  url: string;
+  /** Ten tep goc, de bo me phan biet cac tep voi nhau khi gan vao bai. */
+  name: string;
+  kind: MediaKind;
+}
+
 export interface Assignment {
   id: string;
   submissionId: string | null;
@@ -29,6 +43,7 @@ export interface Assignment {
   status: Status;
   completedAt: string | null;
   imageUrl: string | null;
+  media: AttachedMedia[];
 }
 
 /** Mot bai do AI tach ra, chua luu — bo me con phai duyet o man "Kiem tra lai". */
@@ -45,6 +60,8 @@ export interface DraftAssignment {
    * Duoi 0.6 thi man Kiem tra lai gan co canh bao cho tung bai.
    */
   confidence: number;
+  /** Tep dinh kem cho bai nay. Optional vi ban nhap cu trong sessionStorage khong co. */
+  media?: AttachedMedia[];
 }
 
 /** Danh sach mon co dinh + icon. PRD muc 12 con de mo, tam chot ngan gon. */

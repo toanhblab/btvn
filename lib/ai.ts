@@ -27,7 +27,11 @@ Quy tắc:
 - Mỗi bài tập là một mục riêng. Một dòng "Toán: bài 1, bài 2 trang 30" là MỘT bài.
 - "subject" phải chọn đúng một trong: ${Object.keys(SUBJECTS).join(', ')}.
 - "content" là đề bài viết lại ngắn gọn, rõ ràng, dễ đọc to cho trẻ 4-6 tuổi nghe.
-- "note" là thông tin phụ như số trang, số bài, tên sách. Không có thì để chuỗi rỗng.
+- "note" là thông tin phụ, ghi TÊN SÁCH/VỞ trước rồi mới đến số trang, số bài:
+  "Sách Tiếng Việt tập 1 — trang 10", "Vở ô ly — bài 3 trang 34". Không thấy tên
+  sách thì chỉ ghi trang/bài. Không có gì thì để chuỗi rỗng.
+  Lý do: màn của con hiện dòng này ngay trên thẻ bài tập, để con lấy đúng quyển ra
+  làm; tên sách nằm ở cuối chuỗi thì bị cắt mất.
 - "lang" là ngôn ngữ của CHÍNH chuỗi "content" mà bạn viết ra.
 - BẮT BUỘC: "content" và "lang" phải cùng ngôn ngữ.
   Đề tiếng Anh -> giữ nguyên tiếng Anh trong "content", lang = "en".

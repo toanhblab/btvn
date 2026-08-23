@@ -90,6 +90,20 @@ export default async function DanhSachNhiemVu() {
                   >
                     {a.content}
                   </p>
+                  {/* Ten sach / trang lay duoc luc giao bai — bo me can nhin thay o
+                      day de soan sach cho con ma khong phai mo tung bai */}
+                  {a.note && (
+                    <p className="flex items-start gap-1 text-p-body-sm text-on-surface-variant">
+                      <span className="material-symbols-outlined text-base shrink-0">menu_book</span>
+                      <span className="line-clamp-2">{a.note}</span>
+                    </p>
+                  )}
+                  {a.media.length > 0 && (
+                    <p className="flex items-center gap-1 text-p-body-sm text-on-surface-variant">
+                      <span className="material-symbols-outlined text-base shrink-0">attach_file</span>
+                      {a.media.length} tệp đính kèm
+                    </p>
+                  )}
                   <span
                     className={`text-p-body-sm ${overdue ? 'text-error font-bold' : 'text-on-surface-variant'}`}
                   >
@@ -100,6 +114,14 @@ export default async function DanhSachNhiemVu() {
                         : a.dueDate}
                   </span>
                 </div>
+                {/* Sua duoc sau khi giao: doi de bai, han, video… (/bome/bai/<id>) */}
+                <Link
+                  href={`/bome/bai/${a.id}`}
+                  className="text-outline hover:text-primary min-h-p-tap px-1 shrink-0 flex items-center"
+                  aria-label="Sửa bài tập"
+                >
+                  <span className="material-symbols-outlined">edit</span>
+                </Link>
                 <XoaBai id={a.id} />
               </div>
             );

@@ -8,8 +8,8 @@ type Ctx = { params: Promise<{ id: string }> };
 
 /**
  * PATCH /api/assignments/:id
- *   { status: 'done' | 'todo' }                    -> con tick / bo tick, KHONG can PIN
- *   { subject?, content?, note?, lang?, dueDate? } -> bo me sua, CAN PIN
+ *   { status: 'done' | 'todo' }                            -> con tick / bo tick, KHONG can PIN
+ *   { subject?, content?, note?, lang?, dueDate?, media? } -> bo me sua, CAN PIN
  *
  * Tach hai duong nhu vay vi tre khong dang nhap (PRD 4.5) nhung cung khong duoc
  * phep sua noi dung de bai.
@@ -43,6 +43,17 @@ export async function PATCH(req: Request, { params }: Ctx) {
   if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
   if (!(await getAssignment(familyId, id))) {
     return NextResponse.json({ error: 'Không tìm thấy bài tập.' }, { status: 404 });
+  }
+
+  // Gui `media` len la thay CA danh sach tep dinh kem cua bai; lam sach truoc khi ghi
+  if (body.media !== undefined) {
+    body.media = (Array.isArray(body.media) ? body.media : [])
+      .filter((m: { url?: unknown }) => typeof m?.url === 'string' && (m.url as string).length > 0)
+      .map((m: { url: string; name?: unknown; kind?: unknown }) => ({
+        url: m.url,
+        name: typeof m.name === 'string' ? m.name : '',
+        kind: m.kind === 'audio' || m.kind === 'image' ? m.kind : 'video',
+      }));
   }
   return NextResponse.json({ assignment: await updateAssignment(familyId, id, body) });
 }

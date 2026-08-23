@@ -3,47 +3,35 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { AttachedMedia, Child } from '@/lib/types';
+import type { Assignment, AttachedMedia } from '@/lib/types';
 import { SUBJECTS, iconFor } from '@/lib/types';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 /**
- * Nhap tay tung bai — nen tu stitch-parent 03.
- * Day la duong lui bat buoc khi Gemini loi hoac het quota (PRD muc 10):
- * bo me phai luon nhap duoc bai, khong bao gio bi ket.
+ * Form sua mot bai da giao. Bo cuc va ten nhan bam theo man Nhap tay de bo me
+ * khong phai hoc lai — cung nhung o do, chi khac la co san noi dung.
  */
-export default function NhapTay({
-  children: kids,
+export default function SuaBai({
+  assignment,
+  childName,
   blobEnabled,
 }: {
-  children: Child[];
+  assignment: Assignment;
+  childName: string;
   blobEnabled: boolean;
 }) {
   const router = useRouter();
-  // Tick san nhung con hoc cung lop voi con dau tien (PRD 4.2 — sinh doi cung
-  // lop la truong hop dung nhieu nhat). Khong do chu ten lop cua nha nao ca.
-  const cungLop = kids.filter((c) => c.grade && c.grade === kids[0]?.grade).map((c) => c.id);
-
-  const [chosen, setChosen] = useState<string[]>(
-    cungLop.length > 1 ? cungLop : kids.map((c) => c.id)
-  );
-  const [subject, setSubject] = useState('Toán');
-  const [content, setContent] = useState('');
-  const [note, setNote] = useState('');
-  const [lang, setLang] = useState<'vi' | 'en'>('vi');
-  const [dueDate, setDueDate] = useState(() => {
-    const d = new Date();
-    const p = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-  });
-  const [media, setMedia] = useState<AttachedMedia[]>([]);
+  const [subject, setSubject] = useState(assignment.subject);
+  const [content, setContent] = useState(assignment.content);
+  const [note, setNote] = useState(assignment.note ?? '');
+  const [lang, setLang] = useState<'vi' | 'en'>(assignment.lang);
+  const [dueDate, setDueDate] = useState(assignment.dueDate);
+  const [media, setMedia] = useState<AttachedMedia[]>(assignment.media);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
-  const [saved, setSaved] = useState(0);
 
-  const toggle = (id: string) =>
-    setChosen((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
+  const back = `/bome/con/${assignment.childId}`;
 
   async function onPickMedia(files: FileList | null) {
     if (!files?.length) return;
@@ -61,37 +49,30 @@ export default function NhapTay({
     }
   }
 
-  async function save(themNua: boolean) {
-    if (!content.trim()) return setError('Chưa nhập đề bài.');
-    if (chosen.length === 0) return setError('Chọn ít nhất một con đã.');
-
+  async function save() {
+    if (!content.trim()) return setError('Đề bài không được để trống.');
     setBusy(true);
     setError('');
     try {
-      const res = await fetch('/api/assignments', {
-        method: 'POST',
+      const res = await fetch(`/api/assignments/${assignment.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          childIds: chosen,
+          subject,
+          icon: iconFor(subject),
+          content,
+          note: note || null,
+          lang,
           dueDate,
-          drafts: [{ subject, icon: iconFor(subject), content, note: note || null, lang, confidence: 1, media }],
+          media,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Lưu lỗi');
-
-      setSaved((n) => n + 1);
-      if (themNua) {
-        setContent('');
-        setNote('');
-        setMedia([]);   // tep dinh kem la cua bai vua luu, bai sau chon lai
-      } else {
-        router.push('/bome');
-        router.refresh();
-      }
+      router.push(back);
+      router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Không lưu được.');
-    } finally {
       setBusy(false);
     }
   }
@@ -99,17 +80,18 @@ export default function NhapTay({
   return (
     <main className="px-p-page pt-4">
       <header className="flex items-center gap-2 mb-5">
-        <Link href="/bome/them" className="min-h-p-tap flex items-center text-on-surface-variant pr-1">
+        <Link href={back} className="min-h-p-tap flex items-center text-on-surface-variant pr-1">
           <span className="material-symbols-outlined text-3xl">arrow_back</span>
         </Link>
-        <h1 className="text-p-headline text-on-background">Nhập tay</h1>
+        <div>
+          <h1 className="text-p-headline text-on-background">Sửa bài tập</h1>
+          {childName && (
+            <p className="text-p-body-sm text-on-surface-variant">
+              Bài của {childName} · hạn {assignment.dueDate}
+            </p>
+          )}
+        </div>
       </header>
-
-      {saved > 0 && (
-        <p className="text-p-body-sm text-on-success-container bg-success-container rounded-card p-3 mb-3">
-          Đã lưu {saved} bài. Nhập tiếp hoặc bấm Xong.
-        </p>
-      )}
 
       <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4 flex flex-col gap-3">
         <div>
@@ -118,9 +100,8 @@ export default function NhapTay({
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={3}
-            placeholder="Ví dụ: Làm bài 3 trang 34, viết vào vở ô ly."
             className="w-full rounded-lg border border-outline-variant p-2 text-p-body resize-y
-                       placeholder:text-outline bg-surface-container-lowest"
+                       bg-surface-container-lowest"
           />
         </div>
 
@@ -177,8 +158,54 @@ export default function NhapTay({
 
         <div>
           <label className="text-p-label uppercase text-on-surface-variant block mb-1">
-            Đính kèm — video, ghi âm, ảnh (nếu có)
+            Đính kèm — video, ghi âm, ảnh
           </label>
+
+          {media.length > 0 && (
+            <div className="flex flex-col gap-3 mb-2">
+              {media.map((m) => (
+                <div key={m.url} className="bg-surface-container rounded-lg p-2">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="material-symbols-outlined text-lg text-primary shrink-0">
+                      {MEDIA_ICON[m.kind]}
+                    </span>
+                    <span className="text-p-body-sm text-on-surface truncate flex-1">
+                      {m.name || 'Tệp đính kèm'}
+                    </span>
+                    <button
+                      onClick={() => setMedia((p) => p.filter((x) => x.url !== m.url))}
+                      className="text-outline hover:text-error min-h-p-tap px-1 shrink-0"
+                      aria-label={`Bỏ tệp ${m.name}`}
+                    >
+                      <span className="material-symbols-outlined text-lg">close</span>
+                    </button>
+                  </div>
+                  {/* Xem/nghe lai duoc ngay tai day de chac la dinh dung tep */}
+                  {m.kind === 'video' && (
+                    <video
+                      src={m.url}
+                      controls
+                      playsInline
+                      preload="metadata"
+                      className="w-full max-h-48 rounded-lg bg-black"
+                    />
+                  )}
+                  {m.kind === 'audio' && (
+                    <audio src={m.url} controls preload="metadata" className="w-full" />
+                  )}
+                  {m.kind === 'image' && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={m.url}
+                      alt=""
+                      className="w-full max-h-48 object-contain rounded-lg bg-surface-container-lowest"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
           <label
             className="flex items-center gap-2 border border-dashed border-outline-variant rounded-lg
                        min-h-p-tap px-2 cursor-pointer text-on-surface-variant"
@@ -195,68 +222,29 @@ export default function NhapTay({
             />
             <span className="material-symbols-outlined text-xl text-primary">attach_file</span>
             <span className="text-p-body-sm">
-              {uploading ? 'Đang tải lên…' : 'Ví dụ: video luyện phát âm, ghi âm cô đọc mẫu'}
+              {uploading ? 'Đang tải lên…' : 'Thêm tệp — ví dụ video luyện phát âm, ghi âm cô đọc mẫu'}
             </span>
           </label>
-          {media.length > 0 && (
-            <div className="flex flex-col gap-1.5 mt-2">
-              {media.map((m, i) => (
-                <div key={i} className="flex items-center gap-2 bg-surface-container rounded-lg px-2 py-1.5">
-                  <span className="material-symbols-outlined text-lg text-primary shrink-0">{MEDIA_ICON[m.kind]}</span>
-                  <span className="text-p-body-sm text-on-surface truncate flex-1">{m.name}</span>
-                  <button
-                    onClick={() => setMedia((p) => p.filter((_, j) => j !== i))}
-                    className="text-outline hover:text-error min-h-p-tap px-1 shrink-0"
-                    aria-label={`Bỏ tệp ${m.name}`}
-                  >
-                    <span className="material-symbols-outlined text-lg">close</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div>
-          <label className="text-p-label uppercase text-on-surface-variant block mb-1">Giao cho</label>
-          <div className="flex gap-2">
-            {kids.map((c) => {
-              const on = chosen.includes(c.id);
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => toggle(c.id)}
-                  className={`flex items-center gap-1.5 rounded-full pl-1 pr-3 min-h-p-tap border-2
-                              ${on ? 'bg-primary border-primary text-on-primary' : 'bg-surface-container-lowest border-surface-container-high text-on-surface'}`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={c.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
-                  <span className="text-p-body-sm font-bold">{c.name}</span>
-                </button>
-              );
-            })}
-          </div>
         </div>
       </div>
 
       {error && <p className="text-p-body text-error bg-error-container rounded-card p-3 mb-3">{error}</p>}
 
       <div className="flex gap-2">
-        <button
-          onClick={() => save(true)}
-          disabled={busy || uploading}
-          className="flex-1 rounded-card h-14 min-h-p-tap border-2 border-primary text-primary
-                     text-p-body font-bold disabled:opacity-60"
+        <Link
+          href={back}
+          className="flex-1 flex items-center justify-center rounded-card h-14 min-h-p-tap
+                     border-2 border-outline-variant text-on-surface-variant text-p-body"
         >
-          Lưu và thêm nữa
-        </button>
+          Huỷ
+        </Link>
         <button
-          onClick={() => save(false)}
+          onClick={save}
           disabled={busy || uploading}
-          className="flex-1 rounded-card h-14 min-h-p-tap bg-primary text-on-primary
-                     text-p-body font-bold card-shadow disabled:opacity-60"
+          className="flex-[2] flex items-center justify-center gap-2 bg-primary text-on-primary rounded-card
+                     h-14 min-h-p-tap text-p-body font-bold card-shadow disabled:opacity-60"
         >
-          {busy ? 'Đang lưu…' : 'Lưu và xong'}
+          {busy ? 'Đang lưu…' : 'Lưu thay đổi'}
         </button>
       </div>
     </main>

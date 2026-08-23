@@ -127,11 +127,18 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
           <div className="grid grid-cols-1 md:grid-cols-2 gap-k-gutter">
             {g.items.map((a) => {
               const isDone = a.status === 'done';
+              // "video, ghi âm" chu khong chi dem so tep: con chua doc duoc so,
+              // nhung bo me liec qua biet ngay bai nay co gi cho con
+              const coGi = [
+                a.media.some((m) => m.kind === 'video') && 'video',
+                a.media.some((m) => m.kind === 'audio') && 'ghi âm',
+                a.media.some((m) => m.kind === 'image') && 'ảnh',
+              ].filter(Boolean).join(', ');
               return (
                 <Link
                   key={a.id}
                   href={`/con/${child.id}/bai/${a.id}`}
-                  className={`rounded-[32px] p-6 flex items-center justify-between h-[160px] relative overflow-hidden ${
+                  className={`rounded-[32px] p-6 flex items-center justify-between min-h-[160px] relative overflow-hidden ${
                     isDone
                       ? 'bg-success-container opacity-80 soft-shadow'
                       : 'bg-surface border-[6px] border-primary interactive-shadow'
@@ -161,6 +168,37 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                       >
                         {a.content}
                       </div>
+
+                      {/* Ten sach / vo / so trang lay duoc luc bo me giao bai. Hien
+                          ngay o day chu khong doi mo tung bai: con phai biet lay
+                          dung quyen nao ra truoc khi ngoi vao ban. */}
+                      {a.note && (
+                        <div
+                          className={`flex items-start gap-2 mt-1.5 min-w-0 ${
+                            isDone ? 'text-on-success-container' : 'text-on-surface-variant'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-2xl shrink-0">menu_book</span>
+                          {/* Cho xuong hai dong chu khong cat mot dong: ghi chu that
+                              cua co giao thuong dai ("... chuong trinh Cambridge 1"),
+                              cat mot dong la mat dung phan noi la sach nao */}
+                          <span className="text-k-body-sm line-clamp-2">{a.note}</span>
+                        </div>
+                      )}
+
+                      {/* Bao truoc cho con biet mo bai nay ra la co gi cua co gui kem */}
+                      {coGi && (
+                        <div
+                          className={`flex items-center gap-2 mt-1.5 ${
+                            isDone ? 'text-on-success-container' : 'text-tertiary'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-2xl icon-fill shrink-0">
+                            attach_file
+                          </span>
+                          <span className="text-k-body-sm font-bold">Có {coGi} cô gửi</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   {a.imageUrl && (

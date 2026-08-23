@@ -1,5 +1,7 @@
 import { query, queryOne } from './db';
-import type { Assignment, Child, ChildColor, DraftAssignment, Lang } from './types';
+import type {
+  Assignment, AttachedMedia, Child, ChildColor, DraftAssignment, Lang, MediaKind,
+} from './types';
 
 /** Ngay hom nay theo gio dia phuong, YYYY-MM-DD (toISOString la UTC nen lech mui gio). */
 export function todayISO(offsetDays = 0): string {
@@ -197,7 +199,7 @@ function dateStr(v: string | Date): string {
   return String(v).slice(0, 10);
 }
 
-const toAssignment = (r: AssignmentRow): Assignment => ({
+const toAssignment = (r: AssignmentRow, media: AttachedMedia[]): Assignment => ({
   id: r.id,
   submissionId: r.submission_id,
   childId: r.child_id,
@@ -210,7 +212,29 @@ const toAssignment = (r: AssignmentRow): Assignment => ({
   status: r.status as Assignment['status'],
   completedAt: r.completed_at ? new Date(r.completed_at).toISOString() : null,
   imageUrl: r.image_url,
+  media,
 });
+
+/**
+ * Tep dinh kem (video, ghi am, anh) cua mot loat bai, tra ve map
+ * assignment_id -> danh sach tep. Goi MOT lan cho ca danh sach thay vi tung bai
+ * mot, khong thi man nhiem vu (vai chuc bai) thanh vai chuc cau SQL.
+ */
+async function mediaByAssignment(ids: string[]): Promise<Map<string, AttachedMedia[]>> {
+  const map = new Map<string, AttachedMedia[]>();
+  if (ids.length === 0) return map;
+  const rows = await query<{ assignment_id: string; url: string; name: string; kind: string }>(
+    `SELECT assignment_id, url, name, kind FROM assignment_media
+     WHERE assignment_id = ANY($1) ORDER BY sort_order ASC, id ASC`,
+    [ids]
+  );
+  for (const r of rows) {
+    const list = map.get(r.assignment_id) ?? [];
+    list.push({ url: r.url, name: r.name, kind: r.kind as MediaKind });
+    map.set(r.assignment_id, list);
+  }
+  return map;
+}
 
 /** Loc "bai nay thuoc nha do" dung trong UPDATE/DELETE, noi khong join duoc. */
 const OF_FAMILY = `child_id IN (SELECT id FROM children WHERE family_id = $2)`;
@@ -234,7 +258,8 @@ export async function listAssignments(
      ORDER BY a.due_date ASC, a.subject ASC, a.id ASC`,
     params
   );
-  return rows.map(toAssignment);
+  const media = await mediaByAssignment(rows.map((r) => r.id));
+  return rows.map((r) => toAssignment(r, media.get(r.id) ?? []));
 }
 
 export async function getAssignment(familyId: string, id: string): Promise<Assignment | null> {
@@ -244,7 +269,9 @@ export async function getAssignment(familyId: string, id: string): Promise<Assig
      WHERE a.id = $1 AND c.family_id = $2`,
     [id, familyId]
   );
-  return r ? toAssignment(r) : null;
+  if (!r) return null;
+  const media = await mediaByAssignment([r.id]);
+  return toAssignment(r, media.get(r.id) ?? []);
 }
 
 /**
@@ -291,6 +318,15 @@ export async function saveSubmission(input: {
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
         [id, subId, childId, d.subject, d.icon, d.content, d.note, d.lang, input.dueDate, coverImage]
       );
+      // Moi con mot ban bai rieng nen tep dinh kem cung ghi rieng cho tung ban —
+      // xoa bai cua con nay khong duoc lam mat tep o bai cua con kia.
+      for (const [mi, m] of (d.media ?? []).entries()) {
+        await query(
+          `INSERT INTO assignment_media (id, assignment_id, url, name, kind, sort_order)
+           VALUES ($1,$2,$3,$4,$5,$6)`,
+          [newId('med'), id, m.url, m.name, m.kind, mi]
+        );
+      }
       const a = await getAssignment(input.familyId, id);
       if (a) created.push(a);
     }
@@ -314,7 +350,10 @@ export async function setStatus(
 export async function updateAssignment(
   familyId: string,
   id: string,
-  patch: Partial<Pick<Assignment, 'subject' | 'icon' | 'content' | 'note' | 'lang' | 'dueDate'>>
+  patch: Partial<Pick<Assignment, 'subject' | 'icon' | 'content' | 'note' | 'lang' | 'dueDate'>> & {
+    /** Co mat = THAY CA DANH SACH tep dinh kem cua bai bang danh sach nay. */
+    media?: AttachedMedia[];
+  }
 ): Promise<Assignment | null> {
   const map: Record<string, string> = {
     subject: 'subject', icon: 'icon', content: 'content',
@@ -333,6 +372,26 @@ export async function updateAssignment(
       params
     );
   }
+
+  if (patch.media !== undefined) {
+    // Xoa het roi ghi lai cho don gian — danh sach tep mot bai chi vai phan
+    // tu. Kiem so huu truoc: khong duoc dong den tep cua bai nha khac.
+    const own = await queryOne<{ id: string }>(
+      `SELECT id FROM assignments WHERE id = $1 AND ${OF_FAMILY}`,
+      [id, familyId]
+    );
+    if (own) {
+      await query(`DELETE FROM assignment_media WHERE assignment_id = $1`, [id]);
+      for (const [mi, m] of patch.media.entries()) {
+        await query(
+          `INSERT INTO assignment_media (id, assignment_id, url, name, kind, sort_order)
+           VALUES ($1,$2,$3,$4,$5,$6)`,
+          [newId('med'), id, m.url, m.name, m.kind, mi]
+        );
+      }
+    }
+  }
+
   return getAssignment(familyId, id);
 }
 
