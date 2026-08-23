@@ -37,13 +37,32 @@ function wordLang(word: string): Lang | null {
   return AM_TIET_KHONG_DAU.test(word) ? null : 'en';
 }
 
+/*
+ * Web Speech API khong cho biet gioi tinh giong doc nen phai nhan dien theo TEN
+ * — danh sach ten pho bien tren Apple (iOS/macOS), Microsoft (Edge/Windows) va
+ * Google (Chrome/Android). Ten la thu ca hai doan vi/en phai thong nhat: de bai
+ * ma nua cau giong co, nua cau giong chu thi tre nghe rat buon cuoi.
+ */
+const TEN_NU =
+  /female|samantha|karen|moira|tessa|martha|kate|serena|stephanie|allison|ava|susan|nicky|joelle|zira|hazel|sonia|libby|aria|jenny|michelle|ana\b|linh|hoai\s?my/i;
+const TEN_NAM =
+  /\bmale|daniel|alex\b|fred|aaron|arthur|gordon|rishi|albert|oliver|david|mark\b|george|guy\b|ryan|thomas|james|nam\s?minh/i;
+
+/** Nu +, nam − ; khong doan duoc ten thi coi nhu trung tinh (0). */
+function diemGiongNu(name: string): number {
+  // Kiem "nu" truoc vi chu "Female" chua chuoi con "male"
+  if (TEN_NU.test(name)) return 4;
+  if (TEN_NAM.test(name)) return -4;
+  return 0;
+}
+
 /**
- * Chon giong doc theo vung mien, khong lay dai giong dau tien trong danh sach:
- *   - Tieng Anh: uu tien en-GB (giong Anh-Anh kieu Cambridge/RP) roi moi den
- *     en-US. Khong chon thi iPhone thuong roi vao Samantha giong My.
- *   - Tieng Viet: moi giong vi-VN pho bien (Linh cua Apple, HoaiMy/NamMinh cua
- *     Microsoft, Google Tieng Viet) deu la giong mien Bac; van cong diem theo
- *     ten de chac chan khi may co nhieu giong.
+ * Chon giong doc, khong lay dai giong dau tien trong danh sach:
+ *   - GIONG NU cho CA HAI thu tieng: ca de bai phai nghe nhu MOT co giao doc.
+ *     Truoc day tieng Anh uu tien en-GB nen iPad hay roi vao Daniel (nam),
+ *     trong khi tieng Viet la Linh (nu) — doi co/chu giua cau.
+ *   - Vung mien chi la diem phu (en-GB hon en-US mot chut), thua diem gioi
+ *     tinh: tha Samantha (My, nu) con hon Daniel (Anh, nam).
  * Cong them diem cho giong cai san tren may (localService): doc ngay khong cho
  * mang — nut nay tre bam lien tuc.
  */
@@ -54,13 +73,12 @@ export function pickVoice(
   // Android co the tra "en_GB" dung gach duoi thay vi gach ngang
   const tag = (v: SpeechSynthesisVoice) => v.lang.toLowerCase().replace('_', '-');
   const score = (v: SpeechSynthesisVoice) => {
-    let s = 0;
+    let s = diemGiongNu(v.name);
     if (lang === 'en') {
-      if (tag(v).startsWith('en-gb')) s += 4;
+      if (tag(v).startsWith('en-gb')) s += 2;
       else if (tag(v).startsWith('en-us')) s += 1;
     } else {
-      if (tag(v).startsWith('vi-vn')) s += 4;
-      if (/linh|hoai\s?my|nam\s?minh/i.test(v.name)) s += 2;
+      if (tag(v).startsWith('vi-vn')) s += 2;
     }
     if (v.localService) s += 1;
     return s;
