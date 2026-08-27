@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { Child } from '@/lib/types';
+import type { Child, HwSource } from '@/lib/types';
+import { HW_SOURCES } from '@/lib/types';
 
 type Han = 'today' | 'tomorrow' | 'custom';
 
@@ -23,6 +24,9 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
   const [text, setText] = useState('');
   const [images, setImages] = useState<{ url: string; name: string }[]>([]);
   const [han, setHan] = useState<Han>('today');
+  // Noi giao bai. null = de AI doan theo noi dung (de tieng Anh -> lop tieng
+  // Anh); bo me chon tay thi lua chon do thang, AI khong ghi de.
+  const [hwSource, setHwSource] = useState<HwSource | null>(null);
   const [customDate, setCustomDate] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -88,6 +92,8 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
           drafts: data.drafts,
           warning: data.warning ?? null,
           source: data.source,
+          // Bo me da chon thi lay lua chon do; chua chon thi lay goi y cua AI
+          hwSource: hwSource ?? data.hwSource ?? 'primary_school',
           childIds: chosen,
           dueDate: dueDate(),
           rawText: text || null,
@@ -198,6 +204,40 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
           <p className="text-p-body-sm text-on-surface-variant bg-surface-container rounded-lg p-2 mt-2">
             Các con học cùng {kids[0]?.grade} được chọn sẵn. Mỗi con vẫn có bài
             riêng để tự tick.
+          </p>
+        )}
+      </section>
+
+      {/* ---- Noi giao bai: lop tieng Anh hay truong tieu hoc ---- */}
+      <section className="mb-5">
+        <p className="text-p-label uppercase text-on-surface-variant mb-2">Bài của lớp nào</p>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setHwSource(null)}
+            className={`px-4 min-h-p-tap rounded-full text-p-body-sm font-bold border
+                        ${hwSource === null
+                          ? 'bg-primary text-on-primary border-primary'
+                          : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-high'}`}
+          >
+            ✨ Tự đoán
+          </button>
+          {(Object.keys(HW_SOURCES) as HwSource[]).map((s) => (
+            <button
+              key={s}
+              onClick={() => setHwSource(s)}
+              className={`px-4 min-h-p-tap rounded-full text-p-body-sm font-bold border
+                          ${hwSource === s
+                            ? 'bg-primary text-on-primary border-primary'
+                            : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-high'}`}
+            >
+              {HW_SOURCES[s].icon} {HW_SOURCES[s].label}
+            </button>
+          ))}
+        </div>
+        {hwSource === null && (
+          <p className="text-p-body-sm text-on-surface-variant mt-2">
+            Đề tiếng Anh sẽ tự xếp vào “Lớp tiếng Anh”, còn lại vào “Trường tiểu học”.
+            Bố mẹ vẫn sửa được ở bước kiểm tra lại.
           </p>
         )}
       </section>

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { parentFamilyId, viewingFamilyId } from '@/lib/auth';
 import { deleteAllAssignments, listAssignments, saveSubmission, todayISO } from '@/lib/store';
 import type { DraftAssignment } from '@/lib/types';
-import { iconFor } from '@/lib/types';
+import { hwSourceOf, iconFor } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +33,9 @@ export async function GET(req: Request) {
  * POST /api/assignments — luu ca dot sau khi bo me duyet o man "Kiem tra lai".
  * CAN PIN: chi bo me duoc them bai.
  *
- * Body: { childIds: string[], dueDate, rawText?, imageUrls?, drafts: DraftAssignment[] }
+ * Body: { childIds: string[], dueDate, source?, rawText?, imageUrls?, drafts: DraftAssignment[] }
+ * "source" la noi giao (lop tieng Anh / truong tieu hoc) cho CA dot — thieu hoac
+ * la thi coi la truong tieu hoc.
  * Mot lan goi sinh ra bai RIENG cho tung con trong childIds (PRD 4.2 — hai be
  * sinh doi hoc cung lop, nhap mot lan ra bai cho ca hai).
  *
@@ -62,6 +64,7 @@ export async function POST(req: Request) {
     imageUrls: Array.isArray(body.imageUrls) ? body.imageUrls : [],
     childIds,
     dueDate: body.dueDate || todayISO(),
+    source: hwSourceOf(body.source),
     drafts: drafts.map((d) => ({
       subject: d.subject || 'Khác',
       icon: d.icon || iconFor(d.subject || 'Khác'),

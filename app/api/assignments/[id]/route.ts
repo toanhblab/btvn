@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { parentFamilyId, viewingFamilyId } from '@/lib/auth';
 import { deleteAssignment, getAssignment, setStatus, updateAssignment } from '@/lib/store';
+import { hwSourceOf } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +10,7 @@ type Ctx = { params: Promise<{ id: string }> };
 /**
  * PATCH /api/assignments/:id
  *   { status: 'done' | 'todo' }                            -> con tick / bo tick, KHONG can PIN
- *   { subject?, content?, note?, lang?, dueDate?, media? } -> bo me sua, CAN PIN
+ *   { subject?, content?, note?, lang?, dueDate?, source?, media? } -> bo me sua, CAN PIN
  *
  * Tach hai duong nhu vay vi tre khong dang nhap (PRD 4.5) nhung cung khong duoc
  * phep sua noi dung de bai.
@@ -44,6 +45,9 @@ export async function PATCH(req: Request, { params }: Ctx) {
   if (!(await getAssignment(familyId, id))) {
     return NextResponse.json({ error: 'Không tìm thấy bài tập.' }, { status: 404 });
   }
+
+  // Noi giao chi nhan gia tri app biet — gia tri la ep ve truong tieu hoc
+  if (body.source !== undefined) body.source = hwSourceOf(body.source);
 
   // Gui `media` len la thay CA danh sach tep dinh kem cua bai; lam sach truoc khi ghi
   if (body.media !== undefined) {

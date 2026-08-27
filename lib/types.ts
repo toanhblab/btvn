@@ -6,6 +6,25 @@ export type Status = 'todo' | 'done';
 /** Mau rieng cua tung con. Hai be sinh doi phai khac mau vi chua doc thao ten. */
 export type ChildColor = 'primary' | 'secondary' | 'tertiary';
 
+/**
+ * Noi giao bai: lop hoc them tieng Anh hay truong tieu hoc. Con can hai nhom
+ * rieng de lam xong het mot loai roi moi sang loai kia. Them nguon moi (lop ve,
+ * lop nhac...) thi noi vao day + HW_SOURCES, DB khong co CHECK nen khong can
+ * migration.
+ */
+export type HwSource = 'primary_school' | 'english_class';
+
+/** Nhan + icon tung nguon. Thu tu khoa = thu tu hien o man cua con. */
+export const HW_SOURCES: Record<HwSource, { label: string; icon: string }> = {
+  primary_school: { label: 'Trường tiểu học', icon: '🏫' },
+  english_class: { label: 'Lớp tiếng Anh', icon: '🇬🇧' },
+};
+
+/** Loc gia tri la tu ngoai vao (API body, sessionStorage cu) ve mot nguon hop le. */
+export function hwSourceOf(v: unknown): HwSource {
+  return v === 'english_class' ? 'english_class' : 'primary_school';
+}
+
 export interface Child {
   id: string;
   familyId: string;
@@ -40,6 +59,8 @@ export interface Assignment {
   note: string | null;
   lang: Lang;
   dueDate: string;          // YYYY-MM-DD
+  /** Noi giao bai — chon luc nhap, sua duoc sau khi giao. */
+  source: HwSource;
   status: Status;
   completedAt: string | null;
   imageUrl: string | null;

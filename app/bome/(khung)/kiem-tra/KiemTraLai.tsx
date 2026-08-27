@@ -3,14 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { Child, DraftAssignment } from '@/lib/types';
-import { SUBJECTS, iconFor } from '@/lib/types';
+import type { Child, DraftAssignment, HwSource } from '@/lib/types';
+import { HW_SOURCES, SUBJECTS, hwSourceOf, iconFor } from '@/lib/types';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 interface Payload {
   drafts: DraftAssignment[];
   warning: string | null;
   source: 'ai' | 'rule';
+  /** Noi giao ca dot (lop tieng Anh / truong tieu hoc) — sua duoc o day. */
+  hwSource?: HwSource;
   childIds: string[];
   dueDate: string;
   rawText: string | null;
@@ -28,6 +30,7 @@ export default function KiemTraLai({
   const router = useRouter();
   const [payload, setPayload] = useState<Payload | null>(null);
   const [drafts, setDrafts] = useState<DraftAssignment[]>([]);
+  const [hwSource, setHwSource] = useState<HwSource>('primary_school');
   const [busy, setBusy] = useState(false);
   // Bai nao dang tai tep len — de khoa nut Luu va hien "Đang tải…" dung cho
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
@@ -39,6 +42,8 @@ export default function KiemTraLai({
     const p = JSON.parse(raw) as Payload;
     setPayload(p);
     setDrafts(p.drafts.map((d) => ({ ...d, media: d.media ?? [] })));
+    // Ban nhap cu (truoc khi co nguon giao) khong co hwSource -> truong tieu hoc
+    setHwSource(hwSourceOf(p.hwSource));
   }, [router]);
 
   if (!payload) return null;
@@ -114,6 +119,7 @@ export default function KiemTraLai({
         body: JSON.stringify({
           childIds: payload!.childIds,
           dueDate: payload!.dueDate,
+          source: hwSource,
           rawText: payload!.rawText,
           imageUrls: payload!.imageUrls,
           drafts: clean,
@@ -150,6 +156,24 @@ export default function KiemTraLai({
           </p>
         </div>
       </header>
+
+      {/* Noi giao cua CA dot bai — AI chi goi y, chon o day moi la quyet dinh.
+          Sau khi luu van sua duoc tung bai mot o man Sua bai tap. */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span className="text-p-label uppercase text-on-surface-variant">Bài của</span>
+        {(Object.keys(HW_SOURCES) as HwSource[]).map((s) => (
+          <button
+            key={s}
+            onClick={() => setHwSource(s)}
+            className={`px-4 min-h-p-tap rounded-full text-p-body-sm font-bold border
+                        ${hwSource === s
+                          ? 'bg-primary text-on-primary border-primary'
+                          : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-high'}`}
+          >
+            {HW_SOURCES[s].icon} {HW_SOURCES[s].label}
+          </button>
+        ))}
+      </div>
 
       {payload.warning && (
         <p className="text-p-body-sm text-on-error-container bg-error-container rounded-card p-3 mb-3">
