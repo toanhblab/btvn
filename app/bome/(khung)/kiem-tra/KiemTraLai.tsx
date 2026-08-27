@@ -19,6 +19,9 @@ interface Payload {
   imageUrls: string[];
 }
 
+// Giu dang chuoi de bo me xoa trong o roi go so moi; luu thi rong = mac dinh 10
+type Draft = DraftAssignment & { durationStr: string };
+
 /** Man kiem tra lai — nen tu stitch-parent 08. Ban nhap se KHONG luu neu bo me chua bam. */
 export default function KiemTraLai({
   children: kids,
@@ -29,7 +32,7 @@ export default function KiemTraLai({
 }) {
   const router = useRouter();
   const [payload, setPayload] = useState<Payload | null>(null);
-  const [drafts, setDrafts] = useState<DraftAssignment[]>([]);
+  const [drafts, setDrafts] = useState<Draft[]>([]);
   const [hwSource, setHwSource] = useState<HwSource>('primary_school');
   const [busy, setBusy] = useState(false);
   // Bai nao dang tai tep len — de khoa nut Luu va hien "Đang tải…" dung cho
@@ -42,7 +45,7 @@ export default function KiemTraLai({
     const p = JSON.parse(raw) as Payload;
     setPayload(p);
     // durationMinutes: ban nhap cu trong sessionStorage (truoc khi co dong ho) chua co
-    setDrafts(p.drafts.map((d) => ({ ...d, media: d.media ?? [], durationMinutes: d.durationMinutes ?? 10 })));
+    setDrafts(p.drafts.map((d) => ({ ...d, media: d.media ?? [], durationStr: String(d.durationMinutes ?? 10) })));
     // Ban nhap cu (truoc khi co nguon giao) khong co hwSource -> truong tieu hoc
     setHwSource(hwSourceOf(p.hwSource));
   }, [router]);
@@ -51,7 +54,7 @@ export default function KiemTraLai({
 
   const chosenNames = kids.filter((c) => payload.childIds.includes(c.id)).map((c) => c.name);
 
-  const patch = (i: number, k: keyof DraftAssignment, v: unknown) =>
+  const patch = (i: number, k: keyof Draft, v: unknown) =>
     setDrafts((ds) => ds.map((d, j) => (j === i ? { ...d, [k]: v } : d)));
 
   const remove = (i: number) => setDrafts((ds) => ds.filter((_, j) => j !== i));
@@ -61,7 +64,7 @@ export default function KiemTraLai({
       ...ds,
       {
         subject: 'Khác', icon: iconFor('Khác'), content: '', note: null, lang: 'vi',
-        confidence: 1, media: [], durationMinutes: 10,
+        confidence: 1, media: [], durationStr: '10',
       },
     ]);
 
@@ -92,7 +95,7 @@ export default function KiemTraLai({
   /** Gop bai nay vao bai ngay tren — AI hay tach nham mot bai thanh hai dong. */
   const mergeUp = (i: number) =>
     setDrafts((ds) =>
-      ds.reduce<DraftAssignment[]>((acc, d, j) => {
+      ds.reduce<Draft[]>((acc, d, j) => {
         if (j === i && acc.length) {
           const prev = acc[acc.length - 1];
           // Tep dinh kem lay hop cua hai bai, khong nhan doi tep trung URL
@@ -108,7 +111,12 @@ export default function KiemTraLai({
     );
 
   async function save() {
-    const clean = drafts.filter((d) => d.content.trim());
+    const clean = drafts
+      .filter((d) => d.content.trim())
+      .map(({ durationStr, ...d }) => ({
+        ...d,
+        durationMinutes: durationStr === '' ? 10 : Number(durationStr),
+      }));
     if (clean.length === 0) return setError('Chưa có bài nào để lưu.');
 
     setBusy(true);
@@ -259,10 +267,8 @@ export default function KiemTraLai({
                     inputMode="numeric"
                     min={1}
                     max={180}
-                    value={d.durationMinutes ?? 10}
-                    onChange={(e) =>
-                      patch(i, 'durationMinutes', e.target.value === '' ? undefined : Number(e.target.value))
-                    }
+                    value={d.durationStr}
+                    onChange={(e) => patch(i, 'durationStr', e.target.value)}
                     className="w-12 bg-transparent outline-none text-right"
                     aria-label="Thời lượng (phút)"
                   />

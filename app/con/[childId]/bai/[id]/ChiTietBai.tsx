@@ -67,7 +67,7 @@ export default function ChiTietBai({
   }, [neededLangs]);
 
   // Dung doc khi roi man, khong thi giong con vang theo sang trang khac
-  useEffect(() => () => speechSynthesis?.cancel(), []);
+  useEffect(() => () => window.speechSynthesis?.cancel(), []);
 
   function speak() {
     if (!('speechSynthesis' in window)) return;
@@ -100,7 +100,7 @@ export default function ChiTietBai({
         xoaDongHo(assignment.id);
         setXongSom(som);
         if (som) {
-          speechSynthesis?.cancel();   // cat cau nhac dang doc do, uu tien loi khen
+          window.speechSynthesis?.cancel();   // cat cau nhac dang doc do, uu tien loi khen
           noi('Giỏi quá! Con làm xong sớm luôn!');
         }
         setShowSuccess(true);
