@@ -185,9 +185,20 @@ export default function QuayVideo({
 
     elapsedRef.current = 0;
     setElapsed(0);
+
+    // start() co the nem du constructor da qua: isTypeSupported chi noi may BIET
+    // mimeType do, khong hua ma hoa duoc luong nay o bitrate nay (Safari/iPadOS).
+    // Phai thu XONG roi moi doi phase, khong thi man hinh quay ket lai.
+    try {
+      recorder.start();
+    } catch {
+      stopStream();
+      setError('Máy này chưa quay trong trang được. Con dùng nút "Quay bằng máy ảnh" nhé.');
+      return;
+    }
+
     setPhase('recording');   // useEffect [phase] o tren se gan srcObject sau khi ve
 
-    recorder.start();
     timerRef.current = setInterval(() => {
       elapsedRef.current += 1;
       setElapsed(elapsedRef.current);
@@ -199,8 +210,11 @@ export default function QuayVideo({
     discardRef.current = discard;
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     const r = recorderRef.current;
-    if (r && r.state !== 'inactive') r.stop();
-    else { stopStream(); if (discard) setPhase('idle'); }
+    if (r && r.state !== 'inactive') { r.stop(); return; }
+    // Khong con may ghi nao se ban onstop nua, nen phai tu roi man hinh quay
+    stopStream();
+    if (!discard) setError('Chưa quay được gì, con thử lại nhé.');
+    setPhase('idle');
   }
 
   /** Duong lui: video quay bang app Camera cua may (hoac chon tu thu vien). */
