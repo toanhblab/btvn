@@ -121,7 +121,7 @@ app/vao/        chọn nhà cho máy chưa gắn nhà nào (nhập PIN / tạo n
 app/nha/[slug]/ link gắn iPad vào một nhà (route handler, đặt cookie rồi redirect)
 app/con/        4 màn của trẻ: chọn con → bài hôm nay → chi tiết → chúc mừng
 app/bome/       màn của bố mẹ: PIN, tạo nhà, tổng quan, thêm bài, kiểm tra lại,
-                nhập tay, thêm con, chi tiết theo con, danh sách, cài đặt
+                nhập tay, sửa bài, thêm con, chi tiết theo con, danh sách, cài đặt
 app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 nha (gắn máy), extract (Nous Portal), upload (Blob)
 app/_components/ BanPhimPin — bàn phím số dùng chung cho 4 chỗ nhập PIN
@@ -141,6 +141,13 @@ legacy-static/  bản HTML/JS thuần đầu tiên của phần trẻ, giữ đ�
 **Hai bé sinh đôi.** Nhập một lần ra bài **riêng cho từng bé** — cùng đề nhưng
 mỗi bé một bản ghi, tick độc lập, xoá bài của bé này không ảnh hưởng bé kia.
 Màn "Thêm bài tập" tick sẵn cả hai bé lớp 1 vì đây là trường hợp dùng nhiều nhất.
+
+**Bài đến từ hai nơi.** Các con nhận bài từ lớp học thêm tiếng Anh và từ trường
+tiểu học. Mỗi bài có trường `source` (nơi giao); màn của con nhóm bài theo nơi
+giao, mỗi nhóm có tiến độ riêng — để con làm xong hết một loại rồi mới sang loại
+kia. Bố mẹ chọn nơi giao khi thêm bài (mặc định "Tự đoán": đề tiếng Anh xếp vào
+lớp tiếng Anh) và sửa lại được sau khi lưu. Thêm nguồn mới thì xem `HW_SOURCES`
+trong `lib/types.ts` — không cần migration.
 
 **Giọng đọc.** Mỗi bài có trường `lang` (`vi`/`en`) quyết định giọng đọc thành
 tiếng. Bé 4 tuổi chưa đọc được chữ nào nên nút 🔊 gần như là cách duy nhất để
