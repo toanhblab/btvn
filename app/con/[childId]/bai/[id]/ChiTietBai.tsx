@@ -7,6 +7,7 @@ import type { Assignment, Lang } from '@/lib/types';
 import { pickVoice, splitSpeech } from '@/lib/speech';
 import Confetti from '../../xong/Confetti';
 import DongHoLamBai, { conThoiGian, noi, xoaDongHo } from './DongHoLamBai';
+import QuayVideo from './QuayVideo';
 
 /**
  * Chi tiet mot bai — nen tu Stitch 07.
@@ -18,13 +19,16 @@ export default function ChiTietBai({
   assignment,
   childId,
   celebrate,
+  blobEnabled,
 }: {
   assignment: Assignment;
   childId: string;
   celebrate: boolean;
+  blobEnabled: boolean;
 }) {
   const router = useRouter();
   const [done, setDone] = useState(assignment.status === 'done');
+  const [videoUrl, setVideoUrl] = useState(assignment.submittedVideoUrl);
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   // Xong khi dong ho van con gio -> ban confetti + loi khen (an mung, khong bat buoc)
@@ -110,6 +114,34 @@ export default function ChiTietBai({
     } finally {
       setSaving(false);
     }
+  }
+
+  /**
+   * Con gui video nop bai: luu URL va danh dau xong LUON trong mot lan goi —
+   * voi bai phai quay video thi gui video chinh la "lam xong", khong bat con
+   * tick them mot nut nua. Nem loi ra cho QuayVideo hien, khong alert o day.
+   */
+  async function nopVideo(url: string) {
+    const res = await fetch(`/api/assignments/${assignment.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ videoUrl: url, status: 'done' }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error ?? 'Chưa gửi được video. Con thử lại nhé!');
+    }
+    setVideoUrl(url);
+    setDone(true);
+    // Gui video la lam xong bai -> dong ho cung phai dung, y nhu duong tick
+    const som = conThoiGian(assignment.id, assignment.durationMinutes);
+    xoaDongHo(assignment.id);
+    setXongSom(som);
+    if (som) {
+      window.speechSynthesis?.cancel();
+      noi('Giỏi quá! Con làm xong sớm luôn!');
+    }
+    setShowSuccess(true);
   }
 
   function afterSuccess() {
@@ -209,10 +241,23 @@ export default function ChiTietBai({
               )}
             </div>
           )}
+
+          {/* Bai phai quay video: khung quay/nop nam ngay trong noi dung bai.
+              Gui video xong la bai tu chuyen sang "da lam xong" (nopVideo). */}
+          {assignment.requiresVideo && (
+            <QuayVideo existingUrl={videoUrl} blobEnabled={blobEnabled} onSubmit={nopVideo} />
+          )}
         </div>
 
         <div className="flex flex-col items-center gap-4 mt-6 shrink-0">
-          {!done ? (
+          {!done && assignment.requiresVideo && !videoUrl ? (
+            // Chua co video thi khong co nut tick: quay video chinh la cach
+            // hoan thanh bai nay (server cung chan tick suong).
+            <p className="flex items-center gap-2 text-k-body-sm text-on-surface-variant text-center">
+              <span className="material-symbols-outlined text-2xl">videocam</span>
+              Quay video xong là hoàn thành bài này
+            </p>
+          ) : !done ? (
             <button
               onClick={() => setStatus(true)}
               disabled={saving}

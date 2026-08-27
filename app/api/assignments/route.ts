@@ -74,6 +74,7 @@ export async function POST(req: Request) {
       confidence: d.confidence ?? 1,
       // Bo me da duyet o man Kiem tra lai nen chi lam sach, khong kep lai 5-15
       durationMinutes: sanitizeDuration(d.durationMinutes),
+      requiresVideo: d.requiresVideo === true,
       // Tep dinh kem: chi giu phan tu co url that; kind la thi khong doan bua,
       // coi nhu video de it nhat con trinh phat de bam
       media: (Array.isArray(d.media) ? d.media : [])

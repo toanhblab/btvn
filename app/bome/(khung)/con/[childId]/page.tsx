@@ -148,6 +148,19 @@ export default async function ChiTietCon({
                             📎 {a.media.length} đính kèm
                           </span>
                         )}
+                        {/* Bai phai quay video: da nop thi mau "xong" — bam Sua
+                            (bieu tuong but) de mo bai ra xem video con quay */}
+                        {a.requiresVideo && (
+                          <span
+                            className={`text-p-label px-2 py-0.5 rounded-full ${
+                              a.submittedVideoUrl
+                                ? 'bg-success-container text-on-success-container'
+                                : 'bg-secondary-container text-on-secondary-container'
+                            }`}
+                          >
+                            🎥 {a.submittedVideoUrl ? 'Đã nộp video' : 'Chờ quay video'}
+                          </span>
+                        )}
                         {overdue && (
                           <span className="text-p-label px-2 py-0.5 rounded-full bg-error-container text-on-error-container">
                             Quá hạn {a.dueDate}

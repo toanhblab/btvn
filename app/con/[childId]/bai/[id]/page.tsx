@@ -27,5 +27,12 @@ export default async function Page({
   const stillTodo = sameDay.filter((a) => a.status === 'todo').length;
   const celebrate = assignment.dueDate === todayISO() && stillTodo <= 1;
 
-  return <ChiTietBai assignment={assignment} childId={childId} celebrate={celebrate} />;
+  return (
+    <ChiTietBai
+      assignment={assignment}
+      childId={childId}
+      celebrate={celebrate}
+      blobEnabled={Boolean(process.env.BLOB_READ_WRITE_TOKEN)}
+    />
+  );
 }

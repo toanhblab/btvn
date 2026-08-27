@@ -37,6 +37,44 @@ export function mediaKindOf(mime: string): MediaKind | null {
   return null;
 }
 
+/**
+ * Gioi han video CON QUAY de nop bai: 3 phut la du doc thuoc long mot bai tho
+ * dai, va o muc bitrate ta dat (~1.5Mbps hinh + tieng) thi 3 phut ≈ 35MB —
+ * nam xa duoi tran 100MB, mang nha yeu cung tai noi.
+ */
+export const MAX_QUAY_GIAY = 180;
+
+/**
+ * Tai video con quay len kho — cung co che voi tep bo me dinh kem (Blob khi co,
+ * .data/uploads khi dev) nhung qua route /api/nop-video RIENG: route do xac thuc
+ * bang cookie thiet bi (con khong co PIN) va chi nhan video.
+ */
+export async function uploadSubmissionVideo(
+  file: File,
+  blobEnabled: boolean
+): Promise<string> {
+  if (!file.type.startsWith('video/')) throw new Error('Tệp này không phải video.');
+  if (file.size > MAX_MEDIA_BYTES) {
+    throw new Error('Video dài quá rồi, con quay lại đoạn ngắn hơn nhé.');
+  }
+
+  if (blobEnabled) {
+    const blob = await upload(`nop-bai/${file.name}`, file, {
+      access: 'public',
+      handleUploadUrl: '/api/nop-video',
+      multipart: true,
+    });
+    return blob.url;
+  }
+
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch('/api/nop-video', { method: 'POST', body: fd });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error ?? 'Tải video lỗi.');
+  return data.url as string;
+}
+
 export async function uploadMediaFile(file: File, blobEnabled: boolean): Promise<AttachedMedia> {
   const kind = mediaKindOf(file.type);
   if (!kind) throw new Error(`"${file.name}" không phải video, ghi âm hay ảnh.`);

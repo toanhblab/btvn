@@ -52,6 +52,10 @@ Quy tắc:
   đến 15 (phút). Ước theo độ phức tạp thực tế: bài chép ngắn, tô màu một hình,
   đọc một trang → 5; bài trung bình → 8-10; bài toán nhiều câu, viết đoạn văn,
   quay video gửi cô → 12-15. Không chắc thì để 10.
+- "canQuayVideo" = true khi bài yêu cầu con QUAY VIDEO hoặc trình diễn thành
+  tiếng/động tác để người khác kiểm tra: "quay video", "quay clip gửi cô",
+  "đọc to", "đọc thuộc lòng", "kể lại câu chuyện", "hát", "tập thể dục",
+  "biểu diễn"... Bài viết, vẽ, làm vào vở, hay chỉ XEM video cô gửi thì false.
 - Bỏ qua lời chào, lời dặn chung chung của cô giáo, không phải bài tập thì đừng đưa vào.
 - Không bịa thêm bài không có trong nguồn.
 - Chỉ trả về JSON đúng lược đồ, không kèm lời giải thích.`;
@@ -73,9 +77,10 @@ const SCHEMA = {
           note: { type: 'string' },
           lang: { type: 'string', enum: ['vi', 'en'] },
           duration_minutes: { type: 'integer' },
+          canQuayVideo: { type: 'boolean' },
         },
         // strict:true doi moi thuoc tinh deu phai nam trong required
-        required: ['subject', 'content', 'note', 'lang', 'duration_minutes'],
+        required: ['subject', 'content', 'note', 'lang', 'duration_minutes', 'canQuayVideo'],
         additionalProperties: false,
       },
     },
@@ -87,7 +92,16 @@ const SCHEMA = {
 interface RawDraft {
   subject?: string; content?: string; note?: string; lang?: string;
   duration_minutes?: number;
+  canQuayVideo?: boolean;
 }
+
+/**
+ * Tu khoa nhan ra bai phai QUAY VIDEO, dung lam luoi do phia sau AI (model quen
+ * danh dau nhung de ghi ro "quay video" thi van bat duoc) va cho splitByRule.
+ * KHONG bat tu "video" tran: "xem video cô gửi" la XEM, khong phai quay.
+ */
+const VIDEO_HINT =
+  /quay\s*(video|clip|phim)|đọc\s+to\b|đọc\s+thuộc|thuộc\s+lòng|kể\s+lại|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
 
 /**
  * Truoc day o day hoi model tu cham "confidence" 0..1, va man Kiem tra lai gan
@@ -131,6 +145,7 @@ function normalize(items: RawDraft[]): DraftAssignment[] {
         confidence: DO_TIN_AI,
         // Schema da rang 5-15 nhung van kep lai: model co the lo tra JSON ngoai schema
         durationMinutes: clampDuration(d.duration_minutes),
+        requiresVideo: d.canQuayVideo === true || VIDEO_HINT.test(content),
       };
     });
 }
@@ -251,6 +266,7 @@ export function splitByRule(text: string): DraftAssignment[] {
         confidence: 0.3,   // thap de man kiem tra luon canh bao bo me xem lai
         // Tach tho khong doan duoc do phuc tap -> de mac dinh, bo me sua o man kiem tra
         durationMinutes: DURATION_DEFAULT,
+        requiresVideo: VIDEO_HINT.test(line),
       };
     });
 }

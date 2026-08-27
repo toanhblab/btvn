@@ -44,8 +44,15 @@ export default function KiemTraLai({
     if (!raw) { router.replace('/bome/them'); return; }
     const p = JSON.parse(raw) as Payload;
     setPayload(p);
-    // durationMinutes: ban nhap cu trong sessionStorage (truoc khi co dong ho) chua co
-    setDrafts(p.drafts.map((d) => ({ ...d, media: d.media ?? [], durationStr: String(d.durationMinutes ?? DURATION_DEFAULT) })));
+    // durationMinutes / requiresVideo: ban nhap cu trong sessionStorage chua co
+    setDrafts(
+      p.drafts.map((d) => ({
+        ...d,
+        media: d.media ?? [],
+        durationStr: String(d.durationMinutes ?? DURATION_DEFAULT),
+        requiresVideo: d.requiresVideo ?? false,
+      }))
+    );
     // Ban nhap cu (truoc khi co nguon giao) khong co hwSource -> truong tieu hoc
     setHwSource(hwSourceOf(p.hwSource));
   }, [router]);
@@ -65,6 +72,7 @@ export default function KiemTraLai({
       {
         subject: 'Khác', icon: iconFor('Khác'), content: '', note: null, lang: 'vi',
         confidence: 1, media: [], durationStr: String(DURATION_DEFAULT),
+        requiresVideo: false,
       },
     ]);
 
@@ -103,7 +111,13 @@ export default function KiemTraLai({
             ...(prev.media ?? []),
             ...(d.media ?? []).filter((m) => !(prev.media ?? []).some((x) => x.url === m.url)),
           ];
-          acc[acc.length - 1] = { ...prev, content: `${prev.content} ${d.content}`.trim(), media };
+          acc[acc.length - 1] = {
+            ...prev,
+            content: `${prev.content} ${d.content}`.trim(),
+            media,
+            // Mot trong hai nua co yeu cau quay video thi bai gop van phai quay
+            requiresVideo: Boolean(prev.requiresVideo || d.requiresVideo),
+          };
           return acc;
         }
         return [...acc, d];
@@ -284,6 +298,20 @@ export default function KiemTraLai({
                   className="text-p-body-sm rounded-full bg-surface-container px-3 py-1.5 text-on-surface
                              placeholder:text-outline flex-1 min-w-[10rem]"
                 />
+
+                {/* AI tu danh dau bai phai quay video (doc to, doc thuoc long...);
+                    danh nham hay sot thi bo me bam chip nay de bat/tat lai */}
+                <button
+                  onClick={() => patch(i, 'requiresVideo', !d.requiresVideo)}
+                  aria-pressed={d.requiresVideo ?? false}
+                  className={`text-p-body-sm rounded-full px-3 py-1.5 border transition-colors ${
+                    d.requiresVideo
+                      ? 'bg-tertiary-fixed text-on-tertiary-fixed border-tertiary-fixed font-bold'
+                      : 'bg-surface-container text-on-surface-variant border-transparent'
+                  }`}
+                >
+                  🎥 {d.requiresVideo ? 'Cần quay video' : 'Không cần video'}
+                </button>
 
                 {/* Chi con ban tach tho theo dong (0.3) moi roi xuong duoi nguong */}
                 {d.confidence < 0.6 && (

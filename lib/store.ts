@@ -190,6 +190,8 @@ interface AssignmentRow {
   lang: string; due_date: string | Date; source: string; status: string;
   completed_at: string | Date | null; image_url: string | null;
   duration_minutes: number;
+  requires_video: boolean; submitted_video_url: string | null;
+  submitted_video_at: string | Date | null;
 }
 
 /** Neon tra due_date dang string, PGlite tra Date — chuan hoa ve YYYY-MM-DD. */
@@ -217,6 +219,9 @@ const toAssignment = (r: AssignmentRow, media: AttachedMedia[]): Assignment => (
   imageUrl: r.image_url,
   media,
   durationMinutes: Number(r.duration_minutes ?? 10),
+  requiresVideo: Boolean(r.requires_video),
+  submittedVideoUrl: r.submitted_video_url,
+  submittedVideoAt: r.submitted_video_at ? new Date(r.submitted_video_at).toISOString() : null,
 });
 
 /**
@@ -321,10 +326,10 @@ export async function saveSubmission(input: {
       await query(
         `INSERT INTO assignments
            (id, submission_id, child_id, subject, icon, content, note, lang, due_date, source, image_url,
-            duration_minutes)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+            duration_minutes, requires_video)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
         [id, subId, childId, d.subject, d.icon, d.content, d.note, d.lang, input.dueDate, input.source, coverImage,
-         d.durationMinutes ?? 10]
+         d.durationMinutes ?? 10, d.requiresVideo ?? false]
       );
       // Moi con mot ban bai rieng nen tep dinh kem cung ghi rieng cho tung ban —
       // xoa bai cua con nay khong duoc lam mat tep o bai cua con kia.
@@ -358,8 +363,13 @@ export async function setStatus(
 export async function updateAssignment(
   familyId: string,
   id: string,
-  patch: Partial<Pick<Assignment,
-    'subject' | 'icon' | 'content' | 'note' | 'lang' | 'dueDate' | 'source' | 'durationMinutes'>> & {
+  patch: Partial<
+    Pick<
+      Assignment,
+      'subject' | 'icon' | 'content' | 'note' | 'lang' | 'dueDate' | 'source'
+      | 'durationMinutes' | 'requiresVideo'
+    >
+  > & {
     /** Co mat = THAY CA DANH SACH tep dinh kem cua bai bang danh sach nay. */
     media?: AttachedMedia[];
   }
@@ -368,6 +378,7 @@ export async function updateAssignment(
     subject: 'subject', icon: 'icon', content: 'content',
     note: 'note', lang: 'lang', dueDate: 'due_date', source: 'source',
     durationMinutes: 'duration_minutes',
+    requiresVideo: 'requires_video',
   };
   const sets: string[] = [];
   const params: unknown[] = [id, familyId];
@@ -402,6 +413,27 @@ export async function updateAssignment(
     }
   }
 
+  return getAssignment(familyId, id);
+}
+
+/**
+ * Con nop video cho mot bai. Moi bai giu MOT video moi nhat: quay lai la thay
+ * URL cu — tep cu tren Blob de nguyen (khong co API xoa o phia con), don sau
+ * bang vong doi cua Blob store neu can.
+ *
+ * Duong nay KHONG can PIN (con khong dang nhap — PRD 4.5) nen chi nhan url,
+ * khong cho sua bat ky truong nao khac.
+ */
+export async function submitVideo(
+  familyId: string,
+  id: string,
+  url: string
+): Promise<Assignment | null> {
+  await query(
+    `UPDATE assignments SET submitted_video_url = $3, submitted_video_at = now()
+     WHERE id = $1 AND ${OF_FAMILY}`,
+    [id, familyId, url]
+  );
   return getAssignment(familyId, id);
 }
 
