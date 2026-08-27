@@ -67,7 +67,7 @@ Hệ quả thiết kế (quan trọng, quyết định UI):
 
 - Với ảnh: đọc chữ trong ảnh (OCR / AI vision) → ra text.
 - Với text: tách thành từng bài riêng biệt (theo môn, theo số bài, theo dòng gạch đầu dòng…).
-- Mỗi bài tập tách ra gồm: **môn học**, **nội dung/đề bài**, **ghi chú** (ví dụ "trang 34, bài 3"), **hạn hoàn thành**, **ngôn ngữ của đề (`vi` | `en`)**.
+- Mỗi bài tập tách ra gồm: **môn học**, **nội dung/đề bài**, **ghi chú** (ví dụ "trang 34, bài 3"), **hạn hoàn thành**, **ngôn ngữ của đề (`vi` | `en`)**, **thời lượng làm bài** (phút, AI ước theo độ phức tạp — xem mục 4.3).
 - Ngôn ngữ do AI tự nhận biết (đề của lớp tiếng Anh thường là tiếng Anh hoặc lẫn Việt–Anh) và phụ huynh sửa lại được. Trường này quyết định giọng đọc ở mục 4.3.
 - Kết quả hiện ra ở dạng **bản nháp cho phụ huynh xem lại**: sửa nội dung, gộp, tách, xoá bài sai, rồi bấm "Lưu".
 - Ảnh gốc được giữ lại và gắn vào bài tập để con có thể mở xem lại đề.
