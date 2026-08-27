@@ -69,17 +69,28 @@ export function mocNhac(totalMinutes: number): { atSec: number; text: string }[]
   return mocs;
 }
 
-/**
- * Chuong bao het gio — hai not sin diu dan (E5 -> C5) qua WebAudio, khong tai
- * tep tu ngoai. Khong co AudioContext thi thoi, van con loi doc va thong diep.
- */
-function chuongDiu(): void {
+/** Tao AudioContext (Safari cu la webkitAudioContext), khong co thi null. */
+function taoAudioContext(): AudioContext | null {
   try {
     const Ctx =
       window.AudioContext ??
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
+    return Ctx ? new Ctx() : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Chuong bao het gio — hai not sin diu dan (E5 -> C5) qua WebAudio, khong tai
+ * tep tu ngoai. Dung lai AudioContext da mo khoa trong cu cham "Bat dau lam":
+ * iPad Safari de context tao ngoai cu chi nguoi dung o trang thai suspended va
+ * phat im lang. Khong co context thi thoi, van con loi doc va thong diep.
+ */
+function chuongDiu(ctx: AudioContext | null): void {
+  try {
+    if (!ctx || ctx.state === 'closed') return;
+    if (ctx.state === 'suspended') void ctx.resume().catch(() => {});
     const now = ctx.currentTime;
     for (const [freq, delay] of [[659.25, 0], [523.25, 0.35]]) {
       const o = ctx.createOscillator();
@@ -93,7 +104,9 @@ function chuongDiu(): void {
       o.start(now + delay);
       o.stop(now + delay + 1.2);
     }
-    setTimeout(() => ctx.close(), 2000);
+    setTimeout(() => {
+      if (ctx.state !== 'closed') void ctx.close().catch(() => {});
+    }, 2000);
   } catch { /* iPad khong phat duoc am thi van co thong diep tren man */ }
 }
 
@@ -117,6 +130,15 @@ export default function DongHoLamBai({
      reload giua chung khong doc lai loat nhac cu. */
   const daNhac = useRef<Set<number> | null>(null);
   const daHetGio = useRef(false);
+  /* Mo khoa trong cu cham "Bat dau lam", giu lai cho chuong het gio */
+  const audioCtx = useRef<AudioContext | null>(null);
+
+  useEffect(() => () => {
+    try {
+      const ctx = audioCtx.current;
+      if (ctx && ctx.state !== 'closed') void ctx.close().catch(() => {});
+    } catch { /* dong khong duoc cung khong sao */ }
+  }, []);
 
   // Doc moc bat dau da luu — con lo tay reload thi dong ho chay tiep ngay
   useEffect(() => {
@@ -158,7 +180,11 @@ export default function DongHoLamBai({
       }
       if (elapsedSec >= totalSec) {
         daHetGio.current = true;
-        chuongDiu();
+        // Reload giua chung thi chua co cu cham nao -> tao moi lam phuong an cuoi
+        if (!audioCtx.current || audioCtx.current.state === 'closed') {
+          audioCtx.current = taoAudioContext();
+        }
+        chuongDiu(audioCtx.current);
         noi('Hết giờ rồi, con làm nốt nhé!');
       }
     }
@@ -172,6 +198,13 @@ export default function DongHoLamBai({
     } catch { /* khong luu duoc thi reload mat gio, van chay duoc phien nay */ }
     daNhac.current = new Set();
     daHetGio.current = false;
+    // Cu cham nay la luc iPad cho phep mo khoa WebAudio -> mo san cho chuong het gio
+    try {
+      if (!audioCtx.current || audioCtx.current.state === 'closed') {
+        audioCtx.current = taoAudioContext();
+      }
+      void audioCtx.current?.resume().catch(() => {});
+    } catch { /* khong co am thanh thi van con giong doc va thong diep tren man */ }
     setStartAt(t);
     // Bam nut la mot cu cham -> iPad cho phep doc; cac cau nhac sau do moi chay duoc
     noi(`Con có ${minutes} phút để làm bài. Bắt đầu nhé!`);
