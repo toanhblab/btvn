@@ -62,6 +62,7 @@ export default function QuayVideo({
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const discardRef = useRef(false);
+  const stoppingRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedRef = useRef(0);
   const blobUrlRef = useRef('');
@@ -153,6 +154,7 @@ export default function QuayVideo({
     streamRef.current = stream;
     chunksRef.current = [];
     discardRef.current = false;
+    stoppingRef.current = false;
 
     const mime = MIME_UU_TIEN.find((m) => MediaRecorder.isTypeSupported(m)) ?? '';
     let recorder: MediaRecorder;
@@ -170,6 +172,7 @@ export default function QuayVideo({
 
     recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
     recorder.onstop = () => {
+      stoppingRef.current = false;
       stopStream();
       if (discardRef.current) { chunksRef.current = []; setPhase('idle'); return; }
       const out = new Blob(chunksRef.current, { type: recorder.mimeType || mime || 'video/mp4' });
@@ -207,10 +210,16 @@ export default function QuayVideo({
   }
 
   function stopRecording(discard: boolean) {
+    // stop() dat state = 'inactive' NGAY nhung chi xep hang onstop, con hai nut
+    // "Quay xong"/"Huỷ" van con tren man hinh trong cua so do. Bam lan hai ma
+    // khong chan thi no roi xuong nhanh du phong duoi va lam sai ket qua: bao
+    // "chua quay duoc gi" tren mot ban quay tot, hoac dat lai discard = false
+    // khien onstop hoi sinh ban con vua huy.
+    if (stoppingRef.current) return;
     discardRef.current = discard;
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     const r = recorderRef.current;
-    if (r && r.state !== 'inactive') { r.stop(); return; }
+    if (r && r.state !== 'inactive') { stoppingRef.current = true; r.stop(); return; }
     // Khong con may ghi nao se ban onstop nua, nen phai tu roi man hinh quay
     stopStream();
     if (!discard) setError('Chưa quay được gì, con thử lại nhé.');

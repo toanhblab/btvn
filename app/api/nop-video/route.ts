@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { viewingFamilyId } from '@/lib/auth';
-import { MAX_MEDIA_BYTES } from '@/lib/media';
+import { MAX_NOP_VIDEO_BYTES } from '@/lib/media';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -43,8 +43,8 @@ export async function POST(req: Request) {
     if (!file.type.startsWith('video/')) {
       return NextResponse.json({ error: 'Chỉ nhận video thôi.' }, { status: 400 });
     }
-    if (file.size > MAX_MEDIA_BYTES) {
-      return NextResponse.json({ error: 'Video nặng quá, con quay đoạn ngắn hơn nhé.' }, { status: 400 });
+    if (file.size > MAX_NOP_VIDEO_BYTES) {
+      return NextResponse.json({ error: 'Video hơi dài, con quay lại ngắn hơn nhé.' }, { status: 400 });
     }
 
     const { mkdirSync, writeFileSync } = await import('node:fs');
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
       body,
       onBeforeGenerateToken: async () => ({
         allowedContentTypes: ['video/*'],
-        maximumSizeInBytes: MAX_MEDIA_BYTES,
+        maximumSizeInBytes: MAX_NOP_VIDEO_BYTES,
         addRandomSuffix: true,
       }),
       onUploadCompleted: async () => {

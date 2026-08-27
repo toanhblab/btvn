@@ -40,9 +40,17 @@ export function mediaKindOf(mime: string): MediaKind | null {
 /**
  * Gioi han video CON QUAY de nop bai: 3 phut la du doc thuoc long mot bai tho
  * dai, va o muc bitrate ta dat (~1.5Mbps hinh + tieng) thi 3 phut ≈ 35MB —
- * nam xa duoi tran 100MB, mang nha yeu cung tai noi.
+ * nam xa duoi tran MAX_NOP_VIDEO_BYTES, mang nha yeu cung tai noi.
  */
 export const MAX_QUAY_GIAY = 180;
+
+/**
+ * Tran RIENG cho video con nop, cao hon tep bo me dinh kem. Duong lui tren iPad
+ * la app Camera cua he dieu hanh, no ghi 1080p30 H.264 ≈ 60MB/phut (so cua
+ * Apple), nen 3 phut can ~180MB — dung MAX_MEDIA_BYTES 100MB thi con quay hon
+ * 1 phut rui la khong nop duoc nua. 250MB de con du dat cho MAX_QUAY_GIAY.
+ */
+export const MAX_NOP_VIDEO_BYTES = 250 * 1024 * 1024;
 
 /**
  * Tai video con quay len kho — cung co che voi tep bo me dinh kem (Blob khi co,
@@ -54,8 +62,8 @@ export async function uploadSubmissionVideo(
   blobEnabled: boolean
 ): Promise<string> {
   if (!file.type.startsWith('video/')) throw new Error('Tệp này không phải video.');
-  if (file.size > MAX_MEDIA_BYTES) {
-    throw new Error('Video dài quá rồi, con quay lại đoạn ngắn hơn nhé.');
+  if (file.size > MAX_NOP_VIDEO_BYTES) {
+    throw new Error('Video hơi dài, con quay lại ngắn hơn nhé.');
   }
 
   if (blobEnabled) {
