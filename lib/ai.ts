@@ -136,9 +136,15 @@ interface RawDraft {
  *                   "Chép lời bài hát Bụi phấn vào vở"
  *                   "Xem video bài giảng rồi làm bài tập"
  *                   "Xem video cô gửi" | "Đọc toàn bộ câu chuyện" | "Đọc toán trang 5"
+ *                   "Xem lại group video của lớp rồi viết vào vở"
+ *                   "Bố mẹ backup video bài giảng cho con xem"
+ *
+ * Hai ca cuoi la ly do co (?<![a-zA-ZÀ-ỹ]) truoc nhom dong tu: khong co bien trai
+ * thi "up" bat duoc phan duoi cua "gro-up" / "back-up". splitByRule chi chay o
+ * may chu (app/api/extract) nen lookbehind khong lien quan Safari cu.
  */
 const VIDEO_HINT =
-  /(quay|nộp|gửi|upload|up)\s*(lại\s*)?(\d+|một|hai|ba)?\s*(video|clip|phim)|đọc\s+to(?![a-zA-ZÀ-ỹ])|đọc\s+thuộc|thuộc\s+lòng|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
+  /(?<![a-zA-ZÀ-ỹ])(quay|nộp|gửi|upload|up)\s*(lại\s*)?(\d+|một|hai|ba)?\s*(video|clip|phim)|đọc\s+to(?![a-zA-ZÀ-ỹ])|đọc\s+thuộc|thuộc\s+lòng|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
 
 /**
  * Truoc day o day hoi model tu cham "confidence" 0..1, va man Kiem tra lai gan

@@ -56,10 +56,16 @@ export const MAX_NOP_VIDEO_BYTES = 250 * 1024 * 1024;
  * Tai video con quay len kho — cung co che voi tep bo me dinh kem (Blob khi co,
  * .data/uploads khi dev) nhung qua route /api/nop-video RIENG: route do xac thuc
  * bang cookie thiet bi (con khong co PIN) va chi nhan video.
+ *
+ * onProgress: ban camera iPad co the ~180MB, tren mang nha la vai phut man hinh
+ * nhu treo — con tuong may hong roi thoat giua duong. CHI duong Blob bao duoc
+ * tien do that; duong dev-multipart khong goi callback lan nao (fetch khong co
+ * tien do upload), va o day KHONG bao gio bia so phan tram.
  */
 export async function uploadSubmissionVideo(
   file: File,
-  blobEnabled: boolean
+  blobEnabled: boolean,
+  onProgress?: (phanTram: number) => void
 ): Promise<string> {
   if (!file.type.startsWith('video/')) throw new Error('Tệp này không phải video.');
   if (file.size > MAX_NOP_VIDEO_BYTES) {
@@ -71,6 +77,7 @@ export async function uploadSubmissionVideo(
       access: 'public',
       handleUploadUrl: '/api/nop-video',
       multipart: true,
+      onUploadProgress: ({ percentage }) => onProgress?.(Math.round(percentage)),
     });
     return blob.url;
   }

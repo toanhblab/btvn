@@ -56,6 +56,9 @@ export default function QuayVideo({
   const [blobUrl, setBlobUrl] = useState('');
   // Dang xin quyen camera: nut phai mo ngay de con khong bam hai lan
   const [starting, setStarting] = useState(false);
+  // null = chua/khong do duoc tien do (duong dev, hoac dang lam lai PATCH) ->
+  // chi hien vong xoay, TUYET DOI khong bia so phan tram cho con doc
+  const [phanTram, setPhanTram] = useState<number | null>(null);
 
   const liveRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -256,6 +259,7 @@ export default function QuayVideo({
   async function send() {
     if (!blob) return;
     setPhase('sending');
+    setPhanTram(null);
     setError('');
     try {
       // Lan truoc tai len xong roi ma PATCH moi hong thi chi lam lai PATCH: tai
@@ -267,7 +271,7 @@ export default function QuayVideo({
         const file = blob instanceof File
           ? blob
           : new File([blob], `quay-${Date.now()}.${duoi}`, { type: blob.type });
-        url = await uploadSubmissionVideo(file, blobEnabled);
+        url = await uploadSubmissionVideo(file, blobEnabled, setPhanTram);
         uploadedRef.current = { blob, url };
       }
       await onSubmit(url);
@@ -342,9 +346,18 @@ export default function QuayVideo({
               className="btn-3d-success text-white rounded-3xl flex items-center justify-center
                          gap-3 px-6 h-20 flex-[2] disabled:opacity-60"
             >
-              <span className="material-symbols-outlined text-4xl icon-fill">send</span>
+              <span
+                className={`material-symbols-outlined text-4xl icon-fill
+                            ${phase === 'sending' ? 'animate-spin' : ''}`}
+              >
+                {phase === 'sending' ? 'progress_activity' : 'send'}
+              </span>
               <span className="text-k-headline whitespace-nowrap">
-                {phase === 'sending' ? 'Đang gửi…' : 'Gửi bài'}
+                {phase !== 'sending'
+                  ? 'Gửi bài'
+                  : phanTram === null
+                    ? 'Đang gửi…'
+                    : `Đang gửi… ${phanTram}%`}
               </span>
             </button>
             <button
@@ -358,6 +371,12 @@ export default function QuayVideo({
               Quay lại
             </button>
           </div>
+
+          {phase === 'sending' && (
+            <p className="text-k-body-sm text-on-surface-variant text-center">
+              Con đợi một chút, đừng tắt máy nhé.
+            </p>
+          )}
         </div>
       )}
 
