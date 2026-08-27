@@ -8,6 +8,15 @@ import { DURATION_DEFAULT, HW_SOURCES, SUBJECTS, iconFor } from '@/lib/types';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 /**
+ * Gio nop video hien ra o day duoc SSR (trang la force-dynamic) roi hydrate lai
+ * o may bo me. Ham Vercel chay TZ=UTC, iPad cua bo me la +07 — khong chot mui
+ * gio thi hai ben ra hai chuoi khac nhau: React bao hydration mismatch va bo me
+ * doc phai gio lech 7 tieng o lan ve dau. Chot theo mui gio nha, dung gia dinh
+ * "gio may chu la gio nha" ma todayISO() (lib/store.ts) da dung.
+ */
+const MUI_GIO_NHA = 'Asia/Ho_Chi_Minh';
+
+/**
  * Form sua mot bai da giao. Bo cuc va ten nhan bam theo man Nhap tay de bo me
  * khong phai hoc lai — cung nhung o do, chi khac la co san noi dung.
  */
@@ -202,7 +211,7 @@ export default function SuaBai({
             <label className="text-p-label uppercase text-on-surface-variant block mb-1">
               Video con đã nộp
               {assignment.submittedVideoAt &&
-                ` — ${new Date(assignment.submittedVideoAt).toLocaleString('vi-VN')}`}
+                ` — ${new Date(assignment.submittedVideoAt).toLocaleString('vi-VN', { timeZone: MUI_GIO_NHA })}`}
             </label>
             <video
               src={assignment.submittedVideoUrl}

@@ -96,12 +96,14 @@ interface RawDraft {
 }
 
 /**
- * Tu khoa nhan ra bai phai QUAY VIDEO, dung lam luoi do phia sau AI (model quen
- * danh dau nhung de ghi ro "quay video" thi van bat duoc) va cho splitByRule.
+ * Tu khoa nhan ra bai phai QUAY VIDEO. CHI dung cho splitByRule — ban tach tho
+ * theo dong, khong co cau tra loi cua AI de dua vao. Khi da goi duoc AI thi
+ * truong canQuayVideo cua no la quyet dinh cuoi cung, KHONG OR them regex nay:
+ * regex bat nham ("viết đoạn văn kể lại...") se chan con tick xong bai.
  * KHONG bat tu "video" tran: "xem video cô gửi" la XEM, khong phai quay.
  */
 const VIDEO_HINT =
-  /quay\s*(video|clip|phim)|đọc\s+to(?![a-zA-ZÀ-ỹ])|đọc\s+thuộc|thuộc\s+lòng|kể\s+lại|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
+  /quay\s*(video|clip|phim)|đọc\s+to(?![a-zA-ZÀ-ỹ])|đọc\s+thuộc|thuộc\s+lòng|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
 
 /**
  * Truoc day o day hoi model tu cham "confidence" 0..1, va man Kiem tra lai gan
@@ -145,7 +147,7 @@ function normalize(items: RawDraft[]): DraftAssignment[] {
         confidence: DO_TIN_AI,
         // Schema da rang 5-15 nhung van kep lai: model co the lo tra JSON ngoai schema
         durationMinutes: clampDuration(d.duration_minutes),
-        requiresVideo: d.canQuayVideo === true || VIDEO_HINT.test(content),
+        requiresVideo: d.canQuayVideo === true,
       };
     });
 }

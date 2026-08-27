@@ -54,6 +54,8 @@ export default function QuayVideo({
   const [canRecord, setCanRecord] = useState<boolean | null>(null);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [blobUrl, setBlobUrl] = useState('');
+  // Dang xin quyen camera: nut phai mo ngay de con khong bam hai lan
+  const [starting, setStarting] = useState(false);
 
   const liveRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -62,6 +64,8 @@ export default function QuayVideo({
   const discardRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedRef = useRef(0);
+  const blobUrlRef = useRef('');
+  const startingRef = useRef(false);
 
   useEffect(() => {
     setCanRecord(
@@ -70,6 +74,16 @@ export default function QuayVideo({
     );
   }, []);
 
+  /**
+   * Doi ban xem truoc, tha URL cu di. Phai giu qua ref: ban clip 3 phut nang
+   * ~35MB, tha muon (hoac khong tha khi roi trang) thi no nam lai het phien.
+   */
+  function setPreviewUrl(url: string) {
+    if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    blobUrlRef.current = url;
+    setBlobUrl(url);
+  }
+
   function stopStream() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
@@ -77,9 +91,11 @@ export default function QuayVideo({
   }
 
   // Roi trang giua chung thi tat camera va tha bo nho cua ban xem truoc
-  useEffect(() => () => { stopStream(); if (blobUrl) URL.revokeObjectURL(blobUrl); },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []);
+  useEffect(() => () => {
+    startingRef.current = false;   // getUserMedia dang cho se tu tat luong
+    stopStream();
+    if (blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = ''; }
+  }, []);
 
   /* Gan luong camera vao khung xem truoc SAU khi React da ve the <video> —
      gan ngay trong start() thi thua: luc do the con chua ton tai (state vua
@@ -92,8 +108,13 @@ export default function QuayVideo({
   }, [phase]);
 
   async function start() {
+    // Con bam hai lan trong luc bang xin quyen con mo -> hai MediaStream, cai
+    // sau de len streamRef va cai truoc khong ai tat duoc nua (camera cu sang).
+    if (startingRef.current || phase !== 'idle') return;
+    startingRef.current = true;
+    setStarting(true);
     setError('');
-    if (blobUrl) { URL.revokeObjectURL(blobUrl); setBlobUrl(''); }
+    setPreviewUrl('');
     setBlob(null);
 
     let stream: MediaStream;
@@ -107,9 +128,20 @@ export default function QuayVideo({
     } catch {
       // Con bam "Không cho phép" hoac camera dang bi app khac giu — chi con
       // duong may quay cua he dieu hanh.
+      startingRef.current = false;
+      setStarting(false);
       setError('Chưa mở được máy quay. Con thử nút "Quay bằng máy ảnh" bên dưới nhé.');
       return;
     }
+
+    // Trong luc cho quyen, con da quay bang app Camera (onPickFile) hoac roi
+    // trang — bo luong vua mo, khong duoc de no de mat tep con vua chon.
+    if (!startingRef.current) {
+      stream.getTracks().forEach((t) => t.stop());
+      return;
+    }
+    startingRef.current = false;
+    setStarting(false);
 
     streamRef.current = stream;
     chunksRef.current = [];
@@ -140,7 +172,7 @@ export default function QuayVideo({
         return;
       }
       setBlob(out);
-      setBlobUrl(URL.createObjectURL(out));
+      setPreviewUrl(URL.createObjectURL(out));
       setPhase('preview');
     };
 
@@ -170,9 +202,11 @@ export default function QuayVideo({
     if (!file) return;
     setError('');
     if (!file.type.startsWith('video/')) { setError('Tệp này không phải video.'); return; }
-    if (blobUrl) URL.revokeObjectURL(blobUrl);
+    // Huy lan xin quyen camera dang cho (neu co) de no khong de mat tep nay
+    startingRef.current = false;
+    setStarting(false);
     setBlob(file);
-    setBlobUrl(URL.createObjectURL(file));
+    setPreviewUrl(URL.createObjectURL(file));
     setPhase('preview');
   }
 
@@ -188,8 +222,7 @@ export default function QuayVideo({
       const url = await uploadSubmissionVideo(file, blobEnabled);
       await onSubmit(url);
       // Thanh cong: ben ngoai hien man khen va chuyen trang; don ban xem truoc
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
-      setBlobUrl('');
+      setPreviewUrl('');
       setBlob(null);
       setPhase('idle');
     } catch (e) {
@@ -266,8 +299,7 @@ export default function QuayVideo({
             </button>
             <button
               onClick={() => {
-                if (blobUrl) URL.revokeObjectURL(blobUrl);
-                setBlobUrl(''); setBlob(null); setPhase('idle');
+                setPreviewUrl(''); setBlob(null); setPhase('idle');
               }}
               disabled={phase === 'sending'}
               className="rounded-3xl border-4 border-outline-variant text-on-surface-variant
@@ -298,12 +330,13 @@ export default function QuayVideo({
           {canRecord && (
             <button
               onClick={start}
+              disabled={starting}
               className="btn-3d-primary bg-tertiary text-on-tertiary rounded-3xl flex items-center
-                         justify-center gap-4 px-6 h-20 w-full"
+                         justify-center gap-4 px-6 h-20 w-full disabled:opacity-60"
             >
               <span className="material-symbols-outlined text-4xl icon-fill">videocam</span>
               <span className="text-k-headline">
-                {existingUrl ? 'Quay video khác' : 'Bắt đầu quay'}
+                {starting ? 'Đang mở máy quay…' : existingUrl ? 'Quay video khác' : 'Bắt đầu quay'}
               </span>
             </button>
           )}

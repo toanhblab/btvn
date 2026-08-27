@@ -39,6 +39,7 @@ export default function NhapTay({
   });
   // Giu dang chuoi de bo me xoa trong o roi go so moi; luu thi rong = mac dinh
   const [duration, setDuration] = useState(String(DURATION_DEFAULT));
+  const [requiresVideo, setRequiresVideo] = useState(false);
   const [media, setMedia] = useState<AttachedMedia[]>([]);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -79,7 +80,8 @@ export default function NhapTay({
           dueDate,
           source: hwSource,
           drafts: [{
-            subject, icon: iconFor(subject), content, note: note || null, lang, confidence: 1, media,
+            subject, icon: iconFor(subject), content, note: note || null, lang,
+            confidence: 1, requiresVideo, media,
             durationMinutes: duration === '' ? DURATION_DEFAULT : Number(duration),
           }],
         }),
@@ -91,6 +93,7 @@ export default function NhapTay({
       if (themNua) {
         setContent('');
         setNote('');
+        setRequiresVideo(false);
         setMedia([]);   // tep dinh kem la cua bai vua luu, bai sau chon lai
       } else {
         router.push('/bome');
@@ -180,6 +183,23 @@ export default function NhapTay({
               <option value="en">🇬🇧 Tiếng Anh</option>
             </select>
           </div>
+        </div>
+
+        {/* Nhap tay la duong lui khi AI loi, khong co ai danh dau ho — bo me
+            bam chip nay de bai bat buoc con quay video moi tick xong duoc.
+            Cung chip nhu o man Kiem tra lai. */}
+        <div className="flex">
+          <button
+            onClick={() => setRequiresVideo((v) => !v)}
+            aria-pressed={requiresVideo}
+            className={`text-p-body-sm rounded-full px-3 py-1.5 min-h-p-tap border transition-colors ${
+              requiresVideo
+                ? 'bg-tertiary-fixed text-on-tertiary-fixed border-tertiary-fixed font-bold'
+                : 'bg-surface-container text-on-surface-variant border-transparent'
+            }`}
+          >
+            🎥 {requiresVideo ? 'Cần quay video' : 'Không cần video'}
+          </button>
         </div>
 
         <div>
