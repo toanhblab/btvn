@@ -42,14 +42,24 @@ export async function GET(req: Request, { params }: { params: Promise<{ ten: str
   const m = TEN_TEP_RE.exec(ten);
   if (!m) return NextResponse.json({ error: 'Không có tệp này.' }, { status: 404 });
 
-  const { readFileSync, existsSync } = await import('node:fs');
+  const { createReadStream, statSync } = await import('node:fs');
+  const { Readable } = await import('node:stream');
   const { join } = await import('node:path');
   const duongDan = join('./.data/uploads', ten);
-  if (!existsSync(duongDan)) {
+
+  // Video con quay bang camera iPad co the ~180MB (MAX_NOP_VIDEO_BYTES). Chi lay
+  // KICH THUOC roi doc dung khoang byte duoc hoi: Safari keo thanh thoi gian la
+  // ban ra hang loat Range, nap ca tep vao Buffer moi lan thi `next dev` het RAM.
+  let kichThuoc: number;
+  try {
+    kichThuoc = statSync(duongDan).size;
+  } catch {
     return NextResponse.json({ error: 'Không có tệp này.' }, { status: 404 });
   }
 
-  const buf = readFileSync(duongDan);
+  const doan = (start: number, end: number) =>
+    Readable.toWeb(createReadStream(duongDan, { start, end })) as ReadableStream<Uint8Array>;
+
   const headers: Record<string, string> = {
     'Content-Type': MIME[m[2]] ?? 'application/octet-stream',
     'Accept-Ranges': 'bytes',
@@ -62,25 +72,25 @@ export async function GET(req: Request, { params }: { params: Promise<{ ten: str
   const range = req.headers.get('range');
   const rm = range ? /^bytes=(\d*)-(\d*)$/.exec(range) : null;
   if (rm && (rm[1] || rm[2])) {
-    const start = rm[1] ? Number(rm[1]) : Math.max(0, buf.length - Number(rm[2]));
-    const end = rm[1] && rm[2] ? Math.min(Number(rm[2]), buf.length - 1) : buf.length - 1;
-    if (start > end || start >= buf.length) {
+    const start = rm[1] ? Number(rm[1]) : Math.max(0, kichThuoc - Number(rm[2]));
+    const end = rm[1] && rm[2] ? Math.min(Number(rm[2]), kichThuoc - 1) : kichThuoc - 1;
+    if (start > end || start >= kichThuoc) {
       return new Response(null, {
         status: 416,
-        headers: { 'Content-Range': `bytes */${buf.length}` },
+        headers: { 'Content-Range': `bytes */${kichThuoc}` },
       });
     }
-    return new Response(new Uint8Array(buf.subarray(start, end + 1)), {
+    return new Response(doan(start, end), {
       status: 206,
       headers: {
         ...headers,
-        'Content-Range': `bytes ${start}-${end}/${buf.length}`,
+        'Content-Range': `bytes ${start}-${end}/${kichThuoc}`,
         'Content-Length': String(end - start + 1),
       },
     });
   }
 
-  return new Response(new Uint8Array(buf), {
-    headers: { ...headers, 'Content-Length': String(buf.length) },
+  return new Response(kichThuoc > 0 ? doan(0, kichThuoc - 1) : null, {
+    headers: { ...headers, 'Content-Length': String(kichThuoc) },
   });
 }

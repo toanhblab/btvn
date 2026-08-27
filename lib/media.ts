@@ -1,5 +1,15 @@
 /**
- * Upload tep dinh kem bai tap (video, ghi am, anh) — phan chay o TRINH DUYET.
+ * Tep dinh kem bai tap (video, ghi am, anh): ham upload chay o TRINH DUYET, cong
+ * voi cac hang so + hop dong ten/URL ma CA HAI phia dung chung.
+ *
+ * Module DUNG CHUNG client + server, khong phai module chi cua trinh duyet:
+ * QuayVideo/SuaBai/NhapTay/KiemTraLai nap no trong bundle trinh duyet, con
+ * /api/upload-media, /api/nop-video, /api/tep, /api/assignments/:id va
+ * lib/upload-route nap no o may chu. Nen moi thu o day phai ISOMORPHIC — them
+ * code cham `window` / `navigator` / `document` o TOP LEVEL la no vo ngay khi
+ * route handler nap module, chu khong phai loi tren trinh duyet. Can do capability
+ * cua thiet bi thi do BEN TRONG ham (nhu uploadSubmissionVideo) hoac dat o
+ * component.
  *
  * Tep dinh kem khong duoc di qua route serverless nhu anh de bai (/api/upload)
  * vi Vercel chan body o 4.5MB — video/ghi am cua co giao vuot ngay. Thay vao do:
