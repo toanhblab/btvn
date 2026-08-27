@@ -423,15 +423,23 @@ export async function updateAssignment(
  *
  * Duong nay KHONG can PIN (con khong dang nhap — PRD 4.5) nen chi nhan url,
  * khong cho sua bat ky truong nao khac.
+ *
+ * markDone: nop video CHINH LA hanh dong hoan thanh bai co yeu cau quay, nen hai
+ * viec do phai vao CUNG MOT cau UPDATE. Tach thanh hai cau thi cau sau tach ra
+ * loi giua duong (Neon rot ket noi) se de lai hang co video ma status van 'todo':
+ * con bam gui lai la tai len them mot ban 35MB nua khong ai tro toi.
  */
 export async function submitVideo(
   familyId: string,
   id: string,
-  url: string
+  url: string,
+  markDone = false
 ): Promise<Assignment | null> {
   await query(
-    `UPDATE assignments SET submitted_video_url = $3, submitted_video_at = now()
-     WHERE id = $1 AND ${OF_FAMILY}`,
+    `UPDATE assignments
+        SET submitted_video_url = $3, submitted_video_at = now()
+            ${markDone ? `, status = 'done', completed_at = now()` : ''}
+      WHERE id = $1 AND ${OF_FAMILY}`,
     [id, familyId, url]
   );
   return getAssignment(familyId, id);

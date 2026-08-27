@@ -55,11 +55,14 @@ export async function PATCH(req: Request, { params }: Ctx) {
       );
     }
 
+    // Gui video kem status:'done' la mot viec duy nhat -> mot cau UPDATE duy nhat
+    const nopVaXong = Boolean(body.videoUrl) && body.status === 'done';
+
     let assignment = current;
     if (body.videoUrl) {
-      assignment = (await submitVideo(familyId, id, body.videoUrl)) ?? assignment;
+      assignment = (await submitVideo(familyId, id, body.videoUrl, nopVaXong)) ?? assignment;
     }
-    if ('status' in body) {
+    if ('status' in body && !nopVaXong) {
       assignment = (await setStatus(familyId, id, body.status === 'done')) ?? assignment;
     }
     return NextResponse.json({ assignment });

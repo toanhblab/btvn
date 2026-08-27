@@ -17,6 +17,29 @@ import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 const MUI_GIO_NHA = 'Asia/Ho_Chi_Minh';
 
 /**
+ * Chot mui gio moi la nua chuyen. toLocaleString('vi-VN') con lay THU TU va dau
+ * phan cach tu ban CLDR cua chinh may chay: Node moi tra "01:00:51 28/8/2026"
+ * (CLDR 42 doi tieng Viet sang gio-truoc) con Safari iPad cu tra "28/8/2026,
+ * 01:00:51" — cung mot moc, cung mui gio, hai chuoi khac nhau, hydrate lai la
+ * lech. Vi the chi lay TUNG SO qua formatToParts roi tu ghep theo khuon cua
+ * minh: khuon nay khong phu thuoc CLDR nen may chu va iPad luon ra giong nhau.
+ */
+const SO_GIO_NHA = new Intl.DateTimeFormat('en-US', {
+  timeZone: MUI_GIO_NHA,
+  year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', second: '2-digit',
+  hourCycle: 'h23',
+});
+
+function gioNha(iso: string): string {
+  const p: Record<string, string> = {};
+  for (const { type, value } of SO_GIO_NHA.formatToParts(new Date(iso))) p[type] = value;
+  // Vai ban ICU cu tra gio '24' cho nua dem thay vi '00'
+  const gio = p.hour === '24' ? '00' : p.hour;
+  return `${p.day}/${p.month}/${p.year} ${gio}:${p.minute}:${p.second}`;
+}
+
+/**
  * Form sua mot bai da giao. Bo cuc va ten nhan bam theo man Nhap tay de bo me
  * khong phai hoc lai — cung nhung o do, chi khac la co san noi dung.
  */
@@ -210,8 +233,7 @@ export default function SuaBai({
           <div>
             <label className="text-p-label uppercase text-on-surface-variant block mb-1">
               Video con đã nộp
-              {assignment.submittedVideoAt &&
-                ` — ${new Date(assignment.submittedVideoAt).toLocaleString('vi-VN', { timeZone: MUI_GIO_NHA })}`}
+              {assignment.submittedVideoAt && ` — ${gioNha(assignment.submittedVideoAt)}`}
             </label>
             <video
               src={assignment.submittedVideoUrl}

@@ -54,8 +54,12 @@ Quy tắc:
   quay video gửi cô → 12-15. Không chắc thì để 10.
 - "canQuayVideo" = true khi bài yêu cầu con QUAY VIDEO hoặc trình diễn thành
   tiếng/động tác để người khác kiểm tra: "quay video", "quay clip gửi cô",
-  "đọc to", "đọc thuộc lòng", "kể lại câu chuyện", "hát", "tập thể dục",
-  "biểu diễn"... Bài viết, vẽ, làm vào vở, hay chỉ XEM video cô gửi thì false.
+  "đọc to", "đọc thuộc lòng", "kể lại câu chuyện cho bố mẹ nghe", "quay video
+  kể lại", "thuyết trình", "hát", "tập thể dục", "biểu diễn"...
+  Bài viết, vẽ, làm vào vở, hay chỉ XEM video cô gửi thì false.
+  QUY TẮC ƯU TIÊN: đề có động từ chỉ việc viết / vẽ / làm vào vở thì LUÔN
+  false, dù trong đề có chữ "kể lại".
+  Ví dụ: "Viết đoạn văn kể lại câu chuyện Cây khế vào vở" -> canQuayVideo = false.
 - Bỏ qua lời chào, lời dặn chung chung của cô giáo, không phải bài tập thì đừng đưa vào.
 - Không bịa thêm bài không có trong nguồn.
 - Chỉ trả về JSON đúng lược đồ, không kèm lời giải thích.`;
