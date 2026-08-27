@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { AttachedMedia, Child, HwSource } from '@/lib/types';
-import { HW_SOURCES, SUBJECTS, iconFor } from '@/lib/types';
+import { DURATION_DEFAULT, HW_SOURCES, SUBJECTS, iconFor } from '@/lib/types';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 /**
@@ -37,8 +37,8 @@ export default function NhapTay({
     const p = (n: number) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
   });
-  // Giu dang chuoi de bo me xoa trong o roi go so moi; luu thi rong = mac dinh 10
-  const [duration, setDuration] = useState('10');
+  // Giu dang chuoi de bo me xoa trong o roi go so moi; luu thi rong = mac dinh
+  const [duration, setDuration] = useState(String(DURATION_DEFAULT));
   const [media, setMedia] = useState<AttachedMedia[]>([]);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -80,7 +80,7 @@ export default function NhapTay({
           source: hwSource,
           drafts: [{
             subject, icon: iconFor(subject), content, note: note || null, lang, confidence: 1, media,
-            durationMinutes: duration === '' ? 10 : Number(duration),
+            durationMinutes: duration === '' ? DURATION_DEFAULT : Number(duration),
           }],
         }),
       });

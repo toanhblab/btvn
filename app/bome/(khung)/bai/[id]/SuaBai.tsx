@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Assignment, AttachedMedia, HwSource } from '@/lib/types';
-import { HW_SOURCES, SUBJECTS, iconFor } from '@/lib/types';
+import { DURATION_DEFAULT, HW_SOURCES, SUBJECTS, iconFor } from '@/lib/types';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 /**
@@ -27,7 +27,7 @@ export default function SuaBai({
   const [lang, setLang] = useState<'vi' | 'en'>(assignment.lang);
   const [dueDate, setDueDate] = useState(assignment.dueDate);
   const [hwSource, setHwSource] = useState<HwSource>(assignment.source);
-  // Giu dang chuoi de bo me xoa trong o roi go so moi; luu thi rong = mac dinh 10
+  // Giu dang chuoi de bo me xoa trong o roi go so moi; luu thi rong = mac dinh
   const [duration, setDuration] = useState(String(assignment.durationMinutes));
   const [media, setMedia] = useState<AttachedMedia[]>(assignment.media);
   const [busy, setBusy] = useState(false);
@@ -68,7 +68,7 @@ export default function SuaBai({
           lang,
           dueDate,
           source: hwSource,
-          durationMinutes: duration === '' ? 10 : Number(duration),
+          durationMinutes: duration === '' ? DURATION_DEFAULT : Number(duration),
           media,
         }),
       });

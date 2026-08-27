@@ -16,6 +16,10 @@ import { pickVoice } from '@/lib/speech';
 
 const KEY = (assignmentId: string) => `btvn:dongho:${assignmentId}`;
 
+/* Moc cu hon nguong nay thi coi nhu con da bo do buoi hoc, khong con la mot
+   phien lam bai — chi kiem tra luc mo man, khong co cron hay dong bo server. */
+const HAN_MOC_MS = 60 * 60_000;
+
 /** Moc bat dau (epoch ms) da luu, hoac null neu chua bam Bat dau. */
 export function docMocBatDau(assignmentId: string): number | null {
   // localStorage co the nem loi (Safari che do rieng tu cu) -> coi nhu chua bam
@@ -31,6 +35,22 @@ export function xoaDongHo(assignmentId: string): void {
   try {
     localStorage.removeItem(KEY(assignmentId));
   } catch { /* khong xoa duoc thi lan sau van tu het han theo moc cu, khong sao */ }
+}
+
+/**
+ * Doc moc bat dau LUC MO MAN: moc cu hon 60 phut (con dong iPad di choi roi hom
+ * sau mo lai) thi het hieu luc — xoa key va coi nhu chua bam, nut "Bat dau lam"
+ * hien lai thay vi ket bai trong trang thai qua gio vinh vien. Trong nguong 60
+ * phut van dem tiep de con nghi ngan quay lai khong mat mach.
+ */
+export function docMocBatDauConHieuLuc(assignmentId: string): number | null {
+  const start = docMocBatDau(assignmentId);
+  if (start === null) return null;
+  if (Date.now() - start > HAN_MOC_MS) {
+    xoaDongHo(assignmentId);
+    return null;
+  }
+  return start;
 }
 
 /** Dong ho dang chay va CON GIO khong — quyet dinh co an mung "xong som". */
@@ -110,8 +130,13 @@ function chuongDiu(ctx: AudioContext | null): void {
   } catch { /* iPad khong phat duoc am thi van co thong diep tren man */ }
 }
 
-const fmt = (sec: number) =>
-  `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+/* mm:ss; tu mot gio tro len doi sang h:mm de phut khong tran vao o mm */
+const fmt = (sec: number) => {
+  const gio = Math.floor(sec / 3600);
+  const phut = Math.floor(sec / 60);
+  if (gio > 0) return `${gio}:${String(phut % 60).padStart(2, '0')}`;
+  return `${String(phut).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+};
 
 /* Chu vi vong tien do (r = 88 trong viewBox 200x200) */
 const CHU_VI = 2 * Math.PI * 88;
@@ -142,7 +167,7 @@ export default function DongHoLamBai({
 
   // Doc moc bat dau da luu — con lo tay reload thi dong ho chay tiep ngay
   useEffect(() => {
-    setStartAt(docMocBatDau(assignmentId));
+    setStartAt(docMocBatDauConHieuLuc(assignmentId));
     daNhac.current = null;
     daHetGio.current = false;
   }, [assignmentId]);

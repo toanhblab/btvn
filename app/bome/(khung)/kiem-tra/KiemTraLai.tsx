@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Child, DraftAssignment, HwSource } from '@/lib/types';
-import { HW_SOURCES, SUBJECTS, hwSourceOf, iconFor } from '@/lib/types';
+import { DURATION_DEFAULT, HW_SOURCES, SUBJECTS, hwSourceOf, iconFor } from '@/lib/types';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 interface Payload {
@@ -19,7 +19,7 @@ interface Payload {
   imageUrls: string[];
 }
 
-// Giu dang chuoi de bo me xoa trong o roi go so moi; luu thi rong = mac dinh 10
+// Giu dang chuoi de bo me xoa trong o roi go so moi; luu thi rong = mac dinh
 type Draft = DraftAssignment & { durationStr: string };
 
 /** Man kiem tra lai — nen tu stitch-parent 08. Ban nhap se KHONG luu neu bo me chua bam. */
@@ -45,7 +45,7 @@ export default function KiemTraLai({
     const p = JSON.parse(raw) as Payload;
     setPayload(p);
     // durationMinutes: ban nhap cu trong sessionStorage (truoc khi co dong ho) chua co
-    setDrafts(p.drafts.map((d) => ({ ...d, media: d.media ?? [], durationStr: String(d.durationMinutes ?? 10) })));
+    setDrafts(p.drafts.map((d) => ({ ...d, media: d.media ?? [], durationStr: String(d.durationMinutes ?? DURATION_DEFAULT) })));
     // Ban nhap cu (truoc khi co nguon giao) khong co hwSource -> truong tieu hoc
     setHwSource(hwSourceOf(p.hwSource));
   }, [router]);
@@ -64,7 +64,7 @@ export default function KiemTraLai({
       ...ds,
       {
         subject: 'Khác', icon: iconFor('Khác'), content: '', note: null, lang: 'vi',
-        confidence: 1, media: [], durationStr: '10',
+        confidence: 1, media: [], durationStr: String(DURATION_DEFAULT),
       },
     ]);
 
@@ -115,7 +115,7 @@ export default function KiemTraLai({
       .filter((d) => d.content.trim())
       .map(({ durationStr, ...d }) => ({
         ...d,
-        durationMinutes: durationStr === '' ? 10 : Number(durationStr),
+        durationMinutes: durationStr === '' ? DURATION_DEFAULT : Number(durationStr),
       }));
     if (clean.length === 0) return setError('Chưa có bài nào để lưu.');
 

@@ -72,7 +72,7 @@ const SCHEMA = {
           content: { type: 'string' },
           note: { type: 'string' },
           lang: { type: 'string', enum: ['vi', 'en'] },
-          duration_minutes: { type: 'integer', minimum: 5, maximum: 15 },
+          duration_minutes: { type: 'integer' },
         },
         // strict:true doi moi thuoc tinh deu phai nam trong required
         required: ['subject', 'content', 'note', 'lang', 'duration_minutes'],
