@@ -93,6 +93,13 @@ export default function QuayVideo({
   // Roi trang giua chung thi tat camera va tha bo nho cua ban xem truoc
   useEffect(() => () => {
     startingRef.current = false;   // getUserMedia dang cho se tu tat luong
+    // Tat het track la MediaRecorder tu chuyen inactive va ban onstop, nen phai
+    // danh dau BO truoc: khong thi onstop dung mot object URL sau khi don xong.
+    discardRef.current = true;
+    const r = recorderRef.current;
+    if (r && r.state !== 'inactive') r.stop();
+    recorderRef.current = null;
+    chunksRef.current = [];
     stopStream();
     if (blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = ''; }
   }, []);
@@ -164,7 +171,7 @@ export default function QuayVideo({
     recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
     recorder.onstop = () => {
       stopStream();
-      if (discardRef.current) { setPhase('idle'); return; }
+      if (discardRef.current) { chunksRef.current = []; setPhase('idle'); return; }
       const out = new Blob(chunksRef.current, { type: recorder.mimeType || mime || 'video/mp4' });
       if (out.size === 0) {
         setError('Chưa quay được gì, con thử lại nhé.');
