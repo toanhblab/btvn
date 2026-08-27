@@ -16,9 +16,10 @@ import { pickVoice } from '@/lib/speech';
 
 const KEY = (assignmentId: string) => `btvn:dongho:${assignmentId}`;
 
-/* Moc cu hon nguong nay thi coi nhu con da bo do buoi hoc, khong con la mot
-   phien lam bai — chi kiem tra luc mo man, khong co cron hay dong bo server. */
-const HAN_MOC_MS = 60 * 60_000;
+/* AN HAN TINH TU LUC HET GIO: qua gio lau hon nguong nay thi coi nhu con da bo
+   do buoi hoc, khong con la mot phien lam bai — chi kiem tra luc mo man, khong
+   co cron hay dong bo server. */
+const AN_HAN_QUA_GIO_MS = 60 * 60_000;
 
 /** Moc bat dau (epoch ms) da luu, hoac null neu chua bam Bat dau. */
 export function docMocBatDau(assignmentId: string): number | null {
@@ -38,15 +39,16 @@ export function xoaDongHo(assignmentId: string): void {
 }
 
 /**
- * Doc moc bat dau LUC MO MAN: moc cu hon 60 phut (con dong iPad di choi roi hom
- * sau mo lai) thi het hieu luc — xoa key va coi nhu chua bam, nut "Bat dau lam"
- * hien lai thay vi ket bai trong trang thai qua gio vinh vien. Trong nguong 60
- * phut van dem tiep de con nghi ngan quay lai khong mat mach.
+ * Doc moc bat dau LUC MO MAN: bai da qua gio hon mot tieng (con dong iPad di
+ * choi roi hom sau mo lai) thi moc het hieu luc — xoa key va coi nhu chua bam,
+ * nut "Bat dau lam" hien lai thay vi ket bai trong trang thai qua gio vinh vien.
+ * Nguong tinh TU LUC HET GIO nen bai dai (bo me go 90 phut) dang chay dung gio
+ * khong bao gio bi xoa, va con nghi ngan quay lai van dem tiep khong mat mach.
  */
-export function docMocBatDauConHieuLuc(assignmentId: string): number | null {
+export function docMocBatDauConHieuLuc(assignmentId: string, minutes: number): number | null {
   const start = docMocBatDau(assignmentId);
   if (start === null) return null;
-  if (Date.now() - start > HAN_MOC_MS) {
+  if (Date.now() - start > minutes * 60_000 + AN_HAN_QUA_GIO_MS) {
     xoaDongHo(assignmentId);
     return null;
   }
@@ -130,12 +132,15 @@ function chuongDiu(ctx: AudioContext | null): void {
   } catch { /* iPad khong phat duoc am thi van co thong diep tren man */ }
 }
 
-/* mm:ss; tu mot gio tro len doi sang h:mm de phut khong tran vao o mm */
-const fmt = (sec: number) => {
+const fmt = (sec: number) =>
+  `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+
+/* Nhan qua gio di kem chu "Quá giờ": tu mot tieng tro len doi sang h:mm de phut
+   khong tran vao o mm. Dem nguoc thi giu mm:ss cho khoi doc nham thanh phut. */
+const fmtQuaGio = (sec: number) => {
   const gio = Math.floor(sec / 3600);
-  const phut = Math.floor(sec / 60);
-  if (gio > 0) return `${gio}:${String(phut % 60).padStart(2, '0')}`;
-  return `${String(phut).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+  if (gio === 0) return fmt(sec);
+  return `${gio}:${String(Math.floor(sec / 60) % 60).padStart(2, '0')}`;
 };
 
 /* Chu vi vong tien do (r = 88 trong viewBox 200x200) */
@@ -167,10 +172,10 @@ export default function DongHoLamBai({
 
   // Doc moc bat dau da luu — con lo tay reload thi dong ho chay tiep ngay
   useEffect(() => {
-    setStartAt(docMocBatDauConHieuLuc(assignmentId));
+    setStartAt(docMocBatDauConHieuLuc(assignmentId, minutes));
     daNhac.current = null;
     daHetGio.current = false;
-  }, [assignmentId]);
+  }, [assignmentId, minutes]);
 
   useEffect(() => {
     if (startAt === null) return;
@@ -288,7 +293,7 @@ export default function DongHoLamBai({
                 className="text-[52px] font-bold leading-none text-outline"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
               >
-                +{fmt(elapsedSec - totalSec)}
+                +{fmtQuaGio(elapsedSec - totalSec)}
               </span>
             </>
           ) : (
