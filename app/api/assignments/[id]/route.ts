@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { parentFamilyId, viewingFamilyId } from '@/lib/auth';
+import { laUrlTepAppCap } from '@/lib/media';
 import { deleteAssignment, getAssignment, setStatus, submitVideo, updateAssignment } from '@/lib/store';
 import { hwSourceOf, sanitizeDuration } from '@/lib/types';
 
@@ -41,8 +42,10 @@ export async function PATCH(req: Request, { params }: Ctx) {
     if ('status' in body && body.status !== 'done' && body.status !== 'todo') {
       return NextResponse.json({ error: 'Trạng thái không hợp lệ.' }, { status: 400 });
     }
-    if ('videoUrl' in body &&
-        (typeof body.videoUrl !== 'string' || !body.videoUrl || body.videoUrl.length > 2048)) {
+    // Chi nhan URL do chinh app cap (Blob hoac /api/tep/<ten>) — duong nay khong
+    // doi PIN nen chuoi tu do se cho phep ghi mot video KHONG TON TAI vao bai roi
+    // bao bo me la con da nop.
+    if ('videoUrl' in body && !laUrlTepAppCap(body.videoUrl)) {
       return NextResponse.json({ error: 'Video không hợp lệ.' }, { status: 400 });
     }
     // Bai bat buoc quay video thi tick suong khong tinh: phai co video (moi gui

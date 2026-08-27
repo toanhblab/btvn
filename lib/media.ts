@@ -29,6 +29,40 @@ export const MEDIA_ICON: Record<MediaKind, string> = {
 /** Tep dau vao cho <input type="file"> o cac cho dinh kem. */
 export const MEDIA_ACCEPT = 'video/*,audio/*,image/*';
 
+/**
+ * Ten tep hop le duy nhat trong .data/uploads: <32 hex><duoi>, do lib/upload-route
+ * tu dat. Vua la chot chong ".." lach ra ngoai thu muc, vua chan liet ke mo.
+ */
+export const TEN_TEP_RE = /^([0-9a-f]{32})(\.[a-z0-9]{1,5})$/;
+
+const TEP_PREFIX = '/api/tep/';
+
+/** Duong dan app tra ve cho tep ghi o .data/uploads (che do dev chua bat Blob). */
+export function duongDanTep(ten: string): string {
+  return `${TEP_PREFIX}${ten}`;
+}
+
+/**
+ * URL tep nay co PHAI do app minh cap khong? Chi hai dang: duong dan
+ * /api/tep/<32 hex><duoi> (che do dev) hoac https tren host Vercel Blob.
+ *
+ * Can thiet vi duong PATCH cua con KHONG doi PIN (chi doi cookie thiet bi, ma
+ * cookie do phat cho bat cu ai mo link /nha/<slug>). Khong chot dang URL thi
+ * chuoi bat ky cung ghi duoc vao submitted_video_url: bo me thay chip "🎥 Đã nộp
+ * video" cho video khong ton tai, va trinh duyet bo me tai mot URL ngoai la.
+ */
+export function laUrlTepAppCap(url: unknown): url is string {
+  if (typeof url !== 'string' || !url || url.length > 2048) return false;
+  if (url.startsWith(TEP_PREFIX)) return TEN_TEP_RE.test(url.slice(TEP_PREFIX.length));
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return false;
+  }
+  return u.protocol === 'https:' && /(^|\.)blob\.vercel-storage\.com$/.test(u.hostname);
+}
+
 /** Phan loai theo MIME; khong phai video/audio/anh thi tra null de bao loi som. */
 export function mediaKindOf(mime: string): MediaKind | null {
   if (mime.startsWith('video/')) return 'video';

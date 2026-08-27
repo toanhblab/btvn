@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { TEN_TEP_RE } from '@/lib/media';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,9 +36,10 @@ const MIME: Record<string, string> = {
 export async function GET(req: Request, { params }: { params: Promise<{ ten: string }> }) {
   const { ten } = await params;
 
-  // Ten hop le duy nhat la <32 hex><duoi> do /api/upload-media tu dat —
-  // vua la chot chong ".." lach ra ngoai thu muc, vua chan liet ke mo.
-  const m = /^([0-9a-f]{32})(\.[a-z0-9]{1,5})$/.exec(ten);
+  // Ten hop le duy nhat la <32 hex><duoi> do lib/upload-route tu dat (TEN_TEP_RE
+  // la hop dong dung chung) — vua la chot chong ".." lach ra ngoai thu muc, vua
+  // chan liet ke mo.
+  const m = TEN_TEP_RE.exec(ten);
   if (!m) return NextResponse.json({ error: 'Không có tệp này.' }, { status: 404 });
 
   const { readFileSync, existsSync } = await import('node:fs');

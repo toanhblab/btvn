@@ -130,7 +130,7 @@ interface RawDraft {
  * thi doi tay lai het:
  *   PHAI bat: "Quay 1 video kể lại câu chuyện" | "Quay một video thuyết trình"
  *             "Quay lại video bài hát" | "Quay 2 videos đọc bài"
- *             "Nộp video đọc bài" | "Gửi video cho cô" | "quay video gửi cô"
+ *             "Nộp video đọc bài" | "quay video gửi cô"
  *             "Đọc to bài thơ" | "Đọc thuộc lòng" | "Tập thể dục" | "Biểu diễn"
  *   KHONG duoc bat: "Viết đoạn văn kể lại câu chuyện Cây khế vào vở"
  *                   "Chép lời bài hát Bụi phấn vào vở"
@@ -138,13 +138,27 @@ interface RawDraft {
  *                   "Xem video cô gửi" | "Đọc toàn bộ câu chuyện" | "Đọc toán trang 5"
  *                   "Xem lại group video của lớp rồi viết vào vở"
  *                   "Bố mẹ backup video bài giảng cho con xem"
+ *                   "Cô gửi video bài giảng, con xem rồi làm bài tập vào vở"
+ *                   "Cô giáo gửi video cho bố mẹ tham khảo"
+ *                   "Con xem ít nhất 1 tập phim hoạt hình trong link film cô gửi
+ *                    trong nhóm riêng."
  *
- * Hai ca cuoi la ly do co (?<![a-zA-ZÀ-ỹ]) truoc nhom dong tu: khong co bien trai
- * thi "up" bat duoc phan duoi cua "gro-up" / "back-up". splitByRule chi chay o
- * may chu (app/api/extract) nen lookbehind khong lien quan Safari cu.
+ * Ba ca cuoi la ly do dong tu "gửi" DA BI BO khoi nhom dong tu — DUNG them lai.
+ * Trong tin nhan cua co giao, "gửi" gan chu "video" thi nguoi gui thuong la CO
+ * chu khong phai con ("cô gửi video bài giảng"), va ca hai huong va — neo nguoi
+ * gui (cô|thầy) hay negative lookbehind chan chu ngu — deu vo tren bien the that
+ * ("Cô giáo gửi", "Cô chủ nhiệm gửi", "Cô Lan gửi", "Giáo viên gửi", "Nhà trường
+ * gửi"). Sot co thi bo me bat lai bang chip 🎥 khi duyet; bat oan thi XOA han nut
+ * "Đã làm xong" cua con. Chieu "Con gửi video cho cô" van bat duoc qua "quay" /
+ * "nộp" — hai chu gan nhu luon co mat trong de kieu do.
+ *
+ * Hai ca "group video" / "backup video" la ly do co (?<![a-zA-ZÀ-ỹ]) truoc nhom
+ * dong tu: khong co bien trai thi "up" bat duoc phan duoi cua "gro-up" /
+ * "back-up". splitByRule chi chay o may chu (app/api/extract) nen lookbehind
+ * khong lien quan Safari cu.
  */
 const VIDEO_HINT =
-  /(?<![a-zA-ZÀ-ỹ])(quay|nộp|gửi|upload|up)\s*(lại\s*)?(\d+|một|hai|ba)?\s*(video|clip|phim)|đọc\s+to(?![a-zA-ZÀ-ỹ])|đọc\s+thuộc|thuộc\s+lòng|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
+  /(?<![a-zA-ZÀ-ỹ])(quay|nộp|upload|up)\s*(lại\s*)?(\d+|một|hai|ba)?\s*(video|clip|phim)|đọc\s+to(?![a-zA-ZÀ-ỹ])|đọc\s+thuộc|thuộc\s+lòng|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
 
 /**
  * Truoc day o day hoi model tu cham "confidence" 0..1, va man Kiem tra lai gan
