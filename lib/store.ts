@@ -2,6 +2,7 @@ import { query, queryOne } from './db';
 import type {
   Assignment, AttachedMedia, Child, ChildColor, DraftAssignment, HwSource, Lang, MediaKind,
 } from './types';
+import { hwSourceOf } from './types';
 
 /** Ngay hom nay theo gio dia phuong, YYYY-MM-DD (toISOString la UTC nen lech mui gio). */
 export function todayISO(offsetDays = 0): string {
@@ -209,7 +210,7 @@ const toAssignment = (r: AssignmentRow, media: AttachedMedia[]): Assignment => (
   note: r.note,
   lang: r.lang as Lang,
   dueDate: dateStr(r.due_date),
-  source: r.source as HwSource,
+  source: hwSourceOf(r.source),
   status: r.status as Assignment['status'],
   completedAt: r.completed_at ? new Date(r.completed_at).toISOString() : null,
   imageUrl: r.image_url,
