@@ -27,6 +27,8 @@ export default function SuaBai({
   const [lang, setLang] = useState<'vi' | 'en'>(assignment.lang);
   const [dueDate, setDueDate] = useState(assignment.dueDate);
   const [hwSource, setHwSource] = useState<HwSource>(assignment.source);
+  // Giu dang chuoi de bo me xoa trong o roi go so moi; luu thi rong = mac dinh 10
+  const [duration, setDuration] = useState(String(assignment.durationMinutes));
   const [media, setMedia] = useState<AttachedMedia[]>(assignment.media);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -66,6 +68,7 @@ export default function SuaBai({
           lang,
           dueDate,
           source: hwSource,
+          durationMinutes: duration === '' ? 10 : Number(duration),
           media,
         }),
       });
@@ -175,6 +178,24 @@ export default function SuaBai({
               </button>
             ))}
           </div>
+        </div>
+
+        <div>
+          <label className="text-p-label uppercase text-on-surface-variant block mb-1">
+            Thời lượng làm bài (phút)
+          </label>
+          {/* Dong ho o man cua con dem nguoc tu so nay. AI uoc 5-15;
+              bo me sua tay thi duoc ghi ngoai khoang do (toi da 180). */}
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={180}
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            className="w-full rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
+                       bg-surface-container-lowest"
+          />
         </div>
 
         <div>

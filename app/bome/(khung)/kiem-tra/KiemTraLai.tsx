@@ -41,7 +41,8 @@ export default function KiemTraLai({
     if (!raw) { router.replace('/bome/them'); return; }
     const p = JSON.parse(raw) as Payload;
     setPayload(p);
-    setDrafts(p.drafts.map((d) => ({ ...d, media: d.media ?? [] })));
+    // durationMinutes: ban nhap cu trong sessionStorage (truoc khi co dong ho) chua co
+    setDrafts(p.drafts.map((d) => ({ ...d, media: d.media ?? [], durationMinutes: d.durationMinutes ?? 10 })));
     // Ban nhap cu (truoc khi co nguon giao) khong co hwSource -> truong tieu hoc
     setHwSource(hwSourceOf(p.hwSource));
   }, [router]);
@@ -60,7 +61,7 @@ export default function KiemTraLai({
       ...ds,
       {
         subject: 'Khác', icon: iconFor('Khác'), content: '', note: null, lang: 'vi',
-        confidence: 1, media: [],
+        confidence: 1, media: [], durationMinutes: 10,
       },
     ]);
 
@@ -248,6 +249,25 @@ export default function KiemTraLai({
                   <option value="vi">🇻🇳 Đọc giọng Việt</option>
                   <option value="en">🇬🇧 Đọc giọng Anh</option>
                 </select>
+
+                {/* Dong ho o man cua con dem nguoc tu so nay. AI uoc 5-15 phut;
+                    bo me sua tay thi duoc ghi ngoai khoang do (toi da 180). */}
+                <label className="inline-flex items-center gap-1 text-p-body-sm rounded-full bg-surface-container px-3 py-1.5 text-on-surface">
+                  <span className="material-symbols-outlined text-base">timer</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={180}
+                    value={d.durationMinutes ?? 10}
+                    onChange={(e) =>
+                      patch(i, 'durationMinutes', e.target.value === '' ? undefined : Number(e.target.value))
+                    }
+                    className="w-12 bg-transparent outline-none text-right"
+                    aria-label="Thời lượng (phút)"
+                  />
+                  phút
+                </label>
 
                 {/* Ten sach hien tren the bai tap o man cua con nen o nay phai du
                     rong de doc duoc ca ten sach, khong chi so trang */}

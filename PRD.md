@@ -81,6 +81,7 @@ Thiết kế cho trẻ 4–6 tuổi, chưa đọc thạo, dùng iPad:
 - Mở một bài → ảnh gốc chiếm phần lớn màn hình (zoom được) + đề bài chữ to + **nút loa 🔊 "Nghe đề bài"**.
 - Giọng đọc theo ngôn ngữ của bài: đề tiếng Việt đọc giọng `vi-VN`, đề tiếng Anh đọc giọng `en-US`. Bài lẫn hai thứ tiếng thì đọc từng đoạn theo đúng giọng của đoạn đó.
 - Nút **"Đã làm xong"** rất to, có phản hồi vui (âm thanh / hiệu ứng nhỏ). Tick sai thì bỏ tick được.
+- **Đồng hồ làm bài:** mỗi bài có thời lượng ước tính (AI ước 5–15 phút theo độ phức tạp, bố mẹ sửa được). Con bấm "Bắt đầu làm" → đếm ngược to rõ kèm vòng tiến độ đổi màu (xanh → vàng → đỏ nhạt) và 🚀 bay theo vòng; giọng nói nhắc mỗi 5 phút và ở phút cuối. Hết giờ chỉ có chuông dịu + lời động viên, đồng hồ đếm quá giờ màu xám — không phạt. Xong khi còn giờ thì bắn confetti + lời khen.
 - Tiến độ dạng hình, không dạng số: 5 ô vuông, làm xong ô nào thì ô đó sáng lên (kèm chữ `3/5` cho bố mẹ nhìn).
 - Vùng bấm tối thiểu ~64px cho ngón tay trẻ con; không có menu ẩn, không có cử chỉ swipe phức tạp.
 - Nếu hôm nay không có bài: hiện màn hình khen "Hôm nay không có bài tập 🎉".

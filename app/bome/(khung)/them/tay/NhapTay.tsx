@@ -37,6 +37,8 @@ export default function NhapTay({
     const p = (n: number) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
   });
+  // Giu dang chuoi de bo me xoa trong o roi go so moi; luu thi rong = mac dinh 10
+  const [duration, setDuration] = useState('10');
   const [media, setMedia] = useState<AttachedMedia[]>([]);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -76,7 +78,10 @@ export default function NhapTay({
           childIds: chosen,
           dueDate,
           source: hwSource,
-          drafts: [{ subject, icon: iconFor(subject), content, note: note || null, lang, confidence: 1, media }],
+          drafts: [{
+            subject, icon: iconFor(subject), content, note: note || null, lang, confidence: 1, media,
+            durationMinutes: duration === '' ? 10 : Number(duration),
+          }],
         }),
       });
       const data = await res.json();
@@ -193,6 +198,23 @@ export default function NhapTay({
               </button>
             ))}
           </div>
+        </div>
+
+        <div>
+          <label className="text-p-label uppercase text-on-surface-variant block mb-1">
+            Thời lượng làm bài (phút)
+          </label>
+          {/* Dong ho o man cua con dem nguoc tu so nay */}
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={180}
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            className="w-full rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
+                       bg-surface-container-lowest"
+          />
         </div>
 
         <div>

@@ -154,6 +154,14 @@ tiếng. Bé 4 tuổi chưa đọc được chữ nào nên nút 🔊 gần như
 biết phải làm gì — đọc đề tiếng Anh bằng giọng Việt thì bé nghe không hiểu.
 Bố mẹ sửa được trường này ở màn "Kiểm tra lại".
 
+**Đồng hồ làm bài.** Mỗi bài có `duration_minutes` — AI ước 5–15 phút theo độ
+phức tạp (kẹp trong khoảng đó), bố mẹ sửa được ở màn "Kiểm tra lại" / "Sửa bài
+tập" (sửa tay thì được ra ngoài khoảng). Ở màn của con, bấm "Bắt đầu làm" là đếm
+ngược: vòng tiến độ đổi màu xanh → vàng → đỏ nhạt, giọng nói nhắc mỗi 5 phút và
+phút cuối, hết giờ chuông dịu + đếm quá giờ màu xám (không phạt), xong khi còn
+giờ thì confetti + lời khen. Mốc bắt đầu lưu trong `localStorage` theo id bài
+nên lỡ reload giờ không trôi.
+
 **Không bao giờ để bố mẹ bị kẹt.** AI hỏng, hết quota hay chưa có key thì vẫn
 tách tạm theo dòng kèm cảnh báo, và luôn có đường "Nhập tay từng bài".
 

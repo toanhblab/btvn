@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Assignment, Lang } from '@/lib/types';
 import { pickVoice, splitSpeech } from '@/lib/speech';
+import Confetti from '../../xong/Confetti';
+import DongHoLamBai, { conThoiGian, noi, xoaDongHo } from './DongHoLamBai';
 
 /**
  * Chi tiet mot bai — nen tu Stitch 07.
@@ -25,6 +27,8 @@ export default function ChiTietBai({
   const [done, setDone] = useState(assignment.status === 'done');
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  // Xong khi dong ho van con gio -> ban confetti + loi khen (an mung, khong bat buoc)
+  const [xongSom, setXongSom] = useState(false);
   const [voiceWarning, setVoiceWarning] = useState('');
 
   /* De hay tron hai thu tieng ("Viết các từ: apple, banana") -> tach thanh doan
@@ -90,8 +94,17 @@ export default function ChiTietBai({
       });
       if (!res.ok) throw new Error();
       setDone(nextDone);
-      if (nextDone) setShowSuccess(true);
-      else router.push(`/con/${childId}`);
+      if (nextDone) {
+        // Con gio tren dong ho -> an mung xong som; dong ho da xong viec thi xoa
+        const som = conThoiGian(assignment.id, assignment.durationMinutes);
+        xoaDongHo(assignment.id);
+        setXongSom(som);
+        if (som) {
+          speechSynthesis?.cancel();   // cat cau nhac dang doc do, uu tien loi khen
+          noi('Giỏi quá! Con làm xong sớm luôn!');
+        }
+        setShowSuccess(true);
+      } else router.push(`/con/${childId}`);
     } catch {
       alert('Chưa lưu được. Con thử lại nhé!');
     } finally {
@@ -145,6 +158,12 @@ export default function ChiTietBai({
             <span className="text-k-headline">Nghe đề bài</span>
           </button>
           {voiceWarning && <p className="text-k-body-sm text-error">{voiceWarning}</p>}
+
+          {/* Dong ho lam bai: nut "Bat dau lam" -> dem nguoc + nhac giong noi.
+              Bai da xong thi thoi, khong can gio giac gi nua. */}
+          {!done && (
+            <DongHoLamBai assignmentId={assignment.id} minutes={assignment.durationMinutes} />
+          )}
 
           {/* Tep bo me dinh kem — video luyen phat am, ghi am co doc mau, anh bang
               chu cai... Nut play cua trinh duyet du to cho tre, chi can khung ro
@@ -218,7 +237,10 @@ export default function ChiTietBai({
 
       {showSuccess && (
         <div className="fixed inset-0 bg-white/80 backdrop-blur-md z-50 flex flex-col items-center justify-center p-k-edge">
-          <div className="bg-white rounded-[40px] p-12 flex flex-col items-center gap-8 soft-shadow">
+          {/* Xong truoc khi het gio -> mua confetti sau tam chuc mung.
+              Tam phai co position de confetti (canvas fixed) roi PHIA SAU chu. */}
+          {xongSom && <Confetti />}
+          <div className="relative bg-white rounded-[40px] p-12 flex flex-col items-center gap-8 soft-shadow">
             <span className="material-symbols-outlined text-[120px] text-success icon-fill animate-bounce">
               star
             </span>

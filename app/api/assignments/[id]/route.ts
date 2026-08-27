@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { parentFamilyId, viewingFamilyId } from '@/lib/auth';
 import { deleteAssignment, getAssignment, setStatus, updateAssignment } from '@/lib/store';
-import { hwSourceOf } from '@/lib/types';
+import { hwSourceOf, sanitizeDuration } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,6 +48,11 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
   // Noi giao chi nhan gia tri app biet — gia tri la ep ve truong tieu hoc
   if (body.source !== undefined) body.source = hwSourceOf(body.source);
+
+  // Thoi luong bo me sua tay: chi can so duong hop ly, khong kep lai 5-15
+  if (body.durationMinutes !== undefined) {
+    body.durationMinutes = sanitizeDuration(body.durationMinutes);
+  }
 
   // Gui `media` len la thay CA danh sach tep dinh kem cua bai; lam sach truoc khi ghi
   if (body.media !== undefined) {

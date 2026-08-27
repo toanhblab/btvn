@@ -14,7 +14,7 @@
  */
 
 import type { DraftAssignment, HwSource, Lang } from './types';
-import { iconFor, SUBJECTS } from './types';
+import { clampDuration, DURATION_DEFAULT, iconFor, SUBJECTS } from './types';
 
 const BASE_URL = process.env.NOUS_BASE_URL || 'https://inference-api.nousresearch.com/v1';
 const MODEL = process.env.NOUS_MODEL || 'qwen/qwen3-vl-32b-instruct';
@@ -48,6 +48,10 @@ Quy tắc:
   cùng một việc.
 - Giữ đủ MỌI việc con phải làm trong một mục, kể cả việc phụ như "quay video gửi
   cho cô", "viết vào vở riêng", "gửi vào nhóm". Bỏ sót thì con làm thiếu.
+- "duration_minutes" là thời gian ước tính để trẻ làm xong bài, SỐ NGUYÊN từ 5
+  đến 15 (phút). Ước theo độ phức tạp thực tế: bài chép ngắn, tô màu một hình,
+  đọc một trang → 5; bài trung bình → 8-10; bài toán nhiều câu, viết đoạn văn,
+  quay video gửi cô → 12-15. Không chắc thì để 10.
 - Bỏ qua lời chào, lời dặn chung chung của cô giáo, không phải bài tập thì đừng đưa vào.
 - Không bịa thêm bài không có trong nguồn.
 - Chỉ trả về JSON đúng lược đồ, không kèm lời giải thích.`;
@@ -68,9 +72,10 @@ const SCHEMA = {
           content: { type: 'string' },
           note: { type: 'string' },
           lang: { type: 'string', enum: ['vi', 'en'] },
+          duration_minutes: { type: 'integer', minimum: 5, maximum: 15 },
         },
         // strict:true doi moi thuoc tinh deu phai nam trong required
-        required: ['subject', 'content', 'note', 'lang'],
+        required: ['subject', 'content', 'note', 'lang', 'duration_minutes'],
         additionalProperties: false,
       },
     },
@@ -81,6 +86,7 @@ const SCHEMA = {
 
 interface RawDraft {
   subject?: string; content?: string; note?: string; lang?: string;
+  duration_minutes?: number;
 }
 
 /**
@@ -123,6 +129,8 @@ function normalize(items: RawDraft[]): DraftAssignment[] {
         note: d.note?.trim() || null,
         lang: langOf(content, d.lang),
         confidence: DO_TIN_AI,
+        // Schema da rang 5-15 nhung van kep lai: model co the lo tra JSON ngoai schema
+        durationMinutes: clampDuration(d.duration_minutes),
       };
     });
 }
@@ -241,6 +249,8 @@ export function splitByRule(text: string): DraftAssignment[] {
         note: null,
         lang: (viChars === 0 && /[a-z]/i.test(line) ? 'en' : 'vi') as Lang,
         confidence: 0.3,   // thap de man kiem tra luon canh bao bo me xem lai
+        // Tach tho khong doan duoc do phuc tap -> de mac dinh, bo me sua o man kiem tra
+        durationMinutes: DURATION_DEFAULT,
       };
     });
 }

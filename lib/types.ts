@@ -65,6 +65,8 @@ export interface Assignment {
   completedAt: string | null;
   imageUrl: string | null;
   media: AttachedMedia[];
+  /** Thoi luong lam bai (phut) — dong ho dem nguoc o man cua con chay tu so nay. */
+  durationMinutes: number;
 }
 
 /** Mot bai do AI tach ra, chua luu — bo me con phai duyet o man "Kiem tra lai". */
@@ -83,6 +85,33 @@ export interface DraftAssignment {
   confidence: number;
   /** Tep dinh kem cho bai nay. Optional vi ban nhap cu trong sessionStorage khong co. */
   media?: AttachedMedia[];
+  /** Thoi luong (phut). Optional vi ban nhap cu trong sessionStorage khong co -> mac dinh 10. */
+  durationMinutes?: number;
+}
+
+/* ---------------- Thoi luong lam bai ----------------
+ *
+ * AI uoc luong theo do phuc tap nhung bi KEP trong [MIN, MAX] — LLM doi khi
+ * phong dai ("bai kho, 45 phut") trong khi tre 4-6 tuoi khong ngoi qua 15 phut.
+ * Bo me sua tay thi chi can so duong hop ly, duoc phep ra ngoai khoang cua AI.
+ */
+
+export const DURATION_MIN = 5;
+export const DURATION_MAX = 15;
+export const DURATION_DEFAULT = 10;
+
+/** Kep uoc luong cua AI vao [5, 15]; gia tri hong -> mac dinh 10. */
+export function clampDuration(v: unknown): number {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n) || n <= 0) return DURATION_DEFAULT;
+  return Math.min(DURATION_MAX, Math.max(DURATION_MIN, n));
+}
+
+/** Lam sach gia tri bo me nhap: so nguyen duong, toi da 3 tieng cho khoi go nham. */
+export function sanitizeDuration(v: unknown): number {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n) || n <= 0) return DURATION_DEFAULT;
+  return Math.min(n, 180);
 }
 
 /** Danh sach mon co dinh + icon. PRD muc 12 con de mo, tam chot ngan gon. */
