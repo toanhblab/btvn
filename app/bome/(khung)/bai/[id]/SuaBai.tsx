@@ -28,7 +28,10 @@ const SO_GIO_NHA = new Intl.DateTimeFormat('en-US', {
   timeZone: MUI_GIO_NHA,
   year: 'numeric', month: '2-digit', day: '2-digit',
   hour: '2-digit', minute: '2-digit', second: '2-digit',
-  hourCycle: 'h23',
+  // hour12 co tu doi Intl dau tien va theo spec no de len tren hourCycle. Safari
+  // 14.0 (iPadOS 14.0-14.4) BO QUA hourCycle, quay ve h12 va them phan dayPeriod
+  // — gioNha khong doc phan do nen 19:30 tu nhien thanh 07:30 tren may cua bo me.
+  hour12: false, hourCycle: 'h23',
 });
 
 function gioNha(iso: string): string {

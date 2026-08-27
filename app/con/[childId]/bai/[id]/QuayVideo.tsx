@@ -66,6 +66,8 @@ export default function QuayVideo({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedRef = useRef(0);
   const blobUrlRef = useRef('');
+  /** Ban da tai len xong roi (kem chinh Blob no den tu) — de gui lai khong tai lai. */
+  const uploadedRef = useRef<{ blob: Blob; url: string } | null>(null);
   const startingRef = useRef(false);
 
   useEffect(() => {
@@ -85,6 +87,16 @@ export default function QuayVideo({
     setBlobUrl(url);
   }
 
+  /**
+   * Doi ban quay hien tai. Phai di qua day chu khong goi setBlob truc tiep: doi
+   * ban quay la bo hieu luc URL da tai len, khong bo thi lan gui sau se dinh kem
+   * URL cua ban quay CU.
+   */
+  function setClip(b: Blob | null) {
+    uploadedRef.current = null;
+    setBlob(b);
+  }
+
   function stopStream() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
@@ -102,6 +114,7 @@ export default function QuayVideo({
     recorderRef.current = null;
     chunksRef.current = [];
     stopStream();
+    uploadedRef.current = null;
     if (blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = ''; }
   }, []);
 
@@ -123,7 +136,7 @@ export default function QuayVideo({
     setStarting(true);
     setError('');
     setPreviewUrl('');
-    setBlob(null);
+    setClip(null);
 
     let stream: MediaStream;
     try {
@@ -181,7 +194,7 @@ export default function QuayVideo({
         setPhase('idle');
         return;
       }
-      setBlob(out);
+      setClip(out);
       setPreviewUrl(URL.createObjectURL(out));
       setPhase('preview');
     };
@@ -235,7 +248,7 @@ export default function QuayVideo({
     // Huy lan xin quyen camera dang cho (neu co) de no khong de mat tep nay
     startingRef.current = false;
     setStarting(false);
-    setBlob(file);
+    setClip(file);
     setPreviewUrl(URL.createObjectURL(file));
     setPhase('preview');
   }
@@ -245,15 +258,22 @@ export default function QuayVideo({
     setPhase('sending');
     setError('');
     try {
-      const duoi = blob.type.includes('webm') ? 'webm' : 'mp4';
-      const file = blob instanceof File
-        ? blob
-        : new File([blob], `quay-${Date.now()}.${duoi}`, { type: blob.type });
-      const url = await uploadSubmissionVideo(file, blobEnabled);
+      // Lan truoc tai len xong roi ma PATCH moi hong thi chi lam lai PATCH: tai
+      // lai la de thanh mot ban 35-180MB mo vang tren Blob, khong ai tro toi va
+      // phia con khong co duong xoa.
+      let url = uploadedRef.current?.blob === blob ? uploadedRef.current.url : '';
+      if (!url) {
+        const duoi = blob.type.includes('webm') ? 'webm' : 'mp4';
+        const file = blob instanceof File
+          ? blob
+          : new File([blob], `quay-${Date.now()}.${duoi}`, { type: blob.type });
+        url = await uploadSubmissionVideo(file, blobEnabled);
+        uploadedRef.current = { blob, url };
+      }
       await onSubmit(url);
       // Thanh cong: ben ngoai hien man khen va chuyen trang; don ban xem truoc
       setPreviewUrl('');
-      setBlob(null);
+      setClip(null);
       setPhase('idle');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Chưa gửi được video. Con thử lại nhé!');
@@ -329,7 +349,7 @@ export default function QuayVideo({
             </button>
             <button
               onClick={() => {
-                setPreviewUrl(''); setBlob(null); setPhase('idle');
+                setPreviewUrl(''); setClip(null); setPhase('idle');
               }}
               disabled={phase === 'sending'}
               className="rounded-3xl border-4 border-outline-variant text-on-surface-variant

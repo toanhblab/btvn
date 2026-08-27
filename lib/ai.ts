@@ -57,6 +57,9 @@ Quy tắc:
   "đọc to", "đọc thuộc lòng", "kể lại câu chuyện cho bố mẹ nghe", "quay video
   kể lại", "thuyết trình", "hát", "tập thể dục", "biểu diễn"...
   Bài viết, vẽ, làm vào vở, hay chỉ XEM video cô gửi thì false.
+  Đề đã ghi thẳng "quay video", "quay clip", "nộp video", "gửi video" thì
+  canQuayVideo = true, không cần suy luận thêm — kể cả khi có chữ đệm ở giữa
+  ("quay 1 video kể lại câu chuyện", "quay lại video bài hát").
   QUY TẮC ƯU TIÊN: đề có động từ chỉ việc viết / vẽ / làm vào vở thì LUÔN
   false, dù trong đề có chữ "kể lại".
   Ví dụ: "Viết đoạn văn kể lại câu chuyện Cây khế vào vở" -> canQuayVideo = false.
@@ -118,9 +121,24 @@ interface RawDraft {
  * theo dong deu mang confidence 0.3 nen man Kiem tra lai luon dan canh bao
  * "Tách tạm, chưa qua AI", va bo me bat chip 🎥 ngay tai do bang mot lan bam.
  * Bom them tu khoa vao day de "cho du" la doi cai gia dat hon cai duoc.
+ *
+ * Ngoai le duy nhat: khi co giao GHI THANG chu "video/clip/phim" sau mot dong tu
+ * nop bai thi khong con gi phai doan, nen nhanh do nhan ca chu dem o giua ("quay
+ * 1 video...", "quay lại video...", "nộp video...").
+ *
+ * Repo khong co unit test — cac ca duoi day la hop dong cua regex nay, doi regex
+ * thi doi tay lai het:
+ *   PHAI bat: "Quay 1 video kể lại câu chuyện" | "Quay một video thuyết trình"
+ *             "Quay lại video bài hát" | "Quay 2 videos đọc bài"
+ *             "Nộp video đọc bài" | "Gửi video cho cô" | "quay video gửi cô"
+ *             "Đọc to bài thơ" | "Đọc thuộc lòng" | "Tập thể dục" | "Biểu diễn"
+ *   KHONG duoc bat: "Viết đoạn văn kể lại câu chuyện Cây khế vào vở"
+ *                   "Chép lời bài hát Bụi phấn vào vở"
+ *                   "Xem video bài giảng rồi làm bài tập"
+ *                   "Xem video cô gửi" | "Đọc toàn bộ câu chuyện" | "Đọc toán trang 5"
  */
 const VIDEO_HINT =
-  /quay\s*(video|clip|phim)|đọc\s+to(?![a-zA-ZÀ-ỹ])|đọc\s+thuộc|thuộc\s+lòng|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
+  /(quay|nộp|gửi|upload|up)\s*(lại\s*)?(\d+|một|hai|ba)?\s*(video|clip|phim)|đọc\s+to(?![a-zA-ZÀ-ỹ])|đọc\s+thuộc|thuộc\s+lòng|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
 
 /**
  * Truoc day o day hoi model tu cham "confidence" 0..1, va man Kiem tra lai gan
