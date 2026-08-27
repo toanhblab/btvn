@@ -101,7 +101,7 @@ interface RawDraft {
  * KHONG bat tu "video" tran: "xem video cô gửi" la XEM, khong phai quay.
  */
 const VIDEO_HINT =
-  /quay\s*(video|clip|phim)|đọc\s+to\b|đọc\s+thuộc|thuộc\s+lòng|kể\s+lại|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
+  /quay\s*(video|clip|phim)|đọc\s+to(?![a-zA-ZÀ-ỹ])|đọc\s+thuộc|thuộc\s+lòng|kể\s+lại|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
 
 /**
  * Truoc day o day hoi model tu cham "confidence" 0..1, va man Kiem tra lai gan
