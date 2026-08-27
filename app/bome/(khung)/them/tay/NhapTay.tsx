@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { AttachedMedia, Child } from '@/lib/types';
-import { SUBJECTS, iconFor } from '@/lib/types';
+import type { AttachedMedia, Child, HwSource } from '@/lib/types';
+import { HW_SOURCES, SUBJECTS, iconFor } from '@/lib/types';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 /**
@@ -31,6 +31,7 @@ export default function NhapTay({
   const [content, setContent] = useState('');
   const [note, setNote] = useState('');
   const [lang, setLang] = useState<'vi' | 'en'>('vi');
+  const [hwSource, setHwSource] = useState<HwSource>('primary_school');
   const [dueDate, setDueDate] = useState(() => {
     const d = new Date();
     const p = (n: number) => String(n).padStart(2, '0');
@@ -74,6 +75,7 @@ export default function NhapTay({
         body: JSON.stringify({
           childIds: chosen,
           dueDate,
+          source: hwSource,
           drafts: [{ subject, icon: iconFor(subject), content, note: note || null, lang, confidence: 1, media }],
         }),
       });
@@ -172,6 +174,24 @@ export default function NhapTay({
               <option value="vi">🇻🇳 Tiếng Việt</option>
               <option value="en">🇬🇧 Tiếng Anh</option>
             </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="text-p-label uppercase text-on-surface-variant block mb-1">Bài của lớp nào</label>
+          <div className="flex gap-2 flex-wrap">
+            {(Object.keys(HW_SOURCES) as HwSource[]).map((s) => (
+              <button
+                key={s}
+                onClick={() => setHwSource(s)}
+                className={`px-4 min-h-p-tap rounded-full text-p-body-sm font-bold border
+                            ${hwSource === s
+                              ? 'bg-primary text-on-primary border-primary'
+                              : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-high'}`}
+              >
+                {HW_SOURCES[s].icon} {HW_SOURCES[s].label}
+              </button>
+            ))}
           </div>
         </div>
 

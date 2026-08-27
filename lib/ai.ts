@@ -13,7 +13,7 @@
  * PRD muc 8 ghi ro dieu nay.
  */
 
-import type { DraftAssignment, Lang } from './types';
+import type { DraftAssignment, HwSource, Lang } from './types';
 import { iconFor, SUBJECTS } from './types';
 
 const BASE_URL = process.env.NOUS_BASE_URL || 'https://inference-api.nousresearch.com/v1';
@@ -196,6 +196,20 @@ export async function extractAssignments(input: {
   if (!raw) throw new Error('EMPTY_RESPONSE');
 
   return normalize(parseDrafts(raw));
+}
+
+/**
+ * Doan NOI GIAO tu ban tach: bai den tu lop hoc them tieng Anh hay truong tieu
+ * hoc. Chi la goi y mac dinh — bo me chon tay thi lua chon do thang (man Them
+ * bai tap / Kiem tra lai).
+ *
+ * Dau hieu: de bai tieng Anh nguyen van (lang = 'en') hoac mon "Tiếng Anh".
+ * Qua nua so bai nhu vay thi ca dot gan nhu chac den tu lop tieng Anh — mot dot
+ * nhap la MOT tin nhan cua MOT co giao nen ca dot chung mot nguon.
+ */
+export function inferSource(drafts: DraftAssignment[]): HwSource {
+  const en = drafts.filter((d) => d.lang === 'en' || d.subject === 'Tiếng Anh').length;
+  return en * 2 > drafts.length ? 'english_class' : 'primary_school';
 }
 
 /**

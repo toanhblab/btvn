@@ -1,7 +1,8 @@
 import { query, queryOne } from './db';
 import type {
-  Assignment, AttachedMedia, Child, ChildColor, DraftAssignment, Lang, MediaKind,
+  Assignment, AttachedMedia, Child, ChildColor, DraftAssignment, HwSource, Lang, MediaKind,
 } from './types';
+import { hwSourceOf } from './types';
 
 /** Ngay hom nay theo gio dia phuong, YYYY-MM-DD (toISOString la UTC nen lech mui gio). */
 export function todayISO(offsetDays = 0): string {
@@ -186,7 +187,7 @@ export async function deleteChild(familyId: string, id: string): Promise<void> {
 interface AssignmentRow {
   id: string; submission_id: string | null; child_id: string;
   subject: string; icon: string; content: string; note: string | null;
-  lang: string; due_date: string | Date; status: string;
+  lang: string; due_date: string | Date; source: string; status: string;
   completed_at: string | Date | null; image_url: string | null;
 }
 
@@ -209,6 +210,7 @@ const toAssignment = (r: AssignmentRow, media: AttachedMedia[]): Assignment => (
   note: r.note,
   lang: r.lang as Lang,
   dueDate: dateStr(r.due_date),
+  source: hwSourceOf(r.source),
   status: r.status as Assignment['status'],
   completedAt: r.completed_at ? new Date(r.completed_at).toISOString() : null,
   imageUrl: r.image_url,
@@ -287,6 +289,8 @@ export async function saveSubmission(input: {
   imageUrls: string[];
   childIds: string[];
   dueDate: string;
+  /** Noi giao ca dot bai nay — moi bai sinh ra deu mang nguon nay. */
+  source: HwSource;
   drafts: DraftAssignment[];
 }): Promise<Assignment[]> {
   const mine = new Set((await listChildren(input.familyId)).map((c) => c.id));
@@ -295,8 +299,8 @@ export async function saveSubmission(input: {
 
   const subId = newId('sub');
   await query(
-    `INSERT INTO submissions (id, family_id, raw_text) VALUES ($1, $2, $3)`,
-    [subId, input.familyId, input.rawText]
+    `INSERT INTO submissions (id, family_id, raw_text, source) VALUES ($1, $2, $3, $4)`,
+    [subId, input.familyId, input.rawText, input.source]
   );
 
   for (const url of input.imageUrls) {
@@ -314,9 +318,9 @@ export async function saveSubmission(input: {
       const id = newId('asg');
       await query(
         `INSERT INTO assignments
-           (id, submission_id, child_id, subject, icon, content, note, lang, due_date, image_url)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-        [id, subId, childId, d.subject, d.icon, d.content, d.note, d.lang, input.dueDate, coverImage]
+           (id, submission_id, child_id, subject, icon, content, note, lang, due_date, source, image_url)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+        [id, subId, childId, d.subject, d.icon, d.content, d.note, d.lang, input.dueDate, input.source, coverImage]
       );
       // Moi con mot ban bai rieng nen tep dinh kem cung ghi rieng cho tung ban —
       // xoa bai cua con nay khong duoc lam mat tep o bai cua con kia.
@@ -350,14 +354,14 @@ export async function setStatus(
 export async function updateAssignment(
   familyId: string,
   id: string,
-  patch: Partial<Pick<Assignment, 'subject' | 'icon' | 'content' | 'note' | 'lang' | 'dueDate'>> & {
+  patch: Partial<Pick<Assignment, 'subject' | 'icon' | 'content' | 'note' | 'lang' | 'dueDate' | 'source'>> & {
     /** Co mat = THAY CA DANH SACH tep dinh kem cua bai bang danh sach nay. */
     media?: AttachedMedia[];
   }
 ): Promise<Assignment | null> {
   const map: Record<string, string> = {
     subject: 'subject', icon: 'icon', content: 'content',
-    note: 'note', lang: 'lang', dueDate: 'due_date',
+    note: 'note', lang: 'lang', dueDate: 'due_date', source: 'source',
   };
   const sets: string[] = [];
   const params: unknown[] = [id, familyId];

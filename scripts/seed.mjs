@@ -79,19 +79,19 @@ await query(`INSERT INTO submissions (id, family_id, raw_text) VALUES ($1,$2,$3)
   [subId, familyId, 'Bài tập cô giao trên Zalo']);
 
 const twinTasks = [
-  ['Tiếng Việt', '📖', 'Đọc bài trang 10, đọc to cho bố mẹ nghe.', 'Sách Tiếng Việt tập 1', 'vi', '/img/bai-doc-sach.jpg'],
-  ['Toán',       '🔢', 'Làm bài 3 trang 34. Viết vào vở ô ly.',    'Trang 34, bài 3',        'vi', '/img/bai-toan-vo-o-ly.jpg'],
-  ['Tiếng Anh',  '🔤', 'Learn the colors: red, blue, yellow, green. Say each color out loud three times.', 'Lớp tiếng Anh thứ Ba', 'en', '/img/bai-mau-sac.jpg'],
-  ['Vẽ',         '🎨', 'Vẽ ngôi nhà của em, tô màu cho thật đẹp.', 'Giấy A4',                'vi', '/img/bai-ngoi-nha.jpg'],
+  ['Tiếng Việt', '📖', 'Đọc bài trang 10, đọc to cho bố mẹ nghe.', 'Sách Tiếng Việt tập 1', 'vi', 'primary_school', '/img/bai-doc-sach.jpg'],
+  ['Toán',       '🔢', 'Làm bài 3 trang 34. Viết vào vở ô ly.',    'Trang 34, bài 3',        'vi', 'primary_school', '/img/bai-toan-vo-o-ly.jpg'],
+  ['Tiếng Anh',  '🔤', 'Learn the colors: red, blue, yellow, green. Say each color out loud three times.', 'Lớp tiếng Anh thứ Ba', 'en', 'english_class', '/img/bai-mau-sac.jpg'],
+  ['Vẽ',         '🎨', 'Vẽ ngôi nhà của em, tô màu cho thật đẹp.', 'Giấy A4',                'vi', 'primary_school', '/img/bai-ngoi-nha.jpg'],
 ];
 
 let n = 0;
 for (const childId of ['minh', 'an']) {
-  for (const [subject, icon, content, note, lang, img] of twinTasks) {
+  for (const [subject, icon, content, note, lang, source, img] of twinTasks) {
     await query(
-      `INSERT INTO assignments (id, submission_id, child_id, subject, icon, content, note, lang, due_date, image_url)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-      [id('asg'), subId, childId, subject, icon, content, note, lang, dateOffset(0), img]
+      `INSERT INTO assignments (id, submission_id, child_id, subject, icon, content, note, lang, source, due_date, image_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [id('asg'), subId, childId, subject, icon, content, note, lang, source, dateOffset(0), img]
     );
     n++;
   }
@@ -99,17 +99,17 @@ for (const childId of ['minh', 'an']) {
 
 // Mot bai qua han cua Minh de thu trang thai "Qua han" tren bang dieu khien
 await query(
-  `INSERT INTO assignments (id, submission_id, child_id, subject, icon, content, note, lang, due_date, image_url)
-   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-  [id('asg'), null, 'minh', 'Tự nhiên', '🐝', 'Quan sát con ong, kể lại cho cô nghe.', null, 'vi', dateOffset(-1), '/img/bai-con-ong.jpg']
+  `INSERT INTO assignments (id, submission_id, child_id, subject, icon, content, note, lang, source, due_date, image_url)
+   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+  [id('asg'), null, 'minh', 'Tự nhiên', '🐝', 'Quan sát con ong, kể lại cho cô nghe.', null, 'vi', 'primary_school', dateOffset(-1), '/img/bai-con-ong.jpg']
 );
 n++;
 
 // Be Na: hom nay KHONG co bai -> dung de thu man "Hom nay khong co bai tap"
 await query(
-  `INSERT INTO assignments (id, submission_id, child_id, subject, icon, content, note, lang, due_date, image_url)
-   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-  [id('asg'), null, 'bena', 'Tiếng Anh', '🔤', 'Point at the picture and say: cat, dog, bird.', 'Bài của lớp tiếng Anh', 'en', dateOffset(1), '/img/bai-con-ong.jpg']
+  `INSERT INTO assignments (id, submission_id, child_id, subject, icon, content, note, lang, source, due_date, image_url)
+   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+  [id('asg'), null, 'bena', 'Tiếng Anh', '🔤', 'Point at the picture and say: cat, dog, bird.', 'Bài của lớp tiếng Anh', 'en', 'english_class', dateOffset(1), '/img/bai-con-ong.jpg']
 );
 n++;
 

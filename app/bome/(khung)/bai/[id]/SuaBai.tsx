@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { Assignment, AttachedMedia } from '@/lib/types';
-import { SUBJECTS, iconFor } from '@/lib/types';
+import type { Assignment, AttachedMedia, HwSource } from '@/lib/types';
+import { HW_SOURCES, SUBJECTS, iconFor } from '@/lib/types';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 /**
@@ -26,6 +26,7 @@ export default function SuaBai({
   const [note, setNote] = useState(assignment.note ?? '');
   const [lang, setLang] = useState<'vi' | 'en'>(assignment.lang);
   const [dueDate, setDueDate] = useState(assignment.dueDate);
+  const [hwSource, setHwSource] = useState<HwSource>(assignment.source);
   const [media, setMedia] = useState<AttachedMedia[]>(assignment.media);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -64,6 +65,7 @@ export default function SuaBai({
           note: note || null,
           lang,
           dueDate,
+          source: hwSource,
           media,
         }),
       });
@@ -153,6 +155,25 @@ export default function SuaBai({
               <option value="vi">🇻🇳 Tiếng Việt</option>
               <option value="en">🇬🇧 Tiếng Anh</option>
             </select>
+          </div>
+        </div>
+
+        {/* Nhap xong moi thay xep nham nhom (AI doan sai chang han) thi sua o day */}
+        <div>
+          <label className="text-p-label uppercase text-on-surface-variant block mb-1">Bài của lớp nào</label>
+          <div className="flex gap-2 flex-wrap">
+            {(Object.keys(HW_SOURCES) as HwSource[]).map((s) => (
+              <button
+                key={s}
+                onClick={() => setHwSource(s)}
+                className={`px-4 min-h-p-tap rounded-full text-p-body-sm font-bold border
+                            ${hwSource === s
+                              ? 'bg-primary text-on-primary border-primary'
+                              : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-high'}`}
+              >
+                {HW_SOURCES[s].icon} {HW_SOURCES[s].label}
+              </button>
+            ))}
           </div>
         </div>
 

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
 import { countAssignments, listAssignments, listChildren, todayISO } from '@/lib/store';
+import { HW_SOURCES } from '@/lib/types';
 import XoaBai from '../con/[childId]/XoaBai';
 import XoaTatCa from './XoaTatCa';
 
@@ -82,6 +83,10 @@ export default async function DanhSachNhiemVu() {
                     >
                       {child?.name ?? a.childId}
                     </Link>
+                    {/* Noi giao — de bo me liec qua biet bai lop nao con chua xong */}
+                    <span className="text-p-label px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed">
+                      {HW_SOURCES[a.source].icon} {HW_SOURCES[a.source].label}
+                    </span>
                   </div>
                   <p
                     className={`text-p-body ${

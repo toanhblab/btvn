@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
 import { getChild, listAssignments, todayISO } from '@/lib/store';
+import { HW_SOURCES } from '@/lib/types';
 import XoaBai from './XoaBai';
 
 export const dynamic = 'force-dynamic';
@@ -133,6 +134,10 @@ export default async function ChiTietCon({
                             {a.note}
                           </span>
                         )}
+                        {/* Noi giao — sua duoc trong man Sua bai tap neu xep nham */}
+                        <span className="text-p-label px-2 py-0.5 rounded-full bg-surface-container text-on-surface">
+                          {HW_SOURCES[a.source].icon} {HW_SOURCES[a.source].label}
+                        </span>
                         {a.lang === 'en' && (
                           <span className="text-p-label px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed">
                             🇬🇧 Giọng Anh

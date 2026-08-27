@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { viewingFamilyId } from '@/lib/auth';
 import { getChild, listAssignments, todayISO } from '@/lib/store';
-import type { Assignment } from '@/lib/types';
+import type { Assignment, HwSource } from '@/lib/types';
+import { HW_SOURCES } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,13 +39,27 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   const todayItems = items.filter((a) => a.dueDate === today);
   const done = todayItems.filter((a) => a.status === 'done').length;
 
-  // listAssignments da sap xep theo due_date tang dan nen chi can gom lien tiep
-  const groups: { date: string; items: Assignment[] }[] = [];
-  for (const a of items) {
-    const last = groups[groups.length - 1];
-    if (last && last.date === a.dueDate) last.items.push(a);
-    else groups.push({ date: a.dueDate, items: [a] });
-  }
+  // Gom theo NOI GIAO truoc (lop tieng Anh / truong tieu hoc), trong moi noi
+  // moi gom theo ngay. Con lam xong het bai mot noi roi moi sang noi kia, nen
+  // moi noi can mot khoi rieng voi tien do rieng.
+  const sourceGroups = (Object.keys(HW_SOURCES) as HwSource[])
+    .map((source) => {
+      const mine = items.filter((a) => a.source === source);
+      // listAssignments da sap xep theo due_date tang dan nen chi can gom lien tiep
+      const byDate: { date: string; items: Assignment[] }[] = [];
+      for (const a of mine) {
+        const last = byDate[byDate.length - 1];
+        if (last && last.date === a.dueDate) last.items.push(a);
+        else byDate.push({ date: a.dueDate, items: [a] });
+      }
+      return {
+        source,
+        byDate,
+        total: mine.length,
+        done: mine.filter((a) => a.status === 'done').length,
+      };
+    })
+    .filter((g) => g.total > 0);
 
   /* ---- Khong con bai nao sap toi: man khen thay vi man trong (PRD 4.3) ---- */
   if (items.length === 0) {
@@ -118,13 +133,35 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
         </section>
       )}
 
-      {groups.map((g) => (
-        <section key={g.date} className="mb-k-stack last:mb-0">
-          <h2 className="text-k-headline text-on-surface-variant mb-4">
-            {nhanNgay(g.date, today, tomorrow)}
-          </h2>
+      {sourceGroups.map((sg) => (
+        <section key={sg.source} className="mb-k-stack last:mb-0">
+          {/* Dau moi nhom: noi giao + tien do RIENG cua nhom do, de con lam het
+              mot loai bai (vd het bai lop tieng Anh) roi moi sang loai kia */}
+          <div
+            className={`flex items-center gap-4 rounded-2xl p-4 mb-4 soft-shadow ${
+              sg.done === sg.total ? 'bg-success-container' : 'bg-surface-container-low'
+            }`}
+          >
+            <span className="text-5xl shrink-0">{HW_SOURCES[sg.source].icon}</span>
+            <h2 className="text-k-headline text-on-surface flex-1 min-w-0">
+              {HW_SOURCES[sg.source].label}
+            </h2>
+            <span
+              className={`text-k-label px-5 py-2 rounded-full shrink-0 ${
+                sg.done === sg.total ? 'bg-success text-white' : 'bg-surface-container-highest text-on-surface'
+              }`}
+            >
+              {sg.done === sg.total ? '🎉 ' : ''}{sg.done}/{sg.total} bài xong
+            </span>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-k-gutter">
+          {sg.byDate.map((g) => (
+            <div key={g.date} className="mb-6 last:mb-0">
+              <h3 className="text-k-headline text-on-surface-variant mb-4">
+                {nhanNgay(g.date, today, tomorrow)}
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-k-gutter">
             {g.items.map((a) => {
               const isDone = a.status === 'done';
               // "video, ghi âm" chu khong chi dem so tep: con chua doc duoc so,
@@ -214,7 +251,9 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                 </Link>
               );
             })}
-          </div>
+              </div>
+            </div>
+          ))}
         </section>
       ))}
     </main>
