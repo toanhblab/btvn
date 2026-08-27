@@ -100,11 +100,24 @@ interface RawDraft {
 }
 
 /**
- * Tu khoa nhan ra bai phai QUAY VIDEO. CHI dung cho splitByRule — ban tach tho
- * theo dong, khong co cau tra loi cua AI de dua vao. Khi da goi duoc AI thi
- * truong canQuayVideo cua no la quyet dinh cuoi cung, KHONG OR them regex nay:
- * regex bat nham ("viết đoạn văn kể lại...") se chan con tick xong bai.
- * KHONG bat tu "video" tran: "xem video cô gửi" la XEM, khong phai quay.
+ * Luoi THO nhan ra bai phai QUAY VIDEO. CHI dung cho splitByRule — ban tach tho
+ * theo dong khi khong goi duoc AI, khong co cau tra loi nao de dua vao. Khi da
+ * goi duoc AI thi truong canQuayVideo cua no la quyet dinh cuoi cung, KHONG OR
+ * them regex nay vao: regex bat nham ("viết đoạn văn kể lại...") se chan con
+ * tick xong bai. KHONG bat tu "video" tran: "xem video cô gửi" la XEM, khong
+ * phai quay.
+ *
+ * DUNG "dong bo" danh sach nay voi danh sach trigger trong prompt cua AI o tren.
+ * Hai ben CO Y lech nhau: prompt con co "kể lại ... cho bố mẹ nghe", "thuyết
+ * trình", "hát" nhung o day khong co. Tieng Viet khong dong lai duoc bang mot
+ * danh sach tu khoa — "kể lại" nam trong ca bai NOI ("kể lại cho bố mẹ nghe")
+ * lan bai VIET ("viết đoạn văn kể lại ... vào vở"), va gan co sai vao bai viet
+ * la XOA han nut "Đã làm xong" cua con cho tới khi bo me vao /bome bo tick.
+ *
+ * Nen o duong nay THIEU co la lua chon co chu y, khong phai lo: moi bai tach
+ * theo dong deu mang confidence 0.3 nen man Kiem tra lai luon dan canh bao
+ * "Tách tạm, chưa qua AI", va bo me bat chip 🎥 ngay tai do bang mot lan bam.
+ * Bom them tu khoa vao day de "cho du" la doi cai gia dat hon cai duoc.
  */
 const VIDEO_HINT =
   /quay\s*(video|clip|phim)|đọc\s+to(?![a-zA-ZÀ-ỹ])|đọc\s+thuộc|thuộc\s+lòng|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
