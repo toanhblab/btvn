@@ -61,11 +61,24 @@
 -- LUU Y VAN HANH — chi cho DB PHAT TRIEN CUC BO: tep 011 nay duoc sua sau khi ban
 -- dau (chi mot cau UPDATE, chua co bang phuc hoi) da tung chay o vai DB cuc bo.
 -- chayMigrations bo qua tep da co ten trong _migrations nen tren nhung DB do,
--- _nguon_reclassify_011 se KHONG duoc tao va hai cau hoan tac tren bao "relation
--- does not exist". Xu ly: DELETE FROM _migrations WHERE name = '011_nguon_khac.sql'
--- roi chay lai migrate (hoac xoa han .data/pg). KHONG ap dung cho production hay
--- Vercel preview: nhanh nay chua tung duoc push nen o do 011 chi chay dung mot lan,
--- voi ban day du co bang phuc hoi.
+-- _nguon_reclassify_011 KHONG duoc tao va hai cau hoan tac tren bao "relation
+-- does not exist".
+--
+-- Tren nhung DB do, DOT CHUYEN LA MAT VINH VIEN, KHONG HOAN TAC DUOC. Ban 011 cu
+-- dung y het dieu kien loc voi ban nay, nen moi bai dinh da mang source = 'other'
+-- tu truoc va khong con dau vet gi de biet truoc do no la 'primary_school'.
+--
+-- DUNG TUONG xoa dong _migrations la khoi phuc duoc. Neu chay
+-- DELETE FROM _migrations WHERE name = '011_nguon_khac.sql' roi migrate lai thi:
+-- bang _nguon_reclassify_011 duoc TAO NHUNG RONG (cau INSERT ghi log khop 0 dong
+-- vi khong con dong nao con la 'primary_school'), cau UPDATE chinh cung 0 dong, va
+-- sau do hai cau hoan tac chay THANH CONG nhung sua 0 dong. Khong loi nao hien ra
+-- — de tuong nham la da co duong lui, trong khi khong co. Viec xoa dong _migrations
+-- CHI TAT thong bao "relation does not exist", KHONG cuu du lieu.
+--
+-- Cach sach DUY NHAT cho DB phat trien cuc bo: XOA HAN .data/pg roi migrate lai tu
+-- dau. KHONG ap dung cho production hay Vercel preview: nhanh nay chua tung duoc
+-- push nen o do 011 chi chay dung mot lan, voi ban day du co bang phuc hoi.
 
 CREATE TABLE IF NOT EXISTS _nguon_reclassify_011 (
   assignment_id TEXT PRIMARY KEY,

@@ -77,7 +77,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
     return NextResponse.json({ error: 'Không tìm thấy bài tập.' }, { status: 404 });
   }
 
-  // Noi giao chi nhan gia tri app biet — gia tri la ep ve truong tieu hoc
+  // Noi giao chi nhan gia tri app biet — gia tri la ep ve nguon mac dinh (primary_school)
   if (body.source !== undefined) body.source = hwSourceOf(body.source);
 
   // Thoi luong bo me sua tay: chi can so duong hop ly, khong kep lai 5-15

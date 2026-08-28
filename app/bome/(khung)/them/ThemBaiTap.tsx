@@ -208,7 +208,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
         )}
       </section>
 
-      {/* ---- Noi giao bai: lop tieng Anh hay truong tieu hoc ---- */}
+      {/* ---- Noi giao bai: mot nut cho moi ma trong HW_SOURCES ---- */}
       <section className="mb-5">
         <p className="text-p-label uppercase text-on-surface-variant mb-2">Bài của lớp nào</p>
         <div className="flex gap-2 flex-wrap">

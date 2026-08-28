@@ -53,7 +53,7 @@ export default function KiemTraLai({
         requiresVideo: d.requiresVideo ?? false,
       }))
     );
-    // Ban nhap cu (truoc khi co nguon giao) khong co hwSource -> truong tieu hoc
+    // Ban nhap cu (truoc khi co nguon giao) khong co hwSource -> nguon mac dinh (primary_school)
     setHwSource(hwSourceOf(p.hwSource));
   }, [router]);
 
