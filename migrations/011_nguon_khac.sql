@@ -28,13 +28,21 @@
 -- truong hop. Nhung bai loai hai bi gom nham sang "Khac". Vi vay TRUOC khi doi,
 -- moi dong sap doi duoc ghi lai vao _nguon_reclassify_011 de con duong lui.
 --
--- HOAN TAC TOAN BO (tra moi dong ve dung nguon cu):
+-- Ca hai cau hoan tac duoi day chi dung den dong nao con dang mang DUNG gia tri
+-- ma migration nay ghi ('other') — AND a.source = 'other'. Hoan tac khong dieu
+-- kien se ghi de chinh lua chon co y cua bo me sau khi migration chay (tao truoc
+-- 010, bi gom sang "Khac", roi bo me vao Sua bai bam 🇬🇧 Smartkid): dung cai
+-- silent-loss ma bang _nguon_reclassify_011 sinh ra de chan, tai xuat hien tren
+-- chinh duong phuc hoi. Nguoi sua sau luon thang cai may ghi truoc.
+--
+-- HOAN TAC TOAN BO (tra ve nguon cu nhung dong migration con dang giu):
 --
 --   UPDATE assignments a
 --      SET source = r.source_cu
 --     FROM _nguon_reclassify_011 r
 --    WHERE r.assignment_id = a.id
---      AND r.migration = '011_nguon_khac.sql';  -- het cau
+--      AND r.migration = '011_nguon_khac.sql'
+--      AND a.source = 'other';  -- het cau
 --
 -- HOAN TAC MOT BAI (thay <assignment_id> bang id that):
 --
@@ -43,11 +51,21 @@
 --     FROM _nguon_reclassify_011 r
 --    WHERE r.assignment_id = a.id
 --      AND r.migration = '011_nguon_khac.sql'
+--      AND a.source = 'other'
 --      AND a.id = '<assignment_id>';  -- het cau
 --
 -- (Dau ';' trong hai cau tren co chu "-- het cau" theo sau vi scripts/db.mjs cat
 -- tep .sql o moi dau ';' cuoi dong; de tran thi hai khoi comment nay bi doc nham
 -- thanh cau lenh.)
+--
+-- LUU Y VAN HANH — chi cho DB PHAT TRIEN CUC BO: tep 011 nay duoc sua sau khi ban
+-- dau (chi mot cau UPDATE, chua co bang phuc hoi) da tung chay o vai DB cuc bo.
+-- chayMigrations bo qua tep da co ten trong _migrations nen tren nhung DB do,
+-- _nguon_reclassify_011 se KHONG duoc tao va hai cau hoan tac tren bao "relation
+-- does not exist". Xu ly: DELETE FROM _migrations WHERE name = '011_nguon_khac.sql'
+-- roi chay lai migrate (hoac xoa han .data/pg). KHONG ap dung cho production hay
+-- Vercel preview: nhanh nay chua tung duoc push nen o do 011 chi chay dung mot lan,
+-- voi ban day du co bang phuc hoi.
 
 CREATE TABLE IF NOT EXISTS _nguon_reclassify_011 (
   assignment_id TEXT PRIMARY KEY,
