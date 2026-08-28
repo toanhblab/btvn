@@ -147,12 +147,20 @@ legacy-static/  bản HTML/JS thuần đầu tiên của phần trẻ, giữ đ�
 mỗi bé một bản ghi, tick độc lập, xoá bài của bé này không ảnh hưởng bé kia.
 Màn "Thêm bài tập" tick sẵn cả hai bé lớp 1 vì đây là trường hợp dùng nhiều nhất.
 
-**Bài đến từ hai nơi.** Các con nhận bài từ lớp học thêm tiếng Anh và từ trường
-tiểu học. Mỗi bài có trường `source` (nơi giao); màn của con nhóm bài theo nơi
-giao, mỗi nhóm có tiến độ riêng — để con làm xong hết một loại rồi mới sang loại
-kia. Bố mẹ chọn nơi giao khi thêm bài (mặc định "Tự đoán": đề tiếng Anh xếp vào
-lớp tiếng Anh) và sửa lại được sau khi lưu. Thêm nguồn mới thì xem `HW_SOURCES`
-trong `lib/types.ts` — không cần migration.
+**Bài đến từ ba nơi.** Trường **Nguyễn Siêu**, lớp tiếng Anh **Smartkid**, và
+**Khác** cho những nơi còn lại. Mỗi bài có trường `source` (nơi giao); màn của con
+nhóm bài theo nơi giao, mỗi nhóm có tiến độ riêng — để con làm xong hết một loại
+rồi mới sang loại kia; nhóm rỗng thì không hiện. Bố mẹ chọn nơi giao khi thêm bài
+(mặc định "Tự đoán": đề tiếng Anh xếp vào Smartkid) và sửa lại được sau khi lưu.
+
+Thêm nguồn mới thì chỉ nối vào `HW_SOURCES` trong `lib/types.ts` — không cần
+migration (DB không có `CHECK`), và `hwSourceOf` lọc theo **tập khoá thật** của
+`HW_SOURCES` nên tự nhận nguồn mới. Nhãn hiển thị đổi tự do; **mã định danh lưu
+trong DB thì không** (`primary_school`, `english_class`, `other`).
+
+`inferSource` (`lib/ai.ts`) **cố ý** chỉ đoán ra hai nguồn, không bao giờ đoán
+"Khác" — đó là lựa chọn của con người, máy đoán ra thì bố mẹ mất dấu bài thật sự
+đến từ đâu.
 
 **Giọng đọc.** Mỗi bài có trường `lang` (`vi`/`en`) quyết định giọng đọc thành
 tiếng. Bé 4 tuổi chưa đọc được chữ nào nên nút 🔊 gần như là cách duy nhất để

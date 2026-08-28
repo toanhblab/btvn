@@ -236,7 +236,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
         </div>
         {hwSource === null && (
           <p className="text-p-body-sm text-on-surface-variant mt-2">
-            Đề tiếng Anh sẽ tự xếp vào “Lớp tiếng Anh”, còn lại vào “Trường tiểu học”.
+            Đề tiếng Anh sẽ tự xếp vào “Smartkid”, còn lại vào “Nguyễn Siêu”. Chọn “Khác” nếu bài không của hai nơi này.
             Bố mẹ vẫn sửa được ở bước kiểm tra lại.
           </p>
         )}

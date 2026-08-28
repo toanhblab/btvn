@@ -7,22 +7,41 @@ export type Status = 'todo' | 'done';
 export type ChildColor = 'primary' | 'secondary' | 'tertiary';
 
 /**
- * Noi giao bai: lop hoc them tieng Anh hay truong tieu hoc. Con can hai nhom
- * rieng de lam xong het mot loai roi moi sang loai kia. Them nguon moi (lop ve,
- * lop nhac...) thi noi vao day + HW_SOURCES, DB khong co CHECK nen khong can
- * migration.
+ * Noi giao bai: truong Nguyen Sieu, lop tieng Anh Smartkid, hay mot noi khac.
+ * Con can moi noi mot nhom rieng de lam xong het mot loai roi moi sang loai kia.
+ * Them nguon moi (lop ve, lop nhac...) thi noi vao day + HW_SOURCES, DB khong co
+ * CHECK nen khong can migration.
+ *
+ * MA DINH DANH trong DB la co dinh ('primary_school', 'english_class') — doi nhan
+ * hien thi thi chi sua HW_SOURCES, dung sua ma, khong thi du lieu cu mat nguon.
  */
-export type HwSource = 'primary_school' | 'english_class';
+export type HwSource = 'primary_school' | 'english_class' | 'other';
 
 /** Nhan + icon tung nguon. Thu tu khoa = thu tu hien o man cua con. */
 export const HW_SOURCES: Record<HwSource, { label: string; icon: string }> = {
-  primary_school: { label: 'Trường tiểu học', icon: '🏫' },
-  english_class: { label: 'Lớp tiếng Anh', icon: '🇬🇧' },
+  primary_school: { label: 'Nguyễn Siêu', icon: '🏫' },
+  english_class: { label: 'Smartkid', icon: '🇬🇧' },
+  other: { label: 'Khác', icon: '📚' },
 };
 
-/** Loc gia tri la tu ngoai vao (API body, sessionStorage cu) ve mot nguon hop le. */
+/** Tap khoa THAT cua HW_SOURCES — them nguon thu tu la hwSourceOf tu biet. */
+const HW_SOURCE_KEYS = new Set<string>(Object.keys(HW_SOURCES));
+
+/** Nguon mac dinh khi gia tri khong doc duoc: khoa dau bang. */
+const HW_SOURCE_DEFAULT = Object.keys(HW_SOURCES)[0] as HwSource;
+
+/**
+ * Loc gia tri la tu ngoai vao (API body, sessionStorage cu) ve mot nguon hop le.
+ *
+ * Doi chieu voi TAP KHOA cua HW_SOURCES chu khong viet cung tung ten — truoc day
+ * ham nay nhi phan ("khong phai english_class thi la primary_school") nen nguon
+ * moi bi nuot am tham luc doc lai tu DB.
+ *
+ * Gia tri la KHONG nem loi: API cu / ban nhap cu van chay duoc, chi degrade ve
+ * nguon mac dinh.
+ */
 export function hwSourceOf(v: unknown): HwSource {
-  return v === 'english_class' ? 'english_class' : 'primary_school';
+  return typeof v === 'string' && HW_SOURCE_KEYS.has(v) ? (v as HwSource) : HW_SOURCE_DEFAULT;
 }
 
 export interface Child {
