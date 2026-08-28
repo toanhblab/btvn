@@ -11,7 +11,7 @@ interface Payload {
   drafts: DraftAssignment[];
   warning: string | null;
   source: 'ai' | 'rule';
-  /** Noi giao ca dot (lop tieng Anh / truong tieu hoc) — sua duoc o day. */
+  /** Noi giao ca dot — mot ma trong HW_SOURCES, sua duoc o day. */
   hwSource?: HwSource;
   childIds: string[];
   dueDate: string;
