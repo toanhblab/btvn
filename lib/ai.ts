@@ -52,6 +52,17 @@ Quy tắc:
   đến 15 (phút). Ước theo độ phức tạp thực tế: bài chép ngắn, tô màu một hình,
   đọc một trang → 5; bài trung bình → 8-10; bài toán nhiều câu, viết đoạn văn,
   quay video gửi cô → 12-15. Không chắc thì để 10.
+- "canQuayVideo" = true khi bài yêu cầu con QUAY VIDEO hoặc trình diễn thành
+  tiếng/động tác để người khác kiểm tra: "quay video", "quay clip gửi cô",
+  "đọc to", "đọc thuộc lòng", "kể lại câu chuyện cho bố mẹ nghe", "quay video
+  kể lại", "thuyết trình", "hát", "tập thể dục", "biểu diễn"...
+  Bài viết, vẽ, làm vào vở, hay chỉ XEM video cô gửi thì false.
+  Đề đã ghi thẳng "quay video", "quay clip", "nộp video", "gửi video" thì
+  canQuayVideo = true, không cần suy luận thêm — kể cả khi có chữ đệm ở giữa
+  ("quay 1 video kể lại câu chuyện", "quay lại video bài hát").
+  QUY TẮC ƯU TIÊN: đề có động từ chỉ việc viết / vẽ / làm vào vở thì LUÔN
+  false, dù trong đề có chữ "kể lại".
+  Ví dụ: "Viết đoạn văn kể lại câu chuyện Cây khế vào vở" -> canQuayVideo = false.
 - Bỏ qua lời chào, lời dặn chung chung của cô giáo, không phải bài tập thì đừng đưa vào.
 - Không bịa thêm bài không có trong nguồn.
 - Chỉ trả về JSON đúng lược đồ, không kèm lời giải thích.`;
@@ -73,9 +84,10 @@ const SCHEMA = {
           note: { type: 'string' },
           lang: { type: 'string', enum: ['vi', 'en'] },
           duration_minutes: { type: 'integer' },
+          canQuayVideo: { type: 'boolean' },
         },
         // strict:true doi moi thuoc tinh deu phai nam trong required
-        required: ['subject', 'content', 'note', 'lang', 'duration_minutes'],
+        required: ['subject', 'content', 'note', 'lang', 'duration_minutes', 'canQuayVideo'],
         additionalProperties: false,
       },
     },
@@ -87,7 +99,66 @@ const SCHEMA = {
 interface RawDraft {
   subject?: string; content?: string; note?: string; lang?: string;
   duration_minutes?: number;
+  canQuayVideo?: boolean;
 }
+
+/**
+ * Luoi THO nhan ra bai phai QUAY VIDEO. CHI dung cho splitByRule — ban tach tho
+ * theo dong khi khong goi duoc AI, khong co cau tra loi nao de dua vao. Khi da
+ * goi duoc AI thi truong canQuayVideo cua no la quyet dinh cuoi cung, KHONG OR
+ * them regex nay vao: regex bat nham ("viết đoạn văn kể lại...") se chan con
+ * tick xong bai. KHONG bat tu "video" tran: "xem video cô gửi" la XEM, khong
+ * phai quay.
+ *
+ * DUNG "dong bo" danh sach nay voi danh sach trigger trong prompt cua AI o tren.
+ * Hai ben CO Y lech nhau: prompt con co "kể lại ... cho bố mẹ nghe", "thuyết
+ * trình", "hát" nhung o day khong co. Tieng Viet khong dong lai duoc bang mot
+ * danh sach tu khoa — "kể lại" nam trong ca bai NOI ("kể lại cho bố mẹ nghe")
+ * lan bai VIET ("viết đoạn văn kể lại ... vào vở"), va gan co sai vao bai viet
+ * la XOA han nut "Đã làm xong" cua con cho tới khi bo me vao /bome bo tick.
+ *
+ * Nen o duong nay THIEU co la lua chon co chu y, khong phai lo: moi bai tach
+ * theo dong deu mang confidence 0.3 nen man Kiem tra lai luon dan canh bao
+ * "Tách tạm, chưa qua AI", va bo me bat chip 🎥 ngay tai do bang mot lan bam.
+ * Bom them tu khoa vao day de "cho du" la doi cai gia dat hon cai duoc.
+ *
+ * Ngoai le duy nhat: khi co giao GHI THANG chu "video/clip/phim" sau mot dong tu
+ * nop bai thi khong con gi phai doan, nen nhanh do nhan ca chu dem o giua ("quay
+ * 1 video...", "quay lại video...", "nộp video...").
+ *
+ * Repo khong co unit test — cac ca duoi day la hop dong cua regex nay, doi regex
+ * thi doi tay lai het:
+ *   PHAI bat: "Quay 1 video kể lại câu chuyện" | "Quay một video thuyết trình"
+ *             "Quay lại video bài hát" | "Quay 2 videos đọc bài"
+ *             "Nộp video đọc bài" | "quay video gửi cô"
+ *             "Đọc to bài thơ" | "Đọc thuộc lòng" | "Tập thể dục" | "Biểu diễn"
+ *   KHONG duoc bat: "Viết đoạn văn kể lại câu chuyện Cây khế vào vở"
+ *                   "Chép lời bài hát Bụi phấn vào vở"
+ *                   "Xem video bài giảng rồi làm bài tập"
+ *                   "Xem video cô gửi" | "Đọc toàn bộ câu chuyện" | "Đọc toán trang 5"
+ *                   "Xem lại group video của lớp rồi viết vào vở"
+ *                   "Bố mẹ backup video bài giảng cho con xem"
+ *                   "Cô gửi video bài giảng, con xem rồi làm bài tập vào vở"
+ *                   "Cô giáo gửi video cho bố mẹ tham khảo"
+ *                   "Con xem ít nhất 1 tập phim hoạt hình trong link film cô gửi
+ *                    trong nhóm riêng."
+ *
+ * Ba ca cuoi la ly do dong tu "gửi" DA BI BO khoi nhom dong tu — DUNG them lai.
+ * Trong tin nhan cua co giao, "gửi" gan chu "video" thi nguoi gui thuong la CO
+ * chu khong phai con ("cô gửi video bài giảng"), va ca hai huong va — neo nguoi
+ * gui (cô|thầy) hay negative lookbehind chan chu ngu — deu vo tren bien the that
+ * ("Cô giáo gửi", "Cô chủ nhiệm gửi", "Cô Lan gửi", "Giáo viên gửi", "Nhà trường
+ * gửi"). Sot co thi bo me bat lai bang chip 🎥 khi duyet; bat oan thi XOA han nut
+ * "Đã làm xong" cua con. Chieu "Con gửi video cho cô" van bat duoc qua "quay" /
+ * "nộp" — hai chu gan nhu luon co mat trong de kieu do.
+ *
+ * Hai ca "group video" / "backup video" la ly do co (?<![a-zA-ZÀ-ỹ]) truoc nhom
+ * dong tu: khong co bien trai thi "up" bat duoc phan duoi cua "gro-up" /
+ * "back-up". splitByRule chi chay o may chu (app/api/extract) nen lookbehind
+ * khong lien quan Safari cu.
+ */
+const VIDEO_HINT =
+  /(?<![a-zA-ZÀ-ỹ])(quay|nộp|upload|up)\s*(lại\s*)?(\d+|một|hai|ba)?\s*(video|clip|phim)|đọc\s+to(?![a-zA-ZÀ-ỹ])|đọc\s+thuộc|thuộc\s+lòng|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
 
 /**
  * Truoc day o day hoi model tu cham "confidence" 0..1, va man Kiem tra lai gan
@@ -131,6 +202,7 @@ function normalize(items: RawDraft[]): DraftAssignment[] {
         confidence: DO_TIN_AI,
         // Schema da rang 5-15 nhung van kep lai: model co the lo tra JSON ngoai schema
         durationMinutes: clampDuration(d.duration_minutes),
+        requiresVideo: d.canQuayVideo === true,
       };
     });
 }
@@ -251,6 +323,7 @@ export function splitByRule(text: string): DraftAssignment[] {
         confidence: 0.3,   // thap de man kiem tra luon canh bao bo me xem lai
         // Tach tho khong doan duoc do phuc tap -> de mac dinh, bo me sua o man kiem tra
         durationMinutes: DURATION_DEFAULT,
+        requiresVideo: VIDEO_HINT.test(line),
       };
     });
 }

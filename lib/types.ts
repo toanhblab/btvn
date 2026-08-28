@@ -67,6 +67,11 @@ export interface Assignment {
   media: AttachedMedia[];
   /** Thoi luong lam bai (phut) — dong ho dem nguoc o man cua con chay tu so nay. */
   durationMinutes: number;
+  /** Bai nay phai QUAY VIDEO nop lai (doc to, doc thuoc long, quay gui co...). */
+  requiresVideo: boolean;
+  /** Video con da nop — moi bai giu mot video moi nhat, quay lai la thay. */
+  submittedVideoUrl: string | null;
+  submittedVideoAt: string | null;
 }
 
 /** Mot bai do AI tach ra, chua luu — bo me con phai duyet o man "Kiem tra lai". */
@@ -87,6 +92,8 @@ export interface DraftAssignment {
   media?: AttachedMedia[];
   /** Thoi luong (phut). Optional vi ban nhap cu trong sessionStorage khong co -> mac dinh 10. */
   durationMinutes?: number;
+  /** Bai nay can quay video nop lai. Optional cung ly do voi media. */
+  requiresVideo?: boolean;
 }
 
 /* ---------------- Thoi luong lam bai ----------------

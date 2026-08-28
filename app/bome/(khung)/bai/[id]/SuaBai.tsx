@@ -8,6 +8,41 @@ import { DURATION_DEFAULT, HW_SOURCES, SUBJECTS, iconFor } from '@/lib/types';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 /**
+ * Gio nop video hien ra o day duoc SSR (trang la force-dynamic) roi hydrate lai
+ * o may bo me. Ham Vercel chay TZ=UTC, iPad cua bo me la +07 — khong chot mui
+ * gio thi hai ben ra hai chuoi khac nhau: React bao hydration mismatch va bo me
+ * doc phai gio lech 7 tieng o lan ve dau. Chot theo mui gio nha, dung gia dinh
+ * "gio may chu la gio nha" ma todayISO() (lib/store.ts) da dung.
+ */
+const MUI_GIO_NHA = 'Asia/Ho_Chi_Minh';
+
+/**
+ * Chot mui gio moi la nua chuyen. toLocaleString('vi-VN') con lay THU TU va dau
+ * phan cach tu ban CLDR cua chinh may chay: Node moi tra "01:00:51 28/8/2026"
+ * (CLDR 42 doi tieng Viet sang gio-truoc) con Safari iPad cu tra "28/8/2026,
+ * 01:00:51" — cung mot moc, cung mui gio, hai chuoi khac nhau, hydrate lai la
+ * lech. Vi the chi lay TUNG SO qua formatToParts roi tu ghep theo khuon cua
+ * minh: khuon nay khong phu thuoc CLDR nen may chu va iPad luon ra giong nhau.
+ */
+const SO_GIO_NHA = new Intl.DateTimeFormat('en-US', {
+  timeZone: MUI_GIO_NHA,
+  year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', second: '2-digit',
+  // hour12 co tu doi Intl dau tien va theo spec no de len tren hourCycle. Safari
+  // 14.0 (iPadOS 14.0-14.4) BO QUA hourCycle, quay ve h12 va them phan dayPeriod
+  // — gioNha khong doc phan do nen 19:30 tu nhien thanh 07:30 tren may cua bo me.
+  hour12: false, hourCycle: 'h23',
+});
+
+function gioNha(iso: string): string {
+  const p: Record<string, string> = {};
+  for (const { type, value } of SO_GIO_NHA.formatToParts(new Date(iso))) p[type] = value;
+  // Vai ban ICU cu tra gio '24' cho nua dem thay vi '00'
+  const gio = p.hour === '24' ? '00' : p.hour;
+  return `${p.day}/${p.month}/${p.year} ${gio}:${p.minute}:${p.second}`;
+}
+
+/**
  * Form sua mot bai da giao. Bo cuc va ten nhan bam theo man Nhap tay de bo me
  * khong phai hoc lai — cung nhung o do, chi khac la co san noi dung.
  */
@@ -29,6 +64,7 @@ export default function SuaBai({
   const [hwSource, setHwSource] = useState<HwSource>(assignment.source);
   // Giu dang chuoi de bo me xoa trong o roi go so moi; luu thi rong = mac dinh
   const [duration, setDuration] = useState(String(assignment.durationMinutes));
+  const [requiresVideo, setRequiresVideo] = useState(assignment.requiresVideo);
   const [media, setMedia] = useState<AttachedMedia[]>(assignment.media);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -69,6 +105,7 @@ export default function SuaBai({
           dueDate,
           source: hwSource,
           durationMinutes: duration === '' ? DURATION_DEFAULT : Number(duration),
+          requiresVideo,
           media,
         }),
       });
@@ -179,6 +216,37 @@ export default function SuaBai({
             ))}
           </div>
         </div>
+
+        {/* AI danh dau luc tach bai nhung co the sot hoac danh nham — bo me la
+            nguoi quyet cuoi. Bat co nay thi con phai quay video moi tick xong duoc. */}
+        <label className="flex items-center gap-2 min-h-p-tap cursor-pointer">
+          <input
+            type="checkbox"
+            checked={requiresVideo}
+            onChange={(e) => setRequiresVideo(e.target.checked)}
+            className="w-5 h-5 accent-primary shrink-0"
+          />
+          <span className="text-p-body text-on-surface">
+            🎥 Bài này cần con quay video nộp lại
+          </span>
+        </label>
+
+        {/* Video con da nop — bo me xem lai ngay tai day de kiem tra bai */}
+        {assignment.submittedVideoUrl && (
+          <div>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">
+              Video con đã nộp
+              {assignment.submittedVideoAt && ` — ${gioNha(assignment.submittedVideoAt)}`}
+            </label>
+            <video
+              src={assignment.submittedVideoUrl}
+              controls
+              playsInline
+              preload="metadata"
+              className="w-full max-h-64 rounded-lg bg-black"
+            />
+          </div>
+        )}
 
         <div>
           <label className="text-p-label uppercase text-on-surface-variant block mb-1">

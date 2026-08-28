@@ -223,6 +223,17 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                         </div>
                       )}
 
+                      {/* Bai phai quay video nop: bao ngay tren the de con goi
+                          bo me chuan bi may quay truoc khi mo bai */}
+                      {a.requiresVideo && !isDone && (
+                        <div className="flex items-center gap-2 mt-1.5 text-error">
+                          <span className="material-symbols-outlined text-2xl icon-fill shrink-0">
+                            videocam
+                          </span>
+                          <span className="text-k-body-sm font-bold">Bài này quay video</span>
+                        </div>
+                      )}
+
                       {/* Bao truoc cho con biet mo bai nay ra la co gi cua co gui kem */}
                       {coGi && (
                         <div
