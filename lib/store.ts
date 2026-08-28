@@ -189,6 +189,7 @@ interface AssignmentRow {
   subject: string; icon: string; content: string; note: string | null;
   lang: string; due_date: string | Date; source: string; status: string;
   completed_at: string | Date | null; image_url: string | null;
+  duration_minutes: number;
 }
 
 /** Neon tra due_date dang string, PGlite tra Date — chuan hoa ve YYYY-MM-DD. */
@@ -215,6 +216,7 @@ const toAssignment = (r: AssignmentRow, media: AttachedMedia[]): Assignment => (
   completedAt: r.completed_at ? new Date(r.completed_at).toISOString() : null,
   imageUrl: r.image_url,
   media,
+  durationMinutes: Number(r.duration_minutes ?? 10),
 });
 
 /**
@@ -318,9 +320,11 @@ export async function saveSubmission(input: {
       const id = newId('asg');
       await query(
         `INSERT INTO assignments
-           (id, submission_id, child_id, subject, icon, content, note, lang, due_date, source, image_url)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-        [id, subId, childId, d.subject, d.icon, d.content, d.note, d.lang, input.dueDate, input.source, coverImage]
+           (id, submission_id, child_id, subject, icon, content, note, lang, due_date, source, image_url,
+            duration_minutes)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        [id, subId, childId, d.subject, d.icon, d.content, d.note, d.lang, input.dueDate, input.source, coverImage,
+         d.durationMinutes ?? 10]
       );
       // Moi con mot ban bai rieng nen tep dinh kem cung ghi rieng cho tung ban —
       // xoa bai cua con nay khong duoc lam mat tep o bai cua con kia.
@@ -354,7 +358,8 @@ export async function setStatus(
 export async function updateAssignment(
   familyId: string,
   id: string,
-  patch: Partial<Pick<Assignment, 'subject' | 'icon' | 'content' | 'note' | 'lang' | 'dueDate' | 'source'>> & {
+  patch: Partial<Pick<Assignment,
+    'subject' | 'icon' | 'content' | 'note' | 'lang' | 'dueDate' | 'source' | 'durationMinutes'>> & {
     /** Co mat = THAY CA DANH SACH tep dinh kem cua bai bang danh sach nay. */
     media?: AttachedMedia[];
   }
@@ -362,6 +367,7 @@ export async function updateAssignment(
   const map: Record<string, string> = {
     subject: 'subject', icon: 'icon', content: 'content',
     note: 'note', lang: 'lang', dueDate: 'due_date', source: 'source',
+    durationMinutes: 'duration_minutes',
   };
   const sets: string[] = [];
   const params: unknown[] = [id, familyId];

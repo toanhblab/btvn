@@ -198,6 +198,14 @@ body {
 }
 .btn-3d-success:active { transform: translateY(6px); box-shadow: 0 0 0 0 #16a34a; }
 
+/* Nut "Bat dau lam" — vang ho phach cho khac nut xanh "Da lam xong" ngay duoi */
+.btn-3d-amber {
+  background-color: #eec200;
+  box-shadow: 0 6px 0 0 #b58900;
+  transition: all 0.1s ease;
+}
+.btn-3d-amber:active { transform: translateY(6px); box-shadow: 0 0 0 0 #b58900; }
+
 /* ---------- Avatar chon con ---------- */
 @keyframes subtle-pulse {
   0%, 100% { transform: scale(1); }

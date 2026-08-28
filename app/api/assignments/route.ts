@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { parentFamilyId, viewingFamilyId } from '@/lib/auth';
 import { deleteAllAssignments, listAssignments, saveSubmission, todayISO } from '@/lib/store';
 import type { DraftAssignment } from '@/lib/types';
-import { hwSourceOf, iconFor } from '@/lib/types';
+import { hwSourceOf, iconFor, sanitizeDuration } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,6 +72,8 @@ export async function POST(req: Request) {
       note: d.note || null,
       lang: d.lang === 'en' ? 'en' : 'vi',
       confidence: d.confidence ?? 1,
+      // Bo me da duyet o man Kiem tra lai nen chi lam sach, khong kep lai 5-15
+      durationMinutes: sanitizeDuration(d.durationMinutes),
       // Tep dinh kem: chi giu phan tu co url that; kind la thi khong doan bua,
       // coi nhu video de it nhat con trinh phat de bam
       media: (Array.isArray(d.media) ? d.media : [])
