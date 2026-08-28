@@ -55,7 +55,8 @@ lần. Đường này **chỉ** gắn máy vào nhà, không mở phần bố m�
 trên iPad của các con vẫn an toàn.
 
 Mọi truy vấn trong `lib/store.ts` đều nhận `familyId` và tự lọc theo nó — kể cả
-đường con tick bài xong (đường duy nhất không cần PIN). Biết id con hay id bài
+đường con tick bài xong và con nộp video (hai việc duy nhất không cần PIN, cùng
+xác thực bằng cookie thiết bị). Biết id con hay id bài
 của nhà khác cũng không đọc/sửa được gì.
 
 ## Migration
@@ -102,7 +103,7 @@ bằng AI là chưa hoạt động. Đặt vào `.env.local`:
 | Biến | Chưa có thì sao | Lấy ở đâu |
 | --- | --- | --- |
 | `DATABASE_URL` | Dùng PGlite lưu ở `.data/pg` trên máy | Vercel → Storage → Neon |
-| `BLOB_READ_WRITE_TOKEN` | Ảnh nhúng thẳng vào trang, chỉ hợp để thử | Vercel → Storage → Blob |
+| `BLOB_READ_WRITE_TOKEN` | Ảnh nhúng thẳng vào trang, video/tệp đính kèm ghi vào `.data/uploads` — chỉ chạy khi dev, deploy mà thiếu là con **không nộp video được** | Vercel → Storage → Blob |
 | `NOUS_API_KEY` | Tách bài tạm theo dòng, có cảnh báo rõ cho bố mẹ | portal.nousresearch.com |
 | `NOUS_MODEL` | Dùng `qwen/qwen3-vl-32b-instruct` — **phải là model có vision** | Danh sách ở `/v1/models` |
 | `PIN_SECRET` | Dùng chuỗi mặc định — **phải đổi trước khi deploy** | Tự đặt |
@@ -123,10 +124,14 @@ app/con/        4 màn của trẻ: chọn con → bài hôm nay → chi tiết 
 app/bome/       màn của bố mẹ: PIN, tạo nhà, tổng quan, thêm bài, kiểm tra lại,
                 nhập tay, sửa bài, thêm con, chi tiết theo con, danh sách, cài đặt
 app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
-                nha (gắn máy), extract (Nous Portal), upload (Blob)
+                nha (gắn máy), extract (Nous Portal), upload (ảnh đề bài),
+                upload-media (tệp bố mẹ đính kèm), nop-video (video con nộp),
+                tep (đọc tệp đã ghi ở .data/uploads khi dev)
 app/_components/ BanPhimPin — bàn phím số dùng chung cho 4 chỗ nhập PIN
 lib/            db (Neon|PGlite), store (truy vấn theo familyId), auth (PIN +
-                cookie có chữ ký), pin (PIN_LEN dùng cả hai phía), avatar, ai, types
+                cookie có chữ ký), pin (PIN_LEN dùng cả hai phía), media +
+                upload-route (giới hạn tệp, tên/URL tệp, thân chung hai route
+                tải lên), avatar, ai, types
 proxy.ts        chặn /bome/* khi chưa nhập PIN
 migrations/     từng bước thay đổi lược đồ, chạy theo thứ tự tên tệp (bám PRD mục 7)
 scripts/        db.mjs (kết nối + bộ chạy migration), migrate.mjs (CLI, chạy khi
@@ -164,6 +169,21 @@ giọng nói nhắc mỗi 5 phút và phút cuối, hết giờ chuông dịu + 
 thì mốc hết hiệu lực và nút "Bắt đầu làm" hiện lại, để bài con bỏ dở hôm trước
 không kẹt mãi ở trạng thái quá giờ.
 
+**Nộp bài bằng video.** Bài kiểu "đọc to", "đọc thuộc lòng", "quay video gửi cô",
+thể dục/biểu diễn có trường `requires_video` — AI tự bật khi tách bài, bố mẹ
+bật/tắt lại được bằng chip 🎥 ở màn "Kiểm tra lại" / "Nhập tay" và ô tick 🎥 ở
+màn "Sửa bài tập". Ở màn của con, bài gắn cờ hiện khung quay ngay trong trang (`MediaRecorder`, mp4 trên
+Safari và webm trên Chrome cũ) kèm xem trước và quay lại; máy không quay được
+trong trang hoặc con từ chối quyền camera thì có đường lui mở máy quay của hệ
+điều hành (`capture="user"`). Quay tối đa 3 phút (`MAX_QUAY_GIAY`), máy tự dừng
+khi hết giờ. **Gửi video chính là "đã làm xong"** — bài gắn cờ không có nút tick
+riêng và server cũng chặn tick xong khi chưa có video. Mỗi bài giữ **một video
+mới nhất** (quay lại là thay URL, không giữ lịch sử). Video đi qua route riêng
+`/api/nop-video` (xác thực bằng cookie thiết bị vì con không có PIN, chỉ nhận
+video, trần 250MB vì máy quay của iPad ghi ~60MB/phút). Bố mẹ thấy badge
+🎥 "Đã nộp video" / "Chờ quay video" ở màn chi tiết theo con và phát lại video
+trong màn "Sửa bài tập".
+
 **Không bao giờ để bố mẹ bị kẹt.** AI hỏng, hết quota hay chưa có key thì vẫn
 tách tạm theo dòng kèm cảnh báo, và luôn có đường "Nhập tay từng bài".
 
@@ -188,4 +208,5 @@ chung.
    nhắc, không âm thầm bỏ qua.
 3. Đừng chạy `db:seed` trên DB thật — nó xoá mọi gia đình.
 4. Kiểm tra trên **iPad thật** (giọng `vi-VN` có sẵn không, vùng bấm có vừa
-   ngón tay trẻ con không) và **điện thoại thật**. Không thay thế được bằng máy tính.
+   ngón tay trẻ con không, quay video trong trang có ra mp4 và phát lại được
+   không) và **điện thoại thật**. Không thay thế được bằng máy tính.

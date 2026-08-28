@@ -4,9 +4,10 @@ import { TEN_TEP_RE } from '@/lib/media';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/tep/<ten> — tra ve tep dinh kem (video, ghi am, anh) da luu vao
- * .data/uploads khi dev chua bat Vercel Blob (xem /api/upload-media). Tren
- * production moi tep deu nam tren Blob nen route nay khong bao gio duoc goi.
+ * GET /api/tep/<ten> — tra ve tep da luu vao .data/uploads khi dev chua bat
+ * Vercel Blob: tep bo me dinh kem (/api/upload-media) va video con quay de nop
+ * bai (/api/nop-video) — ca hai ghi tep qua lib/upload-route. Tren production
+ * moi tep deu nam tren Blob nen route nay khong bao gio duoc goi.
  *
  * Khong doi dang nhap: man cua con khong co PIN (PRD 4.5), giong nhu anh tren
  * Blob thi bao ve bang ten tep ngau nhien khong doan duoc.
