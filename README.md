@@ -153,9 +153,10 @@ nhóm bài theo nơi giao, mỗi nhóm có tiến độ riêng — để con là
 rồi mới sang loại kia; nhóm rỗng thì không hiện. Bố mẹ chọn nơi giao khi thêm bài
 (mặc định "Tự đoán": đề tiếng Anh xếp vào Smartkid) và sửa lại được sau khi lưu.
 
-Thêm nguồn mới thì chỉ nối vào `HW_SOURCES` trong `lib/types.ts` — không cần
-migration (DB không có `CHECK`), và `hwSourceOf` lọc theo **tập khoá thật** của
-`HW_SOURCES` nên tự nhận nguồn mới. Nhãn hiển thị đổi tự do; **mã định danh lưu
+Thêm nguồn mới thì nối vào **cả** union `HwSource` **và** bảng `HW_SOURCES` trong
+`lib/types.ts` (thiếu một bên là TypeScript báo lỗi ngay, không hỏng âm thầm) —
+không cần migration (DB không có `CHECK`), và `hwSourceOf` lọc theo **tập khoá
+thật** của `HW_SOURCES` nên tự nhận nguồn mới. Nhãn hiển thị đổi tự do; **mã định danh lưu
 trong DB thì không** (`primary_school`, `english_class`, `other`).
 
 `inferSource` (`lib/ai.ts`) **cố ý** chỉ đoán ra hai nguồn, không bao giờ đoán

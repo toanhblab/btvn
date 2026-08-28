@@ -12,8 +12,9 @@ export type ChildColor = 'primary' | 'secondary' | 'tertiary';
  * Them nguon moi (lop ve, lop nhac...) thi noi vao day + HW_SOURCES, DB khong co
  * CHECK nen khong can migration.
  *
- * MA DINH DANH trong DB la co dinh ('primary_school', 'english_class') — doi nhan
- * hien thi thi chi sua HW_SOURCES, dung sua ma, khong thi du lieu cu mat nguon.
+ * MA DINH DANH trong DB la co dinh ('primary_school', 'english_class', 'other') —
+ * doi nhan hien thi thi chi sua HW_SOURCES, dung sua ma, khong thi du lieu cu mat
+ * nguon.
  */
 export type HwSource = 'primary_school' | 'english_class' | 'other';
 
@@ -27,15 +28,21 @@ export const HW_SOURCES: Record<HwSource, { label: string; icon: string }> = {
 /** Tap khoa THAT cua HW_SOURCES — them nguon thu tu la hwSourceOf tu biet. */
 const HW_SOURCE_KEYS = new Set<string>(Object.keys(HW_SOURCES));
 
-/** Nguon mac dinh khi gia tri khong doc duoc: khoa dau bang. */
-const HW_SOURCE_DEFAULT = Object.keys(HW_SOURCES)[0] as HwSource;
+/**
+ * Dich degrade khi gia tri khong doc duoc. CHOT CUNG, co y KHONG lay theo thu tu
+ * khoa cua HW_SOURCES: thu tu do thuan hien thi (nhom nao truoc o man cua con) va
+ * duoc phep doi tu do, khong duoc keo theo mot quyet dinh ngu nghia. Cung literal
+ * voi cac noi khac tu ghi mac dinh (KiemTraLai, NhapTay, ThemBaiTap, api/extract).
+ */
+const HW_SOURCE_DEFAULT: HwSource = 'primary_school';
 
 /**
  * Loc gia tri la tu ngoai vao (API body, sessionStorage cu) ve mot nguon hop le.
  *
- * Doi chieu voi TAP KHOA cua HW_SOURCES chu khong viet cung tung ten — truoc day
- * ham nay nhi phan ("khong phai english_class thi la primary_school") nen nguon
- * moi bi nuot am tham luc doc lai tu DB.
+ * Kiem tra THANH VIEN doi chieu voi TAP KHOA THAT cua HW_SOURCES chu khong viet
+ * cung tung ten — truoc day ham nay nhi phan ("khong phai english_class thi la
+ * primary_school") nen nguon moi bi nuot am tham luc doc lai tu DB. Them nguon
+ * thu tu vao HW_SOURCES la ham tu nhan, khong phai so lai.
  *
  * Gia tri la KHONG nem loi: API cu / ban nhap cu van chay duoc, chi degrade ve
  * nguon mac dinh.

@@ -21,6 +21,56 @@
 -- migration nay KHONG DOI GI CA. Cau SELECT long nhau tra ve NULL, phep so sanh
 -- thanh NULL, WHERE khong khop dong nao. Do la co y: khong biet moc thoi gian thi
 -- tha khong lam gi con hon gom nham hang loat bai dung vao "Khac".
+--
+-- CHO BIET truoc: moc thoi gian tao bai KHONG phan biet duoc "chua ai dong vao"
+-- voi "bo me tao truoc 010, sau do vao Sua bai bam dung 🏫 Nguyen Sieu" —
+-- assignments khong co updated_at nen khong co tin hieu nao trong schema tach hai
+-- truong hop. Nhung bai loai hai bi gom nham sang "Khac". Vi vay TRUOC khi doi,
+-- moi dong sap doi duoc ghi lai vao _nguon_reclassify_011 de con duong lui.
+--
+-- HOAN TAC TOAN BO (tra moi dong ve dung nguon cu):
+--
+--   UPDATE assignments a
+--      SET source = r.source_cu
+--     FROM _nguon_reclassify_011 r
+--    WHERE r.assignment_id = a.id
+--      AND r.migration = '011_nguon_khac.sql';  -- het cau
+--
+-- HOAN TAC MOT BAI (thay <assignment_id> bang id that):
+--
+--   UPDATE assignments a
+--      SET source = r.source_cu
+--     FROM _nguon_reclassify_011 r
+--    WHERE r.assignment_id = a.id
+--      AND r.migration = '011_nguon_khac.sql'
+--      AND a.id = '<assignment_id>';  -- het cau
+--
+-- (Dau ';' trong hai cau tren co chu "-- het cau" theo sau vi scripts/db.mjs cat
+-- tep .sql o moi dau ';' cuoi dong; de tran thi hai khoi comment nay bi doc nham
+-- thanh cau lenh.)
+
+CREATE TABLE IF NOT EXISTS _nguon_reclassify_011 (
+  assignment_id TEXT PRIMARY KEY,
+  source_cu     TEXT NOT NULL,
+  doi_luc       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  migration     TEXT NOT NULL
+);
+
+INSERT INTO _nguon_reclassify_011 (assignment_id, source_cu, migration)
+SELECT a.id, a.source, '011_nguon_khac.sql'
+  FROM assignments a
+ WHERE a.source = 'primary_school'
+   AND EXISTS (
+         SELECT 1
+           FROM submissions s
+          WHERE s.id = a.submission_id
+            AND s.created_at < (
+                  SELECT m.applied_at
+                    FROM _migrations m
+                   WHERE m.name = '010_nguon_bai_tap.sql'
+                )
+       )
+    ON CONFLICT (assignment_id) DO NOTHING;
 
 UPDATE assignments a
    SET source = 'other'
