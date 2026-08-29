@@ -81,42 +81,60 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
           alt=""
           className="w-[240px] h-[240px] object-cover rounded-full soft-shadow mb-k-stack"
         />
-        <h1 className="text-k-hero text-on-background mb-3">Hôm nay không có bài tập 🎉</h1>
-        <p className="text-k-headline text-on-surface-variant mb-8">{child.name} đi chơi thôi!</p>
+        {/* max-w-3xl (bo Macbook 06): o 1440px thi tieu de 56px chay het mot dong
+            dai ngoang; gioi han khung lai de no xuong hai dong nhu ban thiet ke. */}
+        <div className="flex flex-col items-center max-w-3xl">
+          <h1 className="text-k-hero text-on-background mb-3">Hôm nay không có bài tập 🎉</h1>
+          <p className="text-k-headline text-on-surface-variant mb-8">{child.name} đi chơi thôi!</p>
 
-        <Link
-          href="/con"
-          className="h-k-tap min-w-[280px] rounded-3xl border-4 border-primary text-primary
-                     flex items-center justify-center px-12 text-k-label hover:bg-primary-fixed transition-colors"
-        >
-          <span className="material-symbols-outlined mr-3">home</span>Về trang chính
-        </Link>
+          <Link
+            href="/con"
+            className="h-k-tap min-w-[280px] xl:min-w-[320px] rounded-3xl border-4 border-primary text-primary
+                       flex items-center justify-center px-12 text-k-label hover:bg-primary-fixed transition-colors"
+          >
+            <span className="material-symbols-outlined mr-3">home</span>Về trang chính
+          </Link>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="kid-scope min-h-screen flex flex-col p-k-edge">
-      <header className="flex items-center gap-6 mb-k-stack">
-        <Link
-          href="/con"
-          className="w-16 h-16 bg-surface-container rounded-2xl flex items-center justify-center
-                     interactive-shadow text-primary shrink-0"
-        >
-          <span className="material-symbols-outlined text-4xl icon-fill">arrow_back</span>
-        </Link>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={child.avatarUrl}
-          alt=""
-          className="w-16 h-16 rounded-full object-cover border-4 border-surface-container shrink-0"
-        />
-        <h1 className="text-k-hero text-primary">Bài tập của {child.name}</h1>
+    <main className="kid-scope min-h-screen w-full max-w-[1440px] mx-auto flex flex-col p-k-edge">
+      {/* Man may tinh: tien do doi sang ben phai tieu de (bo Macbook 02) — cho
+          trong ben canh "Bai tap cua ..." tren man 1440px la cho dat no dep nhat. */}
+      <header className="flex items-center gap-6 mb-k-stack xl:justify-between">
+        <div className="flex items-center gap-6 min-w-0">
+          <Link
+            href="/con"
+            className="w-16 h-16 bg-surface-container rounded-2xl flex items-center justify-center
+                       interactive-shadow text-primary shrink-0"
+          >
+            <span className="material-symbols-outlined text-4xl icon-fill">arrow_back</span>
+          </Link>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={child.avatarUrl}
+            alt=""
+            className="w-16 h-16 rounded-full object-cover border-4 border-surface-container shrink-0"
+          />
+          <h1 className="text-k-hero text-primary">Bài tập của {child.name}</h1>
+        </div>
+
+        {/* Chi hien tu 1280px tro len; duoi nguong do tien do van nam trong the
+            o duoi (xl:hidden ben trong the do) — khong nhan doi tren man iPad. */}
+        {todayItems.length > 0 && (
+          <div className="hidden xl:flex items-center shrink-0 bg-primary-container text-on-primary-container
+                          text-k-headline px-8 py-4 rounded-full soft-shadow whitespace-nowrap">
+            {done}/{todayItems.length} bài hôm nay đã xong
+          </div>
+        )}
       </header>
 
       {/* Tien do chi tinh bai hom nay: do la thu con phai lam xong truoc khi di choi (PRD 4.3) */}
       {todayItems.length > 0 && (
-        <section className="bg-surface-container-low rounded-2xl p-6 mb-k-stack flex items-center gap-k-gutter soft-shadow">
+        <section className="bg-surface-container-low rounded-2xl p-6 mb-k-stack flex items-center gap-k-gutter soft-shadow
+                            xl:w-max xl:mx-auto xl:px-10">
           <div className="flex gap-4 flex-wrap">
             {todayItems.map((a) => (
               <div
@@ -133,7 +151,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
               </div>
             ))}
           </div>
-          <div className="text-k-headline text-on-surface">
+          <div className="text-k-headline text-on-surface xl:hidden">
             {done}/{todayItems.length} bài hôm nay đã xong
           </div>
         </section>
@@ -167,7 +185,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                 {nhanNgay(g.date, today, tomorrow)}
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-k-gutter">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-k-gutter">
             {g.items.map((a) => {
               const isDone = a.status === 'done';
               // "video, ghi âm" chu khong chi dem so tep: con chua doc duoc so,
@@ -181,7 +199,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                 <Link
                   key={a.id}
                   href={`/con/${child.id}/bai/${a.id}`}
-                  className={`rounded-[32px] p-6 flex items-center justify-between min-h-[160px] relative overflow-hidden ${
+                  className={`rounded-[32px] p-6 flex items-center xl:items-start justify-between min-h-[160px] relative overflow-hidden ${
                     isDone
                       ? 'bg-success-container opacity-80 soft-shadow'
                       : 'bg-surface border-[6px] border-primary interactive-shadow'
@@ -192,7 +210,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                       <span className="material-symbols-outlined text-3xl icon-fill">check</span>
                     </div>
                   )}
-                  <div className={`flex items-center gap-6 min-w-0 ${isDone ? 'ml-12' : ''}`}>
+                  <div className={`flex items-center xl:items-start gap-6 min-w-0 ${isDone ? 'ml-12' : ''}`}>
                     <div className="text-6xl shrink-0">{a.icon}</div>
                     <div className="min-w-0">
                       <div
@@ -205,7 +223,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                       {/* text-k-body (24px) chu khong phai 32px: o 32px thi de bai bi cat
                           con vai chu, tre nhin vao khong doan ra bai gi. */}
                       <div
-                        className={`text-k-body font-bold line-clamp-2 ${
+                        className={`text-k-body font-bold line-clamp-2 xl:line-clamp-3 ${
                           isDone ? 'text-on-success-container' : 'text-on-surface'
                         }`}
                       >
@@ -255,12 +273,15 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                       )}
                     </div>
                   </div>
+                  {/* Anh minh hoa AN tren luoi 3 cot cua man may tinh: the chi con
+                      ~430px, giu anh lai la de bai bi cat con vai chu. Cung mot ly le
+                      da chot o man chi tiet bai — anh khong giup con hieu them. */}
                   {a.imageUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={a.imageUrl}
                       alt=""
-                      className={`w-24 h-24 rounded-2xl object-cover shrink-0 ml-4 border-4 ${
+                      className={`w-24 h-24 rounded-2xl object-cover shrink-0 ml-4 border-4 xl:hidden ${
                         isDone ? 'border-white/50 opacity-70' : 'border-surface-container-highest'
                       }`}
                     />

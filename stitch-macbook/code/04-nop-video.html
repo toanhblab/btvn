@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Học Vui - Bài Tập</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"tertiary-fixed": "#ffe083", "on-secondary-container": "#5c2400", "on-primary-container": "#fefcff", "surface-dim": "#dfd9d1", "on-secondary-fixed-variant": "#783200", "secondary-fixed-dim": "#ffb690", "on-tertiary": "#ffffff", "surface-bright": "#fff8f1", "on-tertiary-fixed-variant": "#574500", "primary-fixed-dim": "#adc6ff", "tertiary-fixed-dim": "#eec200", "on-primary-fixed": "#001a42", surface: "#fff8f1", "on-error": "#ffffff", "on-secondary": "#ffffff", error: "#ba1a1a", "on-background": "#1e1b17", "surface-container-low": "#f9f3eb", "surface-container": "#f4ede5", secondary: "#9d4300", "inverse-on-surface": "#f7f0e8", "on-surface": "#1e1b17", tertiary: "#735c00", primary: "#0058be", "on-error-container": "#93000a", "on-surface-variant": "#424754", "surface-container-high": "#eee7df", "surface-tint": "#005ac2", "inverse-surface": "#33302b", "secondary-fixed": "#ffdbca", "primary-container": "#2170e4", "surface-container-lowest": "#ffffff", "on-primary-fixed-variant": "#004395", "on-tertiary-container": "#4e3e00", "on-primary": "#ffffff", "tertiary-container": "#cea700", "on-secondary-fixed": "#341100", outline: "#727785", background: "#fff8f1", "primary-fixed": "#d8e2ff", "inverse-primary": "#adc6ff", "on-tertiary-fixed": "#231b00", "error-container": "#ffdad6", "secondary-container": "#fd761a", "surface-variant": "#e8e1da", "outline-variant": "#c2c6d6", "surface-container-highest": "#e8e1da", "custom-cream": "#FFF8F0", "custom-yellow": "#FFD54F", "custom-green": "#4CAF50", "custom-green-dark": "#388E3C"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"margin-mobile": "20px", "margin-desktop": "48px", base: "8px", "stack-md": "24px", "stack-lg": "48px", "stack-sm": "12px", gutter: "32px", "stack-gap": "24px", "touch-target-min": "64px", "margin-edge": "48px"}, fontFamily: {"headline-lg-mobile": ["Quicksand"], "display-md": ["Quicksand"], "display-lg": ["Quicksand"], "body-md": ["Quicksand"], "body-lg": ["Quicksand"], "headline-lg": ["Quicksand"], "label-lg": ["Quicksand"], "label-md": ["Quicksand"], sans: ["Quicksand", "sans-serif"], "label-bold": ["Quicksand"], "display-hero": ["Quicksand"]}, fontSize: {"headline-lg-mobile": ["28px", {lineHeight: "1.3", fontWeight: "700"}], "display-md": ["48px", {lineHeight: "1.2", letterSpacing: "-0.01em", fontWeight: "700"}], "display-lg": ["56px", {lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "700"}], "body-md": ["20px", {lineHeight: "28px", fontWeight: "500"}], "body-lg": ["24px", {lineHeight: "32px", fontWeight: "500"}], "headline-lg": ["32px", {lineHeight: "40px", fontWeight: "700"}], "label-lg": ["16px", {lineHeight: "1.2", fontWeight: "700"}], "label-md": ["14px", {lineHeight: "1.2", fontWeight: "600"}], "label-bold": ["18px", {lineHeight: "24px", fontWeight: "700"}], "display-hero": ["48px", {lineHeight: "60px", letterSpacing: "-0.02em", fontWeight: "700"}]}, boxShadow: {chunky: "0px 8px 0px 0px rgba(0,0,0,0.08)", "chunky-hover": "0px 12px 20px 0px rgba(0,0,0,0.12)"}}}};</script>
+<style>
+        body { font-family: 'Quicksand', sans-serif; background-color: #FFF8F0; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 48; }
+        .btn-3d { transition: transform 0.1s ease, box-shadow 0.1s ease; }
+        .btn-3d:active { transform: translateY(4px); box-shadow: none !important; }
+    </style>
+</head>
+<body class="min-h-screen p-margin-desktop bg-custom-cream text-on-surface flex flex-col items-center">
+<div class="w-full max-w-[1280px]">
+<!-- Top Left Back Link -->
+<a class="inline-flex items-center gap-4 text-on-surface hover:text-primary transition-colors group mb-stack-lg" href="#">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center shadow-chunky group-hover:shadow-chunky-hover transition-all group-hover:-translate-y-1">
+<span class="material-symbols-outlined text-[32px]">arrow_back</span>
+</div>
+<span class="font-headline-lg text-headline-lg">Quay lại</span>
+</a>
+<!-- Main Content -->
+<div class="flex flex-col md:flex-row gap-gutter w-full">
+<!-- LEFT COLUMN -->
+<div class="w-full md:w-[45%] flex flex-col gap-stack-md">
+<div class="bg-surface-container-lowest rounded-[24px] p-8 shadow-chunky relative border-2 border-outline-variant/30 flex flex-col gap-stack-md">
+<div class="inline-flex items-center self-start bg-custom-yellow px-6 py-3 rounded-full text-on-secondary-fixed font-headline-lg text-headline-lg shadow-sm">
+<span class="material-symbols-outlined mr-2">menu_book</span>
+                        Tiếng Việt
+                    </div>
+<h1 class="font-display-md text-display-md text-on-surface">
+                        Đọc to bài Con mèo trang 18
+                    </h1>
+<div class="flex items-center gap-3 text-on-surface-variant font-body-lg text-body-lg">
+<span class="material-symbols-outlined text-[28px]">import_contacts</span>
+<span>Sách Tiếng Việt lớp 1 tập 2</span>
+</div>
+<button class="btn-3d w-full h-[80px] bg-primary-container text-on-primary-container rounded-[24px] flex items-center justify-center gap-4 font-headline-lg text-headline-lg shadow-[0px_8px_0px_0px_#004494] hover:-translate-y-1 mt-4">
+<span class="material-symbols-outlined text-[40px]">volume_up</span>
+                        Nghe đề bài
+                    </button>
+</div>
+<div class="bg-error-container text-on-error-container rounded-[24px] p-8 flex items-center gap-6 shadow-chunky border-2 border-error-container/50">
+<div class="w-16 h-16 bg-[#ba1a1a] rounded-full flex items-center justify-center text-white shrink-0">
+<span class="material-symbols-outlined text-[36px]">videocam</span>
+</div>
+<span class="font-headline-lg text-headline-lg leading-tight">Bài này quay video gửi cô</span>
+</div>
+</div>
+<!-- RIGHT COLUMN -->
+<div class="w-full md:w-[55%] flex flex-col gap-stack-md">
+<div class="bg-surface-container-lowest rounded-[24px] p-8 shadow-chunky relative border-2 border-outline-variant/30 flex flex-col gap-stack-md items-center h-full">
+<!-- Video Preview Area -->
+<div class="w-full aspect-video rounded-[24px] overflow-hidden relative shadow-inner bg-surface-dim">
+<img class="w-full h-full object-cover" data-alt="A high-quality webcam view of a happy 5-year-old Vietnamese child sitting at a bright, tidy desk holding an open illustrated textbook. Warm, bright light-mode lighting, soft shadows, vibrant colors." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsfa34SihHKAd-5p5im-y3sp60i13-RDJHHLK0tFOsBemhiZFkf-CQTPGQYpKiKH_ZD9ytJxsnq1O4tww1i8KUcNupB4zpXkiz0EzWy8-MQV5CDXe-UVs_YJOb_qmxkQpRKWLno7t1_AQS0beA3EbSaeX4Oshcprf-cS3lOJqGX9He4lvv4pGL1IGejTAMokuJ46zKpE5baH9JQmaOK31lqv3H0z5tJBl94Cx1UWjERlMEZQgiokcABPWiv54mSEkNu_hdvIvbX4Y"/>
+<div class="absolute top-4 left-4 bg-error text-white font-label-lg text-label-lg px-4 py-2 rounded-full flex items-center gap-2 shadow-md">
+<div class="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                            00:42
+                        </div>
+<div class="absolute top-4 right-4 bg-black/40 backdrop-blur-sm text-white font-label-lg text-label-lg px-4 py-2 rounded-full shadow-md">
+                            Tối đa 3 phút
+                        </div>
+</div>
+<!-- Controls -->
+<div class="flex items-center justify-center gap-8 py-4 w-full">
+<button class="w-[72px] h-[72px] rounded-full border-4 border-outline-variant text-outline flex items-center justify-center hover:bg-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[36px]">replay</span>
+</button>
+<button class="btn-3d w-[96px] h-[96px] bg-error rounded-full flex items-center justify-center shadow-[0px_8px_0px_0px_#93000a] text-white hover:-translate-y-1">
+<span class="material-symbols-outlined text-[48px]">stop</span>
+</button>
+<button class="w-[72px] h-[72px] rounded-full border-4 border-outline-variant text-outline flex items-center justify-center hover:bg-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[36px]">play_arrow</span>
+</button>
+</div>
+<!-- Progress -->
+<div class="w-full flex flex-col gap-2 items-center">
+<div class="w-full h-[24px] bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-secondary-container rounded-full" style="width: 25%;"></div>
+</div>
+<span class="font-body-lg text-body-lg text-on-surface-variant">Còn 2 phút 18 giây</span>
+</div>
+<!-- Primary Action -->
+<button class="btn-3d w-full h-[88px] bg-custom-green text-white rounded-[24px] flex items-center justify-center gap-4 font-headline-lg text-[32px] font-bold shadow-[0px_8px_0px_0px_#388E3C] hover:-translate-y-1 mt-auto">
+<span class="material-symbols-outlined text-[40px]">cloud_upload</span>
+                        Gửi cho cô
+                    </button>
+</div>
+</div>
+</div>
+</div>
+</body></html>

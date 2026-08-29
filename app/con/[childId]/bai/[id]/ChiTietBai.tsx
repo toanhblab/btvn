@@ -152,6 +152,11 @@ export default function ChiTietBai({
     router.refresh();
   }
 
+  // Man may tinh xep hai cot (bo Macbook 03/04): cot phai chi co ly khi that su
+  // co gi de dat vao do. Khong co tep dinh kem va khong phai quay video thi giu
+  // nguyen mot cot can giua — de trong nua man ben phai thi te hon la khong chia.
+  const coCotPhai = assignment.media.length > 0 || assignment.requiresVideo;
+
   return (
     <main className="kid-scope h-screen flex flex-col p-k-edge overflow-hidden">
       <div className="mb-k-stack shrink-0">
@@ -169,91 +174,108 @@ export default function ChiTietBai({
       </div>
 
       {/* Khong con anh de bai: anh minh hoa khong giup con hieu them nen chi choan cho */}
-      <section className="flex-1 w-full max-w-3xl mx-auto flex flex-col justify-between min-h-0 overflow-y-auto">
-        <div className="flex flex-col gap-k-stack">
-          <div className="self-start px-6 py-3 bg-tertiary-fixed rounded-full soft-shadow">
-            <span className="text-k-headline text-on-tertiary-fixed">
-              {assignment.icon} {assignment.subject}
-            </span>
+      <section
+        className={`flex-1 w-full mx-auto flex flex-col justify-between min-h-0 overflow-y-auto
+                    ${coCotPhai ? 'max-w-3xl xl:max-w-[1280px]' : 'max-w-3xl'}`}
+      >
+        {/* Duoi 1280px: mot cot doc, dung thu tu cu (de bai -> nghe -> QR -> dong ho
+            -> tep co gui -> khung quay). Tu 1280px: trai 7/12 la de bai va viec con
+            phai lam, phai 5/12 la tep co gui kem / khung quay video. Grid mot cot
+            khong khac gi flex-col nen man iPad giu y nguyen. */}
+        <div
+          className={`grid grid-cols-1 gap-k-stack ${coCotPhai ? 'xl:grid-cols-12 xl:gap-k-gutter xl:items-start' : ''}`}
+        >
+          <div className={`flex flex-col gap-k-stack ${coCotPhai ? 'xl:col-span-7' : ''}`}>
+            <div className="self-start px-6 py-3 bg-tertiary-fixed rounded-full soft-shadow">
+              <span className="text-k-headline text-on-tertiary-fixed">
+                {assignment.icon} {assignment.subject}
+              </span>
+            </div>
+
+            {/* 32px tren iPad, 56px tren man may tinh (bo Macbook 03 dung display-lg):
+                cot trai rong ~700px o do nen de bai to len van xuong dong dep. */}
+            <h1 className="text-k-headline xl:text-k-hero text-on-background">{assignment.content}</h1>
+            {assignment.note && (
+              <p className="flex items-center gap-2 text-k-body-sm text-on-surface-variant">
+                <span className="material-symbols-outlined text-2xl shrink-0">menu_book</span>
+                {assignment.note}
+              </p>
+            )}
+
+            <button
+              onClick={speak}
+              className="btn-3d-primary bg-primary text-on-primary rounded-3xl flex items-center
+                         justify-center gap-4 px-6 h-20 w-full mt-2"
+            >
+              <span className="material-symbols-outlined text-4xl">volume_up</span>
+              <span className="text-k-headline">Nghe đề bài</span>
+            </button>
+            {voiceWarning && <p className="text-k-body-sm text-error">{voiceWarning}</p>}
+
+            {/* To bai tap giay hay in ma QR (bai nghe cua nha xuat ban...). Quet
+                ngay tai day de con khong phai muon dien thoai bo me giua buoi hoc. */}
+            <QuetQR />
+
+            {/* Dong ho lam bai: nut "Bat dau lam" -> dem nguoc + nhac giong noi.
+                Bai da xong thi thoi, khong can gio giac gi nua. */}
+            {!done && (
+              <DongHoLamBai assignmentId={assignment.id} minutes={assignment.durationMinutes} />
+            )}
           </div>
 
-          <h1 className="text-k-headline text-on-background">{assignment.content}</h1>
-          {assignment.note && (
-            <p className="flex items-center gap-2 text-k-body-sm text-on-surface-variant">
-              <span className="material-symbols-outlined text-2xl shrink-0">menu_book</span>
-              {assignment.note}
-            </p>
-          )}
-
-          <button
-            onClick={speak}
-            className="btn-3d-primary bg-primary text-on-primary rounded-3xl flex items-center
-                       justify-center gap-4 px-6 h-20 w-full mt-2"
-          >
-            <span className="material-symbols-outlined text-4xl">volume_up</span>
-            <span className="text-k-headline">Nghe đề bài</span>
-          </button>
-          {voiceWarning && <p className="text-k-body-sm text-error">{voiceWarning}</p>}
-
-          {/* To bai tap giay hay in ma QR (bai nghe cua nha xuat ban...). Quet
-              ngay tai day de con khong phai muon dien thoai bo me giua buoi hoc. */}
-          <QuetQR />
-
-          {/* Dong ho lam bai: nut "Bat dau lam" -> dem nguoc + nhac giong noi.
-              Bai da xong thi thoi, khong can gio giac gi nua. */}
-          {!done && (
-            <DongHoLamBai assignmentId={assignment.id} minutes={assignment.durationMinutes} />
-          )}
-
-          {/* Tep bo me dinh kem — video luyen phat am, ghi am co doc mau, anh bang
-              chu cai... Nut play cua trinh duyet du to cho tre, chi can khung ro
-              rang va nhan de hieu; anh thi hien thang ra, khong bat bam gi ca. */}
-          {assignment.media.length > 0 && (
-            <div className="flex flex-col gap-4 mt-2">
-              <p className="flex items-center gap-3 text-k-headline text-on-background">
-                <span className="material-symbols-outlined text-4xl text-tertiary icon-fill">
-                  attach_file
-                </span>
-                Cô gửi kèm bài này
-              </p>
-              {assignment.media.map((m) =>
-                m.kind === 'image' ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    key={m.url}
-                    src={m.url}
-                    alt=""
-                    className="w-full max-h-[60vh] object-contain rounded-3xl soft-shadow
-                               bg-surface-container"
-                  />
-                ) : m.kind === 'audio' ? (
-                  <div
-                    key={m.url}
-                    className="bg-surface-container rounded-3xl soft-shadow p-5 flex items-center gap-4"
-                  >
-                    <span className="material-symbols-outlined text-5xl text-tertiary icon-fill shrink-0">
-                      music_note
+          {coCotPhai && (
+            <div className="flex flex-col gap-k-stack xl:col-span-5">
+              {/* Tep bo me dinh kem — video luyen phat am, ghi am co doc mau, anh bang
+                  chu cai... Nut play cua trinh duyet du to cho tre, chi can khung ro
+                  rang va nhan de hieu; anh thi hien thang ra, khong bat bam gi ca. */}
+              {assignment.media.length > 0 && (
+                <div className="flex flex-col gap-4 mt-2">
+                  <p className="flex items-center gap-3 text-k-headline text-on-background">
+                    <span className="material-symbols-outlined text-4xl text-tertiary icon-fill">
+                      attach_file
                     </span>
-                    <audio src={m.url} controls preload="metadata" className="w-full" />
-                  </div>
-                ) : (
-                  <video
-                    key={m.url}
-                    src={m.url}
-                    controls
-                    playsInline
-                    preload="metadata"
-                    className="w-full max-h-[50vh] rounded-3xl soft-shadow bg-black"
-                  />
-                )
+                    Cô gửi kèm bài này
+                  </p>
+                  {assignment.media.map((m) =>
+                    m.kind === 'image' ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={m.url}
+                        src={m.url}
+                        alt=""
+                        className="w-full max-h-[60vh] object-contain rounded-3xl soft-shadow
+                                   bg-surface-container"
+                      />
+                    ) : m.kind === 'audio' ? (
+                      <div
+                        key={m.url}
+                        className="bg-surface-container rounded-3xl soft-shadow p-5 flex items-center gap-4"
+                      >
+                        <span className="material-symbols-outlined text-5xl text-tertiary icon-fill shrink-0">
+                          music_note
+                        </span>
+                        <audio src={m.url} controls preload="metadata" className="w-full" />
+                      </div>
+                    ) : (
+                      <video
+                        key={m.url}
+                        src={m.url}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="w-full max-h-[50vh] rounded-3xl soft-shadow bg-black"
+                      />
+                    )
+                  )}
+                </div>
+              )}
+
+              {/* Bai phai quay video: khung quay/nop nam ngay trong noi dung bai.
+                  Gui video xong la bai tu chuyen sang "da lam xong" (nopVideo). */}
+              {assignment.requiresVideo && (
+                <QuayVideo existingUrl={videoUrl} blobEnabled={blobEnabled} onSubmit={nopVideo} />
               )}
             </div>
-          )}
-
-          {/* Bai phai quay video: khung quay/nop nam ngay trong noi dung bai.
-              Gui video xong la bai tu chuyen sang "da lam xong" (nopVideo). */}
-          {assignment.requiresVideo && (
-            <QuayVideo existingUrl={videoUrl} blobEnabled={blobEnabled} onSubmit={nopVideo} />
           )}
         </div>
 
@@ -270,7 +292,7 @@ export default function ChiTietBai({
               onClick={() => setStatus(true)}
               disabled={saving}
               className="btn-3d-success text-white rounded-[32px] flex items-center justify-center
-                         gap-4 px-8 h-24 w-full disabled:opacity-60"
+                         gap-4 px-8 h-24 w-full xl:w-[560px] disabled:opacity-60"
             >
               <span className="material-symbols-outlined text-5xl icon-fill">check_circle</span>
               <span className="text-k-headline whitespace-nowrap">Đã làm xong</span>

@@ -19,6 +19,12 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
     <main className="kid-scope min-h-screen flex flex-col items-center justify-center relative overflow-hidden text-center px-k-edge">
       <Confetti />
 
+      {/* Bo Macbook 05 muon hai ngoi sao nay to hon o man rong, nhung text-[64px]
+          hien tai da khong an: bang mau Material Symbols cua Google ship
+          `.material-symbols-outlined { font-size: 24px }` KHONG nam trong @layer,
+          nen no de moi lop text-* cua Tailwind (o @layer utilities) — moi icon
+          trong app dang bi ghim 24px. Loi co truoc thay doi nay va anh huong ca
+          man bo me, nen khong sua o day; them xl:text-[...] cung chi la CSS chet. */}
       <span className="material-symbols-outlined absolute top-[15%] left-[15%] text-[64px] text-tertiary-fixed-dim animate-float-slow">
         kid_star
       </span>
@@ -31,7 +37,7 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
         <img
           src="/img/cup-chuc-mung.jpg"
           alt=""
-          className="w-56 h-56 object-cover rounded-full mb-6 animate-pulse-glow soft-shadow"
+          className="w-56 h-56 xl:w-60 xl:h-60 object-cover rounded-full mb-6 animate-pulse-glow soft-shadow"
         />
         <h1 className="text-k-hero text-primary mb-4">Giỏi quá {child.name}!</h1>
         <p className="text-k-body text-on-surface-variant mb-8">
@@ -40,7 +46,7 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
         <Link
           href="/con"
           className="flex items-center justify-center gap-4 bg-primary text-on-primary text-k-headline
-                     h-20 px-12 rounded-[40px] border-b-8 border-on-primary-fixed-variant
+                     h-20 px-12 xl:min-w-[280px] rounded-[40px] border-b-8 border-on-primary-fixed-variant
                      active:border-b-0 active:translate-y-2 transition-all"
         >
           <span className="material-symbols-outlined text-[40px]">arrow_back</span>

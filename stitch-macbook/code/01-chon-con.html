@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Học Vui - Chọn tài khoản</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-secondary-fixed": "#341100", "primary-fixed": "#d8e2ff", secondary: "#9d4300", "surface-container-low": "#f9f3eb", outline: "#727785", "surface-container-high": "#eee7df", "inverse-on-surface": "#f7f0e8", "on-primary": "#ffffff", "tertiary-fixed-dim": "#eec200", "inverse-surface": "#33302b", "surface-dim": "#dfd9d1", "on-tertiary-container": "#4e3e00", "secondary-fixed": "#ffdbca", "surface-bright": "#fff8f1", background: "#fff8f1", "on-secondary": "#ffffff", "secondary-container": "#fd761a", "on-surface-variant": "#424754", "on-primary-fixed": "#001a42", "error-container": "#ffdad6", "surface-container": "#f4ede5", tertiary: "#735c00", error: "#ba1a1a", "inverse-primary": "#adc6ff", surface: "#fff8f1", "on-primary-container": "#fefcff", "primary-container": "#2170e4", "on-surface": "#1e1b17", "on-tertiary-fixed-variant": "#574500", "surface-tint": "#005ac2", "tertiary-container": "#cea700", "on-tertiary-fixed": "#231b00", "surface-variant": "#e8e1da", "on-background": "#1e1b17", "on-secondary-container": "#5c2400", "on-error": "#ffffff", "outline-variant": "#c2c6d6", "on-primary-fixed-variant": "#004395", "on-tertiary": "#ffffff", "tertiary-fixed": "#ffe083", "on-error-container": "#93000a", "primary-fixed-dim": "#adc6ff", "surface-container-lowest": "#ffffff", "on-secondary-fixed-variant": "#783200", primary: "#0058be", "secondary-fixed-dim": "#ffb690", "surface-container-highest": "#e8e1da"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {gutter: "32px", "stack-sm": "12px", "stack-md": "24px", "margin-mobile": "20px", base: "8px", "margin-desktop": "48px", "stack-lg": "48px", "stack-gap": "24px", "touch-target-min": "64px", "margin-edge": "48px"}, fontFamily: {"label-lg": ["Quicksand"], "headline-lg-mobile": ["Quicksand"], "display-md": ["Quicksand"], "body-md": ["Quicksand"], "label-md": ["Quicksand"], "headline-lg": ["Quicksand"], "display-lg": ["Quicksand"], "body-lg": ["Quicksand"], "label-bold": ["Quicksand"], "display-hero": ["Quicksand"]}, fontSize: {"label-lg": ["16px", {lineHeight: "1.2", fontWeight: "700"}], "headline-lg-mobile": ["28px", {lineHeight: "1.3", fontWeight: "700"}], "display-md": ["48px", {lineHeight: "1.2", letterSpacing: "-0.01em", fontWeight: "700"}], "body-md": ["20px", {lineHeight: "28px", fontWeight: "500"}], "label-md": ["14px", {lineHeight: "1.2", fontWeight: "600"}], "headline-lg": ["32px", {lineHeight: "40px", fontWeight: "700"}], "display-lg": ["56px", {lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "700"}], "body-lg": ["24px", {lineHeight: "32px", fontWeight: "500"}], "label-bold": ["18px", {lineHeight: "24px", fontWeight: "700"}], "display-hero": ["48px", {lineHeight: "60px", letterSpacing: "-0.02em", fontWeight: "700"}]}}}};</script>
+<style>
+        .chunky-shadow {
+            box-shadow: 0px 8px 0px 0px rgba(0, 0, 0, 0.08);
+            border: 2px solid rgba(0, 0, 0, 0.1);
+        }
+        .chunky-shadow:hover {
+            box-shadow: 0px 12px 20px 0px rgba(0, 0, 0, 0.12);
+            transform: translateY(-4px);
+        }
+        .focus-ring:focus-visible {
+            outline: 4px solid #0c70ea;
+            outline-offset: 4px;
+        }
+        .blob-bg {
+            background-color: #FFF8F0;
+            overflow: hidden;
+            position: relative;
+        }
+        .blob-bg::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, #d8e2ff 0%, rgba(216, 226, 255, 0) 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .blob-bg::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            right: -10%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, #ffdf94 0%, rgba(255, 223, 148, 0) 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="blob-bg min-h-screen text-on-surface font-body-md flex flex-col antialiased">
+<!-- Top Navigation Placeholder (Hidden for this specific transaction-like entry screen as per intent logic, but providing a structural parent for layout if needed) -->
+<main class="flex-grow flex flex-col items-center justify-center relative z-10 w-full max-w-[1100px] mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg h-full">
+<header class="text-center mb-stack-lg">
+<h1 class="font-display-md text-display-md text-on-surface mb-stack-sm md:text-display-lg md:font-display-lg">
+                Hôm nay con là ai?
+            </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
+                Chọn tên của con để bắt đầu học vui nhé!
+            </p>
+</header>
+<!-- Avatars Container -->
+<div class="flex flex-wrap justify-center gap-stack-lg w-full" style="gap: 56px;">
+<!-- Avatar 1: Minh -->
+<button aria-label="Đăng nhập với tư cách Minh" class="group flex flex-col items-center focus-ring rounded-xl transition-all duration-300">
+<div class="relative mb-stack-sm">
+<!-- Badge -->
+<div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-secondary-container text-on-secondary font-label-lg text-label-lg px-4 py-2 rounded-full shadow-md z-10 whitespace-nowrap chunky-shadow border-none">
+                        3 bài
+                    </div>
+<!-- Avatar Image -->
+<div class="w-[200px] h-[200px] rounded-full border-[8px] border-primary p-2 bg-surface-container-lowest chunky-shadow transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-[0px_12px_20px_0px_rgba(0,0,0,0.12)]" style="width: 240px; height: 240px;">
+<img alt="Minh" class="w-full h-full object-cover rounded-full" data-alt="A child-friendly illustration of a young boy with short black hair wearing a blue t-shirt, smiling happily. Soft, bright lighting, flat vector illustration style suitable for a modern educational app, set against a solid light blue background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyKoXUAkKTnFZyhNQqNX5KAEiC1T3IhSGvg_fGgWxIFFRGfyCpYLpSxL2P4z0Ej6e-Ktu9bj1tlMvKDX_qXitiu6cjKVnY-rQnMocSrErQI6SCVy7jBbyWFxiCOKnlQBLjm-t46-rjYqhhO_pDX1Qn9WZKgW-Csqr9A58eV7YXxHdGqLhrgVwHja3UkFz1rba_6EpOzWdQRRK31SASs8UnH5kNUUK65k-xCXNjovnal_-X_ocb6gTpxqc_Qhnjce4z3_o1noJXPiU"/>
+</div>
+</div>
+<!-- Name Card -->
+<div class="bg-primary text-on-primary font-headline-lg text-headline-lg px-8 py-3 rounded-lg chunky-shadow w-full text-center group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors border-none">
+                    Minh
+                </div>
+</button>
+<!-- Avatar 2: An (Hover State Demonstration) -->
+<button aria-label="Đăng nhập với tư cách An" class="group flex flex-col items-center focus-ring rounded-xl transition-all duration-300 hover:scale-105">
+<div class="relative mb-stack-sm">
+<!-- Badge -->
+<div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#4caf50] text-white font-label-lg text-label-lg px-4 py-2 rounded-full shadow-md z-10 whitespace-nowrap chunky-shadow border-none">
+                        Xong hết 🎉
+                    </div>
+<!-- Avatar Image (Simulating Hover) -->
+<div class="w-[200px] h-[200px] rounded-full border-[10px] border-secondary-container p-2 bg-surface-container-lowest shadow-[0px_12px_20px_0px_rgba(0,0,0,0.12)] -translate-y-2 transition-all duration-300" style="width: 240px; height: 240px;">
+<img alt="An" class="w-full h-full object-cover rounded-full" data-alt="A cute illustration of a young girl with pigtails wearing an orange dress, laughing enthusiastically. Warm, playful lighting, soft tactile vector art style designed for a kids learning app, set against a solid light orange background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuABCsg2B6jeXQnqoaq__HhS8XGrQr_D7imfBDdzQ-nbpnAvl8C3ngExUEkBBNj37hkQX5ZqAsNRmEWO7-sw1vtWMGIXqD_qy2GDGlIWr8IIxoB-u5MiwVPsd-t-sv7P9blpZw-FfMTbkRjSt0RYdEOe3uZFi5gVghwKTKaH_XKD9hRW5oQvbm3TAhVc_6_4LeVQ2qA7VktFUDWIZHuDgTs0diZ3XjWN9MoWDX-mEOJr04stqSaTJnjVRlN-7nM-ssdRds_qw2q3C1s"/>
+</div>
+</div>
+<!-- Name Card -->
+<div class="bg-secondary-container text-on-secondary font-headline-lg text-headline-lg px-8 py-3 rounded-lg chunky-shadow w-full text-center bg-secondary transition-colors border-none">
+                    An
+                </div>
+</button>
+<!-- Avatar 3: Bé Na -->
+<button aria-label="Đăng nhập với tư cách Bé Na" class="group flex flex-col items-center focus-ring rounded-xl transition-all duration-300">
+<div class="relative mb-stack-sm">
+<!-- Badge -->
+<div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-surface-variant text-on-surface-variant font-label-lg text-label-lg px-4 py-2 rounded-full shadow-md z-10 whitespace-nowrap chunky-shadow border-none">
+                        Chưa có bài
+                    </div>
+<!-- Avatar Image -->
+<div class="w-[200px] h-[200px] rounded-full border-[8px] border-tertiary-fixed-dim p-2 bg-surface-container-lowest chunky-shadow transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-[0px_12px_20px_0px_rgba(0,0,0,0.12)]" style="width: 240px; height: 240px;">
+<img alt="Bé Na" class="w-full h-full object-cover rounded-full" data-alt="A friendly, squishy 3D-style illustration of a toddler girl with a yellow bow in her hair, looking curious and sweet. Bright, even lighting with soft pastel colors, perfectly suited for a children's game UI, set against a solid pale yellow background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCj-3QInGRl6Ioz9BdchpXzMzP8zDmx-xWXtjE-FEBWKRV76XQV2l-pVHPhS7hBPSWv7PmrncaHgI4Uo_fcv4O0dvgnEaKkkDV7sc5TUSmdTcScXIL2KNuakrRLncr1SLVT_opnyBTEFKCkzYqCMXHYh5Xyq_KRFcCHXTO0EGaECn0BAmmNzdQ2E3E56q2bv5y3Y5T3b0GHWAmdbjoV8bcc_UR2Kf3KiQ6rRDc9bc5o5nCo5P2H783C7Cp5rHFpPMAG97PcbXUDNA0"/>
+</div>
+</div>
+<!-- Name Card -->
+<div class="bg-tertiary-fixed-dim text-on-tertiary-container font-headline-lg text-headline-lg px-8 py-3 rounded-lg chunky-shadow w-full text-center group-hover:bg-tertiary-container transition-colors border-none">
+                    Bé Na
+                </div>
+</button>
+</div>
+<!-- Add New Child Card (Optional visual balance element, subtle) -->
+</main>
+<!-- Footer Action -->
+<footer class="fixed bottom-0 right-0 p-margin-desktop z-20">
+<a aria-label="Khu vực dành cho Bố Mẹ" class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors focus-ring rounded-lg px-4 py-2 font-label-lg text-label-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+            BỐ MẸ
+        </a>
+</footer>
+</body></html>
