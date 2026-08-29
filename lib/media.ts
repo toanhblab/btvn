@@ -121,6 +121,9 @@ export async function uploadSubmissionVideo(
       access: 'public',
       handleUploadUrl: '/api/nop-video',
       multipart: true,
+      // Cung ly do voi uploadMediaFile: con CHON tep tu iPad thi ten tep la cua
+      // may, khong bao dam co duoi dung (ban tu quay thi ten do minh dat).
+      contentType: file.type,
       onUploadProgress: ({ percentage }) => onProgress?.(Math.round(percentage)),
     });
     return blob.url;
@@ -147,6 +150,14 @@ export async function uploadMediaFile(file: File, blobEnabled: boolean): Promise
       handleUploadUrl: '/api/upload-media',
       // Tep lon chia phan tai song song, phan nao loi tu thu lai
       multipart: true,
+      // BAT BUOC. Khong gui thi Vercel Blob doan kieu noi dung tu DUOI TEN TEP,
+      // roi tra tep ve kem x-content-type-options: nosniff — trinh duyet tin
+      // nhan do va khong doan lai. Ten tep la do bo me dua vao nen doan hut la
+      // chuyen thuong: ten khong duoi -> "application/octet-stream" va Blob tu
+      // choi luon ("contentType application/octet-stream is not allowed"), con
+      // duoi sai loai -> tep len duoc nhung <audio> khong phat noi. file.type
+      // moi la kieu that, va mediaKindOf o tren da chot no roi.
+      contentType: file.type,
     });
     return { url: blob.url, name: file.name, kind };
   }

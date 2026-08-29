@@ -26,16 +26,22 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   const familyId = await viewingFamilyId();
   if (!familyId) redirect('/vao');
 
-  // getChild loc theo nha: con cua nha khac coi nhu khong ton tai, du co dung
-  // dung link. Cac con khong dang nhap nen day la lop chan duy nhat.
-  const child = await getChild(familyId, childId);
-  if (!child) notFound();
-
   const today = todayISO();
   const tomorrow = todayISO(1);
 
+  // Hai truy van chay SONG SONG. Neon la HTTP nen moi cau la mot vong goi rieng;
+  // cho cau nay xong moi goi cau kia la cong them mot vong khong can thiet vao
+  // dung man hinh con quay ve nhieu nhat.
+  //
+  // getChild loc theo nha: con cua nha khac coi nhu khong ton tai, du co dung
+  // dung link. Cac con khong dang nhap nen day la lop chan duy nhat.
+  //
   // Tu hom nay tro di: bai qua han khong hien nua, khong thi danh sach cu dai mai
-  const items = await listAssignments(familyId, { childId, from: today });
+  const [child, items] = await Promise.all([
+    getChild(familyId, childId),
+    listAssignments(familyId, { childId, from: today }),
+  ]);
+  if (!child) notFound();
   const todayItems = items.filter((a) => a.dueDate === today);
   const done = todayItems.filter((a) => a.status === 'done').length;
 

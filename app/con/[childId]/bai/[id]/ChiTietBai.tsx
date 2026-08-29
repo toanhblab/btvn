@@ -154,10 +154,13 @@ export default function ChiTietBai({
   return (
     <main className="kid-scope h-screen flex flex-col p-k-edge overflow-hidden">
       <div className="mb-k-stack shrink-0">
+        {/* Vung bam phai du 64px CA HAI CHIEU (chuan cham cua man con): truoc day
+            chi co dem ben phai nen nua trai mui ten khong an duoc — ngon tay tre
+            cham lech sang trai la truot ra ngoai the <a>. */}
         <Link
           href={`/con/${childId}`}
           className="inline-flex items-center gap-2 text-on-surface-variant hover:bg-surface-container
-                     rounded-full pr-4 py-2 min-h-k-tap"
+                     rounded-full px-4 py-2 min-h-k-tap min-w-k-tap"
         >
           <span className="material-symbols-outlined text-4xl icon-fill">arrow_back_ios_new</span>
           <span className="text-k-headline">Quay lại</span>
