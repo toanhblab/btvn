@@ -82,26 +82,48 @@ export function mediaKindOf(mime: string): MediaKind | null {
 }
 
 /**
- * Gioi han video CON QUAY de nop bai: 3 phut la du doc thuoc long mot bai tho
- * dai, va o muc bitrate ta dat (~1.5Mbps hinh + tieng) thi 3 phut ≈ 35MB —
- * nam xa duoi tran MAX_NOP_VIDEO_BYTES, mang nha yeu cung tai noi.
+ * Bitrate khi quay NGAY TRONG TRANG (MediaRecorder o QuayVideo). Dat CA HAI so,
+ * khong de trinh duyet tu chon: hai con so nay la thu duy nhat cho phep uoc
+ * duoc mot ban quay dai MAX_QUAY_GIAY nang bao nhieu, ma tran
+ * MAX_NOP_VIDEO_BYTES lai dua tren uoc luong do.
+ *
+ * 1,0Mbps hinh o 960x720 la du cho mot khuon mat doc bai (canh gan nhu tinh,
+ * khong phai canh the thao); truoc quay 3 phut nen de 1,5Mbps thoai mai, gio
+ * dai gap hon ba lan thi ha xuong de tep khong phinh theo.
  */
-export const MAX_QUAY_GIAY = 180;
+export const QUAY_VIDEO_BPS = 1_000_000;
+export const QUAY_AUDIO_BPS = 96_000;
 
 /**
- * Tran RIENG cho video con nop, cao hon tep bo me dinh kem. Duong lui tren iPad
- * la app Camera cua he dieu hanh, no ghi 1080p30 H.264 ≈ 60MB/phut (so cua
- * Apple), nen 3 phut can ~180MB — dung MAX_MEDIA_BYTES 100MB thi con quay hon
- * 1 phut rui la khong nop duoc nua. 250MB de con du dat cho MAX_QUAY_GIAY.
+ * Gioi han video CON QUAY de nop bai — 10 phut (issue #10; truoc la 3 phut).
+ *
+ * Uoc dung luong o muc nen tren: (1_000_000 + 96_000) bit/s × 600 s ÷ 8 ≈ 82MB,
+ * cong vai phan tram vo container van duoi 90MB. Nam xa duoi tran
+ * MAX_NOP_VIDEO_BYTES, va tren mang nha yeu thi day van la vai phut tai — vi the
+ * QuayVideo bat buoc phai hien phan tram tien do.
  */
-export const MAX_NOP_VIDEO_BYTES = 250 * 1024 * 1024;
+export const MAX_QUAY_GIAY = 600;
+
+/**
+ * Tran RIENG cho video con nop, cao hon tep bo me dinh kem.
+ *
+ * So nay bi ep boi DUONG LUI chu khong phai duong quay trong trang: tren iPad
+ * loi thoat la app Camera cua he dieu hanh, no ghi 1080p30 H.264 ≈ 60MB/phut
+ * (so cua Apple) va app minh KHONG dat duoc bitrate cho no. 10 phut kieu do
+ * ≈ 600MB, nen tran cu 250MB (du cho 3 phut ≈ 180MB) se chan thang ban quay
+ * hop le. 700MB de co chut du dat tren muc 600MB do.
+ *
+ * Van la mot cai chot that: quay 4K tren iPad (~400MB/phut) thi 10 phut ≈ 4GB
+ * va bi chan — dung y muon, tep co nho do gia dinh nao cung khong doi noi.
+ */
+export const MAX_NOP_VIDEO_BYTES = 700 * 1024 * 1024;
 
 /**
  * Tai video con quay len kho — cung co che voi tep bo me dinh kem (Blob khi co,
  * .data/uploads khi dev) nhung qua route /api/nop-video RIENG: route do xac thuc
  * bang cookie thiet bi (con khong co PIN) va chi nhan video.
  *
- * onProgress: ban camera iPad co the ~180MB, tren mang nha la vai phut man hinh
+ * onProgress: ban camera iPad co the ~600MB, tren mang nha la nhieu phut man hinh
  * nhu treo — con tuong may hong roi thoat giua duong. CHI duong Blob bao duoc
  * tien do that; duong dev-multipart khong goi callback lan nao (fetch khong co
  * tien do upload), va o day KHONG bao gio bia so phan tram.
