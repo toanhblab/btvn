@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Chi tiết Bài tập</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"surface-container": "#f4ede5", "outline-variant": "#c2c6d6", "on-tertiary": "#ffffff", "tertiary-container": "#cea700", "on-primary-container": "#fefcff", "inverse-on-surface": "#f7f0e8", "error-container": "#ffdad6", primary: "#0058be", "secondary-fixed": "#ffdbca", "secondary-container": "#fd761a", "primary-container": "#2170e4", outline: "#727785", "on-surface": "#1e1b17", "on-secondary-container": "#5c2400", "surface-container-high": "#eee7df", "secondary-fixed-dim": "#ffb690", "on-error": "#ffffff", "primary-fixed": "#d8e2ff", "surface-bright": "#fff8f1", "on-secondary-fixed": "#341100", "on-tertiary-fixed-variant": "#574500", "inverse-primary": "#adc6ff", error: "#ba1a1a", "on-primary-fixed": "#001a42", surface: "#fff8f1", "on-tertiary-fixed": "#231b00", "on-primary": "#ffffff", "tertiary-fixed-dim": "#eec200", "surface-container-low": "#f9f3eb", "primary-fixed-dim": "#adc6ff", "tertiary-fixed": "#ffe083", tertiary: "#735c00", "surface-dim": "#dfd9d1", "on-secondary": "#ffffff", secondary: "#9d4300", "on-error-container": "#93000a", background: "#fff8f1", "on-tertiary-container": "#4e3e00", "on-secondary-fixed-variant": "#783200", "on-surface-variant": "#424754", "inverse-surface": "#33302b", "surface-variant": "#e8e1da", "on-primary-fixed-variant": "#004395", "surface-tint": "#005ac2", "surface-container-lowest": "#ffffff", "surface-container-highest": "#e8e1da", "on-background": "#1e1b17"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"stack-md": "24px", "margin-desktop": "48px", base: "8px", "stack-sm": "12px", "stack-lg": "48px", gutter: "32px", "margin-mobile": "20px", "stack-gap": "24px", "touch-target-min": "64px", "margin-edge": "48px"}, fontFamily: {"label-md": ["Quicksand"], "display-md": ["Quicksand"], "body-md": ["Quicksand"], "display-lg": ["Quicksand"], "headline-lg-mobile": ["Quicksand"], "label-lg": ["Quicksand"], "headline-lg": ["Quicksand"], "body-lg": ["Quicksand"], "label-bold": ["Quicksand"], "display-hero": ["Quicksand"]}, fontSize: {"label-md": ["14px", {lineHeight: "1.2", fontWeight: "600"}], "display-md": ["48px", {lineHeight: "1.2", letterSpacing: "-0.01em", fontWeight: "700"}], "body-md": ["20px", {lineHeight: "28px", fontWeight: "500"}], "display-lg": ["56px", {lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "700"}], "headline-lg-mobile": ["28px", {lineHeight: "1.3", fontWeight: "700"}], "label-lg": ["16px", {lineHeight: "1.2", fontWeight: "700"}], "headline-lg": ["32px", {lineHeight: "40px", fontWeight: "700"}], "body-lg": ["24px", {lineHeight: "32px", fontWeight: "500"}], "label-bold": ["18px", {lineHeight: "24px", fontWeight: "700"}], "display-hero": ["48px", {lineHeight: "60px", letterSpacing: "-0.02em", fontWeight: "700"}]}}}};</script>
+<style>
+        .chunky-shadow {
+            box-shadow: 0px 8px 0px 0px rgba(0,0,0,0.08);
+        }
+        .chunky-shadow-hover {
+            box-shadow: 0px 12px 20px 0px rgba(0,0,0,0.12);
+        }
+        .btn-3d-blue {
+            box-shadow: 0px 6px 0px 0px #004395; /* darker blue */
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn-3d-blue:active {
+            transform: translateY(6px);
+            box-shadow: 0px 0px 0px 0px #004395;
+        }
+        .btn-3d-green {
+            background-color: #22c55e;
+            box-shadow: 0px 6px 0px 0px #166534; /* darker green */
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn-3d-green:active {
+            transform: translateY(6px);
+            box-shadow: 0px 0px 0px 0px #166534;
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen text-on-background font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Main Container -->
+<main class="max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop py-8 md:py-12 flex flex-col gap-8">
+<!-- Top Navigation Area (Contextual Back, Nav Shell Suppressed) -->
+<header class="flex items-center">
+<button class="group flex items-center gap-2 text-primary hover:opacity-80 transition-opacity focus:outline-none focus:ring-4 focus:ring-primary rounded-full px-2 py-1 -ml-2">
+<span class="material-symbols-outlined text-[28px] group-hover:-translate-x-1 transition-transform" style="font-variation-settings: 'FILL' 1;">arrow_back</span>
+<span class="font-headline-lg-mobile text-headline-lg-mobile">Quay lại</span>
+</button>
+</header>
+<!-- Two Column Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- LEFT COLUMN (Approx 55% -> 7/12 cols) -->
+<section class="col-span-1 md:col-span-7 flex flex-col gap-stack-md">
+<!-- Subject Pill -->
+<div class="inline-flex items-center gap-2 bg-tertiary-container text-on-tertiary-container px-5 py-2 rounded-full w-max shadow-sm border-2 border-outline-variant/10">
+<span aria-hidden="true" class="text-2xl">🔢</span>
+<span class="font-label-lg text-label-lg uppercase tracking-wider">Toán</span>
+</div>
+<!-- Task Headers -->
+<div class="flex flex-col gap-3">
+<h1 class="font-display-lg text-display-lg text-on-surface">Làm bài 3 trang 24,<br/>viết kết quả vào vở</h1>
+<div class="flex items-center gap-2 text-on-surface-variant font-body-lg text-body-lg">
+<span class="material-symbols-outlined">menu_book</span>
+<span>Vở bài tập Toán tập 1</span>
+</div>
+</div>
+<!-- Primary Action Button (Listen) -->
+<button class="w-full h-[88px] bg-primary rounded-[24px] flex items-center justify-center gap-4 text-white btn-3d-blue mt-4 focus:outline-none focus:ring-4 focus:ring-primary/50">
+<span class="material-symbols-outlined text-[40px]" style="font-variation-settings: 'FILL' 1;">volume_up</span>
+<span class="font-headline-lg text-[32px] leading-none">Nghe đề bài</span>
+</button>
+<!-- Timer Card -->
+<div class="mt-4 bg-surface-container-lowest rounded-[24px] p-8 border-2 border-outline-variant/10 chunky-shadow hover:-translate-y-1 transition-transform hover:chunky-shadow-hover flex flex-col sm:flex-row items-center gap-6 justify-between">
+<div class="flex items-center gap-6">
+<!-- Progress Dial -->
+<div class="relative w-24 h-24 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<circle class="text-surface-container-high" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-width="12"></circle>
+<circle class="text-secondary-container" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="83.7" stroke-linecap="round" stroke-width="12"></circle> <!-- roughly 2/3 full -->
+</svg>
+<span class="absolute font-headline-lg-mobile text-headline-lg-mobile text-on-surface">08:24</span>
+</div>
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface-variant">Còn 8 phút nữa</span>
+</div>
+<button class="px-8 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container hover:text-on-surface transition-colors focus:outline-none focus:ring-4 focus:ring-primary">
+                        Tạm dừng
+                    </button>
+</div>
+</section>
+<!-- RIGHT COLUMN (Approx 45% -> 5/12 cols) -->
+<section class="col-span-1 md:col-span-5 flex flex-col gap-stack-md mt-8 md:mt-0">
+<!-- Section Heading -->
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile flex items-center gap-3 text-on-surface">
+<span class="material-symbols-outlined text-tertiary-container text-[36px]" style="font-variation-settings: 'FILL' 1;">attach_file</span>
+                    Cô gửi kèm bài này
+                </h2>
+<!-- Video Player Card -->
+<div class="bg-surface-container-lowest rounded-[24px] p-4 border-2 border-outline-variant/10 chunky-shadow hover:-translate-y-1 transition-transform hover:chunky-shadow-hover flex flex-col gap-4 group cursor-pointer">
+<div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-surface-container-high">
+<img alt="Teacher video thumbnail" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A warm, inviting video thumbnail showing a smiling female preschool teacher with a brightly colored classroom background. High-quality lighting, soft shadows, vibrant colors, child-friendly aesthetic. The teacher is wearing a primary blue shirt and holding a colorful math prop." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCu5cDs-_L5RluxMa18Ci-MzvjxeZ1TELsVaOKYXijs9gt10q5TJZOlGFZIANbLkJbCbjyKrQRLvG-eYajbf86SZFRGNpkFojl9KSaTxda6s66aIuMvl4EnsIBJpa34ekjHyCDIuyDM3EWTYPU_DNtOQ1-G1dzjBlAIM41lUIEDAL0U0EK4bz-NgPSPhTZJ0mk5J_-yBqj6k1L5rI9T8kh9tW8QGt-y_6wGp1d7WHE2Za2hgDIpzyJHJPBDP9sPnrZvbuS-PonPQh0"/>
+<!-- Play Button Overlay -->
+<div class="absolute inset-0 flex items-center justify-center bg-on-surface/10 group-hover:bg-on-surface/20 transition-colors">
+<div class="w-20 h-20 bg-surface-container-lowest/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[48px] text-primary" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<!-- Fake playback bar -->
+<div class="absolute bottom-0 left-0 w-full h-1.5 bg-on-surface/20">
+<div class="h-full bg-primary w-1/3"></div>
+</div>
+</div>
+</div>
+<!-- Audio Card -->
+<div class="bg-surface-container-lowest rounded-[24px] p-6 border-2 border-outline-variant/10 chunky-shadow hover:-translate-y-1 transition-transform hover:chunky-shadow-hover flex items-center gap-5 cursor-pointer group">
+<div class="w-16 h-16 rounded-full bg-tertiary-container/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[32px] text-tertiary-container" style="font-variation-settings: 'FILL' 1;">music_note</span>
+</div>
+<div class="flex-grow flex flex-col gap-2">
+<div class="flex justify-between items-center w-full">
+<span class="font-label-lg text-label-lg text-on-surface">Lời giải thích của cô</span>
+<span class="font-label-md text-label-md text-outline">0:45</span>
+</div>
+<div class="w-full h-3 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-container w-1/4 rounded-full"></div>
+</div>
+</div>
+<button class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+</section>
+</div>
+<!-- Bottom Action Section -->
+<div class="flex flex-col items-center justify-center gap-2 pt-4">
+<button class="w-[560px] h-[96px] rounded-[24px] flex items-center justify-center gap-4 text-white btn-3d-green focus:outline-none focus:ring-4 focus:ring-green-500/50">
+<span class="material-symbols-outlined text-[48px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-headline-lg text-[32px] leading-none">Đã làm xong</span>
+</button>
+<button class="text-outline hover:text-on-surface font-body-md text-body-md transition-colors px-4 py-2 mt-2 focus:outline-none focus:ring-2 focus:ring-primary rounded-lg">
+                Chưa làm xong
+            </button>
+</div>
+</main>
+</body></html>

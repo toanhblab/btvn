@@ -35,19 +35,30 @@ export default async function ChonCon() {
       <div className="absolute top-[-10%] left-[-5%] w-[40vw] h-[40vw] rounded-full bg-primary-fixed opacity-40 blur-3xl -z-10 pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-5%] w-[50vw] h-[50vw] rounded-full bg-tertiary-fixed opacity-30 blur-3xl -z-10 pointer-events-none" />
 
-      <h1 className="text-k-hero text-on-surface mb-10 text-center px-6">
-        {rows.length === 0 ? 'Chưa có bạn nào ở đây' : 'Hôm nay con là ai?'}
-      </h1>
+      {/* Khung 1100px (bo Macbook 01): tren man rong, de avatar trai het chieu
+          ngang 1440px thi ba con nam xa nhau, mat phai quet ca man moi tim ten. */}
+      <div className="w-full max-w-[1100px] mx-auto flex flex-col items-center px-k-edge">
+        <h1 className="text-k-hero text-on-surface mb-10 xl:mb-3 text-center">
+          {rows.length === 0 ? 'Chưa có bạn nào ở đây' : 'Hôm nay con là ai?'}
+        </h1>
 
-      {/* Nha vua tao xong thi chua co con nao — noi ro bo me phai lam gi, khong
-          de man hinh trong khong (PRD 4.3: khong bao gio de man trong tay khong) */}
-      {rows.length === 0 && (
-        <p className="text-k-headline text-on-surface-variant text-center px-10 max-w-2xl">
-          Bố mẹ vào phần &quot;Bố mẹ&quot; ở góc dưới, thêm hồ sơ cho các con trước nhé.
-        </p>
-      )}
+        {/* Cau phu chi co trong ban Macbook (01), ban iPad khong co — nen an duoi
+            1280px de man iPad giu y nguyen ban da duyet. mb bu lai cho khong lech. */}
+        {rows.length > 0 && (
+          <p className="hidden xl:block text-k-body text-on-surface-variant mb-7 text-center">
+            Chọn tên của con để bắt đầu học vui nhé!
+          </p>
+        )}
 
-      <div className="flex flex-row flex-wrap justify-center items-start gap-12 px-8">
+        {/* Nha vua tao xong thi chua co con nao — noi ro bo me phai lam gi, khong
+            de man hinh trong khong (PRD 4.3: khong bao gio de man trong tay khong) */}
+        {rows.length === 0 && (
+          <p className="text-k-headline text-on-surface-variant text-center mt-6 max-w-2xl">
+            Bố mẹ vào phần &quot;Bố mẹ&quot; ở góc dưới, thêm hồ sơ cho các con trước nhé.
+          </p>
+        )}
+
+        <div className="flex flex-row flex-wrap justify-center items-start gap-12 xl:gap-14 w-full">
         {rows.map(({ child, total, done }) => {
           const left = total - done;
           return (
@@ -59,7 +70,7 @@ export default async function ChonCon() {
             >
               <div className="relative mb-5">
                 <div
-                  className={`w-[200px] h-[200px] rounded-full bg-surface-container-lowest border-8 ${RING[child.color]}
+                  className={`w-[200px] h-[200px] xl:w-[240px] xl:h-[240px] rounded-full bg-surface-container-lowest border-8 ${RING[child.color]}
                               overflow-hidden soft-shadow transition-transform duration-300 group-hover:scale-105`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -90,6 +101,7 @@ export default async function ChonCon() {
             </Link>
           );
         })}
+        </div>
       </div>
 
       {/* Loi vao cua bo me — de nho va mo de tre bo qua (PRD 4.5) */}
