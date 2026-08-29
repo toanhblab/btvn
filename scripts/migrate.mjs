@@ -7,7 +7,9 @@
  * Chay lai bao nhieu lan cung duoc: bang _migrations ghi nhung tep da chay.
  *
  * Script nay nam trong lenh "build" nen Vercel tu chay moi lan deploy. Muon deploy
- * ma khong chay migration thi dat SKIP_MIGRATIONS=1.
+ * ma khong chay migration thi dat SKIP_MIGRATIONS=1 — day chi la cach CHUA TAM,
+ * de co do vinh vien la vo preview o migration them cot sau nay; xem muc
+ * "Migration" trong README.md truoc khi dung.
  *
  * Them thay doi lươc do: tao tep moi trong migrations/ (so tang dan), DUNG sua tep
  * cu — tep cu da chay o DB that roi, sua no thi khong ai chay lai nua.

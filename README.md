@@ -167,8 +167,8 @@ rồi mới sang loại kia; nhóm rỗng thì không hiện. Bố mẹ chọn n
 Thêm nguồn mới thì nối vào **cả** union `HwSource` **và** bảng `HW_SOURCES` trong
 `lib/types.ts` (thiếu một bên là TypeScript báo lỗi ngay, không hỏng âm thầm) —
 không cần migration (DB không có `CHECK`), và `hwSourceOf` lọc theo **tập khoá
-thật** của `HW_SOURCES` nên tự nhận nguồn mới. Nhãn hiển thị đổi tự do; **mã định danh lưu
-trong DB thì không** (`primary_school`, `english_class`, `other`).
+thật** của `HW_SOURCES` nên tự nhận nguồn mới. Nhãn hiển thị đổi tự do; **mã
+định danh lưu trong DB thì không** (`primary_school`, `english_class`, `other`).
 
 `inferSource` (`lib/ai.ts`) **cố ý** chỉ đoán ra hai nguồn, không bao giờ đoán
 "Khác" — đó là lựa chọn của con người, máy đoán ra thì bố mẹ mất dấu bài thật sự
