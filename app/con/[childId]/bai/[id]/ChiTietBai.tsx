@@ -8,6 +8,7 @@ import { pickVoice, splitSpeech } from '@/lib/speech';
 import Confetti from '../../xong/Confetti';
 import DongHoLamBai, { conThoiGian, noi, xoaDongHo } from './DongHoLamBai';
 import QuayVideo from './QuayVideo';
+import QuetQR from './QuetQR';
 
 /**
  * Chi tiet mot bai — nen tu Stitch 07.
@@ -193,6 +194,10 @@ export default function ChiTietBai({
             <span className="text-k-headline">Nghe đề bài</span>
           </button>
           {voiceWarning && <p className="text-k-body-sm text-error">{voiceWarning}</p>}
+
+          {/* To bai tap giay hay in ma QR (bai nghe cua nha xuat ban...). Quet
+              ngay tai day de con khong phai muon dien thoai bo me giua buoi hoc. */}
+          <QuetQR />
 
           {/* Dong ho lam bai: nut "Bat dau lam" -> dem nguoc + nhac giong noi.
               Bai da xong thi thoi, khong can gio giac gi nua. */}

@@ -204,6 +204,25 @@ video, trần 250MB vì máy quay của iPad ghi ~60MB/phút). Bố mẹ thấy 
 🎥 "Đã nộp video" / "Chờ quay video" ở màn chi tiết theo con và phát lại video
 trong màn "Sửa bài tập".
 
+**Quét mã QR trên tờ bài tập.** Nhiều tờ bài tập giấy in mã QR dẫn tới đoạn nghe
+của nhà xuất bản. Màn chi tiết bài của con có nút **"Quét mã QR"** mở khung quét
+bằng máy ảnh của máy (`QuetQR.tsx`): ưu tiên máy ảnh **sau** (`facingMode: ideal
+'environment'` — iPad soi tờ giấy), laptop chỉ có máy ảnh trước thì trình duyệt
+tự lấy cái đang có. Giải mã **ngay trên máy** bằng `jsqr` (thuần JavaScript, nạp
+động lúc con bấm nút, không kèm worker/wasm phải cấu hình đường dẫn) — khung hình
+đi `<video>` → `<canvas>` → jsQR trong cùng một tab, **nội dung mã không rời khỏi
+máy**. Không dùng `BarcodeDetector` của trình duyệt vì Safari trên iPadOS chưa có.
+
+Quét xong thì hiện luôn cho con thấy: đuôi tệp là **audio/video** thì phát ngay
+trong ứng dụng (đồng hồ làm bài vẫn chạy, con không phải rời màn); là **liên kết
+thường** thì hỏi trước rồi mới mở tab mới; là **chữ** thì hiện nguyên văn. Phát
+không được (nhà xuất bản chặn) thì tự lui về hỏi mở trang.
+
+**Máy ảnh tắt hẳn** khi đọc được mã, khi con bấm "Đóng", và khi rời màn — kể cả
+khi luồng `getUserMedia` mới về sau lúc đã đóng (để luồng chạy ngầm trên iPad là
+tốn pin và đèn máy ảnh sáng mãi). Không mở được máy ảnh thì có đường lui **chụp
+ảnh mã** (`capture="environment"`) rồi đọc trên ảnh.
+
 **Không bao giờ để bố mẹ bị kẹt.** AI hỏng, hết quota hay chưa có key thì vẫn
 tách tạm theo dòng kèm cảnh báo, và luôn có đường "Nhập tay từng bài".
 
