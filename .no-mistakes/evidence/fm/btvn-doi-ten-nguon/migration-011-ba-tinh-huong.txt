@@ -1,0 +1,73 @@
+
+══════ TÌNH HUỐNG A — có mốc 010, bài cũ chưa từng phân loại chuyển sang "other" ══════
+
+TRƯỚC khi chạy 011:
+  mốc _migrations của 010: 2026-08-29T02:02:42.892Z
+  id            môn         source
+  asg_cu_anh    Tiếng Anh   english_class
+  asg_cu_toan   Toán        primary_school
+  asg_cu_viet   Tiếng Việt  primary_school
+  asg_mo_coi    Vẽ          primary_school
+  asg_moi_anh   Tiếng Anh   english_class
+  asg_moi_toan  Toán        primary_school
+  chạy migration:  + 011_nguon_khac.sql
+
+SAU khi chạy 011:
+  mốc _migrations của 010: 2026-08-29T02:02:42.892Z
+  id            môn         source
+  asg_cu_anh    Tiếng Anh   english_class
+  asg_cu_toan   Toán        other
+  asg_cu_viet   Tiếng Việt  other
+  asg_mo_coi    Vẽ          primary_school
+  asg_moi_anh   Tiếng Anh   english_class
+  asg_moi_toan  Toán        primary_school
+
+  Kết quả:
+  ✓ bộ chạy migration nhận đúng 011_nguon_khac.sql
+  ✓ asg_cu_toan (Bài tạo TRƯỚC 010, mang mặc định primary_school) → other [mong đợi other]
+  ✓ asg_cu_viet (Bài tạo TRƯỚC 010, mang mặc định primary_school) → other [mong đợi other]
+  ✓ asg_cu_anh (Bài tạo TRƯỚC 010, được 010 gán english_class) → english_class [mong đợi english_class]
+  ✓ asg_moi_toan (Bài tạo SAU 010, bố mẹ/AI đã chọn primary_school) → primary_school [mong đợi primary_school]
+  ✓ asg_moi_anh (Bài tạo SAU 010, nguồn english_class) → english_class [mong đợi english_class]
+  ✓ asg_mo_coi (Bài MẤT submission (ON DELETE SET NULL)) → primary_school [mong đợi primary_school]
+  ✓ trước 011 hai bài cũ đó đang là primary_school (đúng là 011 đổi chúng, không phải sẵn vậy)
+
+══════ TÌNH HUỐNG B — mất mốc _migrations của 010 → KHÔNG đổi gì cả ══════
+
+TRƯỚC khi chạy 011 (đã xoá mốc 010):
+  mốc _migrations của 010: (KHÔNG CÓ)
+  id            môn         source
+  asg_cu_anh    Tiếng Anh   english_class
+  asg_cu_toan   Toán        primary_school
+  asg_cu_viet   Tiếng Việt  primary_school
+  asg_mo_coi    Vẽ          primary_school
+
+SAU khi chạy 011:
+  mốc _migrations của 010: (KHÔNG CÓ)
+  id            môn         source
+  asg_cu_anh    Tiếng Anh   english_class
+  asg_cu_toan   Toán        primary_school
+  asg_cu_viet   Tiếng Việt  primary_school
+  asg_mo_coi    Vẽ          primary_school
+
+  Kết quả:
+  ✓ không một dòng nào đổi nguồn khi thiếu mốc 010
+  ✓ không bài nào bị gom nhầm vào "other"
+
+══════ TÌNH HUỐNG C — DB mới tinh, chạy hết 001..011 ══════
+   + 001_khoi_tao.sql
+   + 002_moi_nha_mot_pin.sql
+   + 003_video_dinh_kem.sql
+   + 004_video_thu_tu.sql
+   + 005_dinh_kem_moi_loai.sql
+   + 007_thoi_luong_bai.sql
+   + 008_nop_video.sql
+   + 010_nguon_bai_tap.sql
+   + 011_nguon_khac.sql
+
+  Kết quả:
+  ✓ chạy hết 9 migration, không lỗi
+  ✓ DB mới không có bài tập nào — 011 chạy sạch trên DB trống
+
+✅ TẤT CẢ KIỂM CHỨNG ĐỀU ĐẠT
+

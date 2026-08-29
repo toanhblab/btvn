@@ -1,0 +1,25 @@
+### 1. Đăng nhập bằng PIN bố mẹ
+$ curl -c cj -d '{"pin":"1234"}' /api/pin
+{"ok":true,"family":{"id":"fam_4ac6f17de03e4a2b","name":"Nhà mình","slug":"a79c3ac7aa83"}}
+
+### 2. POST /api/assignments với source='other' (nguồn mới "Khác")
+$ curl -b cj -d '{...,"source":"other",...}' /api/assignments
+{
+ "id": "asg_91c6f7861c27420e",
+ "subject": "Nhạc",
+ "source": "other"
+}
+
+### 3. GET /api/assignments — đọc lại từ DB, vẫn ra 'other'
+  Nhạc        other
+
+### 4. PATCH bài đó về 'english_class' rồi đọc lại — đổi nguồn qua API vẫn chạy
+  source = english_class
+
+### 5. Giá trị lạ 'lop_ve_cuoi_tuan' khi POST — phải 200 + degrade, KHÔNG 500
+  HTTP 200
+  source đã ghi = primary_school
+
+### 6. Giá trị lạ (số) khi PATCH — cũng 200 + degrade
+  HTTP 200
+  source đã ghi = primary_school
