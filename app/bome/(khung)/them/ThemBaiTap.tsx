@@ -24,8 +24,8 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
   const [text, setText] = useState('');
   const [images, setImages] = useState<{ url: string; name: string }[]>([]);
   const [han, setHan] = useState<Han>('today');
-  // Noi giao bai. null = de AI doan theo noi dung (de tieng Anh -> lop tieng
-  // Anh); bo me chon tay thi lua chon do thang, AI khong ghi de.
+  // Noi giao bai. null = de AI doan theo noi dung (de tieng Anh -> english_class);
+  // bo me chon tay thi lua chon do thang, AI khong ghi de.
   const [hwSource, setHwSource] = useState<HwSource | null>(null);
   const [customDate, setCustomDate] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
