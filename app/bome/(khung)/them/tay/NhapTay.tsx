@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { AttachedMedia, Child, HwSource } from '@/lib/types';
-import { DURATION_DEFAULT, HW_SOURCES, SUBJECTS, iconFor } from '@/lib/types';
+import { DURATION_DEFAULT, HW_SOURCES, HW_SOURCE_DEFAULT, SUBJECTS, iconFor } from '@/lib/types';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 /**
@@ -31,7 +31,7 @@ export default function NhapTay({
   const [content, setContent] = useState('');
   const [note, setNote] = useState('');
   const [lang, setLang] = useState<'vi' | 'en'>('vi');
-  const [hwSource, setHwSource] = useState<HwSource>('primary_school');
+  const [hwSource, setHwSource] = useState<HwSource>(HW_SOURCE_DEFAULT);
   const [dueDate, setDueDate] = useState(() => {
     const d = new Date();
     const p = (n: number) => String(n).padStart(2, '0');

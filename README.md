@@ -92,8 +92,19 @@ Cách hoạt động:
   và đừng viết thân hàm `$$ ... $$` (bộ tách câu lệnh cắt ở dấu `;`).
 - Deploy preview dùng chung `DATABASE_URL` với production thì migration sẽ được áp
   lên DB thật ngay khi build preview. Với các thay đổi thêm bảng/thêm cột thì
-  không sao; muốn tránh thì cho preview một DB riêng.
-- Cần deploy gấp mà không muốn chạy migration: đặt `SKIP_MIGRATIONS=1`.
+  không sao; muốn tránh thì cho preview một DB riêng. Nhưng câu "không sao" đó
+  **chỉ đúng với thêm bảng/thêm cột**: migration ĐỔI DỮ LIỆU (như
+  `011_nguon_khac.sql`, câu `UPDATE` gom bài cũ sang nguồn `Khác`) không nằm trong
+  đó — nó sửa thẳng dữ liệu thật ngay lúc build preview, trước cả khi PR được duyệt.
+  Đó là lý do lần này phải dùng `SKIP_MIGRATIONS=1`.
+- Cần deploy gấp mà không muốn chạy migration: đặt `SKIP_MIGRATIONS=1`. Đây là
+  **cách chữa tạm**, không phải cấu hình để yên:
+  - Đặt được cho `011_nguon_khac.sql` vì tệp đó **không thêm cột** — preview vẫn
+    chạy đúng với schema cũ.
+  - Nếu để cờ này **vĩnh viễn** thì migration THÊM CỘT sau này sẽ **làm vỡ preview**:
+    code mới deploy lên nhưng gặp schema cũ, thiếu cột nó cần.
+  - Cách dùng lâu dài là cho preview một DB riêng, đúng như gạch đầu dòng ngay trên
+    đã khuyên.
 
 ## Biến môi trường
 
@@ -147,12 +158,21 @@ legacy-static/  bản HTML/JS thuần đầu tiên của phần trẻ, giữ đ�
 mỗi bé một bản ghi, tick độc lập, xoá bài của bé này không ảnh hưởng bé kia.
 Màn "Thêm bài tập" tick sẵn cả hai bé lớp 1 vì đây là trường hợp dùng nhiều nhất.
 
-**Bài đến từ hai nơi.** Các con nhận bài từ lớp học thêm tiếng Anh và từ trường
-tiểu học. Mỗi bài có trường `source` (nơi giao); màn của con nhóm bài theo nơi
-giao, mỗi nhóm có tiến độ riêng — để con làm xong hết một loại rồi mới sang loại
-kia. Bố mẹ chọn nơi giao khi thêm bài (mặc định "Tự đoán": đề tiếng Anh xếp vào
-lớp tiếng Anh) và sửa lại được sau khi lưu. Thêm nguồn mới thì xem `HW_SOURCES`
-trong `lib/types.ts` — không cần migration.
+**Bài đến từ ba nơi.** Trường **Nguyễn Siêu**, lớp tiếng Anh **Smartkid**, và
+**Khác** cho những nơi còn lại. Mỗi bài có trường `source` (nơi giao); màn của con
+nhóm bài theo nơi giao, mỗi nhóm có tiến độ riêng — để con làm xong hết một loại
+rồi mới sang loại kia; nhóm rỗng thì không hiện. Bố mẹ chọn nơi giao khi thêm bài
+(mặc định "Tự đoán": đề tiếng Anh xếp vào Smartkid) và sửa lại được sau khi lưu.
+
+Thêm nguồn mới thì nối vào **cả** union `HwSource` **và** bảng `HW_SOURCES` trong
+`lib/types.ts` (thiếu một bên là TypeScript báo lỗi ngay, không hỏng âm thầm) —
+không cần migration (DB không có `CHECK`), và `hwSourceOf` lọc theo **tập khoá
+thật** của `HW_SOURCES` nên tự nhận nguồn mới. Nhãn hiển thị đổi tự do; **mã
+định danh lưu trong DB thì không** (`primary_school`, `english_class`, `other`).
+
+`inferSource` (`lib/ai.ts`) **cố ý** chỉ đoán ra hai nguồn, không bao giờ đoán
+"Khác" — đó là lựa chọn của con người, máy đoán ra thì bố mẹ mất dấu bài thật sự
+đến từ đâu.
 
 **Giọng đọc.** Mỗi bài có trường `lang` (`vi`/`en`) quyết định giọng đọc thành
 tiếng. Bé 4 tuổi chưa đọc được chữ nào nên nút 🔊 gần như là cách duy nhất để

@@ -34,8 +34,8 @@ export async function GET(req: Request) {
  * CAN PIN: chi bo me duoc them bai.
  *
  * Body: { childIds: string[], dueDate, source?, rawText?, imageUrls?, drafts: DraftAssignment[] }
- * "source" la noi giao (lop tieng Anh / truong tieu hoc) cho CA dot — thieu hoac
- * la thi coi la truong tieu hoc.
+ * "source" la noi giao cho CA dot, mot ma trong HW_SOURCES — thieu hoac la thi ep
+ * ve nguon mac dinh (primary_school).
  * Mot lan goi sinh ra bai RIENG cho tung con trong childIds (PRD 4.2 — hai be
  * sinh doi hoc cung lop, nhap mot lan ra bai cho ca hai).
  *

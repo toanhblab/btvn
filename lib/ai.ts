@@ -286,6 +286,10 @@ export async function extractAssignments(input: {
  * Dau hieu: de bai tieng Anh nguyen van (lang = 'en') hoac mon "Tiếng Anh".
  * Qua nua so bai nhu vay thi ca dot gan nhu chac den tu lop tieng Anh — mot dot
  * nhap la MOT tin nhan cua MOT co giao nen ca dot chung mot nguon.
+ *
+ * CO Y chi tra ve HAI nguon du HW_SOURCES da co them 'other' (Khac): "Khac" la
+ * lua chon cua CON NGUOI, khong de may doan. May doan ra "Khac" thi bo me khong
+ * con biet bai do that su tu dau. Dung "sua" ham nay cho phu voi HW_SOURCES.
  */
 export function inferSource(drafts: DraftAssignment[]): HwSource {
   const en = drafts.filter((d) => d.lang === 'en' || d.subject === 'Tiếng Anh').length;

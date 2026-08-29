@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Child, HwSource } from '@/lib/types';
-import { HW_SOURCES } from '@/lib/types';
+import { HW_SOURCES, HW_SOURCE_DEFAULT } from '@/lib/types';
 
 type Han = 'today' | 'tomorrow' | 'custom';
 
@@ -24,8 +24,8 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
   const [text, setText] = useState('');
   const [images, setImages] = useState<{ url: string; name: string }[]>([]);
   const [han, setHan] = useState<Han>('today');
-  // Noi giao bai. null = de AI doan theo noi dung (de tieng Anh -> lop tieng
-  // Anh); bo me chon tay thi lua chon do thang, AI khong ghi de.
+  // Noi giao bai. null = de AI doan theo noi dung (de tieng Anh -> english_class);
+  // bo me chon tay thi lua chon do thang, AI khong ghi de.
   const [hwSource, setHwSource] = useState<HwSource | null>(null);
   const [customDate, setCustomDate] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
           warning: data.warning ?? null,
           source: data.source,
           // Bo me da chon thi lay lua chon do; chua chon thi lay goi y cua AI
-          hwSource: hwSource ?? data.hwSource ?? 'primary_school',
+          hwSource: hwSource ?? data.hwSource ?? HW_SOURCE_DEFAULT,
           childIds: chosen,
           dueDate: dueDate(),
           rawText: text || null,
@@ -208,7 +208,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
         )}
       </section>
 
-      {/* ---- Noi giao bai: lop tieng Anh hay truong tieu hoc ---- */}
+      {/* ---- Noi giao bai: mot nut cho moi ma trong HW_SOURCES ---- */}
       <section className="mb-5">
         <p className="text-p-label uppercase text-on-surface-variant mb-2">Bài của lớp nào</p>
         <div className="flex gap-2 flex-wrap">
@@ -236,7 +236,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
         </div>
         {hwSource === null && (
           <p className="text-p-body-sm text-on-surface-variant mt-2">
-            Đề tiếng Anh sẽ tự xếp vào “Lớp tiếng Anh”, còn lại vào “Trường tiểu học”.
+            Đề tiếng Anh sẽ tự xếp vào “Smartkid”, còn lại vào “Nguyễn Siêu”. Chọn “Khác” nếu bài không của hai nơi này.
             Bố mẹ vẫn sửa được ở bước kiểm tra lại.
           </p>
         )}

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isParent } from '@/lib/auth';
 import { extractAssignments, hasAI, inferSource, splitByRule } from '@/lib/ai';
+import { HW_SOURCE_DEFAULT } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 // Doc anh bang AI co the lau; Vercel gioi han thoi gian chay ham serverless
@@ -12,7 +13,7 @@ export const maxDuration = 60;
  * -> { drafts, source: 'ai' | 'rule', hwSource, warning? }
  *
  * "source" la NGUON TACH (AI hay tach tho); "hwSource" la NOI GIAO doan tu noi
- * dung (lop tieng Anh / truong tieu hoc) — chi la goi y, bo me chon tay thi
+ * dung (mot ma trong HW_SOURCES) — chi la goi y, bo me chon tay thi
  * lua chon do thang.
  *
  * Khong bao gio tra loi 500 tay khong: neu AI hong thi van tra ve ban tach tho
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
       return NextResponse.json({
         drafts: [],
         source: 'ai',
-        hwSource: 'primary_school',
+        hwSource: HW_SOURCE_DEFAULT,
         warning: 'Không tìm thấy bài tập nào trong nội dung này. Bố mẹ thử nhập tay xem.',
       });
     } catch (err) {
