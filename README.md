@@ -92,8 +92,19 @@ Cách hoạt động:
   và đừng viết thân hàm `$$ ... $$` (bộ tách câu lệnh cắt ở dấu `;`).
 - Deploy preview dùng chung `DATABASE_URL` với production thì migration sẽ được áp
   lên DB thật ngay khi build preview. Với các thay đổi thêm bảng/thêm cột thì
-  không sao; muốn tránh thì cho preview một DB riêng.
-- Cần deploy gấp mà không muốn chạy migration: đặt `SKIP_MIGRATIONS=1`.
+  không sao; muốn tránh thì cho preview một DB riêng. Nhưng câu "không sao" đó
+  **chỉ đúng với thêm bảng/thêm cột**: migration ĐỔI DỮ LIỆU (như
+  `011_nguon_khac.sql`, câu `UPDATE` gom bài cũ sang nguồn `Khác`) không nằm trong
+  đó — nó sửa thẳng dữ liệu thật ngay lúc build preview, trước cả khi PR được duyệt.
+  Đó là lý do lần này phải dùng `SKIP_MIGRATIONS=1`.
+- Cần deploy gấp mà không muốn chạy migration: đặt `SKIP_MIGRATIONS=1`. Đây là
+  **cách chữa tạm**, không phải cấu hình để yên:
+  - Đặt được cho `011_nguon_khac.sql` vì tệp đó **không thêm cột** — preview vẫn
+    chạy đúng với schema cũ.
+  - Nếu để cờ này **vĩnh viễn** thì migration THÊM CỘT sau này sẽ **làm vỡ preview**:
+    code mới deploy lên nhưng gặp schema cũ, thiếu cột nó cần.
+  - Cách dùng lâu dài là cho preview một DB riêng, đúng như gạch đầu dòng ngay trên
+    đã khuyên.
 
 ## Biến môi trường
 

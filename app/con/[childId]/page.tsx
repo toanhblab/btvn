@@ -39,7 +39,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   const todayItems = items.filter((a) => a.dueDate === today);
   const done = todayItems.filter((a) => a.status === 'done').length;
 
-  // Gom theo NOI GIAO truoc (lop tieng Anh / truong tieu hoc), trong moi noi
+  // Gom theo NOI GIAO truoc (moi ma trong HW_SOURCES mot nhom), trong moi noi
   // moi gom theo ngay. Con lam xong het bai mot noi roi moi sang noi kia, nen
   // moi noi can mot khoi rieng voi tien do rieng.
   const sourceGroups = (Object.keys(HW_SOURCES) as HwSource[])
@@ -136,7 +136,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
       {sourceGroups.map((sg) => (
         <section key={sg.source} className="mb-k-stack last:mb-0">
           {/* Dau moi nhom: noi giao + tien do RIENG cua nhom do, de con lam het
-              mot loai bai (vd het bai lop tieng Anh) roi moi sang loai kia */}
+              mot loai bai (vd het bai cua mot ma trong HW_SOURCES) roi moi sang loai kia */}
           <div
             className={`flex items-center gap-4 rounded-2xl p-4 mb-4 soft-shadow ${
               sg.done === sg.total ? 'bg-success-container' : 'bg-surface-container-low'

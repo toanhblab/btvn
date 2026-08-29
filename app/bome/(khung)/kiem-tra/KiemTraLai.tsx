@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Child, DraftAssignment, HwSource } from '@/lib/types';
-import { DURATION_DEFAULT, HW_SOURCES, SUBJECTS, hwSourceOf, iconFor } from '@/lib/types';
+import { DURATION_DEFAULT, HW_SOURCES, HW_SOURCE_DEFAULT, SUBJECTS, hwSourceOf, iconFor } from '@/lib/types';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 interface Payload {
@@ -33,7 +33,7 @@ export default function KiemTraLai({
   const router = useRouter();
   const [payload, setPayload] = useState<Payload | null>(null);
   const [drafts, setDrafts] = useState<Draft[]>([]);
-  const [hwSource, setHwSource] = useState<HwSource>('primary_school');
+  const [hwSource, setHwSource] = useState<HwSource>(HW_SOURCE_DEFAULT);
   const [busy, setBusy] = useState(false);
   // Bai nao dang tai tep len — de khoa nut Luu va hien "Đang tải…" dung cho
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);

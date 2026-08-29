@@ -31,10 +31,11 @@ const HW_SOURCE_KEYS = new Set<string>(Object.keys(HW_SOURCES));
 /**
  * Dich degrade khi gia tri khong doc duoc. CHOT CUNG, co y KHONG lay theo thu tu
  * khoa cua HW_SOURCES: thu tu do thuan hien thi (nhom nao truoc o man cua con) va
- * duoc phep doi tu do, khong duoc keo theo mot quyet dinh ngu nghia. Cung literal
- * voi cac noi khac tu ghi mac dinh (KiemTraLai, NhapTay, ThemBaiTap, api/extract).
+ * duoc phep doi tu do, khong duoc keo theo mot quyet dinh ngu nghia. Cac noi khac
+ * tu ghi mac dinh (KiemTraLai, NhapTay, ThemBaiTap, api/extract) deu import chinh
+ * hang so nay, dung viet lai literal — de doi mot cho la doi het.
  */
-const HW_SOURCE_DEFAULT: HwSource = 'primary_school';
+export const HW_SOURCE_DEFAULT: HwSource = 'primary_school';
 
 /**
  * Loc gia tri la tu ngoai vao (API body, sessionStorage cu) ve mot nguon hop le.

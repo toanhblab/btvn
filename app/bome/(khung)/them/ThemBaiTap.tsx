@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Child, HwSource } from '@/lib/types';
-import { HW_SOURCES } from '@/lib/types';
+import { HW_SOURCES, HW_SOURCE_DEFAULT } from '@/lib/types';
 
 type Han = 'today' | 'tomorrow' | 'custom';
 
@@ -93,7 +93,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
           warning: data.warning ?? null,
           source: data.source,
           // Bo me da chon thi lay lua chon do; chua chon thi lay goi y cua AI
-          hwSource: hwSource ?? data.hwSource ?? 'primary_school',
+          hwSource: hwSource ?? data.hwSource ?? HW_SOURCE_DEFAULT,
           childIds: chosen,
           dueDate: dueDate(),
           rawText: text || null,
