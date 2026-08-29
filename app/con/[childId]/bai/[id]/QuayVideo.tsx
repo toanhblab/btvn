@@ -1,7 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { MAX_QUAY_GIAY, uploadSubmissionVideo } from '@/lib/media';
+import {
+  MAX_QUAY_GIAY,
+  QUAY_AUDIO_BPS,
+  QUAY_VIDEO_BPS,
+  uploadSubmissionVideo,
+} from '@/lib/media';
 
 /**
  * Quay video nop bai — cho bai co requiresVideo (doc to, doc thuoc long, quay
@@ -18,8 +23,10 @@ import { MAX_QUAY_GIAY, uploadSubmissionVideo } from '@/lib/media';
  *      HANH (tren iPad la app Camera), quay xong tra tep ve. Duong nay gan nhu
  *      khong the hong nen luon hien song song lam loi thoat.
  *
- * Do dai chan o MAX_QUAY_GIAY (3 phut): du doc mot bai tho dai, va o bitrate
- * ~1.5Mbps thi tep ≈ 35MB, tai noi tren mang nha. May tu dung quay khi het gio.
+ * Do dai chan o MAX_QUAY_GIAY (10 phut) va may TU DUNG quay khi het gio. Muc
+ * nen di kem la QUAY_VIDEO_BPS + QUAY_AUDIO_BPS, hai so do chon cung nhau: 10
+ * phut o muc do ra tep ≈ 82MB (xem lib/media). Doi mot trong hai ma khong doi
+ * cai kia la tep phinh qua tran MAX_NOP_VIDEO_BYTES.
  */
 
 type Phase = 'idle' | 'recording' | 'preview' | 'sending';
@@ -81,8 +88,8 @@ export default function QuayVideo({
   }, []);
 
   /**
-   * Doi ban xem truoc, tha URL cu di. Phai giu qua ref: ban clip 3 phut nang
-   * ~35MB, tha muon (hoac khong tha khi roi trang) thi no nam lai het phien.
+   * Doi ban xem truoc, tha URL cu di. Phai giu qua ref: ban clip 10 phut nang
+   * ~82MB, tha muon (hoac khong tha khi roi trang) thi no nam lai het phien.
    */
   function setPreviewUrl(url: string) {
     if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
@@ -177,7 +184,8 @@ export default function QuayVideo({
     try {
       recorder = new MediaRecorder(stream, {
         ...(mime ? { mimeType: mime } : {}),
-        videoBitsPerSecond: 1_500_000,
+        videoBitsPerSecond: QUAY_VIDEO_BPS,
+        audioBitsPerSecond: QUAY_AUDIO_BPS,
       });
     } catch {
       stopStream();
@@ -263,7 +271,7 @@ export default function QuayVideo({
     setError('');
     try {
       // Lan truoc tai len xong roi ma PATCH moi hong thi chi lam lai PATCH: tai
-      // lai la de thanh mot ban 35-180MB mo vang tren Blob, khong ai tro toi va
+      // lai la de thanh mot ban 82-600MB mo vang tren Blob, khong ai tro toi va
       // phia con khong co duong xoa.
       let url = uploadedRef.current?.blob === blob ? uploadedRef.current.url : '';
       if (!url) {

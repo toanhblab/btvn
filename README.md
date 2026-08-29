@@ -189,13 +189,21 @@ giọng nói nhắc mỗi 5 phút và phút cuối, hết giờ chuông dịu + 
 thì mốc hết hiệu lực và nút "Bắt đầu làm" hiện lại, để bài con bỏ dở hôm trước
 không kẹt mãi ở trạng thái quá giờ.
 
+Con bấm nhầm "Bắt đầu làm" thì bố mẹ xoá mốc đó bằng nút nhỏ **"Bố mẹ đặt lại
+giờ"** ngay dưới đồng hồ (`DatLaiGio.tsx`): nhập mã PIN của nhà là bài quay về
+trạng thái chưa bấm. Nút phải nằm **trên chính máy của con** vì mốc bắt đầu chỉ
+có trong `localStorage` của máy đó, máy chủ không giữ bản nào — một nút đặt lại
+đặt ở phần `/bome` sẽ không với tới được iPad của con. PIN ở đây chỉ được *kiểm
+tra* qua `POST /api/pin/kiem-tra`, không đặt cookie `btvn_parent`, để máy dùng
+chung của các con không vô tình mở được phần bố mẹ (PRD 4.5).
+
 **Nộp bài bằng video.** Bài kiểu "đọc to", "đọc thuộc lòng", "quay video gửi cô",
 thể dục/biểu diễn có trường `requires_video` — AI tự bật khi tách bài, bố mẹ
 bật/tắt lại được bằng chip 🎥 ở màn "Kiểm tra lại" / "Nhập tay" và ô tick 🎥 ở
 màn "Sửa bài tập". Ở màn của con, bài gắn cờ hiện khung quay ngay trong trang (`MediaRecorder`, mp4 trên
 Safari và webm trên Chrome cũ) kèm xem trước và quay lại; máy không quay được
 trong trang hoặc con từ chối quyền camera thì có đường lui mở máy quay của hệ
-điều hành (`capture="user"`). Quay tối đa 3 phút (`MAX_QUAY_GIAY`), máy tự dừng
+điều hành (`capture="user"`). Quay tối đa 10 phút (`MAX_QUAY_GIAY`), máy tự dừng
 khi hết giờ. **Gửi video chính là "đã làm xong"** — bài gắn cờ không có nút tick
 riêng và server cũng chặn tick xong khi chưa có video. Mỗi bài giữ **một video
 mới nhất** (quay lại là thay URL, không giữ lịch sử). Video đi qua route riêng

@@ -15,7 +15,7 @@ export const maxDuration = 60;
  *   2. Chi nhan video. Con khong duoc muon duong nay de tai thu khac len.
  *   3. Tran rieng MAX_NOP_VIDEO_BYTES, cao hon tep bo me dinh kem (xem lib/media).
  *
- * Gioi han do dai nam o phia quay (MAX_QUAY_GIAY dung may quay sau 3 phut);
+ * Gioi han do dai nam o phia quay (MAX_QUAY_GIAY dung may quay sau 10 phut);
  * o day chi con tran dung luong lam chot cuoi.
  */
 export async function POST(req: Request) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { pickVoice } from '@/lib/speech';
+import DatLaiGio from './DatLaiGio';
 
 /**
  * Dong ho lam bai — con bam "Bat dau lam" la dem nguoc tu thoi luong cua bai.
@@ -221,6 +222,21 @@ export default function DongHoLamBai({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [now]);
 
+  /**
+   * Bo me da go dung PIN -> xoa moc bat dau, bai ve lai nut "Bat dau lam".
+   *
+   * Cung dung xoaDongHo nhu duong lam xong bai, nen mo lai trang cung khong hoi
+   * sinh moc cu. Phai tu dat lai hai ref: hai effect kia chi chay lai khi doi
+   * bai hoac doi thoi luong, con day la doi bai NGAY TAI CHO.
+   */
+  function datLaiGio() {
+    xoaDongHo(assignmentId);
+    daNhac.current = null;
+    daHetGio.current = false;
+    setStartAt(null);
+    setNow(0);
+  }
+
   function batDau() {
     const t = Date.now();
     try {
@@ -312,6 +328,9 @@ export default function DongHoLamBai({
           Hết giờ rồi, con làm nốt nhé! 💪
         </p>
       )}
+
+      {/* Con bam nham "Bat dau lam" — bo me go PIN ngay tren may nay de xoa gio */}
+      <DatLaiGio onDatLai={datLaiGio} />
     </div>
   );
 }
