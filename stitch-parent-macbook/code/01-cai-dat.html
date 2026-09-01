@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cài đặt - Nhà mình</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-container": "#5c2400",
+                    "primary": "#0058be",
+                    "surface-container": "#eaeef4",
+                    "inverse-surface": "#2c3136",
+                    "surface-container-highest": "#dfe3e9",
+                    "error": "#ba1a1a",
+                    "surface-container-lowest": "#ffffff",
+                    "outline": "#727785",
+                    "on-tertiary-fixed-variant": "#574500",
+                    "on-primary-fixed": "#001a42",
+                    "on-tertiary-container": "#4e3e00",
+                    "on-background": "#171c20",
+                    "tertiary-fixed": "#ffe083",
+                    "surface-tint": "#005ac2",
+                    "on-primary-fixed-variant": "#004395",
+                    "tertiary-container": "#cea700",
+                    "on-secondary": "#ffffff",
+                    "surface-variant": "#dfe3e9",
+                    "secondary-fixed": "#ffdbca",
+                    "primary-container": "#2170e4",
+                    "primary-fixed": "#d8e2ff",
+                    "surface": "#f6f9ff",
+                    "tertiary": "#735c00",
+                    "on-surface": "#171c20",
+                    "on-secondary-fixed-variant": "#783200",
+                    "surface-container-high": "#e5e8ee",
+                    "on-error-container": "#93000a",
+                    "on-primary-container": "#fefcff",
+                    "inverse-primary": "#adc6ff",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed": "#231b00",
+                    "surface-dim": "#d6dae0",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed-dim": "#adc6ff",
+                    "surface-bright": "#f6f9ff",
+                    "surface-container-low": "#f0f4fa",
+                    "secondary-fixed-dim": "#ffb690",
+                    "secondary-container": "#fd761a",
+                    "tertiary-fixed-dim": "#eec200",
+                    "outline-variant": "#c2c6d6",
+                    "error-container": "#ffdad6",
+                    "inverse-on-surface": "#edf1f7",
+                    "on-surface-variant": "#424754",
+                    "background": "#f6f9ff",
+                    "secondary": "#9d4300",
+                    "on-secondary-fixed": "#341100",
+                    "on-primary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "sidebar-width": "260px",
+                    "stack-lg": "32px",
+                    "stack-md": "16px",
+                    "gutter": "24px",
+                    "margin-desktop": "40px",
+                    "stack-sm": "8px"
+            },
+            "fontFamily": {
+                    "body-md": ["Quicksand"],
+                    "body-lg": ["Quicksand"],
+                    "headline-lg-mobile": ["Quicksand"],
+                    "label-md": ["Quicksand"],
+                    "headline-md": ["Quicksand"],
+                    "headline-lg": ["Quicksand"],
+                    "caption": ["Quicksand"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "34px", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "headline-lg": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "caption": ["12px", {"lineHeight": "16px", "fontWeight": "500"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            background-color: #FFF8F0;
+        }
+        .card-shadow {
+            box-shadow: 0px 4px 20px rgba(59, 130, 246, 0.04);
+        }
+        .hover-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0px 8px 24px rgba(59, 130, 246, 0.08);
+        }
+        .hover-row:hover .chevron-icon {
+            transform: translateX(4px);
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface antialiased w-full h-screen flex overflow-hidden">
+<!-- Fixed Sidebar (SideNavBar component from JSON) -->
+<aside class="fixed left-0 top-0 h-full w-[260px] bg-surface-container-lowest border-r border-surface-variant flex flex-col z-20 shadow-[0px_4px_20px_rgba(59,130,246,0.04)] py-stack-lg flex flex-col gap-stack-md shrink-0 justify-between">
+<div class="flex flex-col h-full gap-stack-md">
+<!-- Header -->
+<div class="px-6 mb-8 flex flex-col items-center">
+<div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center mb-3 text-primary">
+<span class="material-symbols-outlined text-4xl">home</span>
+</div>
+<h2 class="font-headline-md text-headline-md font-bold text-on-surface">Nhà mình</h2>
+<p class="font-caption text-caption text-on-surface-variant mt-1 text-center">3 con · Mã nhà: nha-minh-8f2c</p>
+</div>
+<!-- Navigation -->
+<nav class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 px-4 py-3 mx-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Trang chủ</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 px-4 py-3 mx-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" href="#">
+<span class="material-symbols-outlined">photo_camera</span>
+<span class="font-label-md text-label-md">Thêm bài</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 px-4 py-3 mx-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" href="#">
+<span class="material-symbols-outlined">checklist</span>
+<span class="font-label-md text-label-md">Nhiệm vụ</span>
+</a>
+<!-- Active Item -->
+<a aria-current="page" class="flex items-center gap-3 bg-primary-container text-on-primary-container rounded-full px-4 py-3 mx-2 hover:bg-primary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 scale-98 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-label-md text-label-md">Cài đặt</span>
+</a>
+</nav>
+<!-- Bottom CTA -->
+<div class="px-4 mt-auto">
+<button class="w-full bg-surface-container-low hover:bg-surface-container-high transition-colors duration-200 rounded-xl p-4 flex flex-col items-start gap-2 focus:outline-none focus:ring-2 focus:ring-primary">
+<div class="flex items-center gap-2 text-primary font-label-md text-label-md w-full">
+<span class="material-symbols-outlined">tablet_mac</span>
+<span>Mở màn hình của con</span>
+</div>
+<p class="font-caption text-caption text-on-surface-variant text-left leading-relaxed">Xem đúng những gì các con đang thấy trên iPad</p>
+</button>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-[260px] h-full overflow-y-auto bg-[#FFF8F0]">
+<div class="max-w-[1080px] mx-auto p-[48px]">
+<!-- Page Header -->
+<header class="mb-stack-lg">
+<h1 class="font-headline-lg text-headline-lg font-bold text-on-surface mb-2">Cài đặt</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">Nhà mình dùng chung một mã PIN, không cần tài khoản. Nhà khác dùng mã riêng của họ và không thấy được gì của nhà mình.</p>
+</header>
+<!-- Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-[24px]">
+<!-- LEFT COLUMN -->
+<div class="flex flex-col gap-[24px]">
+<!-- Section: HỒ SƠ CÁC CON -->
+<section class="bg-surface-container-lowest rounded-[16px] card-shadow p-[24px] hover-card transition-all duration-300">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-2">HỒ SƠ CÁC CON</h3>
+<p class="font-caption text-caption text-on-surface-variant mb-4">Bấm vào một con để đổi tên, ảnh, lớp, màu riêng — hoặc xoá.</p>
+<div class="flex flex-col gap-2 mb-4">
+<!-- Child 1 -->
+<button class="hover-row w-full flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors group focus:outline-none focus:ring-2 focus:ring-primary">
+<div class="flex items-center gap-4">
+<img class="w-10 h-10 rounded-full object-cover ring-2 ring-primary" data-alt="A small circular portrait of an Asian boy, smiling gently, softly lit, wearing a casual blue shirt. Minimalist light blue background. Soft and approachable modern app icon style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhWR919dpZd1YmjPpz84F3w2cmHekfdNkpVenJsk3vgq2v0vnfN70kNcJc02Dhn52mW1ljLZmDvODt3NkUca2okhq6ywY9f_YYxl93MWwuRxBKIg9XPtAHlHOj_v9Q4Z5q2I196RDZDLX-irwlAqYs3x86XaLop47f4qCNeoewGMq0heV4pr_eDwy75AVd4G1ToagOd3uIYL67XhHFsB6glUUKUGP0dInlMTEHReGNRbaRHerLaUYBAFfsk6Qlz3fTXevwfa6baCA"/>
+<div class="text-left">
+<div class="font-label-md text-label-md text-on-surface">Minh</div>
+<div class="font-caption text-caption text-on-surface-variant">Lớp 1</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline chevron-icon transition-transform">chevron_right</span>
+</button>
+<!-- Child 2 -->
+<button class="hover-row w-full flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors group focus:outline-none focus:ring-2 focus:ring-primary">
+<div class="flex items-center gap-4">
+<img class="w-10 h-10 rounded-full object-cover ring-2 ring-secondary-container" data-alt="A small circular portrait of an Asian boy, bright eyes, softly lit, wearing an orange t-shirt. Minimalist light orange background. Soft and approachable modern app icon style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKbEebnLUHY47tH3fwIV5OEkfImfT97j3QcDnzdRNqu1QlNkicutvgNUSiUXm0rL2YUYIAR8n43M84XZ6oOlr2Y3SHmCca613s_r1SXgk_1ybQKsc3CoIKhlw3gso_r6iE54lerKaR4A5cEAuySIq8Kl169OxgHrbk8RnKd0_oY0mK8qAJAkfvPyNRMcxG0HkVmcl4JOs5JmrF5FS0YW1kvsHh_PciUrMQbhU6JGK77gp3TLgn0NrNPmOhMwXxW4ICtpE7OCh-W0A"/>
+<div class="text-left">
+<div class="font-label-md text-label-md text-on-surface">An</div>
+<div class="font-caption text-caption text-on-surface-variant">Lớp 1</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline chevron-icon transition-transform">chevron_right</span>
+</button>
+<!-- Child 3 -->
+<button class="hover-row w-full flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-low transition-colors group focus:outline-none focus:ring-2 focus:ring-primary">
+<div class="flex items-center gap-4">
+<img class="w-10 h-10 rounded-full object-cover ring-2 ring-tertiary-container" data-alt="A small circular portrait of a younger Asian toddler girl, cute smile, softly lit, wearing a yellow dress. Minimalist light yellow background. Soft and approachable modern app icon style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBr1M-u6qCDSHdYCYSQrO5Xqw8fQtY8c72VFttwk3Hpo52XSWvNPM-MqxdZMyNWsPEyCin5febegfmPRafdYjlV1qEJl2bk4LCxB2QWfaGNGCTrKWCou3U53LJmSVjl1XSQDw8KMGDLe6zlVbeicCr041rTr1T5hRhlWDZUM4bp1DdjQE1lIAF62ftIHCMMXyeAZ81GD71yB4167t_yduMMTHGv8N91g6e-LeT0jF70driocQtFLAtQBvrQOrxXKkCZ0rCELV9LVeA"/>
+<div class="text-left">
+<div class="font-label-md text-label-md text-on-surface">Bé Na</div>
+<div class="font-caption text-caption text-on-surface-variant">Mẫu giáo</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline chevron-icon transition-transform">chevron_right</span>
+</button>
+</div>
+<button class="w-full h-[48px] rounded-lg border-2 border-primary text-primary font-label-md text-label-md flex items-center justify-center gap-2 hover:bg-primary-fixed transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined">person_add</span>
+                            Thêm con
+                        </button>
+</section>
+<!-- Section: LINK CHO IPAD -->
+<section class="bg-surface-container-lowest rounded-[16px] card-shadow p-[24px] hover-card transition-all duration-300">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-2">LINK CHO IPAD CỦA CÁC CON</h3>
+<p class="font-caption text-caption text-on-surface-variant mb-4">Mở Safari trên iPad của con và nhập link này, hoặc copy để gửi qua Zalo.</p>
+<div class="flex flex-col gap-3"><div class="bg-[#FFF8F0] p-3 rounded-lg border border-surface-variant flex items-center"><code class="font-mono text-sm text-on-surface break-all">https://btvn.vercel.app/nha/nha-minh-8f2c</code></div><button class="w-full h-[48px] bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-md text-label-md px-4 rounded-lg flex items-center justify-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"><span class="material-symbols-outlined text-xl">content_copy</span>Copy link</button></div>
+</section>
+<section class="bg-surface-container-lowest rounded-[16px] card-shadow p-[24px] hover-card transition-all duration-300"><h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-4">HỆ THỐNG</h3><div class="flex flex-col gap-4"><div class="flex justify-between items-center py-2 border-b border-surface-variant last:border-0"><span class="font-body-md text-body-md text-on-surface-variant">Dữ liệu</span><span class="font-body-md text-body-md text-on-surface">Neon Postgres</span></div><div class="flex justify-between items-center py-2 border-b border-surface-variant last:border-0"><span class="font-body-md text-body-md text-on-surface-variant">Mã nhà</span><code class="font-mono text-sm text-on-surface bg-surface-container-low px-2 py-1 rounded">nha-minh-8f2c</code></div></div></section></div>
+<!-- RIGHT COLUMN -->
+<div class="flex flex-col gap-[24px]">
+<!-- Section: TÊN NHÀ -->
+<section class="bg-surface-container-lowest rounded-[16px] card-shadow p-[24px] hover-card transition-all duration-300">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-4">TÊN NHÀ</h3>
+<div class="flex gap-3">
+<input class="flex-1 h-[48px] rounded-[16px] border border-outline-variant px-4 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-fixed focus:ring-opacity-50 transition-all" type="text" value="Nhà mình"/>
+<button class="h-[48px] bg-primary hover:bg-surface-tint text-on-primary font-label-md text-label-md px-6 rounded-[16px] transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 shadow-sm">
+                                Lưu
+                            </button>
+</div>
+</section>
+<!-- Section: MÃ PIN -->
+<section class="bg-surface-container-lowest rounded-[16px] card-shadow p-[24px] hover-card transition-all duration-300">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-2">MÃ PIN</h3>
+<button class="hover-row w-full flex items-center justify-between p-3 -mx-3 rounded-lg hover:bg-surface-container-low transition-colors group focus:outline-none focus:ring-2 focus:ring-primary text-left">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">password</span>
+</div>
+<div>
+<div class="font-label-md text-label-md text-on-surface font-bold">Đổi mã PIN</div>
+<div class="font-caption text-caption text-on-surface-variant mt-1">Dùng khi các con đã nhìn thấy mã cũ</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline chevron-icon transition-transform">chevron_right</span>
+</button>
+</section>
+<!-- Section: HỆ THỐNG -->
+<!-- Section: NGUY HIỂM -->
+<section class="bg-surface-container-lowest rounded-[16px] border border-error card-shadow p-[24px] hover-card transition-all duration-300">
+<h3 class="font-label-md text-label-md text-error uppercase tracking-wider mb-2">NGUY HIỂM</h3>
+<button class="hover-row w-full flex items-center justify-between p-3 -mx-3 rounded-lg hover:bg-error-container transition-colors group focus:outline-none focus:ring-2 focus:ring-error text-left">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined">logout</span>
+</div>
+<div class="pr-4">
+<div class="font-label-md text-label-md text-error font-bold">Quên PIN trên thiết bị này</div>
+<div class="font-caption text-caption text-on-surface-variant mt-1">Dùng khi trót tick "nhớ" trên iPad của các con. Màn hình của con vẫn dùng được bình thường.</div>
+</div>
+</div>
+</button>
+</section>
+</div>
+</div>
+<div class="h-12 w-full"></div> <!-- Bottom padding -->
+</div>
+</main>
+</body></html>

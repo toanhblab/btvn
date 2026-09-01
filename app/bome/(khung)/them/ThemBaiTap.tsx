@@ -8,7 +8,10 @@ import { HW_SOURCES, HW_SOURCE_DEFAULT } from '@/lib/types';
 
 type Han = 'today' | 'tomorrow' | 'custom';
 
-/** Man them bai tap — nen tu stitch-parent 07. */
+/**
+ * Man them bai tap — nen tu stitch-parent 07 (dien thoai) va
+ * stitch-parent-macbook 03 (Macbook).
+ */
 export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
   const router = useRouter();
 
@@ -109,20 +112,34 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
   }
 
   return (
-    <main className="px-p-page pt-4">
-      <header className="flex items-center gap-2 mb-5">
-        <Link href="/bome" className="min-h-p-tap flex items-center text-on-surface-variant pr-1">
+    <main className="px-p-page pt-4 xl:max-w-[1200px] xl:mx-auto xl:px-12 xl:py-12">
+      <header className="flex items-center gap-2 mb-5 xl:block xl:mb-8">
+        {/* Tu 1280px thanh ben trai lo ro dang o muc nao nen mui ten quay lai
+            thanh thua — an di dung nhu ban thiet ke 03 */}
+        <Link
+          href="/bome"
+          className="min-h-p-tap flex items-center text-on-surface-variant pr-1 xl:hidden"
+        >
           <span className="material-symbols-outlined text-3xl">arrow_back</span>
         </Link>
         <h1 className="text-p-headline text-primary">Thêm bài tập</h1>
+        <p className="hidden xl:block text-p-body text-on-surface-variant mt-1">
+          Chụp lại tin nhắn của cô rồi để máy tách thành từng bài.
+        </p>
       </header>
+
+      {/* Tu 1280px tach lam hai cot (ban thiet ke 03): ben trai la thu bo me dan
+          vao (anh + chu), ben phai la cac lua chon + nut. Duoi 1280px hai khung
+          nay chi la the <div> thuong nen thu tu doc van y nguyen ban dien thoai. */}
+      <div className="xl:grid xl:grid-cols-12 xl:gap-8 xl:items-start">
+      <div className="xl:col-span-7">
 
       {/* ---- Anh bai tap ---- */}
       <section className="mb-5">
         <p className="text-p-label uppercase text-on-surface-variant mb-2">Ảnh bài tập</p>
         <label
           className="block border-2 border-dashed border-outline-variant rounded-card p-6 text-center
-                     bg-surface-container-lowest cursor-pointer"
+                     bg-surface-container-lowest cursor-pointer xl:py-16"
         >
           <input
             type="file"
@@ -166,12 +183,15 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
           rows={4}
           placeholder="Dán tin nhắn của cô giáo vào đây…"
           className="w-full rounded-card border border-outline-variant bg-surface-container-lowest
-                     p-3 text-p-body text-on-surface placeholder:text-outline resize-y"
+                     p-3 text-p-body text-on-surface placeholder:text-outline resize-y xl:min-h-64"
         />
       </section>
 
+      </div>
+      <div className="xl:col-span-5">
+
       {/* ---- Chon con ---- */}
-      <section className="mb-5">
+      <section className="mb-5 xl:bg-surface-container-low xl:rounded-card xl:p-5 xl:mb-4">
         <p className="text-p-label uppercase text-on-surface-variant mb-2">Giao cho con nào</p>
         <div className="flex gap-2">
           {kids.map((c) => {
@@ -209,7 +229,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
       </section>
 
       {/* ---- Noi giao bai: mot nut cho moi ma trong HW_SOURCES ---- */}
-      <section className="mb-5">
+      <section className="mb-5 xl:bg-surface-container-low xl:rounded-card xl:p-5 xl:mb-4">
         <p className="text-p-label uppercase text-on-surface-variant mb-2">Bài của lớp nào</p>
         <div className="flex gap-2 flex-wrap">
           <button
@@ -243,7 +263,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
       </section>
 
       {/* ---- Han hoan thanh ---- */}
-      <section className="mb-6">
+      <section className="mb-6 xl:bg-surface-container-low xl:rounded-card xl:p-5 xl:mb-4">
         <p className="text-p-label uppercase text-on-surface-variant mb-2">Hạn hoàn thành</p>
         <div className="flex gap-2 items-center flex-wrap">
           {([['today', 'Hôm nay'], ['tomorrow', 'Mai'], ['custom', 'Chọn ngày']] as [Han, string][]).map(
@@ -295,6 +315,9 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
           <span className="material-symbols-outlined text-xl">edit_note</span>
           Nhập tay từng bài
         </Link>
+      </div>
+
+      </div>
       </div>
     </main>
   );

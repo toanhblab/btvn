@@ -8,9 +8,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# Ba ngữ cảnh màn hình, ba bộ thiết kế
+# Bốn ngữ cảnh màn hình, bốn bộ thiết kế
 
-App có ba bộ thiết kế Stitch đã lưu trong repo (`code/` là HTML kèm lớp Tailwind,
+App có bốn bộ thiết kế Stitch đã lưu trong repo (`code/` là HTML kèm lớp Tailwind,
 `images/` là ảnh dựng sẵn — xem cả hai):
 
 | Thư mục | Người dùng | Thiết bị |
@@ -18,13 +18,19 @@ App có ba bộ thiết kế Stitch đã lưu trong repo (`code/` là HTML kèm 
 | `stitch/` | con | iPad ngang |
 | `stitch-parent/` | bố mẹ | điện thoại |
 | `stitch-macbook/` | con | Macbook |
+| `stitch-parent-macbook/` | bố mẹ | Macbook |
 
-Ba bộ dùng **chung 47 màu và chung phông Quicksand**; chỉ thang chữ/spacing khác
+Bốn bộ dùng **chung 47 màu và chung phông Quicksand**; chỉ thang chữ/spacing khác
 nhau. `app/globals.css` là nơi duy nhất khai báo token, với hai tiền tố:
 `k-*` cho màn của con, `p-*` cho màn của bố mẹ. **Không thêm tiền tố thứ ba** —
 đọc khối chú thích lớn ngay sau `@theme` trong `app/globals.css` trước khi định
 thêm token: nó giải thích vì sao ngữ cảnh Macbook là điểm ngắt `xl:` (1280px) và
-vì sao thang `k-*` tự giãn ra ở đó thay vì sinh ra bộ token trùng lặp.
+vì sao hai thang `k-*` / `p-*` tự giãn ra ở đó thay vì sinh ra bộ token trùng lặp.
+
+Một chỗ dễ vấp khi giãn thang `p-*`: `k-*` chỉ dùng trong `app/con/**` nên đặt
+thẳng ở `:root` được, còn `p-*` thì **không** — `BanPhimPin`, `ChonNha` và hộp
+"Bố mẹ đặt lại giờ" nằm ngay trong màn của con cũng dùng `p-*`. Nên `p-*` giãn ra
+trong lớp `.parent-scope`, do `app/bome/(khung)/layout.tsx` đặt.
 
 Hai cái bẫy đã trả giá để biết, cùng ghi ở khối chú thích đó:
 
@@ -36,8 +42,15 @@ Hai cái bẫy đã trả giá để biết, cùng ghi ở khối chú thích đ
   nó đè mọi lớp `text-*` của Tailwind (ở `@layer utilities`). Lỗi này có ở cả
   màn con và màn bố mẹ; `text-4xl` trên icon là CSS chết.
 
+Khung của bố mẹ (`app/bome/(khung)/layout.tsx`): dưới 1280px là cột hẹp + thanh
+điều hướng dưới (`ThanhDuoi`), từ 1280px là thanh bên trái 260px (`ThanhBen`).
+Màn nào của bố mẹ **chưa có bản thiết kế Macbook** thì giữ `xl:max-w-lg xl:mx-auto`
+trên `<main>` để không bị kéo giãn ra cả 1180px — đừng bỏ lớp đó khi chưa dựng
+bản Macbook cho màn ấy.
+
 Kiểm bố cục ở nhiều cỡ màn: có sẵn ảnh chụp đối chiếu trong
-`stitch-macbook/kiem-tra/` (`macbook-*` ở 1440×900, `ipad-*` ở 1180×820).
+`stitch-macbook/kiem-tra/` (màn của con) và `stitch-parent-macbook/kiem-tra/`
+(màn của bố mẹ) — `macbook-*` ở 1440×900, `ipad-*` ở 1180×820.
 
 ## Maintaining this file
 

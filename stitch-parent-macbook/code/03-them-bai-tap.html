@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Thêm bài tập - Nhà mình</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "background": "#f6f9ff",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#4e3e00",
+                        "inverse-on-surface": "#edf1f7",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#001a42",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#2c3136",
+                        "surface-dim": "#d6dae0",
+                        "on-secondary-fixed": "#341100",
+                        "outline": "#727785",
+                        "tertiary-fixed-dim": "#eec200",
+                        "secondary": "#9d4300",
+                        "on-secondary-container": "#5c2400",
+                        "primary": "#0058be",
+                        "on-surface-variant": "#424754",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#004395",
+                        "on-surface": "#171c20",
+                        "surface": "#f6f9ff",
+                        "surface-container-high": "#e5e8ee",
+                        "secondary-fixed": "#ffdbca",
+                        "inverse-primary": "#adc6ff",
+                        "surface-container": "#eaeef4",
+                        "surface-bright": "#f6f9ff",
+                        "primary-fixed-dim": "#adc6ff",
+                        "primary-container": "#2170e4",
+                        "secondary-fixed-dim": "#ffb690",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed": "#ffe083",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-container-highest": "#dfe3e9",
+                        "on-tertiary-fixed": "#231b00",
+                        "surface-tint": "#005ac2",
+                        "surface-container-low": "#f0f4fa",
+                        "on-primary-container": "#fefcff",
+                        "on-background": "#171c20",
+                        "on-secondary-fixed-variant": "#783200",
+                        "tertiary": "#735c00",
+                        "secondary-container": "#fd761a",
+                        "tertiary-container": "#cea700",
+                        "surface-variant": "#dfe3e9",
+                        "outline-variant": "#c2c6d6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "40px",
+                        "margin-mobile": "16px",
+                        "stack-md": "16px",
+                        "stack-lg": "32px",
+                        "stack-sm": "8px",
+                        "sidebar-width": "260px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Quicksand"],
+                        "headline-lg": ["Quicksand"],
+                        "body-lg": ["Quicksand"],
+                        "headline-md": ["Quicksand"],
+                        "body-md": ["Quicksand"],
+                        "headline-lg-mobile": ["Quicksand"],
+                        "caption": ["Quicksand"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "34px", "fontWeight": "700" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #FFF8F0;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface antialiased min-h-screen flex">
+<!-- SideNavBar (Predicted & Modified for context) -->
+<nav class="fixed left-0 top-0 h-full w-sidebar-width bg-surface shadow-[0px_4px_20px_rgba(59,130,246,0.04)] flex flex-col py-stack-lg z-50">
+<!-- Header -->
+<div class="px-6 mb-8 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container"><span class="material-symbols-outlined">home</span></div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">Nhà mình</h1>
+<p class="font-caption text-caption text-on-surface-variant">3 con · Mã nhà: nha-minh-8f2c</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface px-4 py-3 mx-2 hover:bg-surface-container-high transition-all duration-200 rounded-full" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Trang chủ</span>
+</a>
+<a class="flex items-center gap-3 bg-primary text-on-primary rounded-full px-4 py-3 mx-2 translate-x-1 transition-transform duration-200" href="#"><span class="material-symbols-outlined fill">add_task</span><span class="font-label-md text-label-md">Thêm bài</span></a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface px-4 py-3 mx-2 hover:bg-surface-container-high transition-all duration-200 rounded-full" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-label-md text-label-md">Nhiệm vụ</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface px-4 py-3 mx-2 hover:bg-surface-container-high transition-all duration-200 rounded-full" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Cài đặt</span>
+</a>
+</div>
+<!-- Pinned Bottom CTA -->
+<div class="mt-auto px-4">
+<button class="w-full flex items-center gap-3 bg-surface-container text-on-surface p-4 rounded-2xl hover:bg-surface-container-high transition-colors shadow-[0px_4px_20px_rgba(59,130,246,0.04)]">
+<span class="material-symbols-outlined text-primary">tablet_mac</span>
+<div class="text-left">
+<p class="font-label-md text-label-md text-on-surface">Mở màn hình của con</p>
+<p class="font-caption text-caption text-on-surface-variant">Để con làm bài tập</p>
+</div>
+</button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 ml-sidebar-width pl-margin-desktop pr-margin-desktop py-stack-lg max-w-[1200px] mx-auto w-full">
+<!-- Header -->
+<header class="mb-stack-lg">
+<h2 class="font-headline-lg text-headline-lg text-primary font-bold mb-2">Thêm bài tập</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Chụp lại tin nhắn của cô rồi để máy tách thành từng bài.</p>
+</header>
+<!-- Layout Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter items-start">
+<!-- Left Column (60%) -->
+<div class="md:col-span-7 flex flex-col gap-stack-md">
+<!-- Upload Area -->
+<section>
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-2 uppercase tracking-wider">Ảnh bài tập</h3>
+<div class="bg-surface rounded-[16px] shadow-[0px_4px_20px_rgba(59,130,246,0.04)] p-6 border-2 border-dashed border-outline-variant hover:border-primary transition-colors cursor-pointer group flex flex-col items-center justify-center min-h-[200px]"><div class="w-16 h-16 rounded-full bg-primary-container/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><span class="material-symbols-outlined text-3xl text-primary">add_a_photo</span></div><p class="font-label-md text-label-md text-on-surface">Kéo thả ảnh vào đây, hoặc bấm để chọn ảnh</p><p class="font-caption text-caption text-on-surface-variant mt-1">Chụp màn hình Zalo rồi dán thẳng bằng ⌘V cũng được</p></div>
+<!-- Thumbnails (Placeholder for interactive state) -->
+<div class="flex gap-4 mt-4"><div class="relative w-[96px] h-[96px] rounded-lg overflow-hidden shadow-sm border border-outline-variant"><img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6F23MO5UBe5jsv3RgRMxtzg3UbHWUtwTvaRekJ73VQz58kslB9tX0xC2tvnlrByWw_OHiY5VGmPiUBYKAAS6z8lGUCdMjMlKiX7Cg2xakOdMVwuk7nEGVfC_AIj3YX3Prrf0Px-8zER-vqIvHsj7aWFyw9oDx2NXslDWPEYaup9n3nLHJT9TnY7odOKkn3t11JUocpb1RHQIRMOgr-hAfm88WQOHvKcXwVEIRUdDaYgQyGDyiT9VctlfoxjDNshnb-EXNG-rOuaM"/><button class="absolute top-1 right-1 w-6 h-6 bg-inverse-surface/70 rounded-full flex items-center justify-center text-inverse-on-surface hover:bg-error transition-colors"><span class="material-symbols-outlined text-sm">close</span></button></div><div class="relative w-[96px] h-[96px] rounded-lg overflow-hidden shadow-sm border border-outline-variant"><img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6F23MO5UBe5jsv3RgRMxtzg3UbHWUtwTvaRekJ73VQz58kslB9tX0xC2tvnlrByWw_OHiY5VGmPiUBYKAAS6z8lGUCdMjMlKiX7Cg2xakOdMVwuk7nEGVfC_AIj3YX3Prrf0Px-8zER-vqIvHsj7aWFyw9oDx2NXslDWPEYaup9n3nLHJT9TnY7odOKkn3t11JUocpb1RHQIRMOgr-hAfm88WQOHvKcXwVEIRUdDaYgQyGDyiT9VctlfoxjDNshnb-EXNG-rOuaM"/><button class="absolute top-1 right-1 w-6 h-6 bg-inverse-surface/70 rounded-full flex items-center justify-center text-inverse-on-surface hover:bg-error transition-colors"><span class="material-symbols-outlined text-sm">close</span></button></div></div>
+</section>
+<!-- Text Area -->
+<section class="mt-stack-sm">
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-2 uppercase tracking-wider flex items-center gap-2">
+                        Hoặc dán nội dung
+                    </h3>
+<div class="bg-surface rounded-[16px] shadow-[0px_4px_20px_rgba(59,130,246,0.04)] p-1">
+<textarea class="w-full h-auto min-h-[160px] bg-transparent border-none focus:ring-0 resize-none p-4 font-body-md text-on-surface placeholder:text-outline" placeholder="Dán tin nhắn của cô giáo vào đây…" rows="6"></textarea>
+</div>
+</section>
+</div>
+<!-- Right Column (40%) -->
+<div class="md:col-span-5 flex flex-col gap-stack-md">
+<!-- Assign to Child -->
+<section class="bg-surface rounded-[16px] shadow-[0px_4px_20px_rgba(59,130,246,0.04)] p-6">
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-4 uppercase tracking-wider">Giao cho con nào</h3>
+<div class="grid grid-cols-3 gap-3"><!-- Minh --><button class="relative flex flex-col items-center gap-2 p-3 rounded-xl bg-primary-container/10 border-2 border-primary group"><div class="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-sm font-bold">check</span></div><div class="w-12 h-12 rounded-full overflow-hidden border border-outline-variant"><img alt="Minh" class="w-full h-full object-cover object-left" src="https://lh3.googleusercontent.com/aida/AEtjO1VYiaSEK_hWbN967c9bDXy4yT2kvpZMFemiShQ1JVKsmFe6DZ1poLUGLLjSPnVrE21c_Af9FcqYDJnVXsCPSsO81fAsynEyc_wVxUYnVaxpJdFKdb7-04i5BI12Czo6dTNM9fyJZ9kg4HLEI-aksEKw5401DuHnHJaif6FYKA5RF9QuT2CJp3-MvMoP8WKqpC1ChOMnatH95asVj2NXi7SWBCRQq9ogpWMGXrJuTdcnWx9WCB6RPNW_xNI"/></div><span class="font-label-md text-label-md text-on-surface">Minh</span></button><!-- An --><button class="relative flex flex-col items-center gap-2 p-3 rounded-xl bg-primary-container/10 border-2 border-primary group"><div class="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-sm font-bold">check</span></div><div class="w-12 h-12 rounded-full overflow-hidden border border-outline-variant"><img alt="An" class="w-full h-full object-cover object-center" src="https://lh3.googleusercontent.com/aida/AEtjO1VYiaSEK_hWbN967c9bDXy4yT2kvpZMFemiShQ1JVKsmFe6DZ1poLUGLLjSPnVrE21c_Af9FcqYDJnVXsCPSsO81fAsynEyc_wVxUYnVaxpJdFKdb7-04i5BI12Czo6dTNM9fyJZ9kg4HLEI-aksEKw5401DuHnHJaif6FYKA5RF9QuT2CJp3-MvMoP8WKqpC1ChOMnatH95asVj2NXi7SWBCRQq9ogpWMGXrJuTdcnWx9WCB6RPNW_xNI"/></div><span class="font-label-md text-label-md text-on-surface">An</span></button><!-- Bé Na --><button class="relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-transparent hover:bg-surface-container-high transition-colors"><div class="w-12 h-12 rounded-full overflow-hidden border border-outline-variant opacity-70"><img alt="Bé Na" class="w-full h-full object-cover object-right" src="https://lh3.googleusercontent.com/aida/AEtjO1VYiaSEK_hWbN967c9bDXy4yT2kvpZMFemiShQ1JVKsmFe6DZ1poLUGLLjSPnVrE21c_Af9FcqYDJnVXsCPSsO81fAsynEyc_wVxUYnVaxpJdFKdb7-04i5BI12Czo6dTNM9fyJZ9kg4HLEI-aksEKw5401DuHnHJaif6FYKA5RF9QuT2CJp3-MvMoP8WKqpC1ChOMnatH95asVj2NXi7SWBCRQq9ogpWMGXrJuTdcnWx9WCB6RPNW_xNI"/></div><span class="font-label-md text-label-md text-on-surface-variant">Bé Na</span></button></div>
+<p class="font-caption text-caption text-on-surface-variant mt-4 text-center">Các con học cùng Lớp 1 được chọn sẵn. Mỗi con vẫn có bài riêng để tự tick.</p>
+</section>
+<!-- Class Category -->
+<section class="bg-surface rounded-[16px] shadow-[0px_4px_20px_rgba(59,130,246,0.04)] p-6">
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-4 uppercase tracking-wider">Bài của lớp nào</h3>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md flex items-center gap-2">
+<span>✨</span> Tự đoán
+                        </button>
+<button class="px-4 py-2 rounded-full bg-surface-container border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md flex items-center gap-2">
+<span>🏫</span> Trường tiểu học
+                        </button>
+<button class="px-4 py-2 rounded-full bg-surface-container border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md flex items-center gap-2">
+<span>🇬🇧</span> Lớp tiếng Anh
+                        </button>
+</div>
+<p class="font-caption text-caption text-on-surface-variant mt-3">Đề tiếng Anh sẽ tự xếp vào "Lớp tiếng Anh", còn lại vào "Trường tiểu học". Bố mẹ vẫn sửa được ở bước kiểm tra lại.</p>
+</section>
+<!-- Due Date -->
+<section class="bg-surface rounded-[16px] shadow-[0px_4px_20px_rgba(59,130,246,0.04)] p-6">
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-4 uppercase tracking-wider">Hạn hoàn thành</h3>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md">Hôm nay</button>
+<button class="px-4 py-2 rounded-full bg-surface-container border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md">
+                            Mai
+                        </button>
+<button class="px-4 py-2 rounded-full bg-surface-container border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">calendar_month</span> Chọn ngày
+                        </button>
+</div>
+</section>
+<!-- Action Buttons -->
+<div class="mt-auto pt-stack-sm flex flex-col gap-3">
+<button class="w-full h-12 bg-primary text-on-primary rounded-xl font-label-md text-label-md flex items-center justify-center gap-2 hover:bg-surface-tint hover:-translate-y-0.5 transition-all shadow-sm hover:shadow-md">
+<span class="material-symbols-outlined">auto_awesome</span>
+                        Tách bài tập
+                    </button>
+<button class="w-full h-12 border-2 border-primary text-primary rounded-xl font-label-md text-label-md flex items-center justify-center gap-2 hover:bg-primary-container/10 transition-colors">
+<span class="material-symbols-outlined">edit_note</span>
+                        Nhập tay từng bài
+                    </button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -8,7 +8,10 @@ import XoaTatCa from './XoaTatCa';
 
 export const dynamic = 'force-dynamic';
 
-/** Danh sach nhiem vu ca nha — nen tu stitch-parent 04. */
+/**
+ * Danh sach nhiem vu ca nha — nen tu stitch-parent 04 (dien thoai) va
+ * stitch-parent-macbook 04 (Macbook).
+ */
 export default async function DanhSachNhiemVu() {
   const familyId = await parentFamilyId();
   if (!familyId) redirect('/bome/pin');
@@ -38,23 +41,43 @@ export default async function DanhSachNhiemVu() {
   });
 
   return (
-    <main className="px-p-page pt-4">
-      <header className="flex items-center justify-between mb-4">
+    <main className="px-p-page pt-4 xl:max-w-[1080px] xl:mx-auto xl:px-12 xl:py-12 xl:flex xl:flex-col">
+      <header className="flex items-center justify-between mb-4 xl:items-start xl:mb-8">
         <div>
           <h1 className="text-p-headline text-on-background">Danh sách bài tập</h1>
           <p className="text-p-body-sm text-on-surface-variant">Cả nhà · 7 ngày quanh hôm nay</p>
         </div>
-        <span className="text-p-body-sm px-3 py-1.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed shrink-0">
-          {done}/{items.length} xong
-        </span>
+        <div className="flex items-center gap-3 shrink-0">
+          <span className="text-p-body-sm px-3 py-1.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed shrink-0">
+            {done}/{items.length} xong
+          </span>
+          {/* Tren Macbook nut chinh len goc tren; ban dien thoai giu nut rong ca
+              hang o cuoi trang (o duoi) */}
+          <Link
+            href="/bome/them"
+            className="hidden xl:flex items-center gap-1.5 bg-primary text-on-primary rounded-full
+                       min-h-p-tap px-6 text-p-body-sm font-bold card-shadow"
+          >
+            <span className="material-symbols-outlined text-xl">add</span>
+            Thêm bài tập mới
+          </Link>
+        </div>
       </header>
 
-      <XoaTatCa total={total} />
+      {/* Ban thiet ke 04 dat "Xoa tat ca bai tap" ngay duoi "Them bai tap moi" o
+          goc tren — hai nut mau do va mau xanh cach nhau vai chuc pixel, bam nham
+          la mat sach bai. Tu 1280px day no xuong CUOI trang (order-3), xa han nut
+          them. Duoi 1280px khung nay khong phai flex nen `order` khong an gi, vi
+          tri nut giu nguyen nhu ban dien thoai da duyet. Buoc hoi lai hai nac ben
+          trong XoaTatCa van con nguyen o ca hai co man. */}
+      <div className="xl:order-3 xl:mt-10 xl:self-end xl:w-auto">
+        <XoaTatCa total={total} />
+      </div>
 
       {sorted.length === 0 ? (
-        <p className="text-p-body text-on-surface-variant text-center py-10">Chưa có bài tập nào.</p>
+        <p className="text-p-body text-on-surface-variant text-center py-10 xl:order-2">Chưa có bài tập nào.</p>
       ) : (
-        <div className="flex flex-col gap-p-tight mb-4">
+        <div className="flex flex-col gap-p-tight mb-4 xl:order-2 xl:gap-3 xl:mb-0">
           {sorted.map((a) => {
             const child = nameOf.get(a.childId);
             const overdue = a.status === 'todo' && a.dueDate < today;
@@ -62,7 +85,7 @@ export default async function DanhSachNhiemVu() {
               <div
                 key={a.id}
                 className="bg-surface-container-lowest rounded-card card-shadow relative overflow-hidden
-                           p-3 pl-4 flex items-start gap-2"
+                           p-3 pl-4 flex items-start gap-2 xl:items-center xl:p-5 xl:pl-6 xl:gap-4"
               >
                 <div className={`absolute left-0 inset-y-0 w-1 ${BAR[child?.color ?? 'primary']}`} />
                 <span
@@ -110,7 +133,7 @@ export default async function DanhSachNhiemVu() {
                     </p>
                   )}
                   <span
-                    className={`text-p-body-sm ${overdue ? 'text-error font-bold' : 'text-on-surface-variant'}`}
+                    className={`text-p-body-sm xl:hidden ${overdue ? 'text-error font-bold' : 'text-on-surface-variant'}`}
                   >
                     {overdue
                       ? `Quá hạn — ${a.dueDate}`
@@ -119,6 +142,21 @@ export default async function DanhSachNhiemVu() {
                         : a.dueDate}
                   </span>
                 </div>
+                {/* Tren Macbook han nam thanh mot vien ben phai (ban thiet ke 04)
+                    thay vi mot dong nua duoi de bai — hang the con du cho */}
+                <span
+                  className={`hidden xl:inline-flex shrink-0 text-p-body-sm px-3 py-1.5 rounded-full ${
+                    overdue
+                      ? 'bg-error-container text-error font-bold'
+                      : 'bg-surface-container text-on-surface-variant'
+                  }`}
+                >
+                  {overdue
+                    ? `Quá hạn — ${a.dueDate}`
+                    : a.dueDate === today
+                      ? 'Hôm nay'
+                      : a.dueDate}
+                </span>
                 {/* Sua duoc sau khi giao: doi de bai, han, video… (/bome/bai/<id>) */}
                 <Link
                   href={`/bome/bai/${a.id}`}
@@ -137,7 +175,7 @@ export default async function DanhSachNhiemVu() {
       <Link
         href="/bome/them"
         className="flex items-center justify-center gap-2 bg-primary text-on-primary rounded-card
-                   h-14 min-h-p-tap text-p-body font-bold card-shadow"
+                   h-14 min-h-p-tap text-p-body font-bold card-shadow xl:hidden"
       >
         <span className="material-symbols-outlined">add</span>
         Thêm bài tập mới
