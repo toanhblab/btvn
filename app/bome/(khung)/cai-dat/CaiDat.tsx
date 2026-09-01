@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PIN_LEN } from '@/lib/pin';
 import type { Family } from '@/lib/store';
+
+/** Khung the trang o co Macbook — duoi 1280px khong doi gi so voi ban cu. */
+const THE =
+  'xl:bg-surface-container-lowest xl:rounded-card xl:shadow-[0_2px_8px_rgba(0,0,0,0.10)] xl:p-6 xl:mb-6';
 
 export default function CaiDat({
   family,
@@ -17,25 +21,6 @@ export default function CaiDat({
   const router = useRouter();
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
-
-  /* ---- Link cho iPad ----
-   * Ghep o client vi chi trinh duyet biet chac ten mien dang mo (localhost khi
-   * dev, ten mien Vercel khi that). */
-  const [link, setLink] = useState('');
-  const [copied, setCopied] = useState(false);
-  useEffect(() => {
-    setLink(`${window.location.origin}/nha/${family.slug}`);
-  }, [family.slug]);
-
-  async function copyLink() {
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setError('Không copy được. Bố mẹ chọn tay rồi copy nhé.');
-    }
-  }
 
   /* ---- Doi ten nha ---- */
   const [name, setName] = useState(family.name);
@@ -118,30 +103,15 @@ export default function CaiDat({
         </section>
       )}
 
-      {/* ---- Link mo man hinh cua con tren iPad ---- */}
-      <h2 className="text-p-label uppercase text-on-surface-variant mb-2">Link cho iPad của các con</h2>
-      <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4">
-        <p className="text-p-body-sm text-on-surface-variant mb-2">
-          Mở link này một lần trên máy của các con là xong: máy nhớ luôn nhà mình,
-          các con mở lên là thấy bài, không phải nhập gì. Link không mở được phần
-          của bố mẹ.
-        </p>
-        <p className="text-p-body-sm font-mono text-on-surface break-all bg-surface-container rounded-lg p-2 mb-2">
-          {link || '…'}
-        </p>
-        <button
-          onClick={copyLink}
-          className="w-full rounded-card min-h-p-tap h-12 border-2 border-primary text-primary
-                     text-p-body font-bold flex items-center justify-center gap-1.5"
-        >
-          <span className="material-symbols-outlined">{copied ? 'check' : 'content_copy'}</span>
-          {copied ? 'Đã copy' : 'Copy link'}
-        </button>
-      </div>
+      {/* Khoi "Link cho iPad cua cac con" da bo han theo yeu cau cua captain o
+          issue #15 — ban thiet ke Macbook con ve no nhung khong dung nua. May cua
+          con van gan vao nha duoc bang duong nhap PIN o /vao. */}
 
       {/* ---- Ten nha ---- */}
+      <section className={THE}>
       <h2 className="text-p-label uppercase text-on-surface-variant mb-2">Tên nhà</h2>
-      <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4 flex gap-2">
+      <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4 flex gap-2
+                      xl:shadow-none xl:p-0 xl:mb-0">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -159,13 +129,16 @@ export default function CaiDat({
         </button>
       </div>
 
+      </section>
+
       {/* ---- Doi ma PIN ---- */}
+      <section className={THE}>
       <h2 className="text-p-label uppercase text-on-surface-variant mb-2">Mã PIN</h2>
       {!moPin ? (
         <button
           onClick={() => { setMoPin(true); setMsg(''); setError(''); }}
           className="w-full bg-surface-container-lowest rounded-card card-shadow p-3 flex items-center gap-3
-                     min-h-p-tap text-left mb-4"
+                     min-h-p-tap text-left mb-4 xl:shadow-none xl:p-0 xl:mb-0"
         >
           <span className="w-9 h-9 rounded-lg bg-primary-fixed flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-primary">password</span>
@@ -179,7 +152,8 @@ export default function CaiDat({
           <span className="material-symbols-outlined text-outline">chevron_right</span>
         </button>
       ) : (
-        <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4 flex flex-col gap-2">
+        <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4 flex flex-col gap-2
+                        xl:shadow-none xl:p-0 xl:mb-0">
           <label className="text-p-label uppercase text-on-surface-variant">Mã PIN hiện tại</label>
           <input
             value={oldPin}
@@ -234,10 +208,16 @@ export default function CaiDat({
         </div>
       )}
 
+      </section>
+
+      {/* Vung nguy hiem — ban thiet ke 01 vien do quanh rieng khoi nay o co
+          Macbook de no khong lan voi cac the trang o tren */}
+      <section className="xl:border xl:border-error xl:rounded-card xl:p-6">
+      <h2 className="hidden xl:block text-p-label uppercase text-error mb-2">Nguy hiểm</h2>
       <button
         onClick={quenPin}
         className="w-full bg-surface-container-lowest rounded-card card-shadow p-3 flex items-center gap-3
-                   min-h-p-tap text-left"
+                   min-h-p-tap text-left xl:shadow-none xl:bg-transparent xl:p-0"
       >
         <span className="w-9 h-9 rounded-lg bg-error-container flex items-center justify-center shrink-0">
           <span className="material-symbols-outlined text-error">logout</span>
@@ -250,6 +230,7 @@ export default function CaiDat({
           </span>
         </span>
       </button>
+      </section>
 
       {msg && <p className="text-p-body-sm text-on-surface-variant mt-3">{msg}</p>}
       {error && <p className="text-p-body text-error bg-error-container rounded-card p-3 mt-3">{error}</p>}

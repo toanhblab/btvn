@@ -1,22 +1,21 @@
 @import "tailwindcss";
 
 /* ===========================================================================
-   Design tokens — gop tu 3 bo Stitch:
-   - Bo cua tre  (iPad landscape) : stitch/code/*.html
-   - Bo cua bo me (dien thoai)    : stitch-parent/code/*.html
-   - Bo cua tre  (Macbook)        : stitch-macbook/code/*.html
+   Design tokens — gop tu 4 bo Stitch:
+   - Bo cua tre   (iPad landscape) : stitch/code/*.html
+   - Bo cua bo me (dien thoai)     : stitch-parent/code/*.html
+   - Bo cua tre   (Macbook)        : stitch-macbook/code/*.html
+   - Bo cua bo me (Macbook)        : stitch-parent-macbook/code/*.html
 
    47 mau giong het nhau nen dung chung. Rieng thang chu va spacing thi hai ben
    dung cung ten nhung khac gia tri (headline-lg 32px vs 24px, body-lg 24px vs
    16px, tap target 64px vs 48px) nen phai them tien to:
      k-* = kid (man cua tre)      p-* = parent (man cua bo me)
 
-   Bo Macbook KHONG phai he thiet ke thu ba: cung 47 mau, cung Quicksand, cung
-   chuan cham 64px, va thang chu trung gan het voi k-* (display-hero 48 =
-   k-hero, headline-lg 32 = k-headline, body-lg 24 = k-body, body-md 20 =
-   k-body-sm, label-bold 18 = k-label). Nen KHONG co tien to d-*: chi co mot
-   diem ngat `xl:` (1280px) va thang k-* tu gian ra o diem ngat do — xem khoi
-   @media ngay sau @theme.
+   Hai bo Macbook KHONG phai he thiet ke thu ba: cung 47 mau, cung Quicksand,
+   cung chuan cham, thang chu trung gan het voi k-* / p-*. Nen KHONG co tien to
+   d-*: chi co mot diem ngat `xl:` (1280px) va hai thang k-* / p-* tu gian ra o
+   diem ngat do — xem khoi @media ngay sau @theme.
    =========================================================================== */
 
 @theme {
@@ -149,7 +148,7 @@
 }
 
 /* ---------------------------------------------------------------------------
-   MAN MAY TINH = `xl:` (1280px). Doc ky truoc khi sua man cua con.
+   MAN MAY TINH = `xl:` (1280px). Doc ky truoc khi sua man cua con / cua bo me.
 
    Vi sao 1280px: iPad phai nam DUOI nguong. iPad 10.9"/Air ngang la 1180px,
    iPad Pro 11" la 1194px, iPad gen 9 la 1024px — het thay < 1280. Dat nguong o
@@ -163,23 +162,39 @@
    nen `pc:grid-cols-3` (1280) bi `md:grid-cols-2` (768) de len o man 1440px —
    im lang va rat kho lan ra. `xl:` xep sau `md:`/`lg:` nen chong tang dung.
 
-   Va vi sao khong co tien to `d-*` thu ba ben canh k-* va p-*: thang k-* TU GIAN RA
-   o day. Tailwind v4 sinh ra `.text-k-hero { font-size: var(--text-k-hero) }`,
+   Va vi sao khong co tien to `d-*` thu ba ben canh k-* va p-*: hai thang TU GIAN
+   RA o day. Tailwind v4 sinh ra `.text-k-hero { font-size: var(--text-k-hero) }`,
    nen dinh nghia lai bien trong @media la MOI cho dung text-k-hero doi theo —
-   khong phai di sua tung the tren tung man va khong so quen mot cho. Them nua,
-   k-* CHI duoc dung trong app/con/** (bo me dung p-*), nen khoi nay khong the
-   voi tay sang man bo me. Khoi phai nam NGOAI @layer de thang duoc bien trong
-   @layer theme cua Tailwind.
+   khong phai di sua tung the tren tung man va khong so quen mot cho. k-* chi
+   dung trong app/con/**, p-* chi dung trong app/bome/**, nen hai nhom khong
+   dam vao nhau. Khoi phai nam NGOAI @layer de thang duoc bien trong @layer theme
+   cua Tailwind.
 
-   Chi mot co that su moi: display-lg 56px cua bo Macbook (k-hero dang 48px).
-   Cac co con lai cua bo Macbook trung y nguyen voi k-* nen giu nguyen, khong
-   tao ban sao. label-lg 16 / label-md 14 cung khong them: Tailwind da co
-   text-base / text-sm dung hai co do.
+   Bo Macbook cua tre: chi mot co that su moi, display-lg 56px (k-hero dang
+   48px). Cac co con lai trung y nguyen voi k-*.
+
+   Bo Macbook cua bo me (stitch-parent-macbook): headline-lg 36/44 cho tieu de
+   trang, headline-md 24/32 cho tieu de muc, body-lg 18/28 cho chu trong the —
+   ba co nay to hon ban dien thoai nen dinh nghia lai o day. Con label-md 14/20
+   va caption 12/16 trung y nguyen p-body-sm / p-label nen khong dong den.
+
+   Ca hai truong hop: label-lg 16 / label-md 14 khong them token moi vi Tailwind
+   da co text-base / text-sm dung hai co do.
    --------------------------------------------------------------------------- */
 @media (width >= theme(--breakpoint-xl)) {
   :root {
     --text-k-hero: 56px;
     --text-k-hero--line-height: 64px;
+
+    --text-p-headline: 36px;
+    --text-p-headline--line-height: 44px;
+    --text-p-headline--letter-spacing: -0.02em;
+
+    --text-p-headline-md: 24px;
+    --text-p-headline-md--line-height: 32px;
+
+    --text-p-body: 18px;
+    --text-p-body--line-height: 28px;
   }
 }
 

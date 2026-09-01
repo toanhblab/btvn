@@ -106,8 +106,10 @@ export default function NhapTay({
     }
   }
 
+  // Man nay chua co ban thiet ke Macbook (issue #15 de lai): tu 1280px giu
+  // nguyen cot hep nhu tren dien thoai, chi khac la co thanh ben trai.
   return (
-    <main className="px-p-page pt-4">
+    <main className="px-p-page pt-4 xl:max-w-lg xl:mx-auto">
       <header className="flex items-center gap-2 mb-5">
         <Link href="/bome/them" className="min-h-p-tap flex items-center text-on-surface-variant pr-1">
           <span className="material-symbols-outlined text-3xl">arrow_back</span>

@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 /**
  * Thanh dieu huong duoi cung — nen tu stitch-parent 02/04/05.
  * Ban Stitch bi loi hien thi Unicode ("Nhlệm vụ", "CỠ0e0i đ11ầt") nen go lai.
+ *
+ * Tu 1280px thi an di, ThanhBen ben trai thay cho no (xem layout.tsx).
  */
 const TABS = [
   { href: '/bome', icon: 'home', label: 'Trang chủ' },
@@ -20,7 +22,7 @@ export default function ThanhDuoi() {
   return (
     <nav
       className="fixed bottom-0 inset-x-0 bg-surface-container-lowest border-t border-surface-container-high
-                 flex items-stretch z-40 pb-[env(safe-area-inset-bottom)]"
+                 flex items-stretch z-40 pb-[env(safe-area-inset-bottom)] xl:hidden"
     >
       {TABS.map((t) => {
         const active = t.href === '/bome' ? path === '/bome' : path.startsWith(t.href);
