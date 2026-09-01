@@ -22,7 +22,7 @@ export default async function BomeLayout({ children }: { children: React.ReactNo
     : [null, []];
 
   return (
-    <div className="min-h-screen xl:pl-[260px]">
+    <div className="parent-scope min-h-screen xl:pl-[260px]">
       {family && (
         <ThanhBen familyName={family.name} childCount={kids.length} slug={family.slug} />
       )}

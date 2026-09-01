@@ -165,10 +165,16 @@
    Va vi sao khong co tien to `d-*` thu ba ben canh k-* va p-*: hai thang TU GIAN
    RA o day. Tailwind v4 sinh ra `.text-k-hero { font-size: var(--text-k-hero) }`,
    nen dinh nghia lai bien trong @media la MOI cho dung text-k-hero doi theo —
-   khong phai di sua tung the tren tung man va khong so quen mot cho. k-* chi
-   dung trong app/con/**, p-* chi dung trong app/bome/**, nen hai nhom khong
-   dam vao nhau. Khoi phai nam NGOAI @layer de thang duoc bien trong @layer theme
-   cua Tailwind.
+   khong phai di sua tung the tren tung man va khong so quen mot cho. Khoi phai
+   nam NGOAI @layer de thang duoc bien trong @layer theme cua Tailwind.
+
+   k-* thi dat thang o :root duoc vi chi app/con/** dung den. p-* thi KHONG:
+   ngoai app/bome/** no con duoc dung o BanPhimPin, ChonNha va hop "Bo me dat lai
+   gio" nam NGAY TRONG man cua con — de o :root la chu trong hop do to len theo
+   khi con mo tren Macbook, tuc la sua nham man da duyet o #14. Nen p-* buoc vao
+   `.parent-scope`, lop nay chi khung app/bome/(khung)/layout.tsx dat. Man nhap
+   PIN / tao nha (ngoai khung do) cung giu nguyen thang dien thoai — dung y muon,
+   hai man do chua co thiet ke Macbook.
 
    Bo Macbook cua tre: chi mot co that su moi, display-lg 56px (k-hero dang
    48px). Cac co con lai trung y nguyen voi k-*.
@@ -185,7 +191,9 @@
   :root {
     --text-k-hero: 56px;
     --text-k-hero--line-height: 64px;
+  }
 
+  .parent-scope {
     --text-p-headline: 36px;
     --text-p-headline--line-height: 44px;
     --text-p-headline--letter-spacing: -0.02em;
