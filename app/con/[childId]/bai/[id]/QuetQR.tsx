@@ -19,9 +19,17 @@ import { useEffect, useRef, useState } from 'react';
  *
  * May anh phai TAT han khi dong khung quet hoac roi trang: de luong chay ngam
  * tren iPad la ton pin va den may anh sang mai.
+ *
+ * Mac dinh la may anh TRUOC (con thay chinh minh nen ngam de hon), co nut doi
+ * sang may anh sau. Khung xem duoc lat guong bang CSS khi dung may anh truoc;
+ * drawImage doc tu the <video> nen bien doi CSS KHONG anh huong khung dua vao
+ * jsQR — dung lat canvas giai ma, cung dung lat lai lan nua.
  */
 
 type Phase = 'opening' | 'scanning' | 'result' | 'error';
+
+/** Mat may anh: 'user' la may anh truoc, 'environment' la may anh sau. */
+type Mat = 'user' | 'environment';
 
 /** Kieu cua ham jsQR — lay tu chinh goi de khong phai ta lai chu ky. */
 type JsQR = typeof import('jsqr').default;
@@ -64,6 +72,11 @@ export default function QuetQR() {
   const [error, setError] = useState('');
   // null = chua biet (truoc khi mount); tinh sau mount de SSR/khach khop nhau
   const [coMayAnh, setCoMayAnh] = useState<boolean | null>(null);
+  /** Mat may anh dang dung. Moi lan mo khung lai bat dau tu may anh truoc. */
+  const [mat, setMat] = useState<Mat>('user');
+  /** Chi hien nut doi khi may co tu 2 may anh. Dem khong duoc thi cu hien: tha
+      co nut bam khong an hon la mat duong doi may anh tren iPad. */
+  const [coTheDoi, setCoTheDoi] = useState(true);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -73,6 +86,11 @@ export default function QuetQR() {
   const jsQRRef = useRef<JsQR | null>(null);
   /** Con bam hai lan / dong khung khi getUserMedia con dang cho -> bo luong ve sau. */
   const dangMoRef = useRef(false);
+  /** Moi lan mo / doi may anh la mot "doi". Luong ve muon hon doi cua no (con
+      da dong khung roi mo lai, hoac bam doi may anh hai lan) thi bi bo di. */
+  const doiRef = useRef(0);
+  /** Chan bam nut doi may anh lien tuc trong luc luong moi con dang cho. */
+  const dangDoiRef = useRef(false);
 
   useEffect(() => {
     setCoMayAnh(Boolean(navigator.mediaDevices?.getUserMedia));
@@ -81,6 +99,7 @@ export default function QuetQR() {
   /** Tat may anh: dung vong quet, tat het track, go luong khoi the <video>. */
   function tatMayAnh() {
     dangMoRef.current = false;
+    doiRef.current += 1;                        // luong nao con dang cho thi thanh doi cu
     if (rafRef.current !== null) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
@@ -106,9 +125,84 @@ export default function QuetQR() {
     }
   }, [phase]);
 
+  /**
+   * Xin luong theo mot mat may anh roi bat vong quet. Nem loi neu khong mo duoc
+   * (de ben goi tu quyet dinh bao loi hay lui ve may anh cu). Tra ve false khi
+   * luong ve muon: da bi bo, ben goi khong nen doi trang thai gi nua.
+   */
+  async function batLuong(m: Mat, doi: number) {
+    // Dat kieu "ideal" chu khong "exact": may nao chi co mot may anh thi trinh
+    // duyet tu lay cai dang co thay vi bao loi.
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: m },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+    });
+
+    // Con da dong khung (hoac roi trang, hoac bam doi may anh lan nua) trong luc
+    // bang xin quyen con mo -> bo luong vua nhan, khong thi may anh sang mai ma
+    // khong ai tat duoc nua.
+    if (!dangMoRef.current || doi !== doiRef.current) {
+      stream.getTracks().forEach((t) => t.stop());
+      return false;
+    }
+
+    streamRef.current = stream;
+    lanCuoiRef.current = 0;
+    setMat(m);
+    setPhase('scanning');                       // useEffect [phase] gan srcObject sau khi ve
+    rafRef.current = requestAnimationFrame(vongQuet);
+    return true;
+  }
+
+  /** Dem may anh SAU khi da duoc cap quyen — truoc do nhan thiet bi con trong. */
+  async function demMayAnh() {
+    try {
+      const ds = await navigator.mediaDevices.enumerateDevices();
+      setCoTheDoi(ds.filter((d) => d.kind === 'videoinput').length >= 2);
+    } catch {
+      setCoTheDoi(true);
+    }
+  }
+
+  /**
+   * Doi qua mat may anh ben kia: tat han luong dang chay roi mo luong moi. Mot so
+   * may dem ra 2 thiet bi ma khong co may anh sau that -> mo khong duoc thi lui
+   * ve may anh cu va noi cho con biet, dung de lop phu tro trang khong luong nao.
+   */
+  async function doiMayAnh() {
+    if (dangDoiRef.current) return;
+    dangDoiRef.current = true;
+    const cu = mat;
+    const moi: Mat = mat === 'user' ? 'environment' : 'user';
+    tatMayAnh();                                // bo luong cu + tang doiRef
+    const doi = doiRef.current;
+    dangMoRef.current = true;                   // bam Dong luc nay se lai ha co xuong
+    setPhase('opening');
+    setError('');
+    try {
+      if (await batLuong(moi, doi)) return;
+    } catch {
+      try {
+        if (await batLuong(cu, doi)) {
+          setError('Máy này chỉ có một máy ảnh thôi con nhé.');
+        }
+      } catch {
+        dangMoRef.current = false;
+        setError('Chưa mở được máy ảnh. Con nhờ bố mẹ cho phép dùng máy ảnh, hoặc chụp ảnh mã nhé.');
+        setPhase('error');
+      }
+    } finally {
+      dangDoiRef.current = false;
+    }
+  }
+
   async function moKhung() {
     if (dangMoRef.current) return;
     dangMoRef.current = true;
+    const doi = ++doiRef.current;
     setMo(true);
     setPhase('opening');
     setError('');
@@ -125,18 +219,9 @@ export default function QuetQR() {
       return;
     }
 
-    let stream: MediaStream;
     try {
-      // "environment" la may anh SAU — dung de soi to giay tren iPad. Dat kieu
-      // "ideal" chu khong "exact": laptop chi co may anh truoc thi trinh duyet
-      // tu lay cai dang co thay vi bao loi.
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
+      // Mac dinh may anh TRUOC.
+      if (!(await batLuong('user', doi))) return;
     } catch {
       dangMoRef.current = false;
       setError('Chưa mở được máy ảnh. Con nhờ bố mẹ cho phép dùng máy ảnh, hoặc chụp ảnh mã nhé.');
@@ -144,17 +229,7 @@ export default function QuetQR() {
       return;
     }
 
-    // Con da dong khung (hoac roi trang) trong luc bang xin quyen con mo -> bo
-    // luong vua nhan, khong thi may anh sang mai ma khong ai tat duoc nua.
-    if (!dangMoRef.current) {
-      stream.getTracks().forEach((t) => t.stop());
-      return;
-    }
-
-    streamRef.current = stream;
-    lanCuoiRef.current = 0;
-    setPhase('scanning');                       // useEffect [phase] gan srcObject sau khi ve
-    rafRef.current = requestAnimationFrame(vongQuet);
+    demMayAnh();                                // dem ngam, khong chan vong quet
   }
 
   function vongQuet(now: number) {
@@ -221,6 +296,7 @@ export default function QuetQR() {
     setKetQua(null);
     setError('');
     setPhase('opening');
+    setMat('user');                             // lan sau mo lai bat dau tu may anh truoc
   }
 
   /** Phat khong duoc (nha xuat ban chan, hoac dinh dang la mot trang chu khong phai tep) -> hoi mo tab moi. */
@@ -248,14 +324,29 @@ export default function QuetQR() {
             <p className="text-k-headline text-white">
               {phase === 'result' ? 'Mã QR này là:' : 'Đưa mã QR vào khung'}
             </p>
-            <button
-              onClick={dongKhung}
-              className="rounded-full bg-white/15 text-white flex items-center justify-center
-                         gap-2 px-6 h-20 min-h-k-tap"
-            >
-              <span className="material-symbols-outlined text-4xl">close</span>
-              <span className="text-k-headline">Đóng</span>
-            </button>
+            <div className="shrink-0 flex items-center gap-4">
+              {/* Nhan dat theo may anh SE chuyen toi, khong phai cai dang dung. */}
+              {phase === 'scanning' && coTheDoi && (
+                <button
+                  onClick={doiMayAnh}
+                  className="rounded-full bg-white/15 text-white flex items-center justify-center
+                             gap-2 px-6 h-20 min-h-k-tap"
+                >
+                  <span className="material-symbols-outlined text-4xl">cameraswitch</span>
+                  <span className="text-k-headline">
+                    {mat === 'user' ? 'Máy ảnh sau' : 'Máy ảnh trước'}
+                  </span>
+                </button>
+              )}
+              <button
+                onClick={dongKhung}
+                className="rounded-full bg-white/15 text-white flex items-center justify-center
+                           gap-2 px-6 h-20 min-h-k-tap"
+              >
+                <span className="material-symbols-outlined text-4xl">close</span>
+                <span className="text-k-headline">Đóng</span>
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-center gap-6">
@@ -265,12 +356,15 @@ export default function QuetQR() {
 
             {phase === 'scanning' && (
               <div className="relative w-full max-w-3xl rounded-3xl overflow-hidden bg-black">
+                {/* Lat guong CHI khi dung may anh truoc: khong lat thi con dua to
+                    giay sang trai ma hinh chay sang phai, rat kho ngam. Chi la CSS
+                    nen khung dua vao jsQR (doc tu the <video>) khong he bi lat. */}
                 <video
                   ref={videoRef}
                   muted
                   playsInline
                   autoPlay
-                  className="w-full max-h-[60vh] object-contain"
+                  className={`w-full max-h-[60vh] object-contain${mat === 'user' ? ' scale-x-[-1]' : ''}`}
                 />
                 {/* Khung ngam: lam toi phan ngoai o vuong (bong do trai rong) de tre
                     biet ngay phai chia ma vao giua, ke ca khi to giay trang toat. */}
