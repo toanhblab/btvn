@@ -24,7 +24,12 @@ export default function ViecNha({
   chores: DailyChore[];
   daTick: string[];
 }) {
-  const [xong, setXong] = useState<string[]>(daTick);
+  // Chi giu tick cua nhung viec DANG BAT ma trang nay nhan duoc: listChoreChecks
+  // co y tra ca tick cua viec bo me da tat (xem migration 012), nen neu khong loc
+  // thi cau khen "lam het viec" dem nham — thua tick cua viec da tat, hoac thieu.
+  const [xong, setXong] = useState<string[]>(() =>
+    daTick.filter((id) => chores.some((c) => c.id === id))
+  );
 
   async function tick(choreId: string) {
     const done = !xong.includes(choreId);

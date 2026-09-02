@@ -45,6 +45,7 @@ export default function ViecNha({ initial }: { initial: DailyChore[] }) {
   }
 
   async function themViec() {
+    if (busy) return;
     const content = them.trim();
     if (!content) return;
     const data = await goi('/api/viec-nha', {
@@ -59,10 +60,7 @@ export default function ViecNha({ initial }: { initial: DailyChore[] }) {
   /** Luu chu khi roi o nhap — chi goi khi that su co doi. */
   async function luuChu(c: DailyChore, content: string) {
     const moi = content.trim();
-    if (!moi || moi === c.content) {
-      setChores((ds) => ds.map((x) => (x.id === c.id ? { ...x, content: c.content } : x)));
-      return;
-    }
+    if (!moi || moi === c.content) return;
     const data = await goi(`/api/viec-nha/${c.id}`, {
       method: 'PATCH',
       body: JSON.stringify({ content: moi }),
@@ -144,7 +142,18 @@ export default function ViecNha({ initial }: { initial: DailyChore[] }) {
                 defaultValue={c.content}
                 key={`${c.id}:${c.content}`}
                 maxLength={MAX_CHU_VIEC_NHA}
-                onBlur={(e) => luuChu(c, e.target.value)}
+                onBlur={(e) => {
+                  // Xoa trang o nhap roi bam ra ngoai thi tra lai chu cu NGAY tren
+                  // the input: doi state khong lam <input> ve lai duoc (key khong
+                  // doi nen React giu nguyen the, defaultValue bi bo qua), bo me se
+                  // nhin thay o trong trong khi DB con chu cu.
+                  const moi = e.target.value.trim();
+                  if (!moi || moi === c.content) {
+                    e.target.value = c.content;
+                    return;
+                  }
+                  luuChu(c, moi);
+                }}
                 aria-label="Nội dung việc"
                 className={`w-full rounded-lg border border-outline-variant min-h-p-tap px-3 text-p-body
                             bg-surface-container-lowest ${c.enabled ? 'text-on-surface' : 'text-on-surface-variant'}`}

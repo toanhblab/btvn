@@ -78,7 +78,17 @@ export async function insertFamily(name: string, pinHash: string): Promise<Famil
   );
   // Nha moi co san ba viec nha mac dinh, giong nhung nha da co tu truoc (migration
   // 012 nap cho ho). Bo me sua/tat/xoa duoc ngay o man Cai dat.
-  await seedDefaultChores(family.id);
+  //
+  // Nap that bai thi bo qua: dong families o tren da commit roi (khong chung mot
+  // transaction), nen nem loi len se tra 500 trong khi nha VAN da duoc tao — bo me
+  // thu lai dung ma PIN do se bi bao "ma PIN nay co nha khac dung roi", ket han.
+  // Vi du that bai: bang daily_chores chua co vi moi truong dat SKIP_MIGRATIONS=1.
+  // Viec nha mac dinh chi la "co thi tot", con tao duoc nha moi la bat buoc.
+  try {
+    await seedDefaultChores(family.id);
+  } catch (e) {
+    console.error('Khong nap duoc viec nha mac dinh cho nha moi', family.id, e);
+  }
   return family;
 }
 
