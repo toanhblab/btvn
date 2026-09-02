@@ -155,6 +155,7 @@ export default function ChiTietBai({
   // Man may tinh xep hai cot (bo Macbook 03/04): cot phai chi co ly khi that su
   // co gi de dat vao do. Khong co tep dinh kem va khong phai quay video thi giu
   // nguyen mot cot can giua — de trong nua man ben phai thi te hon la khong chia.
+  // Mot cot VAN noi rong o co may tinh (xem max-w duoi day), chi la khong chia doi.
   const coCotPhai = assignment.media.length > 0 || assignment.requiresVideo;
 
   return (
@@ -174,9 +175,14 @@ export default function ChiTietBai({
       </div>
 
       {/* Khong con anh de bai: anh minh hoa khong giup con hieu them nen chi choan cho */}
+      {/* Be rong o co may tinh: 1280px cho hai cot (dung khung cua bo Macbook 03),
+          1080px cho mot cot. 1280px cho MOT cot chu thi dong qua dai, doc met — nhat
+          la de bai dang xl:text-k-hero; con giu 768px nhu duoi 1280px thi hai ben
+          trong hon 330px moi ben tren man 1440px. 1080px la muc do bang mat: le con
+          180px moi ben va de bai dai nhat trong du lieu mau van gon mot dong. */}
       <section
         className={`flex-1 w-full mx-auto flex flex-col justify-between min-h-0 overflow-y-auto
-                    ${coCotPhai ? 'max-w-3xl xl:max-w-[1280px]' : 'max-w-3xl'}`}
+                    ${coCotPhai ? 'max-w-3xl xl:max-w-[1280px]' : 'max-w-3xl xl:max-w-[1080px]'}`}
       >
         {/* Duoi 1280px: mot cot doc, dung thu tu cu (de bai -> nghe -> QR -> dong ho
             -> tep co gui -> khung quay). Tu 1280px: trai 7/12 la de bai va viec con
