@@ -52,6 +52,13 @@ Kiểm bố cục ở nhiều cỡ màn: có sẵn ảnh chụp đối chiếu t
 `stitch-macbook/kiem-tra/` (màn của con) và `stitch-parent-macbook/kiem-tra/`
 (màn của bố mẹ) — `macbook-*` ở 1440×900, `ipad-*` ở 1180×820.
 
+Lái trình duyệt vào `next dev` thì mở bằng **`http://localhost:<cổng>`**, đừng
+dùng `127.0.0.1`. Next 16 chặn "cross-origin dev request" nên mọi tệp
+`/_next/static/**` trả 403 khi host là `127.0.0.1`: trang vẫn dựng xong ở phía
+máy chủ và chụp ảnh vẫn đẹp, nhưng React KHÔNG hydrate — mọi `useEffect`, mọi
+nút của component khách đều chết lặng, không báo lỗi gì. Bằng chứng nằm ở nhật
+ký `next dev` ("Blocked cross-origin request to Next.js dev resource").
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.

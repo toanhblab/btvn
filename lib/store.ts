@@ -250,7 +250,7 @@ const OF_FAMILY = `child_id IN (SELECT id FROM children WHERE family_id = $2)`;
 
 export async function listAssignments(
   familyId: string,
-  opts: { childId?: string; date?: string; from?: string; to?: string }
+  opts: { childId?: string; date?: string; from?: string; to?: string; source?: HwSource }
 ): Promise<Assignment[]> {
   const where: string[] = ['c.family_id = $1'];
   const params: unknown[] = [familyId];
@@ -259,6 +259,9 @@ export async function listAssignments(
   if (opts.date)    { params.push(opts.date);    where.push(`a.due_date = $${params.length}`); }
   if (opts.from)    { params.push(opts.from);    where.push(`a.due_date >= $${params.length}`); }
   if (opts.to)      { params.push(opts.to);      where.push(`a.due_date <= $${params.length}`); }
+  // Loc theo MA nguon ('english_class'...), khong theo ten mon: ten mon la chu
+  // bo me go tay nen "Tiếng Anh" o nha nay co the la "English" o nha khac.
+  if (opts.source)  { params.push(opts.source);  where.push(`a.source = $${params.length}`); }
 
   const rows = await query<AssignmentRow>(
     `SELECT a.* FROM assignments a
