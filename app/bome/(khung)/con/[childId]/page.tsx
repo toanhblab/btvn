@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
-import { getChild, listAssignments, todayISO } from '@/lib/store';
+import { getChild, listAssignments, listChoreChecks, listChores, todayISO } from '@/lib/store';
 import { HW_SOURCES } from '@/lib/types';
 import XoaBai from './XoaBai';
 
@@ -29,6 +29,16 @@ export default async function ChiTietCon({
   const items = tuanNay
     ? await listAssignments(familyId, { childId, from: todayISO(-6), to: todayISO(6) })
     : await listAssignments(familyId, { childId, date: today });
+
+  // Viec nha (issue #25) lay rieng va CHI CHO HOM NAY, ke ca khi dang xem tab
+  // "Tuan nay": no la viec cua buoi toi hom nay, khong phai bai tap co han. Cung
+  // vi the no khong duoc cong vao tien do bai tap ngay duoi hay vao ba o o man
+  // tong quan — captain dung ba con so do de theo bai tap.
+  const [chores, daTick] = await Promise.all([
+    listChores(familyId, { enabledOnly: true }),
+    listChoreChecks(familyId, childId, today),
+  ]);
+  const soViecXong = chores.filter((c) => daTick.includes(c.id)).length;
 
   const done = items.filter((a) => a.status === 'done').length;
   const pct = items.length ? Math.round((done / items.length) * 100) : 0;
@@ -93,6 +103,40 @@ export default async function ChiTietCon({
           <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
         </div>
       </section>
+
+      {chores.length > 0 && (
+        <section className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-5">
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <h2 className="text-p-label uppercase text-on-surface-variant">Việc nhà hôm nay</h2>
+            <span className="text-p-body-sm text-on-surface font-bold">
+              {soViecXong}/{chores.length} xong
+            </span>
+          </div>
+          <ul className="flex flex-col gap-1">
+            {chores.map((c) => {
+              const xong = daTick.includes(c.id);
+              return (
+                <li key={c.id} className="flex items-center gap-1.5">
+                  <span
+                    className={`material-symbols-outlined text-base shrink-0 ${
+                      xong ? 'text-success icon-fill' : 'text-outline-variant'
+                    }`}
+                  >
+                    {xong ? 'check_circle' : 'radio_button_unchecked'}
+                  </span>
+                  <span
+                    className={`text-p-body-sm ${
+                      xong ? 'text-on-surface-variant line-through' : 'text-on-surface'
+                    }`}
+                  >
+                    {c.content}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {items.length === 0 ? (
         <p className="text-p-body text-on-surface-variant text-center py-10">
