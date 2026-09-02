@@ -1,0 +1,29 @@
+Cach ly giua hai nha + quyen tren cac duong /api/viec-nha
+(request that vao `next dev`, nha A = DB mau, nha B = nha vua tao)
+
+### 1. Nha A dang nhap bang PIN 1234
+{"ok":true,"family":{"id":"fam_33baf34268da4a73","name":"Nhà mình","slug":"cd4512f7fa25"}}
+
+### 2. Danh sach viec nha cua nha A
+{"chores":[{"id":"chr_5d23cf3730fb4d69","content":"Tắt đèn học","sortOrder":1,"enabled":true},
+           {"id":"chr_f174a07e557f41ff","content":"Cất sách vở vào ba lô","sortOrder":2,"enabled":true},
+           {"id":"chr_5cab4799a159462a","content":"Soạn sách vở cho ngày mai","sortOrder":3,"enabled":true}]}
+viec dau cua nha A: chr_5d23cf3730fb4d69
+
+### 3. Tao nha B (PIN 9911) — nha moi phai duoc nap san ba viec mac dinh
+{"family":{"id":"fam_1bea7bc7f17949b0","name":"Nha hang xom","slug":"07dbd398b05a"}}
+Cất sách vở vào ba lô | Tắt đèn học | Soạn sách vở cho ngày mai
+
+### 4. Nha B doi chu viec cua nha A -> phai 404
+{"error":"Không tìm thấy việc này."} [HTTP 404]
+### 5. Nha B xoa viec cua nha A -> phai 404
+{"error":"Không tìm thấy việc này."} [HTTP 404]
+### 6. May chua gan nha nao tick -> phai 401
+{"error":"Máy này chưa gắn với nhà nào."} [HTTP 401]
+### 7. May cua nha B tick viec cua nha A -> phai 404
+{"error":"Không tìm thấy việc này."} [HTTP 404]
+### 8. Khong co PIN thi khong doc duoc danh sach -> phai 401
+{"error":"Cần mã PIN của bố mẹ."} [HTTP 401]
+
+### 9. Chu cua nha A sau tat ca -> khong doi
+Tắt đèn học | Cất sách vở vào ba lô | Soạn sách vở cho ngày mai

@@ -1,0 +1,29 @@
+Migration 012 nang mot DB DANG CHAY (2 nha, 1 con, 2 bai tap), chay ba lan.
+
+=== LAN 1: nang DB (da co du lieu) len migration 012 ===
+  + 012_nhiem_vu_moi_ngay.sql
+✓ Da chay 1 migration moi
+  2 gia đình · 1 con · 2 bài tập
+viec nha: 6 dong
+  fam_cu   #1  Cất sách vở vào ba lô
+  fam_cu   #2  Tắt đèn học
+  fam_cu   #3  Soạn sách vở cho ngày mai
+  fam_cu2  #1  Cất sách vở vào ba lô
+  fam_cu2  #2  Tắt đèn học
+  fam_cu2  #3  Soạn sách vở cho ngày mai
+bai tap con nguyen: 2
+
+=== LAN 2: chay lai ngay lap tuc ===
+✓ DB da moi nhat (10 migration)
+viec nha: 6 dong (khong them dong nao)   |   bai tap con nguyen: 2
+
+-> nha fam_cu2 tu xoa mot viec ("Tắt đèn học")
+
+=== LAN 3: chay lai nguyen van tep 012 sau khi nha do tu sua danh sach ===
+viec nha: 5 dong
+  fam_cu   #1  Cất sách vở vào ba lô
+  fam_cu   #2  Tắt đèn học
+  fam_cu   #3  Soạn sách vở cho ngày mai
+  fam_cu2  #1  Cất sách vở vào ba lô
+  fam_cu2  #3  Soạn sách vở cho ngày mai
+=> viec bo me da xoa KHONG tu quay lai; bai tap khong suy suyen.

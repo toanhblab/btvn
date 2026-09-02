@@ -1,0 +1,18 @@
+Hoi quy "insert-family-nap-viec-khong-nguyen-tu"
+DB da bi bo hai bang daily_chores / daily_chore_checks — dung canh moi truong xem
+truoc dat SKIP_MIGRATIONS=1, ma code moi thi da co seedDefaultChores.
+
+--- TRUOC KHI SUA (tam bo try/catch trong insertFamily) ---
+$ curl -X POST /api/families -d '{"name":"Nha ket han","pin":"5566"}'
+ [HTTP 500]                                  <- khong co than phan hoi
+$ curl -X POST /api/families -d '{"name":"Nha ket han","pin":"5566"}'   (bo me thu lai)
+{"error":"Mã PIN này có nhà khác dùng rồi, chọn mã khác nhé."} [HTTP 409]
+=> nha DA duoc tao nhung bo me khong vao duoc bang chinh ma PIN vua dat: ket han.
+
+--- SAU KHI SUA (ma dang o nhanh nay) ---
+$ curl -X POST /api/families -d '{"name":"Nha thu preview","pin":"4477"}'
+{"family":{"id":"fam_93c173095f524fee","name":"Nha thu preview","slug":"6e11852c8ea3"}} [HTTP 200]
+$ curl -X POST /api/pin -d '{"pin":"4477"}'
+{"ok":true,"family":{"id":"fam_93c173095f524fee","name":"Nha thu preview","slug":"6e11852c8ea3"}} [HTTP 200]
+nhat ky may chu: "Khong nap duoc viec nha mac dinh cho nha moi fam_93c173095f524fee ..."
+=> nha tao duoc, vao duoc; chi mat ba viec mac dinh (bo me tu them o man Cai dat).
