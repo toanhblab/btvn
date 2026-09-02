@@ -29,7 +29,12 @@ import {
  * cai kia la tep phinh qua tran MAX_NOP_VIDEO_BYTES.
  */
 
-type Phase = 'idle' | 'recording' | 'preview' | 'sending';
+/**
+ * 'ready' = camera da mo, khung hinh truc tiep da hien nhung CHUA ghi gi: con
+ * nhin thay minh, chinh lai cho ngoi, roi moi bam "Bắt đầu quay". Dong ho va
+ * moc MAX_QUAY_GIAY chi chay tu luc sang 'recording'.
+ */
+type Phase = 'idle' | 'ready' | 'recording' | 'preview' | 'sending';
 
 /** mp4 truoc (Safari chi ghi duoc mp4), webm sau (Chrome/Firefox). */
 const MIME_UU_TIEN = [
@@ -129,16 +134,30 @@ export default function QuayVideo({
   }, []);
 
   /* Gan luong camera vao khung xem truoc SAU khi React da ve the <video> —
-     gan ngay trong start() thi thua: luc do the con chua ton tai (state vua
-     doi, chua commit) va khung hinh se den thui. */
+     gan ngay trong moCamera() thi thua: luc do the con chua ton tai (state vua
+     doi, chua commit) va khung hinh se den thui.
+     Cung o day luon, khi vua sang 'ready': cuon khung hinh vao giua man. Tren
+     iPad ngang khung nam duoi de bai nen con khong thay minh neu khong cuon. */
   useEffect(() => {
-    if (phase === 'recording' && liveRef.current && streamRef.current) {
+    if ((phase === 'ready' || phase === 'recording') && liveRef.current && streamRef.current) {
       liveRef.current.srcObject = streamRef.current;
       liveRef.current.play().catch(() => {}); // autoPlay+muted thuong tu chay, day chi la day them
+      if (phase === 'ready') cuonToiKhung();
     }
   }, [phase]);
 
-  async function start() {
+  /* Cuon lan hai o onLoadedMetadata la CAN, khong phai cho chac: luc effect
+     tren chay, the <video> chua biet kich thuoc luong nen con thap; cuon xong
+     no moi gian ra theo ti le 4:3 va day chinh no xuong duoi khung nhin. */
+  function cuonToiKhung() {
+    liveRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /**
+   * Nhip 1: chi MO may quay roi dung o 'ready'. Chua tao MediaRecorder, chua
+   * chay dong ho — con nhin thay minh trong khung truoc da.
+   */
+  async function moCamera() {
     // Con bam hai lan trong luc bang xin quyen con mo -> hai MediaStream, cai
     // sau de len streamRef va cai truoc khong ai tat duoc nua (camera cu sang).
     if (startingRef.current || phase !== 'idle') return;
@@ -175,6 +194,25 @@ export default function QuayVideo({
     setStarting(false);
 
     streamRef.current = stream;
+    setElapsed(0);
+    elapsedRef.current = 0;
+    setPhase('ready');   // useEffect [phase] o tren gan srcObject + cuon toi khung
+  }
+
+  /** Thoat o giai doan 'ready': tat sach luong, ve man cho. */
+  function dongCamera() {
+    stopStream();
+    setPhase('idle');
+  }
+
+  /**
+   * Nhip 2: con bam "Bắt đầu quay" trong khung — gio moi tao MediaRecorder,
+   * ghi that va chay dong ho tu 0:00.
+   */
+  function batDauGhi() {
+    const stream = streamRef.current;
+    if (phase !== 'ready' || !stream) return;
+
     chunksRef.current = [];
     discardRef.current = false;
     stoppingRef.current = false;
@@ -188,7 +226,9 @@ export default function QuayVideo({
         audioBitsPerSecond: QUAY_AUDIO_BPS,
       });
     } catch {
+      // Hong o day thi KHONG duoc ket lai o 'ready' voi luong con song
       stopStream();
+      setPhase('idle');
       setError('Máy này chưa quay trong trang được. Con dùng nút "Quay bằng máy ảnh" nhé.');
       return;
     }
@@ -219,12 +259,14 @@ export default function QuayVideo({
     try {
       recorder.start();
     } catch {
+      recorderRef.current = null;
       stopStream();
+      setPhase('idle');
       setError('Máy này chưa quay trong trang được. Con dùng nút "Quay bằng máy ảnh" nhé.');
       return;
     }
 
-    setPhase('recording');   // useEffect [phase] o tren se gan srcObject sau khi ve
+    setPhase('recording');
 
     timerRef.current = setInterval(() => {
       elapsedRef.current += 1;
@@ -300,8 +342,10 @@ export default function QuayVideo({
         Quay video nộp bài
       </p>
 
-      {/* ---- Dang quay: khung hinh truc tiep + dong ho + nut dung ---- */}
-      {phase === 'recording' && (
+      {/* ---- Da mo may quay: MOT khoi khung hinh dung chung cho 'ready' va
+           'recording'. Khong duoc tach thanh hai khoi <video> rieng: React se
+           thao the ra gan lai khi doi phase, srcObject mat va khung den thui. */}
+      {(phase === 'ready' || phase === 'recording') && (
         <div className="flex flex-col gap-4">
           <div className="relative">
             <video
@@ -309,31 +353,55 @@ export default function QuayVideo({
               muted
               playsInline
               autoPlay
+              onLoadedMetadata={() => { if (phase === 'ready') cuonToiKhung(); }}
               className="w-full max-h-[50vh] rounded-3xl soft-shadow bg-black -scale-x-100"
             />
-            <span className="absolute top-4 left-4 flex items-center gap-2 bg-black/60 text-white
-                             rounded-full px-4 py-2 text-k-body-sm font-bold">
-              <span className="w-3 h-3 rounded-full bg-error animate-pulse" />
-              {mmss(elapsed)} / {mmss(MAX_QUAY_GIAY)}
-            </span>
+            {phase === 'recording' && (
+              <span className="absolute top-4 left-4 flex items-center gap-2 bg-black/60 text-white
+                               rounded-full px-4 py-2 text-k-body-sm font-bold">
+                <span className="w-3 h-3 rounded-full bg-error animate-pulse" />
+                {mmss(elapsed)} / {mmss(MAX_QUAY_GIAY)}
+              </span>
+            )}
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => stopRecording(false)}
-              className="btn-3d-primary bg-error text-white rounded-3xl flex items-center
-                         justify-center gap-3 px-6 h-20 flex-[2]"
-            >
-              <span className="material-symbols-outlined text-4xl icon-fill">stop_circle</span>
-              <span className="text-k-headline">Quay xong</span>
-            </button>
-            <button
-              onClick={() => stopRecording(true)}
-              className="rounded-3xl border-4 border-outline-variant text-on-surface-variant
-                         flex items-center justify-center px-6 h-20 flex-1 text-k-body"
-            >
-              Huỷ
-            </button>
-          </div>
+
+          {phase === 'ready' ? (
+            <div className="flex gap-3">
+              <button
+                onClick={batDauGhi}
+                className="btn-3d-primary bg-error text-white rounded-3xl flex items-center
+                           justify-center gap-3 px-6 h-20 flex-[2]"
+              >
+                <span className="material-symbols-outlined text-4xl icon-fill">radio_button_checked</span>
+                <span className="text-k-headline">Bắt đầu quay</span>
+              </button>
+              <button
+                onClick={dongCamera}
+                className="rounded-3xl border-4 border-outline-variant text-on-surface-variant
+                           flex items-center justify-center px-6 h-20 flex-1 text-k-body"
+              >
+                Thoát
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <button
+                onClick={() => stopRecording(false)}
+                className="btn-3d-primary bg-error text-white rounded-3xl flex items-center
+                           justify-center gap-3 px-6 h-20 flex-[2]"
+              >
+                <span className="material-symbols-outlined text-4xl icon-fill">stop_circle</span>
+                <span className="text-k-headline">Quay xong</span>
+              </button>
+              <button
+                onClick={() => stopRecording(true)}
+                className="rounded-3xl border-4 border-outline-variant text-on-surface-variant
+                           flex items-center justify-center px-6 h-20 flex-1 text-k-body"
+              >
+                Huỷ
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -406,14 +474,14 @@ export default function QuayVideo({
 
           {canRecord && (
             <button
-              onClick={start}
+              onClick={moCamera}
               disabled={starting}
               className="btn-3d-primary bg-tertiary text-on-tertiary rounded-3xl flex items-center
                          justify-center gap-4 px-6 h-20 w-full disabled:opacity-60"
             >
               <span className="material-symbols-outlined text-4xl icon-fill">videocam</span>
               <span className="text-k-headline">
-                {starting ? 'Đang mở máy quay…' : existingUrl ? 'Quay video khác' : 'Bắt đầu quay'}
+                {starting ? 'Đang mở máy quay…' : existingUrl ? 'Quay video khác' : 'Mở máy quay'}
               </span>
             </button>
           )}
