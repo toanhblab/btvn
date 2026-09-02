@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
 import { getFamilyById, listAssignments, progressUpcoming, todayISO } from '@/lib/store';
+import { HW_SOURCES } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,10 +18,16 @@ export default async function BangDieuKhien() {
   const [family, rows, homNay] = await Promise.all([
     getFamilyById(familyId),
     progressUpcoming(familyId),
-    // Chi dung o co Macbook: ban thiet ke de trong hon nua man hinh duoi phan
-    // "Cac con", ma thu bo me mo may tinh len de xem chinh la bai cua hom nay.
+    // Dung hai cho: danh sach "Bai hom nay" (chi co o co Macbook) va nut
+    // "Nop bai cho co" ngay duoi ba o tinh trang (ca hai co man).
     listAssignments(familyId, { date: today }),
   ]);
+
+  // Nut "Nộp bài cho cô" chi hien khi hom nay CO bai cua lop tieng Anh — nha
+  // khong hoc lop do thi khong thay gi. Loc theo MA nguon chu khong theo ten mon:
+  // ten mon la chu bo me go tay, sua duoc bat cu luc nao.
+  const baiTiengAnh = homNay.filter((a) => a.source === 'english_class');
+  const videoDaQuay = baiTiengAnh.filter((a) => a.submittedVideoUrl).length;
 
   const totalDone = rows.reduce((s, r) => s + r.done, 0);
   const totalTodo = rows.reduce((s, r) => s + (r.total - r.done), 0);
@@ -93,6 +100,30 @@ export default async function BangDieuKhien() {
           </div>
         ))}
       </section>
+
+      {/* Nop bai cho co — chi lop tieng Anh moi phai nop lai video cho co, va chi
+          khi hom nay co bai cua lop do. So video ghi ngay tren nut de bo me biet
+          con thieu hay du ma khong phai mo man ra xem. */}
+      {baiTiengAnh.length > 0 && (
+        <Link
+          href="/bome/nop-co"
+          className="bg-surface-container-lowest rounded-card card-shadow flex items-center gap-3
+                     p-3 mb-6 min-h-p-tap xl:p-6 xl:mb-10"
+        >
+          <span className="flex items-center justify-center w-11 h-11 rounded-full bg-tertiary-fixed
+                           shrink-0 xl:w-14 xl:h-14">
+            <span className="material-symbols-outlined text-on-tertiary-fixed">send</span>
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-p-body text-on-surface font-bold">Nộp bài cho cô</span>
+            <span className="block text-p-body-sm text-on-surface-variant">
+              {videoDaQuay}/{baiTiengAnh.length} video đã quay ·{' '}
+              {HW_SOURCES.english_class.icon} {HW_SOURCES.english_class.label}
+            </span>
+          </span>
+          <span className="material-symbols-outlined text-outline shrink-0">chevron_right</span>
+        </Link>
+      )}
 
       <h2 className="text-p-headline-md text-on-background mb-3 xl:mb-4">Các con</h2>
 
