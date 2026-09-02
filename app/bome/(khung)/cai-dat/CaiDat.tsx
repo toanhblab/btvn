@@ -80,13 +80,6 @@ export default function CaiDat({
     }
   }
 
-  async function quenPin() {
-    if (!confirm('Quên mã PIN trên thiết bị này? Lần sau mở lại phải nhập PIN.')) return;
-    await fetch('/api/pin', { method: 'DELETE' });
-    router.push('/con');
-    router.refresh();
-  }
-
   const oPin =
     'w-full rounded-lg border border-outline-variant min-h-p-tap px-3 text-p-body tracking-[0.5em] ' +
     'bg-surface-container-lowest';
@@ -184,7 +177,7 @@ export default function CaiDat({
           <p className="text-p-body-sm text-on-surface-variant mt-1">
             Mã PIN cũng là thứ phân biệt nhà mình với nhà khác, nên nếu mã mới đã
             có nhà khác dùng thì phải chọn mã khác. Các thiết bị đang mở sẵn phần
-            bố mẹ vẫn mở — muốn đóng thì bấm &quot;Quên PIN&quot; ngay trên máy đó.
+            bố mẹ thì vẫn mở tiếp, mã mới chỉ cần cho những lần mở sau.
           </p>
 
           <div className="flex gap-2 mt-1">
@@ -210,27 +203,9 @@ export default function CaiDat({
 
       </section>
 
-      {/* Vung nguy hiem — ban thiet ke 01 vien do quanh rieng khoi nay o co
-          Macbook de no khong lan voi cac the trang o tren */}
-      <section className="xl:border xl:border-error xl:rounded-card xl:p-6">
-      <h2 className="hidden xl:block text-p-label uppercase text-error mb-2">Nguy hiểm</h2>
-      <button
-        onClick={quenPin}
-        className="w-full bg-surface-container-lowest rounded-card card-shadow p-3 flex items-center gap-3
-                   min-h-p-tap text-left xl:shadow-none xl:bg-transparent xl:p-0"
-      >
-        <span className="w-9 h-9 rounded-lg bg-error-container flex items-center justify-center shrink-0">
-          <span className="material-symbols-outlined text-error">logout</span>
-        </span>
-        <span className="flex-1">
-          <span className="block text-p-body text-error font-bold">Quên PIN trên thiết bị này</span>
-          <span className="block text-p-body-sm text-on-surface-variant">
-            Dùng khi trót tick &quot;nhớ&quot; trên iPad của các con. Màn hình của
-            con vẫn dùng được bình thường.
-          </span>
-        </span>
-      </button>
-      </section>
+      {/* Khoi "Vung nguy hiem" (nut "Quen PIN tren thiet bi nay") da bo han theo
+          yeu cau cua captain o issue #17. Duong DELETE /api/pin van con nhung
+          khong con giao dien nao goi. */}
 
       {msg && <p className="text-p-body-sm text-on-surface-variant mt-3">{msg}</p>}
       {error && <p className="text-p-body text-error bg-error-container rounded-card p-3 mt-3">{error}</p>}
