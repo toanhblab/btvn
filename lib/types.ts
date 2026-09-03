@@ -161,3 +161,21 @@ export const SUBJECTS: Record<string, string> = {
 export function iconFor(subject: string): string {
   return SUBJECTS[subject] ?? SUBJECTS['Khác'];
 }
+
+/* ---------------- Nhiem vu moi ngay ("viec nha") ----------------
+ *
+ * MOT danh sach chung ca nha, khong phai moi con mot danh sach (issue #25): bo me
+ * sua o man Cai dat, moi con deu thay danh sach do o man khen sau khi lam xong
+ * bai cuoi cung cua hom nay.
+ */
+
+export interface DailyChore {
+  id: string;
+  content: string;
+  sortOrder: number;
+  /** Tat thi con khong thay nua, nhung nhung lan da tick van con. */
+  enabled: boolean;
+}
+
+/** Chu cua mot viec — dai hon thi tran ra khoi dong to o man cua con. */
+export const MAX_CHU_VIEC_NHA = 60;

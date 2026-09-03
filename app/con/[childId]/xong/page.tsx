@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { viewingFamilyId } from '@/lib/auth';
-import { getChild } from '@/lib/store';
+import { getChild, listChoreChecks, listChores, todayISO } from '@/lib/store';
 import Confetti from './Confetti';
+import ViecNha from './ViecNha';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,15 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
 
   const child = await getChild(familyId, childId);
   if (!child) notFound();
+
+  // Viec nha bo me dang bat + nhung viec con da tick HOM NAY. Nha nao khong bat
+  // viec nao thi man nay giu nguyen y nhu truoc khi co tinh nang — khong tieu de
+  // mo coi, khong khoi trong.
+  const [chores, daTick] = await Promise.all([
+    listChores(familyId, { enabledOnly: true }),
+    listChoreChecks(familyId, childId, todayISO()),
+  ]);
+  const coViecNha = chores.length > 0;
 
   return (
     <main className="kid-scope min-h-screen flex flex-col items-center justify-center relative overflow-hidden text-center px-k-edge">
@@ -33,16 +43,24 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
       </span>
 
       <div className="relative z-10 flex flex-col items-center">
+        {/* Co danh sach viec nha thi cup nho lai: iPad ngang chi cao 820px, giu
+            cup 224px thi ba dong viec va nut "Quay lai" bi day xuong duoi man —
+            ma <main> dang overflow-hidden (cho confetti) nen phan tran ra la mat
+            han, khong keo xuong xem duoc. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/img/cup-chuc-mung.jpg"
           alt=""
-          className="w-56 h-56 xl:w-60 xl:h-60 object-cover rounded-full mb-6 animate-pulse-glow soft-shadow"
+          className={`object-cover rounded-full mb-6 animate-pulse-glow soft-shadow
+                      ${coViecNha ? 'w-40 h-40 xl:w-44 xl:h-44' : 'w-56 h-56 xl:w-60 xl:h-60'}`}
         />
         <h1 className="text-k-hero text-primary mb-4">Giỏi quá {child.name}!</h1>
         <p className="text-k-body text-on-surface-variant mb-8">
           Con làm hết bài hôm nay rồi. Đi chơi thôi!
         </p>
+
+        {coViecNha && <ViecNha childId={childId} chores={chores} daTick={daTick} />}
+
         <Link
           href="/con"
           className="flex items-center justify-center gap-4 bg-primary text-on-primary text-k-headline

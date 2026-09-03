@@ -1,6 +1,7 @@
 import { query, queryOne } from './db';
 import type {
-  Assignment, AttachedMedia, Child, ChildColor, DraftAssignment, HwSource, Lang, MediaKind,
+  Assignment, AttachedMedia, Child, ChildColor, DailyChore, DraftAssignment, HwSource, Lang,
+  MediaKind,
 } from './types';
 import { hwSourceOf } from './types';
 
@@ -75,6 +76,19 @@ export async function insertFamily(name: string, pinHash: string): Promise<Famil
     `INSERT INTO families (id, name, slug, parent_pin_hash) VALUES ($1,$2,$3,$4)`,
     [family.id, family.name, family.slug, pinHash]
   );
+  // Nha moi co san ba viec nha mac dinh, giong nhung nha da co tu truoc (migration
+  // 012 nap cho ho). Bo me sua/tat/xoa duoc ngay o man Cai dat.
+  //
+  // Nap that bai thi bo qua: dong families o tren da commit roi (khong chung mot
+  // transaction), nen nem loi len se tra 500 trong khi nha VAN da duoc tao — bo me
+  // thu lai dung ma PIN do se bi bao "ma PIN nay co nha khac dung roi", ket han.
+  // Vi du that bai: bang daily_chores chua co vi moi truong dat SKIP_MIGRATIONS=1.
+  // Viec nha mac dinh chi la "co thi tot", con tao duoc nha moi la bat buoc.
+  try {
+    await seedDefaultChores(family.id);
+  } catch (e) {
+    console.error('Khong nap duoc viec nha mac dinh cho nha moi', family.id, e);
+  }
   return family;
 }
 
@@ -520,4 +534,184 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
       overdue: mine.filter((r) => dateStr(r.due_date) < today && r.status === 'todo').length,
     };
   });
+}
+
+/* ---------------- Nhiem vu moi ngay ("viec nha") ----------------
+ *
+ * MOT danh sach chung ca nha: bo me sua o man Cai dat, moi con deu thay danh
+ * sach do o man khen sau khi lam xong bai cuoi cung cua hom nay. Danh dau da lam
+ * thi lai theo (con, viec, ngay) — xem migrations/012_nhiem_vu_moi_ngay.sql.
+ */
+
+/**
+ * Ba viec captain chot o issue #25. Nha moi tao duoc nap san ba viec nay; nha da
+ * co tu truoc thi migration 012 nap. scripts/seed.mjs cheo lai danh sach nay
+ * cho DB mau — doi o day thi doi ca ben do.
+ */
+export const VIEC_NHA_MAC_DINH = [
+  'Cất sách vở vào ba lô',
+  'Tắt đèn học',
+  'Soạn sách vở cho ngày mai',
+];
+
+interface ChoreRow { id: string; content: string; sort_order: number; enabled: boolean }
+
+const toChore = (r: ChoreRow): DailyChore => ({
+  id: r.id,
+  content: r.content,
+  sortOrder: Number(r.sort_order),
+  enabled: Boolean(r.enabled),
+});
+
+export async function listChores(
+  familyId: string,
+  opts: { enabledOnly?: boolean } = {}
+): Promise<DailyChore[]> {
+  const rows = await query<ChoreRow>(
+    `SELECT id, content, sort_order, enabled FROM daily_chores
+      WHERE family_id = $1 ${opts.enabledOnly ? 'AND enabled' : ''}
+      ORDER BY sort_order ASC, created_at ASC, id ASC`,
+    [familyId]
+  );
+  return rows.map(toChore);
+}
+
+/** Nap ba viec mac dinh cho mot nha vua tao. */
+export async function seedDefaultChores(familyId: string): Promise<void> {
+  for (const [i, content] of VIEC_NHA_MAC_DINH.entries()) {
+    await query(
+      `INSERT INTO daily_chores (id, family_id, content, sort_order) VALUES ($1,$2,$3,$4)`,
+      [newId('chr'), familyId, content, i + 1]
+    );
+  }
+}
+
+export async function createChore(familyId: string, content: string): Promise<DailyChore> {
+  const row = await queryOne<{ n: number | string | null }>(
+    `SELECT MAX(sort_order) AS n FROM daily_chores WHERE family_id = $1`,
+    [familyId]
+  );
+  const chore: DailyChore = {
+    id: newId('chr'),
+    content,
+    sortOrder: Number(row?.n ?? 0) + 1,
+    enabled: true,
+  };
+  await query(
+    `INSERT INTO daily_chores (id, family_id, content, sort_order) VALUES ($1,$2,$3,$4)`,
+    [chore.id, familyId, chore.content, chore.sortOrder]
+  );
+  return chore;
+}
+
+/** Tra null neu viec nay thuoc nha khac — dung lam luon lop kiem tra so huu. */
+export async function getChore(familyId: string, id: string): Promise<DailyChore | null> {
+  const r = await queryOne<ChoreRow>(
+    `SELECT id, content, sort_order, enabled FROM daily_chores WHERE id = $1 AND family_id = $2`,
+    [id, familyId]
+  );
+  return r ? toChore(r) : null;
+}
+
+export async function updateChore(
+  familyId: string,
+  id: string,
+  patch: { content?: string; enabled?: boolean }
+): Promise<DailyChore | null> {
+  const sets: string[] = [];
+  const params: unknown[] = [id, familyId];
+
+  if (patch.content !== undefined) { params.push(patch.content); sets.push(`content = $${params.length}`); }
+  if (patch.enabled !== undefined) { params.push(patch.enabled); sets.push(`enabled = $${params.length}`); }
+
+  if (sets.length) {
+    await query(
+      `UPDATE daily_chores SET ${sets.join(', ')} WHERE id = $1 AND family_id = $2`,
+      params
+    );
+  }
+  return getChore(familyId, id);
+}
+
+export async function deleteChore(familyId: string, id: string): Promise<void> {
+  await query(`DELETE FROM daily_chores WHERE id = $1 AND family_id = $2`, [id, familyId]);
+}
+
+/**
+ * Doi cho mot viec voi viec ngay tren (huong -1) hoac ngay duoi (huong +1).
+ *
+ * Danh so lai CA danh sach thay vi hoan doi hai gia tri sort_order: du lieu cu co
+ * the co hai dong trung so (mac dinh 0), hoan doi thi thu tu khong nhuc nhich ma
+ * bo me khong hieu vi sao. Danh lai 1..n mot the la het chuyen.
+ */
+export async function moveChore(familyId: string, id: string, huong: -1 | 1): Promise<void> {
+  const list = await listChores(familyId);
+  const i = list.findIndex((c) => c.id === id);
+  const j = i + huong;
+  if (i < 0 || j < 0 || j >= list.length) return;
+
+  [list[i], list[j]] = [list[j], list[i]];
+  for (const [k, c] of list.entries()) {
+    await query(
+      `UPDATE daily_chores SET sort_order = $3 WHERE id = $1 AND family_id = $2`,
+      [c.id, familyId, k + 1]
+    );
+  }
+}
+
+/** Nhung viec con DA TICK trong mot ngay. Loc theo nha de khong doc nham nha khac. */
+export async function listChoreChecks(
+  familyId: string,
+  childId: string,
+  date: string
+): Promise<string[]> {
+  const rows = await query<{ chore_id: string }>(
+    `SELECT k.chore_id FROM daily_chore_checks k
+       JOIN children c ON c.id = k.child_id
+      WHERE k.child_id = $1 AND c.family_id = $2 AND k.done_date = $3`,
+    [childId, familyId, date]
+  );
+  return rows.map((r) => r.chore_id);
+}
+
+/**
+ * Con tick / bo tick mot viec cho MOT ngay.
+ *
+ * Duong nay chay tu may cua con (chi co cookie thiet bi, khong co PIN) nen ba
+ * thu deu phai kiem o day chu khong tin tham so tu trinh duyet: viec phai thuoc
+ * nha nay, con phai thuoc nha nay, va ngay do nguoi goi khong dat duoc (ham goi
+ * truyen todayISO()).
+ *
+ * @returns false neu viec hoac con khong thuoc nha nay — nguoi goi tra 404.
+ */
+export async function setChoreCheck(
+  familyId: string,
+  childId: string,
+  choreId: string,
+  date: string,
+  done: boolean
+): Promise<boolean> {
+  const own = await queryOne<{ id: string }>(
+    `SELECT ch.id FROM daily_chores ch
+       JOIN children c ON c.family_id = ch.family_id
+      WHERE ch.id = $1 AND c.id = $2 AND ch.family_id = $3`,
+    [choreId, childId, familyId]
+  );
+  if (!own) return false;
+
+  if (done) {
+    // Con bam nhieu lan la chuyen binh thuong -> DO NOTHING thay vi loi trung khoa.
+    await query(
+      `INSERT INTO daily_chore_checks (id, child_id, chore_id, done_date)
+       VALUES ($1,$2,$3,$4)
+       ON CONFLICT (child_id, chore_id, done_date) DO NOTHING`,
+      [newId('tik'), childId, choreId, date]
+    );
+  } else {
+    await query(
+      `DELETE FROM daily_chore_checks WHERE child_id = $1 AND chore_id = $2 AND done_date = $3`,
+      [childId, choreId, date]
+    );
+  }
+  return true;
 }

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PIN_LEN } from '@/lib/pin';
 import type { Family } from '@/lib/store';
+import type { DailyChore } from '@/lib/types';
+import ViecNha from './ViecNha';
 
 /** Khung the trang o co Macbook — duoi 1280px khong doi gi so voi ban cu. */
 const THE =
@@ -11,10 +13,12 @@ const THE =
 
 export default function CaiDat({
   family,
+  chores,
   hasAI,
   hasBlob,
 }: {
   family: Family;
+  chores: DailyChore[];
   hasAI: boolean;
   hasBlob: boolean;
 }) {
@@ -201,6 +205,12 @@ export default function CaiDat({
         </div>
       )}
 
+      </section>
+
+      {/* ---- Nhiem vu moi ngay ---- */}
+      <section className={THE}>
+      <h2 className="text-p-label uppercase text-on-surface-variant mb-2">Nhiệm vụ mỗi ngày</h2>
+      <ViecNha initial={chores} />
       </section>
 
       {/* Khoi "Vung nguy hiem" (nut "Quen PIN tren thiet bi nay") da bo han theo

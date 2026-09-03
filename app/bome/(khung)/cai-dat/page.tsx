@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
-import { getFamilyById, listChildren } from '@/lib/store';
+import { getFamilyById, listChildren, listChores } from '@/lib/store';
 import { hasNeon } from '@/lib/db';
 import CaiDat from './CaiDat';
 
@@ -20,9 +20,10 @@ export default async function Page() {
   const familyId = await parentFamilyId();
   if (!familyId) redirect('/bome/pin');
 
-  const [children, family] = await Promise.all([
+  const [children, family, chores] = await Promise.all([
     listChildren(familyId),
     getFamilyById(familyId),
+    listChores(familyId),
   ]);
   if (!family) redirect('/bome/pin');
 
@@ -118,6 +119,7 @@ export default async function Page() {
         <div>
           <CaiDat
             family={family}
+            chores={chores}
             hasAI={Boolean(process.env.NOUS_API_KEY)}
             hasBlob={Boolean(process.env.BLOB_READ_WRITE_TOKEN)}
           />

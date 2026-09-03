@@ -45,7 +45,10 @@ await chayMigrations(db);
 console.log('✓ Da tao bang');
 
 // 2. Xoa du lieu cu
-for (const t of ['assignments', 'submission_images', 'submissions', 'children', 'families']) {
+for (const t of [
+  'daily_chore_checks', 'daily_chores',
+  'assignments', 'submission_images', 'submissions', 'children', 'families',
+]) {
   await query(`DELETE FROM ${t}`);
 }
 
@@ -56,6 +59,16 @@ await query(
   `INSERT INTO families (id, name, slug, parent_pin_hash) VALUES ($1,$2,$3,$4)`,
   [familyId, 'Nhà mình', slug, await sha256(`${SECRET}:${PIN}`)]
 );
+
+// 3b. Ba viec nha mac dinh — cheo lai VIEC_NHA_MAC_DINH trong lib/store.ts (script
+//     node khong import duoc TypeScript). Doi mot ben la phai doi ben kia.
+const chores = ['Cất sách vở vào ba lô', 'Tắt đèn học', 'Soạn sách vở cho ngày mai'];
+for (const [i, content] of chores.entries()) {
+  await query(
+    `INSERT INTO daily_chores (id, family_id, content, sort_order) VALUES ($1,$2,$3,$4)`,
+    [id('chr'), familyId, content, i + 1]
+  );
+}
 
 // 4. Ba con — dung PRD muc 11: 2 be sinh doi lop 1 + 1 be 4 tuoi mau giao.
 //    Moi be mot mau rieng vi hai be sinh doi chua doc thao ten.
@@ -113,7 +126,7 @@ await query(
 );
 n++;
 
-console.log(`✓ 1 gia đình, ${children.length} con, ${n} bài tập`);
+console.log(`✓ 1 gia đình, ${children.length} con, ${n} bài tập, ${chores.length} việc nhà`);
 console.log(`  PIN bố mẹ      : ${PIN}`);
 console.log(`  Link cho iPad  : /nha/${slug}`);
 process.exit(0);
