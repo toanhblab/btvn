@@ -36,7 +36,7 @@ mock.module('@vercel/blob/client', {
   },
 });
 
-const { uploadMediaFile, uploadSubmissionVideo, mediaKindOf } = await import('./media.ts');
+const { uploadMediaFile, uploadSubmissionVideo, mediaKindOf, driveFileIdTu } = await import('./media.ts');
 
 beforeEach(() => {
   daGoi.length = 0;
@@ -71,4 +71,32 @@ test('video con nop: cung phai bao kieu that (con chon tep san tren iPad)', asyn
 test('mediaKindOf: mp3 la ghi am', () => {
   assert.equal(mediaKindOf('audio/mpeg'), 'audio');
   assert.equal(mediaKindOf('application/octet-stream'), null);
+});
+
+/**
+ * driveFileIdTu (issue #28): rut fileId tu link chia se Google Drive de dung
+ * iframe src rieng — chot chat de khong nhet nham url la vao iframe.
+ */
+test('driveFileIdTu: rut duoc fileId tu link chia se dung dang', () => {
+  assert.equal(
+    driveFileIdTu('https://drive.google.com/file/d/1NnPqgO9iYBtIcO3WDnESJfl7MU1nKtfZ/view'),
+    '1NnPqgO9iYBtIcO3WDnESJfl7MU1nKtfZ'
+  );
+  assert.equal(
+    driveFileIdTu('https://drive.google.com/file/d/1NnPqgO9iYBtIcO3WDnESJfl7MU1nKtfZ/preview'),
+    '1NnPqgO9iYBtIcO3WDnESJfl7MU1nKtfZ'
+  );
+  assert.equal(
+    driveFileIdTu('https://drive.google.com/file/d/1NnPqgO9iYBtIcO3WDnESJfl7MU1nKtfZ/view?usp=sharing'),
+    '1NnPqgO9iYBtIcO3WDnESJfl7MU1nKtfZ'
+  );
+});
+
+test('driveFileIdTu: tu choi domain/dang khac de khong nhet nham iframe src', () => {
+  assert.equal(driveFileIdTu('https://drive.google.com/drive/folders/abc123'), null);
+  assert.equal(driveFileIdTu('https://evil.com/file/d/abc123/view'), null);
+  assert.equal(driveFileIdTu('https://drive.google.com.evil.com/file/d/abc123/view'), null);
+  assert.equal(driveFileIdTu('not a url'), null);
+  assert.equal(driveFileIdTu(''), null);
+  assert.equal(driveFileIdTu(undefined), null);
 });
