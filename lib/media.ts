@@ -73,6 +73,37 @@ export function laUrlTepAppCap(url: unknown): url is string {
   return u.protocol === 'https:' && /(^|\.)blob\.vercel-storage\.com$/.test(u.hostname);
 }
 
+/**
+ * Rut fileId tu link chia se Google Drive dang https://drive.google.com/file/d/<fileId>/view
+ * (issue #28 — bo me dan tay link phim vao bai). Tra null neu khong dung dang nay.
+ *
+ * Day la duong chap nhan RIENG voi laUrlTepAppCap o tren — KHONG noi long ham do,
+ * vi hai ham phuc vu hai muc dich khac nhau: laUrlTepAppCap chot "URL app tu cap"
+ * cho duong PATCH khong PIN cua con, con ham nay chi chot dinh dang link Drive de
+ * dung fileId RUT RA (khong phai chuoi url goc) dung ban thanh iframe src o duoi —
+ * ke ca media.url trong CSDL bi sua tay/hong, khong bao gio nhet thang url do vao
+ * iframe.
+ */
+export function driveFileIdTu(url: unknown): string | null {
+  if (typeof url !== 'string' || !url || url.length > 2048) return null;
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
+  }
+  if (u.protocol !== 'https:' || u.hostname !== 'drive.google.com') return null;
+  // Chi nhan dung /file/d/<fileId>/ roi toi da mot doan (view|preview|edit) —
+  // moi thu sau do (query string, hash...) bi bo qua vi khong doc pathname.
+  const m = /^\/file\/d\/([a-zA-Z0-9_-]+)\/(?:view|preview|edit)?$/.exec(u.pathname);
+  return m ? m[1] : null;
+}
+
+/** Dung fileId da rut (driveFileIdTu) de dung URL nhung — Drive khong cho <video> phat thang. */
+export function drivePreviewUrl(fileId: string): string {
+  return `https://drive.google.com/file/d/${fileId}/preview`;
+}
+
 /** Phan loai theo MIME; khong phai video/audio/anh thi tra null de bao loi som. */
 export function mediaKindOf(mime: string): MediaKind | null {
   if (mime.startsWith('video/')) return 'video';

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Assignment, AttachedMedia, HwSource } from '@/lib/types';
 import { DURATION_DEFAULT, HW_SOURCES, SUBJECTS, iconFor } from '@/lib/types';
-import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
+import { MEDIA_ACCEPT, MEDIA_ICON, driveFileIdTu, drivePreviewUrl, uploadMediaFile } from '@/lib/media';
 
 /**
  * Gio nop video hien ra o day duoc SSR (trang la force-dynamic) roi hydrate lai
@@ -69,8 +69,27 @@ export default function SuaBai({
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [driveUrl, setDriveUrl] = useState('');
+  const [driveError, setDriveError] = useState('');
 
   const back = `/bome/con/${assignment.childId}`;
+
+  // Link phim Google Drive (issue #28) khong tai len nhu tep — luu thang url
+  // dang chinh tac (bo query/hash lac vao) voi kind 'video', hien phan biet o
+  // luc render bang driveFileIdTu.
+  function addDriveLink() {
+    const fileId = driveFileIdTu(driveUrl.trim());
+    if (!fileId) {
+      setDriveError('Link chưa đúng dạng chia sẻ Google Drive (…/file/d/<mã phim>/view).');
+      return;
+    }
+    setMedia((prev) => [
+      ...prev,
+      { url: `https://drive.google.com/file/d/${fileId}/view`, name: 'Phim Google Drive', kind: 'video' },
+    ]);
+    setDriveUrl('');
+    setDriveError('');
+  }
 
   async function onPickMedia(files: FileList | null) {
     if (!files?.length) return;
@@ -275,48 +294,82 @@ export default function SuaBai({
 
           {media.length > 0 && (
             <div className="flex flex-col gap-3 mb-2">
-              {media.map((m) => (
-                <div key={m.url} className="bg-surface-container rounded-lg p-2">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="material-symbols-outlined text-lg text-primary shrink-0">
-                      {MEDIA_ICON[m.kind]}
-                    </span>
-                    <span className="text-p-body-sm text-on-surface truncate flex-1">
-                      {m.name || 'Tệp đính kèm'}
-                    </span>
-                    <button
-                      onClick={() => setMedia((p) => p.filter((x) => x.url !== m.url))}
-                      className="text-outline hover:text-error min-h-p-tap px-1 shrink-0"
-                      aria-label={`Bỏ tệp ${m.name}`}
-                    >
-                      <span className="material-symbols-outlined text-lg">close</span>
-                    </button>
+              {media.map((m) => {
+                // Video co the la tep tai len hoac link Drive dan tay (issue #28) —
+                // phan biet bang chinh HINH DANG url, khong them gia tri kind moi.
+                const driveId = m.kind === 'video' ? driveFileIdTu(m.url) : null;
+                return (
+                  <div key={m.url} className="bg-surface-container rounded-lg p-2">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="material-symbols-outlined text-lg text-primary shrink-0">
+                        {MEDIA_ICON[m.kind]}
+                      </span>
+                      <span className="text-p-body-sm text-on-surface truncate flex-1">
+                        {m.name || 'Tệp đính kèm'}
+                      </span>
+                      <button
+                        onClick={() => setMedia((p) => p.filter((x) => x.url !== m.url))}
+                        className="text-outline hover:text-error min-h-p-tap px-1 shrink-0"
+                        aria-label={`Bỏ tệp ${m.name}`}
+                      >
+                        <span className="material-symbols-outlined text-lg">close</span>
+                      </button>
+                    </div>
+                    {/* Xem/nghe lai duoc ngay tai day de chac la dinh dung tep */}
+                    {m.kind === 'video' && driveId && (
+                      <iframe
+                        src={drivePreviewUrl(driveId)}
+                        allow="autoplay"
+                        className="w-full aspect-video rounded-lg"
+                      />
+                    )}
+                    {m.kind === 'video' && !driveId && (
+                      <video
+                        src={m.url}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="w-full max-h-48 rounded-lg bg-black"
+                      />
+                    )}
+                    {m.kind === 'audio' && (
+                      <audio src={m.url} controls preload="metadata" className="w-full" />
+                    )}
+                    {m.kind === 'image' && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={m.url}
+                        alt=""
+                        className="w-full max-h-48 object-contain rounded-lg bg-surface-container-lowest"
+                      />
+                    )}
                   </div>
-                  {/* Xem/nghe lai duoc ngay tai day de chac la dinh dung tep */}
-                  {m.kind === 'video' && (
-                    <video
-                      src={m.url}
-                      controls
-                      playsInline
-                      preload="metadata"
-                      className="w-full max-h-48 rounded-lg bg-black"
-                    />
-                  )}
-                  {m.kind === 'audio' && (
-                    <audio src={m.url} controls preload="metadata" className="w-full" />
-                  )}
-                  {m.kind === 'image' && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={m.url}
-                      alt=""
-                      className="w-full max-h-48 object-contain rounded-lg bg-surface-container-lowest"
-                    />
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
+
+          <div className="flex gap-2 mb-2">
+            <input
+              value={driveUrl}
+              onChange={(e) => {
+                setDriveUrl(e.target.value);
+                setDriveError('');
+              }}
+              placeholder="Dán link phim Google Drive (drive.google.com/file/d/…)"
+              className="flex-1 rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
+                         placeholder:text-outline bg-surface-container-lowest"
+            />
+            <button
+              type="button"
+              onClick={addDriveLink}
+              className="px-4 min-h-p-tap rounded-lg bg-surface-container-high text-on-surface-variant
+                         text-p-body-sm font-bold shrink-0"
+            >
+              Thêm
+            </button>
+          </div>
+          {driveError && <p className="text-p-body-sm text-error mb-2">{driveError}</p>}
 
           <label
             className="flex items-center gap-2 border border-dashed border-outline-variant rounded-lg

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Assignment, Lang } from '@/lib/types';
+import { driveFileIdTu, drivePreviewUrl } from '@/lib/media';
 import { pickVoice, splitSpeech } from '@/lib/speech';
 import Confetti from '../../xong/Confetti';
 import DongHoLamBai, { conThoiGian, noi, xoaDongHo } from './DongHoLamBai';
@@ -242,26 +243,42 @@ export default function ChiTietBai({
                     </span>
                     Cô gửi kèm bài này
                   </p>
-                  {assignment.media.map((m) =>
-                    m.kind === 'image' ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                  {assignment.media.map((m) => {
+                    if (m.kind === 'image') {
+                      return (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={m.url}
+                          src={m.url}
+                          alt=""
+                          className="w-full max-h-[60vh] object-contain rounded-3xl soft-shadow
+                                     bg-surface-container"
+                        />
+                      );
+                    }
+                    if (m.kind === 'audio') {
+                      return (
+                        <div
+                          key={m.url}
+                          className="bg-surface-container rounded-3xl soft-shadow p-5 flex items-center gap-4"
+                        >
+                          <span className="material-symbols-outlined text-5xl text-tertiary icon-fill shrink-0">
+                            music_note
+                          </span>
+                          <audio src={m.url} controls preload="metadata" className="w-full" />
+                        </div>
+                      );
+                    }
+                    // Video co the la tep tai len hoac link Drive dan tay (issue #28) —
+                    // Drive khong cho <video> phat thang nen phai nhung bang iframe.
+                    const driveId = driveFileIdTu(m.url);
+                    return driveId ? (
+                      <iframe
                         key={m.url}
-                        src={m.url}
-                        alt=""
-                        className="w-full max-h-[60vh] object-contain rounded-3xl soft-shadow
-                                   bg-surface-container"
+                        src={drivePreviewUrl(driveId)}
+                        allow="autoplay"
+                        className="w-full aspect-video rounded-3xl soft-shadow bg-black"
                       />
-                    ) : m.kind === 'audio' ? (
-                      <div
-                        key={m.url}
-                        className="bg-surface-container rounded-3xl soft-shadow p-5 flex items-center gap-4"
-                      >
-                        <span className="material-symbols-outlined text-5xl text-tertiary icon-fill shrink-0">
-                          music_note
-                        </span>
-                        <audio src={m.url} controls preload="metadata" className="w-full" />
-                      </div>
                     ) : (
                       <video
                         key={m.url}
@@ -271,8 +288,8 @@ export default function ChiTietBai({
                         preload="metadata"
                         className="w-full max-h-[50vh] rounded-3xl soft-shadow bg-black"
                       />
-                    )
-                  )}
+                    );
+                  })}
                 </div>
               )}
 
