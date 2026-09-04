@@ -504,6 +504,11 @@ export interface ChildProgress {
   total: number;
   done: number;
   overdue: number;
+  // Rieng so bai tap (khong tinh viec nha) — man con dung cai nay de phan biet
+  // "hom nay khong duoc giao gi" voi "co bai nhung chua tinh xong (con viec nha)".
+  // Viec nha KHONG duoc tinh vao day: nha nao cung co san 3 viec mac dinh (#25) nen
+  // neu tinh ca viec nha thi total gan nhu khong bao gio bang 0, "Chua co bai" bien mat.
+  homeworkTotal: number;
 }
 
 /**
@@ -511,6 +516,12 @@ export interface ChildProgress {
  * hom truoc cho ngay hom sau, dem moi hom nay thi bang dieu khien bao 0 trong
  * khi bai da nam san trong may. Man cua con cung liet ke tu hom nay tro di nen
  * hai ben phai dem giong nhau, khong thi badge "Chua co bai" ma mo ra van co bai.
+ *
+ * Nhiem vu moi ngay (#25) gio tinh NHU MOT BAI TAP (#30): cong them vao total/done
+ * cua HOM NAY — chua tick het viec nha thi "done" khong duoi kip "total", badge
+ * "Xong het" o man con (app/con/page.tsx) va o/ trang tong quan cua bo me se
+ * khong bat sang cho toi khi tick xong ca bai lan viec nha. Chi cong cho hom nay:
+ * viec nha khong co "han" nhu bai tap nen khong co khai niem viec nha "sap toi".
  */
 export async function progressUpcoming(familyId: string): Promise<ChildProgress[]> {
   const today = todayISO();
@@ -523,15 +534,33 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
     [familyId, today]
   );
 
+  // Danh sach viec nha dang bat la CHUNG CA NHA (xem migration 012), nen chi can
+  // dem so viec da tick HOM NAY cho tung con — khong can tung viec la viec nao.
+  const chores = await listChores(familyId, { enabledOnly: true });
+  const choreDoneRows = chores.length
+    ? await query<{ child_id: string; n: string | number }>(
+        `SELECT k.child_id, COUNT(*) AS n FROM daily_chore_checks k
+           JOIN daily_chores ch ON ch.id = k.chore_id
+          WHERE ch.family_id = $1 AND ch.enabled AND k.done_date = $2
+          GROUP BY k.child_id`,
+        [familyId, today]
+      )
+    : [];
+  const choreDoneOf = new Map(choreDoneRows.map((r) => [r.child_id, Number(r.n)]));
+
   return children.map((child) => {
     const mine = rows.filter((r) => r.child_id === child.id);
     const upcoming = mine.filter((r) => dateStr(r.due_date) >= today);
+    // Chan tren o chores.length: viec bi tat SAU khi con da tick khong duoc lam
+    // "done" vuot qua "total" cua hom nay.
+    const doneChores = Math.min(chores.length, choreDoneOf.get(child.id) ?? 0);
     return {
       child,
-      total: upcoming.length,
-      done: upcoming.filter((r) => r.status === 'done').length,
+      total: upcoming.length + chores.length,
+      done: upcoming.filter((r) => r.status === 'done').length + doneChores,
       // Qua han = han truoc hom nay ma van chua xong
       overdue: mine.filter((r) => dateStr(r.due_date) < today && r.status === 'todo').length,
+      homeworkTotal: upcoming.length,
     };
   });
 }

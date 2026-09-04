@@ -59,6 +59,16 @@ máy chủ và chụp ảnh vẫn đẹp, nhưng React KHÔNG hydrate — mọi 
 nút của component khách đều chết lặng, không báo lỗi gì. Bằng chứng nằm ở nhật
 ký `next dev` ("Blocked cross-origin request to Next.js dev resource").
 
+`lib/*.test.ts` chạy thẳng bằng `node --test` (xem script `test` trong
+`package.json`), không qua Next/webpack — nên KHÔNG import trực tiếp
+`lib/store.ts` (và các file `lib/*.ts` khác dùng import không đuôi kiểu
+`from './db'`) từ một test: Node đòi đuôi `.ts` rõ ràng cho import tương đối,
+`from './db'` sẽ ném "Cannot find module './db'". Cách các test hiện có xử lý:
+test chạy PGlite thật (qua `chayMigrations` của `scripts/db.mjs`, một file
+`.mjs` thường nên import được bình thường) và viết lại đúng câu SQL mà hàm cần
+kiểm tra — xem `lib/nhiem-vu-mac-dinh-hoan-thanh.test.ts`. Sửa SQL ở
+`lib/store.ts` thì phải sửa cả bản sao trong test cho khớp.
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.

@@ -59,7 +59,7 @@ export default async function ChonCon() {
         )}
 
         <div className="flex flex-row flex-wrap justify-center items-start gap-12 xl:gap-14 w-full">
-        {rows.map(({ child, total, done }) => {
+        {rows.map(({ child, total, done, homeworkTotal }) => {
           const left = total - done;
           return (
             <Link
@@ -79,19 +79,25 @@ export default async function ChonCon() {
 
                 {/* Badge dem so bai con lai. Ban Stitch hardcode "Xong het" cho ca 3 con.
                     Phan biet ro "xong het" (co bai va da lam xong) voi "khong co bai"
-                    (hom nay khong duoc giao gi) — hai chuyen khac han nhau. */}
+                    (hom nay khong duoc giao gi) — hai chuyen khac han nhau.
+
+                    "Khong co bai" xet rieng homeworkTotal (chi bai tap): viec nha
+                    mac dinh (#25/#30) hau nhu nha nao cung co san 3 viec, neu xet ca
+                    viec nha thi badge nay se gan nhu khong bao gio hien "Chua co bai"
+                    nua — trong khi con thuc su khong duoc giao bai gi hom nay thi cung
+                    khong co duong nao den man tick viec nha (chi mo tu bai cuoi cung). */}
                 <span
                   className={`absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-k-label px-4 py-2 rounded-full
                               border-4 border-surface-container-lowest
                               ${
-                                total === 0
+                                homeworkTotal === 0
                                   ? 'bg-surface-container-high text-on-surface-variant'
                                   : left === 0
                                     ? 'bg-success text-white'
                                     : 'bg-secondary-container text-white'
                               }`}
                 >
-                  {total === 0 ? 'Chưa có bài' : left === 0 ? 'Xong hết 🎉' : `${left} bài`}
+                  {homeworkTotal === 0 ? 'Chưa có bài' : left === 0 ? 'Xong hết 🎉' : `${left} bài`}
                 </span>
               </div>
 
