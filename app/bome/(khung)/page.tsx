@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
+import { SO_NGAY_QUET_GAN_DAY, ngayGanNhatCoBai } from '@/lib/ngay';
 import { getFamilyById, listAssignments, progressUpcoming, todayISO } from '@/lib/store';
 import { HW_SOURCES } from '@/lib/types';
 
@@ -15,19 +16,26 @@ export default async function BangDieuKhien() {
   if (!familyId) redirect('/bome/pin');
 
   const today = todayISO();
-  const [family, rows, homNay] = await Promise.all([
+  const [family, rows, homNay, ganDay] = await Promise.all([
     getFamilyById(familyId),
     progressUpcoming(familyId),
     // Dung hai cho: danh sach "Bai hom nay" (chi co o co Macbook) va nut
     // "Nop bai cho co" ngay duoi ba o tinh trang (ca hai co man).
     listAssignments(familyId, { date: today }),
+    // Rieng cho nut "Nop bai cho co": issue #31 — truoc day nut nay CHI hien
+    // khi HOM NAY co bai lop tieng Anh nen sang ngay moi khong giao bai la bo
+    // me mat luon loi vao, du bai hom truoc con chua nop. Gio xet ca N ngay gan
+    // day, dan sang man /bome/nop-co/chon-ngay de bo me tu chon lai ngay.
+    listAssignments(familyId, {
+      source: 'english_class',
+      from: todayISO(-SO_NGAY_QUET_GAN_DAY),
+      to: today,
+    }),
   ]);
 
-  // Nut "Nộp bài cho cô" chi hien khi hom nay CO bai cua lop tieng Anh — nha
-  // khong hoc lop do thi khong thay gi. Loc theo MA nguon chu khong theo ten mon:
-  // ten mon la chu bo me go tay, sua duoc bat cu luc nao.
   const baiTiengAnh = homNay.filter((a) => a.source === 'english_class');
   const videoDaQuay = baiTiengAnh.filter((a) => a.submittedVideoUrl).length;
+  const coBaiGanDay = ngayGanNhatCoBai(ganDay.map((a) => a.dueDate), today, 1).length > 0;
 
   const totalDone = rows.reduce((s, r) => s + r.done, 0);
   const totalTodo = rows.reduce((s, r) => s + (r.total - r.done), 0);
@@ -101,12 +109,13 @@ export default async function BangDieuKhien() {
         ))}
       </section>
 
-      {/* Nop bai cho co — chi lop tieng Anh moi phai nop lai video cho co, va chi
-          khi hom nay co bai cua lop do. So video ghi ngay tren nut de bo me biet
-          con thieu hay du ma khong phai mo man ra xem. */}
-      {baiTiengAnh.length > 0 && (
+      {/* Nop bai cho co — chi lop tieng Anh moi phai nop lai video cho co. Nut
+          nay la LOI VAO ON DINH (issue #31): hom nay co bai thi dan thang vao
+          man cua hom nay, khong thi dan sang man "Chon ngay" de bo me tu tim
+          lai 3 ngay gan nhat con chua nop / muon nop lai. */}
+      {coBaiGanDay && (
         <Link
-          href="/bome/nop-co"
+          href={baiTiengAnh.length > 0 ? '/bome/nop-co' : '/bome/nop-co/chon-ngay'}
           className="bg-surface-container-lowest rounded-card card-shadow flex items-center gap-3
                      p-3 mb-6 min-h-p-tap xl:p-6 xl:mb-10"
         >
@@ -117,7 +126,9 @@ export default async function BangDieuKhien() {
           <span className="flex-1 min-w-0">
             <span className="block text-p-body text-on-surface font-bold">Nộp bài cho cô</span>
             <span className="block text-p-body-sm text-on-surface-variant">
-              {videoDaQuay}/{baiTiengAnh.length} video đã quay ·{' '}
+              {baiTiengAnh.length > 0
+                ? `${videoDaQuay}/${baiTiengAnh.length} video đã quay · `
+                : 'Xem lại những ngày gần đây · '}
               {HW_SOURCES.english_class.icon} {HW_SOURCES.english_class.label}
             </span>
           </span>

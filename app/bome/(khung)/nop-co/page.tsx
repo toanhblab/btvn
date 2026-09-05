@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
+import { lechNgay, ngayTiengViet } from '@/lib/ngay';
 import { listAssignments, listChildren, todayISO } from '@/lib/store';
 import { HW_SOURCES } from '@/lib/types';
 import ChiaSeVideo, { type NhomNop } from './ChiaSeVideo';
@@ -8,32 +9,6 @@ import ChiaSeVideo, { type NhomNop } from './ChiaSeVideo';
 export const dynamic = 'force-dynamic';
 
 const NGAY_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-/** YYYY-MM-DD -> Date GIO DIA PHUONG. new Date('2026-09-02') la nua dem UTC nen
-    o mui gio am se lui mat mot ngay — tach tay cho chac. */
-function tuISO(s: string): Date {
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function sangISO(d: Date): string {
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-
-function lechNgay(ngay: string, n: number): string {
-  const d = tuISO(ngay);
-  d.setDate(d.getDate() + n);
-  return sangISO(d);
-}
-
-const THU = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-
-/** "2026-09-02" -> "Thứ Ba, 2/9". */
-function ngayTiengViet(ngay: string): string {
-  const d = tuISO(ngay);
-  return `${THU[d.getDay()]}, ${d.getDate()}/${d.getMonth() + 1}`;
-}
 
 /** "Bé Na" -> "BeNa". Ten tep gui cho co nen bo dau: Zalo va may cua co doi khi
     lam hong ten tep co dau, con so o cuoi thi luon doc duoc. */
@@ -153,13 +128,19 @@ export default async function NopBaiChoCo({
         </Link>
       </nav>
 
-      {dangXem !== homNay && (
-        <div className="mb-4 text-center">
+      <div className="flex items-center justify-center gap-4 mb-4">
+        {dangXem !== homNay && (
           <Link href="/bome/nop-co" className="text-p-body-sm font-bold text-primary">
             Về hôm nay
           </Link>
-        </div>
-      )}
+        )}
+        {/* Loi thoat khac ngoai lui/tien tung ngay: nhay thang toi 3 ngay gan
+            nhat CO bai (issue #31) — bo me sang ngay moi khong con thay nut o
+            trang tong quan van tim lai duoc bai cu qua day. */}
+        <Link href="/bome/nop-co/chon-ngay" className="text-p-body-sm font-bold text-primary">
+          Chọn ngày gần đây
+        </Link>
+      </div>
 
       {nhom.length === 0 ? (
         <div className="bg-surface-container-lowest rounded-card card-shadow p-6 text-center xl:p-10">
