@@ -59,6 +59,15 @@ máy chủ và chụp ảnh vẫn đẹp, nhưng React KHÔNG hydrate — mọi 
 nút của component khách đều chết lặng, không báo lỗi gì. Bằng chứng nằm ở nhật
 ký `next dev` ("Blocked cross-origin request to Next.js dev resource").
 
+Video con quay để nộp bài (`QuayVideo.tsx`, dùng `MediaRecorder`) luôn có metadata
+`duration` SAI trong container (bug của trình duyệt, không phải lỗi ghép chunk) —
+`<video>` trong trang vẫn phát đủ vì nó đọc dữ liệu thật khi tua, nhưng bất kỳ
+công cụ nào DỰA VÀO metadata đó (như "Save Video" vào Photos trên iOS) sẽ cắt
+theo con số sai (issue #32). `lib/videoDuration.ts` vá lại 4-8 byte duration
+trong mp4 (mvhd/tkhd/mdhd) và webm (Segment>Info>Duration) bằng số giây THẬT mà
+`QuayVideo` đã tự đếm, ngay sau khi `onstop` ghép xong Blob — đọc chú thích đầu
+file đó trước khi đụng vào luồng quay/nộp video.
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.
