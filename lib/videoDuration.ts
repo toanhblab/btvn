@@ -23,6 +23,21 @@
  * Chi VA TRI CHO SAN (khong doi kich thuoc tep): neu container khong co san
  * truong duration (hiem, nhung co the xay ra) thi bo qua, tra nguyen Blob goc
  * — an toan hon la chen them byte va phai tinh lai moi offset phia sau.
+ *
+ * MOI TRACK MANG THOI LUONG RIENG CUA NO (nguon: dieu tra
+ * data/btvn-video-mau-that/report.md, tiep noi data/btvn-video-qua-dai).
+ * Ban dau ham nay ghi CUNG mot `seconds` (elapsedRef tong the) vao mvhd VA
+ * vao tkhd/mdhd cua MOI track no gap — khong phan biet track nao that su dai
+ * bao nhieu. Tren mot file that (audio ~24s du lieu mau, video ~326s, ca hai
+ * bi vá thanh cung 325s), Safari/AVFoundation hien thi 650s = tong 2 track
+ * cung gia tri do (Chrome thi lay max nen khong lo). mvhd (chi mot gia tri
+ * cho ca phim) VAN dung `seconds` chung nhu cu — dung nghia la tong the.
+ * tkhd/mdhd cua TUNG track gio tinh tu tong `sample_duration` trong cac hop
+ * `trun` (thuoc `moof > traf`, khop `tfhd.trackId` that) — thoi luong mau
+ * that, doc lap voi header — roi ghi RIENG vao dung track do. Neu file khong
+ * phan manh (khong co moof/trun, vi du webm hoac mp4 khong tu MediaRecorder)
+ * hoac thieu du lieu track, roi ve dung `seconds` chung nhu truoc — khong pha
+ * duong Chrome dang chay dung.
  */
 
 function readUintBE(view: DataView, offset: number, length: number): number {
@@ -41,51 +56,170 @@ function writeUintBE(view: DataView, offset: number, length: number, value: numb
 
 // ---------------------------------------------------------------- MP4/ISOBMFF
 
+function boxType(view: DataView, offset: number): string {
+  return String.fromCharCode(
+    view.getUint8(offset), view.getUint8(offset + 1),
+    view.getUint8(offset + 2), view.getUint8(offset + 3)
+  );
+}
+
+/** offset con truoc "version+flags" cua mvhd/tkhd/mdhd — tra ve size cua truong thoi gian (4 hoac 8 byte). */
+function timeFieldSize(view: DataView, body: number): number {
+  return view.getUint8(body) === 1 ? 8 : 4;
+}
+
+/** version(1 byte) + flags(3 byte) cua mot full box (vd tfhd/trun). */
+function fullBoxVersionFlags(view: DataView, body: number): { version: number; flags: number } {
+  const v = readUintBE(view, body, 4);
+  return { version: v >>> 24, flags: v & 0xffffff };
+}
+
+/** Duyet cac box con truc tiep trong [start, end), goi visit(type, offset, headerSize, boxSize) cho tung box. */
+function forEachBox(
+  view: DataView,
+  start: number,
+  end: number,
+  visit: (type: string, offset: number, headerSize: number, boxSize: number) => void
+): void {
+  let offset = start;
+  while (offset + 8 <= end) {
+    const size32 = readUintBE(view, offset, 4);
+    const type = boxType(view, offset + 4);
+    let boxSize = size32;
+    let headerSize = 8;
+    if (size32 === 1) {
+      if (offset + 16 > end) break;
+      boxSize = readUintBE(view, offset + 8, 8);
+      headerSize = 16;
+    } else if (size32 === 0) {
+      boxSize = end - offset; // box chay den het cha
+    }
+    if (boxSize < headerSize || offset + boxSize > end) break; // du lieu bat thuong, dung an toan
+    visit(type, offset, headerSize, boxSize);
+    offset += boxSize;
+  }
+}
+
+/** Doc tkhd.track_ID -> mdhd.timescale cua tung track trong moov (mdhd co timescale rieng, tkhd thi khong). */
+function collectTrackTimescales(view: DataView, totalLength: number): Map<number, number> {
+  const trackTimescales = new Map<number, number>();
+  let currentTrackId: number | null = null;
+
+  function walk(start: number, end: number): void {
+    forEachBox(view, start, end, (type, offset, headerSize, boxSize) => {
+      if (type === 'moov' || type === 'trak' || type === 'mdia') {
+        walk(offset + headerSize, offset + boxSize);
+      } else if (type === 'tkhd') {
+        const body = offset + headerSize;
+        const tSize = timeFieldSize(view, body);
+        currentTrackId = readUintBE(view, body + 4 + tSize * 2, 4);
+      } else if (type === 'mdhd') {
+        const body = offset + headerSize;
+        const tSize = timeFieldSize(view, body);
+        const timescale = readUintBE(view, body + 4 + tSize * 2, 4);
+        if (currentTrackId !== null && timescale > 0) trackTimescales.set(currentTrackId, timescale);
+      }
+    });
+  }
+  walk(0, totalLength);
+  return trackTimescales;
+}
+
+/**
+ * Cong don `sample_duration` trong moi hop `trun` (thuoc `moof > traf`) theo
+ * dung `tfhd.trackId` — thoi luong mau THAT cua tung track, doc lap voi
+ * mvhd/tkhd/mdhd (nhung hop nay co the da bi vá sai). Tra ve rong neu file
+ * khong phan manh (khong co moof/trun) — mp4 khong do MediaRecorder ghi, hoac
+ * MediaRecorder cua mot so trinh duyet/che do khac ghi kieu "phang".
+ */
+function collectTrackSampleSums(view: DataView, totalLength: number): Map<number, number> {
+  const sums = new Map<number, number>();
+
+  function walkTraf(start: number, end: number): void {
+    let trackId: number | null = null;
+    let defaultSampleDuration = 0;
+    forEachBox(view, start, end, (type, offset, headerSize) => {
+      if (type === 'tfhd') {
+        const body = offset + headerSize;
+        const { flags } = fullBoxVersionFlags(view, body);
+        let p = body + 4; // version+flags(4), roi toi track_ID
+        trackId = readUintBE(view, p, 4);
+        p += 4;
+        if (flags & 0x000001) p += 8; // base-data-offset-present
+        if (flags & 0x000002) p += 4; // sample-description-index-present
+        if (flags & 0x000008) defaultSampleDuration = readUintBE(view, p, 4); // default-sample-duration-present
+      } else if (type === 'trun' && trackId !== null) {
+        const body = offset + headerSize;
+        const { flags } = fullBoxVersionFlags(view, body);
+        const sampleCount = readUintBE(view, body + 4, 4);
+        let p = body + 8;
+        if (flags & 0x000001) p += 4; // data-offset-present
+        if (flags & 0x000004) p += 4; // first-sample-flags-present
+        const durationPresent = (flags & 0x000100) !== 0;
+        const sizePresent = (flags & 0x000200) !== 0;
+        const flagsPresent = (flags & 0x000400) !== 0;
+        const ctsPresent = (flags & 0x000800) !== 0;
+
+        let sum = sums.get(trackId) ?? 0;
+        for (let i = 0; i < sampleCount; i++) {
+          if (durationPresent) {
+            sum += readUintBE(view, p, 4);
+            p += 4;
+          } else {
+            sum += defaultSampleDuration;
+          }
+          if (sizePresent) p += 4;
+          if (flagsPresent) p += 4;
+          if (ctsPresent) p += 4;
+        }
+        sums.set(trackId, sum);
+      }
+    });
+  }
+
+  function walkMoof(start: number, end: number): void {
+    forEachBox(view, start, end, (type, offset, headerSize, boxSize) => {
+      if (type === 'traf') walkTraf(offset + headerSize, offset + boxSize);
+    });
+  }
+
+  forEachBox(view, 0, totalLength, (type, offset, headerSize, boxSize) => {
+    if (type === 'moof') walkMoof(offset + headerSize, offset + boxSize);
+  });
+
+  return sums;
+}
+
 /**
  * Duyet cay box MP4 (ISO/IEC 14496-12), vá truong duration trong mvhd + tung
- * tkhd + mdhd bang thoi luong that. mvhd/mdhd co timescale RIENG cua no; tkhd
- * KHONG co timescale rieng, dung chung timescale cua phim (mvhd) — vi the phai
- * doc mvhd TRUOC roi moi vá cac trak, dung thu tu box trong file (mvhd luon
- * dung truoc cac trak trong moov theo chuan).
+ * tkhd + mdhd. mvhd (chi mot gia tri cho ca phim) dung `seconds` chung
+ * (elapsedRef tong the) nhu cu. tkhd/mdhd cua TUNG track dung thoi luong mau
+ * THAT rieng cua chinh track do (tinh tu moof/trun, xem collectTrackSampleSums)
+ * khi tinh duoc; neu khong (file khong phan manh, hoac thieu du lieu track)
+ * thi roi ve `seconds` chung nhu hanh vi cu. mdhd.duration cung timescale voi
+ * chinh no nen dung thang tong don vi mau (chinh xac tuyet doi, khong quy doi
+ * qua giay); tkhd.duration lai theo timescale cua PHIM (mvhd) nen phai quy doi
+ * tu don vi mau that (theo timescale track) sang giay roi nhan lai
+ * movieTimescale — vi the phai doc mvhd TRUOC roi moi vá cac trak, dung thu tu
+ * box trong file (mvhd luon dung truoc cac trak trong moov theo chuan).
  */
 function patchMp4Duration(buf: ArrayBuffer, seconds: number): boolean {
   const view = new DataView(buf);
   let changed = false;
+
+  const trackTimescales = collectTrackTimescales(view, buf.byteLength);
+  const trackSampleUnitSums = collectTrackSampleSums(view, buf.byteLength);
+
   let movieTimescale = 0;
-
-  function boxType(offset: number): string {
-    return String.fromCharCode(
-      view.getUint8(offset), view.getUint8(offset + 1),
-      view.getUint8(offset + 2), view.getUint8(offset + 3)
-    );
-  }
-
-  /** offset con truoc "version+flags" cua mvhd/tkhd/mdhd — tra ve size cua truong thoi gian (4 hoac 8 byte). */
-  function timeFieldSize(body: number): number {
-    return view.getUint8(body) === 1 ? 8 : 4;
-  }
+  let currentTrackId: number | null = null;
 
   function walk(start: number, end: number): void {
-    let offset = start;
-    while (offset + 8 <= end) {
-      const size32 = readUintBE(view, offset, 4);
-      const type = boxType(offset + 4);
-      let boxSize = size32;
-      let headerSize = 8;
-      if (size32 === 1) {
-        if (offset + 16 > end) break;
-        boxSize = readUintBE(view, offset + 8, 8);
-        headerSize = 16;
-      } else if (size32 === 0) {
-        boxSize = end - offset; // box chay den het cha
-      }
-      if (boxSize < headerSize || offset + boxSize > end) break; // du lieu bat thuong, dung an toan
-
+    forEachBox(view, start, end, (type, offset, headerSize, boxSize) => {
       if (type === 'moov' || type === 'trak' || type === 'mdia') {
         walk(offset + headerSize, offset + boxSize);
       } else if (type === 'mvhd') {
         const body = offset + headerSize;
-        const tSize = timeFieldSize(body);
+        const tSize = timeFieldSize(view, body);
         const timescaleOffset = body + 4 + tSize * 2; // version+flags(4) + creation + modification
         movieTimescale = readUintBE(view, timescaleOffset, 4);
         if (movieTimescale > 0) {
@@ -94,25 +228,32 @@ function patchMp4Duration(buf: ArrayBuffer, seconds: number): boolean {
         }
       } else if (type === 'tkhd') {
         const body = offset + headerSize;
-        const tSize = timeFieldSize(body);
+        const tSize = timeFieldSize(view, body);
         // version+flags(4) + creation + modification + track_ID(4) + reserved(4)
-        const durationOffset = body + 4 + tSize * 2 + 4 + 4;
+        const trackIdOffset = body + 4 + tSize * 2;
+        currentTrackId = readUintBE(view, trackIdOffset, 4);
+        const durationOffset = trackIdOffset + 4 + 4;
         if (movieTimescale > 0) {
-          writeUintBE(view, durationOffset, tSize, Math.round(seconds * movieTimescale));
+          const trackTimescale = trackTimescales.get(currentTrackId);
+          const rawUnits = trackSampleUnitSums.get(currentTrackId);
+          const trackSeconds =
+            trackTimescale !== undefined && rawUnits !== undefined ? rawUnits / trackTimescale : null;
+          writeUintBE(view, durationOffset, tSize, Math.round((trackSeconds ?? seconds) * movieTimescale));
           changed = true;
         }
       } else if (type === 'mdhd') {
         const body = offset + headerSize;
-        const tSize = timeFieldSize(body);
+        const tSize = timeFieldSize(view, body);
         const timescaleOffset = body + 4 + tSize * 2;
         const timescale = readUintBE(view, timescaleOffset, 4);
         if (timescale > 0) {
-          writeUintBE(view, timescaleOffset + 4, tSize, Math.round(seconds * timescale));
+          const rawUnits = currentTrackId !== null ? trackSampleUnitSums.get(currentTrackId) : undefined;
+          const value = rawUnits !== undefined ? rawUnits : Math.round(seconds * timescale);
+          writeUintBE(view, timescaleOffset + 4, tSize, value);
           changed = true;
         }
       }
-      offset += boxSize;
-    }
+    });
   }
 
   walk(0, buf.byteLength);
