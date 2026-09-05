@@ -121,6 +121,131 @@ test('mp4: va lai duration sai trong mvhd/tkhd/mdhd bang thoi luong that', async
   assert.equal(docU32(buf, mdhdBody + 12 + 4), kyVongDonVi, 'mdhd.duration phai la thoi luong that');
 });
 
+// ------------------------------------------------- Hoi quy: track-aware (Safari 2x)
+
+function tkhdBoxTrackId(trackId: number, duration: number): number[] {
+  const body = [
+    ...fullBoxHeaderV0(),
+    ...u32be(trackId),
+    ...u32be(0), // reserved
+    ...u32be(duration),
+    ...new Array(60).fill(0),
+  ];
+  return box('tkhd', body);
+}
+
+function versionFlagsBytes(version: number, flags: number): number[] {
+  return [version & 0xff, (flags >>> 16) & 0xff, (flags >>> 8) & 0xff, flags & 0xff];
+}
+
+/** tfhd toi gian: chi version+flags(0) + track_ID, khong dung base-data-offset/default-sample-duration. */
+function tfhdBox(trackId: number): number[] {
+  const body = [...versionFlagsBytes(0, 0), ...u32be(trackId)];
+  return box('tfhd', body);
+}
+
+/** trun voi cac sample_duration THAT — chi bat co sample-duration-present (0x100). */
+function trunBox(sampleDurations: number[]): number[] {
+  const SAMPLE_DURATION_PRESENT = 0x000100;
+  const body = [
+    ...versionFlagsBytes(0, SAMPLE_DURATION_PRESENT),
+    ...u32be(sampleDurations.length),
+    ...sampleDurations.flatMap((d) => u32be(d)),
+  ];
+  return box('trun', body);
+}
+
+function timTatCaBox(buf: Uint8Array, start: number, end: number, type: string): { body: number; size: number }[] {
+  const ketQua: { body: number; size: number }[] = [];
+  let offset = start;
+  while (offset < end) {
+    const size = docU32(buf, offset);
+    const t = String.fromCharCode(buf[offset + 4], buf[offset + 5], buf[offset + 6], buf[offset + 7]);
+    if (t === type) ketQua.push({ body: offset + 8, size });
+    offset += size;
+  }
+  return ketQua;
+}
+
+test('mp4: moi track (audio/video) duoc va bang thoi luong mau THAT rieng cua no, khong con bi ep ve cung mot so', async () => {
+  const movieTimescale = 1000;
+  const saiDuration = 999_000; // placeholder sai chung, giong loi goc truoc khi va
+
+  const AUDIO_ID = 1;
+  const VIDEO_ID = 2;
+  const audioMdhdTimescale = 48000;
+  const videoMdhdTimescale = 600;
+  // Du lieu mau THAT cua tung track — co tinh khac han nhau, dung tinh huong
+  // that trong bao cao btvn-video-mau-that (audio ~24s, video ~326s).
+  const audioSampleUnits = 24 * audioMdhdTimescale; // 24.0000s
+  const videoSampleUnits = 326 * videoMdhdTimescale; // 326.0000s
+
+  const mvhd = mvhdBox(movieTimescale, saiDuration);
+  const audioTrak = box('trak', [
+    ...tkhdBoxTrackId(AUDIO_ID, saiDuration),
+    ...box('mdia', mdhdBox(audioMdhdTimescale, saiDuration)),
+  ]);
+  const videoTrak = box('trak', [
+    ...tkhdBoxTrackId(VIDEO_ID, saiDuration),
+    ...box('mdia', mdhdBox(videoMdhdTimescale, saiDuration)),
+  ]);
+  const moov = box('moov', [...mvhd, ...audioTrak, ...videoTrak]);
+  const ftyp = box('ftyp', ascii('isomiso2avc1mp41'));
+
+  const moof = box('moof', [
+    ...box('traf', [...tfhdBox(AUDIO_ID), ...trunBox([audioSampleUnits])]),
+    ...box('traf', [...tfhdBox(VIDEO_ID), ...trunBox([videoSampleUnits])]),
+  ]);
+
+  const goc = new Uint8Array([...ftyp, ...moov, ...moof]);
+  const blob = new Blob([goc as BlobPart], { type: 'video/mp4;codecs=avc1' });
+
+  const elapsedGiay = 325; // dong ho dem tong the cua QuayVideo (elapsedRef) — khac ca 2 track that
+  const daVa = await fixVideoDuration(blob, elapsedGiay);
+  assert.notEqual(daVa, blob, 'phai tra ve Blob moi khi va thanh cong');
+
+  const buf = new Uint8Array(await daVa.arrayBuffer());
+  assert.equal(buf.length, goc.length, 'khong duoc doi kich thuoc tep');
+
+  const moovBody = timBox(buf, 0, buf.length, 'moov');
+  const moovSize = docU32(buf, moovBody - 8);
+  const mvhdBody = timBox(buf, moovBody, moovBody + moovSize - 8, 'mvhd');
+
+  // mvhd van dung `seconds` chung nhu cu — khong doi hanh vi hien co.
+  assert.equal(docU32(buf, mvhdBody + 12 + 4), elapsedGiay * movieTimescale, 'mvhd (tong the) phai giu nguyen elapsedRef');
+
+  const traks = timTatCaBox(buf, moovBody, moovBody + moovSize - 8, 'trak');
+  assert.equal(traks.length, 2, 'phai tim thay 2 trak');
+
+  const theoTrackId = new Map<number, { tkhdDuration: number; mdhdDuration: number }>();
+  for (const trak of traks) {
+    const trakEnd = trak.body + trak.size - 8;
+    const tkhdBody = timBox(buf, trak.body, trakEnd, 'tkhd');
+    const trackId = docU32(buf, tkhdBody + 12);
+    const tkhdDuration = docU32(buf, tkhdBody + 12 + 4 + 4);
+    const mdiaBody = timBox(buf, trak.body, trakEnd, 'mdia');
+    const mdiaSize = docU32(buf, mdiaBody - 8);
+    const mdhdBody = timBox(buf, mdiaBody, mdiaBody + mdiaSize - 8, 'mdhd');
+    const mdhdDuration = docU32(buf, mdhdBody + 12 + 4);
+    theoTrackId.set(trackId, { tkhdDuration, mdhdDuration });
+  }
+
+  const audio = theoTrackId.get(AUDIO_ID)!;
+  const video = theoTrackId.get(VIDEO_ID)!;
+
+  // mdhd: cung timescale voi chinh track do -> ghi THANG tong don vi mau that, chinh xac tuyet doi.
+  assert.equal(audio.mdhdDuration, audioSampleUnits, 'mdhd audio phai la thoi luong mau THAT cua chinh no');
+  assert.equal(video.mdhdDuration, videoSampleUnits, 'mdhd video phai la thoi luong mau THAT cua chinh no');
+
+  // tkhd: theo timescale cua PHIM (mvhd) -> quy doi tu giay that cua tung track.
+  assert.equal(audio.tkhdDuration, Math.round(24 * movieTimescale), 'tkhd audio phai khop 24s that cua no');
+  assert.equal(video.tkhdDuration, Math.round(326 * movieTimescale), 'tkhd video phai khop 326s that cua no');
+
+  // Diem mau chot cua bug goc: hai track KHONG con bi ep ve cung mot gia tri.
+  assert.notEqual(audio.tkhdDuration, video.tkhdDuration, 'tkhd 2 track phai khac nhau (khong con bi ep chung)');
+  assert.notEqual(audio.mdhdDuration, video.mdhdDuration, 'mdhd 2 track phai khac nhau (khong con bi ep chung)');
+});
+
 test('mp4: khong doi Blob goc khi khong nhan dien duoc box can va', async () => {
   const blob = new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'video/mp4' });
   const ketQua = await fixVideoDuration(blob, 60);
