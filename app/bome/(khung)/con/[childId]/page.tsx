@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
-import { getChild, listAssignments, listChoreChecks, listChores, todayISO } from '@/lib/store';
+import { getChild, listAssignments, listChores, todayISO } from '@/lib/store';
 import { HW_SOURCES } from '@/lib/types';
 import XoaBai from './XoaBai';
 
@@ -30,14 +30,23 @@ export default async function ChiTietCon({
     ? await listAssignments(familyId, { childId, from: todayISO(-6), to: todayISO(6) })
     : await listAssignments(familyId, { childId, date: today });
 
-  // Viec nha (issue #25) lay rieng va CHI CHO HOM NAY, ke ca khi dang xem tab
-  // "Tuan nay": no la viec cua buoi toi hom nay, khong phai bai tap co han. Cung
-  // vi the no khong duoc cong vao tien do bai tap ngay duoi hay vao ba o o man
-  // tong quan — captain dung ba con so do de theo bai tap.
-  const [chores, daTick] = await Promise.all([
+  // Viec nha lay rieng va CHI CHO HOM NAY, ke ca khi dang xem tab "Tuan nay":
+  // no la viec cua buoi toi hom nay, khong phai bai tap co han. Cung vi the no
+  // khong duoc cong vao tien do bai tap ngay duoi hay vao ba o o man tong quan
+  // — captain dung ba con so do de theo bai tap (khong doi bang co nay: xem
+  // listAssignments, includeChores mac dinh false).
+  //
+  // Viec nha gio la dong assignments THAT (issue #36) — con tick qua PATCH
+  // /api/assignments/:id, KHONG con ghi vao daily_chore_checks nua, nen "da
+  // tick chua" phai doc tu day (includeChores: true), khong doc tu
+  // listChoreChecks nua (se luon tra rong tu khi #36 doi cach tick).
+  const [chores, choreAssignmentsHomNay] = await Promise.all([
     listChores(familyId, { enabledOnly: true }),
-    listChoreChecks(familyId, childId, today),
+    listAssignments(familyId, { childId, date: today, includeChores: true }),
   ]);
+  const daTick = choreAssignmentsHomNay
+    .filter((a) => a.choreId != null && a.status === 'done')
+    .map((a) => a.choreId as string);
   const soViecXong = chores.filter((c) => daTick.includes(c.id)).length;
 
   const done = items.filter((a) => a.status === 'done').length;
