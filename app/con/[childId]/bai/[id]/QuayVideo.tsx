@@ -7,6 +7,7 @@ import {
   QUAY_VIDEO_BPS,
   uploadSubmissionVideo,
 } from '@/lib/media';
+import { fixVideoDuration } from '@/lib/videoDuration';
 
 /**
  * Quay video nop bai — cho bai co requiresVideo (doc to, doc thuoc long, quay
@@ -245,9 +246,17 @@ export default function QuayVideo({
         setPhase('idle');
         return;
       }
-      setClip(out);
-      setPreviewUrl(URL.createObjectURL(out));
-      setPhase('preview');
+      // Dong ho da dem duoc dung so giay THAT — dung no de va lai metadata
+      // duration cua container (issue #32: MediaRecorder ghi sai so nay, khong
+      // lam sai du lieu hinh/am, nhung cong cu doc metadata nhu "Save Video"
+      // vao Photos tren iOS se cat theo con so sai do).
+      const daGhiGiay = elapsedRef.current;
+      fixVideoDuration(out, daGhiGiay).then((fixed) => {
+        if (discardRef.current) return; // huy/roi trang trong luc dang va
+        setClip(fixed);
+        setPreviewUrl(URL.createObjectURL(fixed));
+        setPhase('preview');
+      });
     };
 
     elapsedRef.current = 0;

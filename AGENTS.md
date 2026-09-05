@@ -59,15 +59,14 @@ máy chủ và chụp ảnh vẫn đẹp, nhưng React KHÔNG hydrate — mọi 
 nút của component khách đều chết lặng, không báo lỗi gì. Bằng chứng nằm ở nhật
 ký `next dev` ("Blocked cross-origin request to Next.js dev resource").
 
-`lib/*.test.ts` chạy thẳng bằng `node --test` (xem script `test` trong
-`package.json`), không qua Next/webpack — nên KHÔNG import trực tiếp
-`lib/store.ts` (và các file `lib/*.ts` khác dùng import không đuôi kiểu
-`from './db'`) từ một test: Node đòi đuôi `.ts` rõ ràng cho import tương đối,
-`from './db'` sẽ ném "Cannot find module './db'". Cách các test hiện có xử lý:
-test chạy PGlite thật (qua `chayMigrations` của `scripts/db.mjs`, một file
-`.mjs` thường nên import được bình thường) và viết lại đúng câu SQL mà hàm cần
-kiểm tra — xem `lib/nhiem-vu-mac-dinh-hoan-thanh.test.ts`. Sửa SQL ở
-`lib/store.ts` thì phải sửa cả bản sao trong test cho khớp.
+Video con quay để nộp bài (`QuayVideo.tsx`, dùng `MediaRecorder`) luôn có metadata
+`duration` SAI trong container (bug của trình duyệt, không phải lỗi ghép chunk) —
+`<video>` trong trang vẫn phát đủ vì nó đọc dữ liệu thật khi tua, nhưng bất kỳ
+công cụ nào DỰA VÀO metadata đó (như "Save Video" vào Photos trên iOS) sẽ cắt
+theo con số sai (issue #32). `lib/videoDuration.ts` vá lại 4-8 byte duration
+trong mp4 (mvhd/tkhd/mdhd) và webm (Segment>Info>Duration) bằng số giây THẬT mà
+`QuayVideo` đã tự đếm, ngay sau khi `onstop` ghép xong Blob — đọc chú thích đầu
+file đó trước khi đụng vào luồng quay/nộp video.
 
 ## Maintaining this file
 
