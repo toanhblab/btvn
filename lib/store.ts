@@ -601,8 +601,10 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
       child,
       total: upcoming.length,
       done: upcoming.filter((r) => r.status === 'done').length,
-      // Qua han = han truoc hom nay ma van chua xong
-      overdue: mine.filter((r) => dateStr(r.due_date) < today && r.status === 'todo').length,
+      // Qua han = han truoc hom nay ma van chua xong. Loai viec nha (chore_id
+      // khong null) giong het nguyen tac homeworkTotal ben duoi va listAssignments
+      // — man bo me khong duoc thay viec nha lam phinh badge nay.
+      overdue: mine.filter((r) => dateStr(r.due_date) < today && r.status === 'todo' && r.chore_id === null).length,
       homeworkTotal: upcoming.filter((r) => r.chore_id === null).length,
     };
   });
@@ -632,8 +634,8 @@ export const VIEC_NHA_MAC_DINH = [
  * co null hay khong (xem app/con/[childId]/page.tsx) — chi la gia tri hop le
  * cho hai cot NOT NULL cua assignments.
  */
-const VIEC_NHA_SUBJECT = 'Việc nhà';
-const VIEC_NHA_ICON = '🧹';
+export const VIEC_NHA_SUBJECT = 'Việc nhà';
+export const VIEC_NHA_ICON = '🧹';
 
 interface ChoreRow { id: string; content: string; sort_order: number; enabled: boolean }
 
@@ -740,59 +742,3 @@ export async function moveChore(familyId: string, id: string, huong: -1 | 1): Pr
   }
 }
 
-/** Nhung viec con DA TICK trong mot ngay. Loc theo nha de khong doc nham nha khac. */
-export async function listChoreChecks(
-  familyId: string,
-  childId: string,
-  date: string
-): Promise<string[]> {
-  const rows = await query<{ chore_id: string }>(
-    `SELECT k.chore_id FROM daily_chore_checks k
-       JOIN children c ON c.id = k.child_id
-      WHERE k.child_id = $1 AND c.family_id = $2 AND k.done_date = $3`,
-    [childId, familyId, date]
-  );
-  return rows.map((r) => r.chore_id);
-}
-
-/**
- * Con tick / bo tick mot viec cho MOT ngay.
- *
- * Duong nay chay tu may cua con (chi co cookie thiet bi, khong co PIN) nen ba
- * thu deu phai kiem o day chu khong tin tham so tu trinh duyet: viec phai thuoc
- * nha nay, con phai thuoc nha nay, va ngay do nguoi goi khong dat duoc (ham goi
- * truyen todayISO()).
- *
- * @returns false neu viec hoac con khong thuoc nha nay — nguoi goi tra 404.
- */
-export async function setChoreCheck(
-  familyId: string,
-  childId: string,
-  choreId: string,
-  date: string,
-  done: boolean
-): Promise<boolean> {
-  const own = await queryOne<{ id: string }>(
-    `SELECT ch.id FROM daily_chores ch
-       JOIN children c ON c.family_id = ch.family_id
-      WHERE ch.id = $1 AND c.id = $2 AND ch.family_id = $3`,
-    [choreId, childId, familyId]
-  );
-  if (!own) return false;
-
-  if (done) {
-    // Con bam nhieu lan la chuyen binh thuong -> DO NOTHING thay vi loi trung khoa.
-    await query(
-      `INSERT INTO daily_chore_checks (id, child_id, chore_id, done_date)
-       VALUES ($1,$2,$3,$4)
-       ON CONFLICT (child_id, chore_id, done_date) DO NOTHING`,
-      [newId('tik'), childId, choreId, date]
-    );
-  } else {
-    await query(
-      `DELETE FROM daily_chore_checks WHERE child_id = $1 AND chore_id = $2 AND done_date = $3`,
-      [childId, choreId, date]
-    );
-  }
-  return true;
-}

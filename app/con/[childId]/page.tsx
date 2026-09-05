@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { viewingFamilyId } from '@/lib/auth';
-import { getChild, listAssignments, todayISO } from '@/lib/store';
+import { getChild, listAssignments, todayISO, VIEC_NHA_ICON, VIEC_NHA_SUBJECT } from '@/lib/store';
 import type { Assignment, HwSource } from '@/lib/types';
 import { HW_SOURCES } from '@/lib/types';
 import ViecNhaBai from './ViecNhaBai';
@@ -90,8 +90,8 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   if (choreItems.length > 0) {
     sourceGroups.push({
       key: 'viec-nha',
-      icon: '🧹',
-      label: 'Việc nhà',
+      icon: VIEC_NHA_ICON,
+      label: VIEC_NHA_SUBJECT,
       isChores: true,
       byDate: gomTheoNgay(choreItems),
       total: choreItems.length,
