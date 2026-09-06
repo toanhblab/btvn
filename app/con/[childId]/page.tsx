@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { viewingFamilyId } from '@/lib/auth';
-import { getChild, listAssignments, todayISO } from '@/lib/store';
+import { getChild, listAssignments, todayISO, VIEC_NHA_ICON, VIEC_NHA_SUBJECT } from '@/lib/store';
 import type { Assignment, HwSource } from '@/lib/types';
 import { HW_SOURCES } from '@/lib/types';
+import ViecNhaBai from './ViecNhaBai';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,35 +38,71 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   // dung link. Cac con khong dang nhap nen day la lop chan duy nhat.
   //
   // Tu hom nay tro di: bai qua han khong hien nua, khong thi danh sach cu dai mai
+  // includeChores: true — viec nha (issue #36) gio la dong assignments THAT,
+  // xep thanh nhom rieng CUOI CUNG ben duoi. Moi noi goi listAssignments KHAC
+  // trong app (man bo me, progressUpcoming) khong xin co nay nen tu dong giu
+  // nguyen hanh vi cu, chi trang nay + tinh celebrate o bai/[id]/page.tsx la
+  // can thay ca viec nha.
   const [child, items] = await Promise.all([
     getChild(familyId, childId),
-    listAssignments(familyId, { childId, from: today }),
+    listAssignments(familyId, { childId, from: today, includeChores: true }),
   ]);
   if (!child) notFound();
   const todayItems = items.filter((a) => a.dueDate === today);
   const done = todayItems.filter((a) => a.status === 'done').length;
+  // Con bao nhieu thu cua hom nay chua xong (bai that + viec nha). ViecNhaBai
+  // can so nay de biet luc nao tick not viec cuoi cung thi day sang man khen —
+  // cung mot y voi `stillTodo` o bai/[id]/page.tsx, dem o day de khong phai
+  // them mot luot goi listAssignments nua.
+  const todoHomNay = todayItems.length - done;
+
+  /** listAssignments da sap xep theo due_date tang dan nen chi can gom lien tiep. */
+  function gomTheoNgay(mine: Assignment[]): { date: string; items: Assignment[] }[] {
+    const byDate: { date: string; items: Assignment[] }[] = [];
+    for (const a of mine) {
+      const last = byDate[byDate.length - 1];
+      if (last && last.date === a.dueDate) last.items.push(a);
+      else byDate.push({ date: a.dueDate, items: [a] });
+    }
+    return byDate;
+  }
 
   // Gom theo NOI GIAO truoc (moi ma trong HW_SOURCES mot nhom), trong moi noi
   // moi gom theo ngay. Con lam xong het bai mot noi roi moi sang noi kia, nen
-  // moi noi can mot khoi rieng voi tien do rieng.
-  const sourceGroups = (Object.keys(HW_SOURCES) as HwSource[])
-    .map((source) => {
-      const mine = items.filter((a) => a.source === source);
-      // listAssignments da sap xep theo due_date tang dan nen chi can gom lien tiep
-      const byDate: { date: string; items: Assignment[] }[] = [];
-      for (const a of mine) {
-        const last = byDate[byDate.length - 1];
-        if (last && last.date === a.dueDate) last.items.push(a);
-        else byDate.push({ date: a.dueDate, items: [a] });
-      }
-      return {
-        source,
-        byDate,
-        total: mine.length,
-        done: mine.filter((a) => a.status === 'done').length,
-      };
-    })
-    .filter((g) => g.total > 0);
+  // moi noi can mot khoi rieng voi tien do rieng. Viec nha (a.choreId khong
+  // null) bi LOAI khoi day du "source" cua no la gi — chore_id moi la dau hieu
+  // that, xem lib/types.ts — roi duoc gom thanh MOT nhom rieng, noi CUOI mang
+  // (issue #36 muc 7), khong dung HW_SOURCES cho nhom do de khong phai them
+  // 'viec nha' vao hang so day (xem chu thich o lib/store.ts saveSubmission).
+  const sourceGroups: { key: string; icon: string; label: string; isChores: boolean;
+    byDate: { date: string; items: Assignment[] }[]; total: number; done: number }[] =
+    (Object.keys(HW_SOURCES) as HwSource[])
+      .map((source) => {
+        const mine = items.filter((a) => a.source === source && a.choreId == null);
+        return {
+          key: source,
+          icon: HW_SOURCES[source].icon,
+          label: HW_SOURCES[source].label,
+          isChores: false,
+          byDate: gomTheoNgay(mine),
+          total: mine.length,
+          done: mine.filter((a) => a.status === 'done').length,
+        };
+      })
+      .filter((g) => g.total > 0);
+
+  const choreItems = items.filter((a) => a.choreId != null);
+  if (choreItems.length > 0) {
+    sourceGroups.push({
+      key: 'viec-nha',
+      icon: VIEC_NHA_ICON,
+      label: VIEC_NHA_SUBJECT,
+      isChores: true,
+      byDate: gomTheoNgay(choreItems),
+      total: choreItems.length,
+      done: choreItems.filter((a) => a.status === 'done').length,
+    });
+  }
 
   /* ---- Khong con bai nao sap toi: man khen thay vi man trong (PRD 4.3) ---- */
   if (items.length === 0) {
@@ -126,7 +163,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
         {todayItems.length > 0 && (
           <div className="hidden xl:flex items-center shrink-0 bg-primary-container text-on-primary-container
                           text-k-headline px-8 py-4 rounded-full soft-shadow whitespace-nowrap">
-            {done}/{todayItems.length} bài hôm nay đã xong
+            {done}/{todayItems.length} xong hôm nay
           </div>
         )}
       </header>
@@ -152,30 +189,31 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
             ))}
           </div>
           <div className="text-k-headline text-on-surface xl:hidden">
-            {done}/{todayItems.length} bài hôm nay đã xong
+            {done}/{todayItems.length} xong hôm nay
           </div>
         </section>
       )}
 
       {sourceGroups.map((sg) => (
-        <section key={sg.source} className="mb-k-stack last:mb-0">
+        <section key={sg.key} className="mb-k-stack last:mb-0">
           {/* Dau moi nhom: noi giao + tien do RIENG cua nhom do, de con lam het
-              mot loai bai (vd het bai cua mot ma trong HW_SOURCES) roi moi sang loai kia */}
+              mot loai bai (vd het bai cua mot ma trong HW_SOURCES) roi moi sang loai kia.
+              Nhom "Viec nha" luon xep cuoi mang sourceGroups (issue #36 muc 7). */}
           <div
             className={`flex items-center gap-4 rounded-2xl p-4 mb-4 soft-shadow ${
               sg.done === sg.total ? 'bg-success-container' : 'bg-surface-container-low'
             }`}
           >
-            <span className="text-5xl shrink-0">{HW_SOURCES[sg.source].icon}</span>
+            <span className="text-5xl shrink-0">{sg.icon}</span>
             <h2 className="text-k-headline text-on-surface flex-1 min-w-0">
-              {HW_SOURCES[sg.source].label}
+              {sg.label}
             </h2>
             <span
               className={`text-k-label px-5 py-2 rounded-full shrink-0 ${
                 sg.done === sg.total ? 'bg-success text-white' : 'bg-surface-container-highest text-on-surface'
               }`}
             >
-              {sg.done === sg.total ? '🎉 ' : ''}{sg.done}/{sg.total} bài xong
+              {sg.done === sg.total ? '🎉 ' : ''}{sg.done}/{sg.total} {sg.isChores ? 'việc' : 'bài'} xong
             </span>
           </div>
 
@@ -185,6 +223,17 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                 {nhanNgay(g.date, today, tomorrow)}
               </h3>
 
+              {sg.isChores ? (
+                // Viec nha: the tick nhe tai cho, KHONG dan sang /bai/[id] — man
+                // do co doc to + dong ho dem nguoc + co the quay video, khong hop
+                // voi mot viec don gian nhu "tat den hoc" (xem ViecNhaBai.tsx).
+                <ViecNhaBai
+                  items={g.items}
+                  childId={child.id}
+                  laHomNay={g.date === today}
+                  todoHomNay={todoHomNay}
+                />
+              ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-k-gutter">
             {g.items.map((a) => {
               const isDone = a.status === 'done';
@@ -290,6 +339,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
               );
             })}
               </div>
+              )}
             </div>
           ))}
         </section>

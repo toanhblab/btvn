@@ -8,8 +8,10 @@ export const dynamic = 'force-dynamic';
 /**
  * GET /api/viec-nha — danh sach viec nha CUA NHA NAY (ca viec dang tat). CAN PIN.
  *
- * Man cua con khong goi duong nay: no doc thang tu server component (trang
- * /con/<id>/xong) nen khong can mot duong doc khong PIN o day.
+ * Man cua con khong goi duong nay nen khong can mot duong doc khong PIN o day:
+ * tu issue #36 no khong doc daily_chores nua ma doc CAC DONG assignments da tao
+ * cho tung ngay (listAssignments, includeChores: true) — man /xong gio thuan an
+ * mung, khong con checklist viec nha.
  */
 export async function GET() {
   const familyId = await parentFamilyId();

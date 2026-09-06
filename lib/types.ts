@@ -99,6 +99,14 @@ export interface Assignment {
   /** Video con da nop — moi bai giu mot video moi nhat, quay lai la thay. */
   submittedVideoUrl: string | null;
   submittedVideoAt: string | null;
+  /**
+   * Dong nay co phai mot "viec nha" (nhiem vu mac dinh, issue #25/#36) khong —
+   * tham chieu daily_chores.id, null neu la bai tap that. DAU HIEU DUY NHAT de
+   * phan biet: co y KHONG them 'viec nha' vao HW_SOURCES o tren — hang so do bi
+   * lap lai o 4 man nhap/sua bai cua bo me de ve nut "chon noi giao", them vao
+   * do se hien mot nut co the bam nham cho mot bai THAT.
+   */
+  choreId: string | null;
 }
 
 /** Mot bai do AI tach ra, chua luu — bo me con phai duyet o man "Kiem tra lai". */

@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
-import { getChild, listAssignments, listChoreChecks, listChores, todayISO } from '@/lib/store';
-import { HW_SOURCES } from '@/lib/types';
+import { getChild, listAssignments, todayISO } from '@/lib/store';
+import { HW_SOURCES, type Assignment } from '@/lib/types';
 import XoaBai from './XoaBai';
 
 export const dynamic = 'force-dynamic';
@@ -26,19 +26,38 @@ export default async function ChiTietCon({
   if (!child) notFound();
 
   const today = todayISO();
-  const items = tuanNay
-    ? await listAssignments(familyId, { childId, from: todayISO(-6), to: todayISO(6) })
-    : await listAssignments(familyId, { childId, date: today });
 
-  // Viec nha (issue #25) lay rieng va CHI CHO HOM NAY, ke ca khi dang xem tab
-  // "Tuan nay": no la viec cua buoi toi hom nay, khong phai bai tap co han. Cung
-  // vi the no khong duoc cong vao tien do bai tap ngay duoi hay vao ba o o man
-  // tong quan — captain dung ba con so do de theo bai tap.
-  const [chores, daTick] = await Promise.all([
-    listChores(familyId, { enabledOnly: true }),
-    listChoreChecks(familyId, childId, today),
-  ]);
-  const soViecXong = chores.filter((c) => daTick.includes(c.id)).length;
+  // Viec nha lay rieng va CHI CHO HOM NAY, ke ca khi dang xem tab "Tuan nay":
+  // no la viec cua buoi toi hom nay, khong phai bai tap co han. Cung vi the no
+  // khong duoc cong vao tien do bai tap ngay duoi hay vao ba o o man tong quan
+  // — captain dung ba con so do de theo bai tap (khong doi bang co nay: xem
+  // listAssignments, includeChores mac dinh false).
+  //
+  // Doc theo CAC DONG THAT da tao cho hom nay (issue #36), KHONG theo cau hinh
+  // dang bat (listChores): hai ben lech nhau ngay khi bo me sua danh sach giua
+  // chung, va ngay khong ai giao bai thi khong co dong nao duoc tao — bo me
+  // phai thay dung thu con dang thay, khong thi "0/3 xong" mai du con khong co
+  // gi de tick.
+  //
+  // Tab "Hom nay": MOT cau duy nhat roi tach hai phan bang choreId, vi hai ben
+  // chi khac moi co includeChores. Tab "Tuan nay": pham vi ngay khac nhau nen
+  // phai hai cau, cho chay song song — Neon la HTTP nen cho cau nay xong moi goi
+  // cau kia la cong them mot vong khong can thiet (nhu chu thich o man cua con).
+  let items: Assignment[];
+  let choreItems: Assignment[];
+  if (tuanNay) {
+    const [tuan, homNay] = await Promise.all([
+      listAssignments(familyId, { childId, from: todayISO(-6), to: todayISO(6) }),
+      listAssignments(familyId, { childId, date: today, includeChores: true }),
+    ]);
+    items = tuan;
+    choreItems = homNay.filter((a) => a.choreId != null);
+  } else {
+    const homNay = await listAssignments(familyId, { childId, date: today, includeChores: true });
+    items = homNay.filter((a) => a.choreId == null);
+    choreItems = homNay.filter((a) => a.choreId != null);
+  }
+  const soViecXong = choreItems.filter((a) => a.status === 'done').length;
 
   const done = items.filter((a) => a.status === 'done').length;
   const pct = items.length ? Math.round((done / items.length) * 100) : 0;
@@ -104,17 +123,17 @@ export default async function ChiTietCon({
         </div>
       </section>
 
-      {chores.length > 0 && (
+      {choreItems.length > 0 && (
         <section className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-5">
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <h2 className="text-p-label uppercase text-on-surface-variant">Việc nhà hôm nay</h2>
             <span className="text-p-body-sm text-on-surface font-bold">
-              {soViecXong}/{chores.length} xong
+              {soViecXong}/{choreItems.length} xong
             </span>
           </div>
           <ul className="flex flex-col gap-1">
-            {chores.map((c) => {
-              const xong = daTick.includes(c.id);
+            {choreItems.map((c) => {
+              const xong = c.status === 'done';
               return (
                 <li key={c.id} className="flex items-center gap-1.5">
                   <span

@@ -54,10 +54,12 @@ export async function PATCH(req: Request, { params }: Ctx) {
 }
 
 /**
- * DELETE /api/viec-nha/:id — xoa han mot viec. CAN PIN.
+ * DELETE /api/viec-nha/:id — BO han mot viec. CAN PIN.
  *
- * Nhung lan con da tick viec nay di theo (ON DELETE CASCADE) nen giao dien phai
- * hoi lai truoc khi goi.
+ * Danh dau da bo chu khong xoa dong that (deleteChore): viec bien mat khoi man
+ * Cai dat, khong khoi phuc duoc, va khong duoc them vao nhung ngay sau nua —
+ * nhung nhung ngay DA TAO thi giu nguyen, ke ca nhung lan con da tick. Khong
+ * khoi phuc duoc nen giao dien van phai hoi lai truoc khi goi.
  */
 export async function DELETE(_req: Request, { params }: Ctx) {
   const familyId = await parentFamilyId();

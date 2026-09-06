@@ -23,7 +23,11 @@ export default async function Page({
 
   // Man chuc mung chi danh cho bai CUOI CUNG CUA HOM NAY: danh sach gio co ca bai
   // ngay mai, khen "lam het bai hom nay" khi con moi lam bai ngay mai thi sai.
-  const sameDay = await listAssignments(familyId, { childId, date: assignment.dueDate });
+  // includeChores: true — viec nha (issue #36) gio la dong assignments THAT,
+  // phai tinh vao stillTodo: thieu co nay thi con lam xong bai THAT cuoi cung
+  // se bi day sang man khen (/xong) TRUOC khi tick het viec nha, dung y cu
+  // (#25/#30) la ca hai phai xong het thi moi coi la "het viec hom nay".
+  const sameDay = await listAssignments(familyId, { childId, date: assignment.dueDate, includeChores: true });
   const stillTodo = sameDay.filter((a) => a.status === 'todo').length;
   const celebrate = assignment.dueDate === todayISO() && stillTodo <= 1;
 
