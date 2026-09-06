@@ -55,9 +55,9 @@ lần. Đường này **chỉ** gắn máy vào nhà, không mở phần bố m�
 trên iPad của các con vẫn an toàn.
 
 Mọi truy vấn trong `lib/store.ts` đều nhận `familyId` và tự lọc theo nó — kể cả
-đường con tick bài xong, con nộp video và con tick việc nhà (ba việc duy nhất
-không cần PIN, cùng xác thực bằng cookie thiết bị). Biết id con hay id bài
-của nhà khác cũng không đọc/sửa được gì.
+đường con tick bài xong (việc nhà cũng đi đúng đường này) và con nộp video (hai
+việc duy nhất không cần PIN, cùng xác thực bằng cookie thiết bị). Biết id con
+hay id bài của nhà khác cũng không đọc/sửa được gì.
 
 ## Migration
 
@@ -140,7 +140,7 @@ app/bome/       màn của bố mẹ: PIN, tạo nhà, tổng quan, thêm bài, 
 app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 nha (gắn máy), extract (Nous Portal), upload (ảnh đề bài),
                 upload-media (tệp bố mẹ đính kèm), nop-video (video con nộp),
-                viec-nha (danh sách nhiệm vụ mỗi ngày + tick của con),
+                viec-nha (cấu hình nhiệm vụ mỗi ngày của bố mẹ, cần PIN),
                 tep (đọc tệp đã ghi ở .data/uploads khi dev)
 app/_components/ BanPhimPin — bàn phím số dùng chung cho 4 chỗ nhập PIN
 lib/            db (Neon|PGlite), store (truy vấn theo familyId), auth (PIN +
@@ -235,17 +235,27 @@ khi luồng `getUserMedia` mới về sau lúc đã đóng (để luồng chạy
 tốn pin và đèn máy ảnh sáng mãi). Không mở được máy ảnh thì có đường lui **chụp
 ảnh mã** (`capture="environment"`) rồi đọc trên ảnh.
 
-**Nhiệm vụ mỗi ngày.** Làm xong bài cuối cùng của hôm nay, con thấy thêm danh
-sách việc nhà ngay trong màn khen "Giỏi quá!" (cất sách vở vào ba lô / tắt đèn
-học / soạn sách vở cho ngày mai — ba việc mặc định nạp sẵn cho mọi nhà) và tự
-tick từng việc. Tick lưu theo **từng con, từng ngày** nên vào lại vẫn thấy đã
-tick. **Một danh sách chung cả nhà**, bố mẹ sửa một lần ở Cài đặt → "Nhiệm vụ mỗi
-ngày": đổi chữ, đổi thứ tự bằng hai nút mũi tên, bật/tắt, xoá. Tắt thì con không
-thấy nữa nhưng những lần đã tick vẫn còn; xoá thì mất theo. Nhà không bật việc
-nào thì màn khen y như trước. Bố mẹ xem "Việc nhà hôm nay — 2/3 xong" ở màn chi
-tiết theo con; con số đó **không** cộng vào ba ô Hoàn thành / Đang chờ / Quá hạn
-ở màn tổng quan — ba ô ấy chỉ đếm bài tập. Hôm nào con không có bài tập nào thì
-không nhắc việc nhà.
+**Nhiệm vụ mỗi ngày.** Việc nhà (cất sách vở vào ba lô / tắt đèn học / soạn sách
+vở cho ngày mai — ba việc mặc định nạp sẵn cho mọi nhà) là **dòng bài tập thật**
+trong bảng `assignments`, cột `chore_id` là dấu hiệu duy nhất nhận ra chúng. Bố
+mẹ giao bài cho một ngày là việc nhà của ngày đó được tạo cùng lúc, xếp thành
+nhóm **"Việc nhà" cuối cùng** trong danh sách bài hôm nay của con; con bấm là
+tick ngay tại chỗ (không mở màn chi tiết bài, vì đọc to + đồng hồ đếm ngược
+không hợp cho "tắt đèn học"). Hôm nào không ai giao bài thì hôm đó **không có**
+việc nhà. Xong hết cả bài lẫn việc nhà mới sang màn khen "Giỏi quá!" — màn đó
+thuần ăn mừng, không còn checklist.
+
+**Một danh sách chung cả nhà**, bố mẹ sửa một lần ở Cài đặt → "Nhiệm vụ mỗi
+ngày": đổi chữ, đổi thứ tự bằng hai nút mũi tên, bật/tắt, xoá. Mọi thay đổi chỉ
+ảnh hưởng những ngày **tạo sau đó** — nội dung đã chép sang dòng bài lúc tạo.
+Xoá là **đánh dấu bỏ** (không khôi phục được): việc biến mất khỏi Cài đặt và
+không thêm vào ngày nào nữa, nhưng những ngày đã tạo giữ nguyên, kể cả các lần
+con đã tick. Bố mẹ xem "Việc nhà hôm nay — 2/3 xong" ở màn chi tiết theo con;
+ô "Quá hạn" ở màn tổng quan và tiến độ bài tập ở hai màn của bố mẹ **không** đếm
+việc nhà (`listAssignments` mặc định loại chúng), còn Hoàn thành / Đang chờ thì
+có — chưa tick hết việc nhà của hôm nay thì chưa được coi là xong. Vì việc nhà
+là bài tập thật, nút **"Xoá tất cả bài tập và việc nhà"** xoá luôn cả lịch sử
+việc nhà.
 
 **Không bao giờ để bố mẹ bị kẹt.** AI hỏng, hết quota hay chưa có key thì vẫn
 tách tạm theo dòng kèm cảnh báo, và luôn có đường "Nhập tay từng bài".
