@@ -1,0 +1,55 @@
+Kiểm thử end-to-end issue #36 — "nhiệm vụ mặc định tạo cùng lúc với bài tập của ngày, xếp cuối cùng"
+App chạy thật: `npm run db:seed` (PGlite ./.data/pg) + `next dev -p 3457`, lái bằng Chromium (playwright-core).
+Ngày hệ thống: 2026-09-06.
+
+[1] Bố mẹ nhập tay MỘT bài cho Bé Na, hạn hôm nay (ảnh 01) → lưu qua saveSubmission.
+    Trạng thái đã ghi trong DB ngay sau đó (mỗi việc nhà đang bật = MỘT dòng assignments thật):
+
+    con     | hạn        | subject   | content                     | status | chore_id             | sort_order
+    --------+------------+-----------+-----------------------------+--------+----------------------+-----------
+    Bé Na   | 2026-09-06 | Việc nhà  | Cất sách vở vào ba lô       | todo   | chr_085a9dab0dbf47a6 | 1
+    Bé Na   | 2026-09-06 | Việc nhà  | Tắt đèn học                 | todo   | chr_b5a72c9759664d16 | 2
+    Bé Na   | 2026-09-06 | Việc nhà  | Soạn sách vở cho ngày mai   | todo   | chr_de29d3b96a184743 | 3
+    Bé Na   | 2026-09-06 | Vẽ        | Tô màu con cá, đếm từ 1..10 | todo   | (null)               | (null)
+
+    Minh/An hôm nay có bài (nạp thẳng bằng seed, không qua saveSubmission) nên KHÔNG có dòng việc nhà
+    → đúng mục 1: việc nhà chỉ sinh ra khi bố mẹ giao bài cho cặp (con, ngày) đó.
+
+[2] Màn của con /con/bena (ảnh 02): nhóm "🧹 Việc nhà" nằm SAU mọi nhóm nơi giao, badge "0/3 việc xong",
+    ô tiến độ tổng "0/4 xong hôm nay" (mục 7 + chữ đã sửa ở vòng review 2).
+
+[3] Con làm xong BÀI THẬT trước (ảnh 03): quay về danh sách, KHÔNG sang màn khen vì việc nhà còn "todo"
+    → "3/4 xong hôm nay". Tick hai việc nhà (ảnh 04): "3/4" → nhóm "2/3 việc xong", tick tại chỗ + refresh.
+    Tick việc nhà CUỐI CÙNG → tự chuyển sang /con/bena/xong (ảnh 05): màn ăn mừng thuần, KHÔNG còn
+    checklist "Việc nhỏ trước khi đi chơi" (mục 3).
+
+[4] Màn bố mẹ:
+    - /bome/con/bena (ảnh 07): "Tiến độ hôm nay 1/1 bài đã xong" (không cộng việc nhà) + hộp đọc riêng
+      "VIỆC NHÀ HÔM NAY 3/3 xong".
+    - /bome/nhiem-vu (ảnh 15): "0/12 xong", không có dòng việc nhà nào trong danh sách bài tập (mục 5).
+    - Form nhập tay (ảnh 01): "Bài của lớp nào" chỉ có Nguyễn Siêu / Smartkid / Khác — không rò "Việc nhà"
+      thành một lựa chọn bấm nhầm được (mục 2).
+
+[5] Thứ tự bố mẹ xếp (nút mũi tên ở Cài đặt, ảnh 08): đưa "Soạn sách vở cho ngày mai" lên đầu, rồi giao
+    bài cho Minh hạn NGÀY MAI → nhóm Việc nhà của ngày mai xếp đúng thứ tự mới (ảnh 09):
+      Soạn sách vở cho ngày mai → Cất sách vở vào ba lô → Tắt đèn học.
+
+[6] Nộp bài LẦN HAI trong cùng ngày cho Bé Na (ảnh 10): vẫn đúng 3 dòng việc nhà, các tick cũ giữ nguyên
+    ("🎉 3/3 việc xong"), bài mới hiện bình thường → unique index (child_id, due_date, chore_id) chặn trùng.
+
+[7] Việc nhà QUÁ HẠN không làm phình badge của bố mẹ (ảnh 11): thêm một dòng việc nhà 'todo' hạn hôm qua
+    cho An → /bome vẫn "Quá hạn 1" (chỉ bài thật của Minh), thẻ của An không có dấu cảnh báo.
+
+[8] Sửa danh sách việc nhà giữa chừng (mục 6): xoá hẳn "Cất sách vở vào ba lô" và tắt "Soạn sách vở cho
+    ngày mai" (ảnh 12) → ngày MỚI (08/09) chỉ tạo 1 dòng "Tắt đèn học" (ảnh 13), còn các dòng ĐÃ TẠO của
+    hôm nay vẫn đủ 3 và vẫn là việc nhà (ảnh 14).
+
+[9] "Xoá tất cả bài tập" (mục 8, ảnh 16): hộp hỏi lại ghi rõ "Xoá tất cả 17 mục của cả nhà? — 17 mục này
+    gồm cả việc nhà đã tạo cho từng ngày..." (17 = 12 bài thật + 5 dòng việc nhà). Sau khi xoá: danh sách
+    bố mẹ "0/0 xong", màn của con trở về "Hôm nay không có bài tập 🎉" (ảnh 17).
+
+Ghi chú kỹ thuật: giữa bước [6] và [7] phải tắt/bật lại `next dev` để chèn dòng việc nhà quá hạn,
+và PGlite (bản DB dev, ./.data/pg) mất một phần ghi chưa kịp flush khi tắt tiến trình — nên từ ảnh 11
+trở đi các tick/sắp xếp của bước [3][5][6] không còn trong DB. Mỗi khẳng định ở trên đều được chụp
+NGAY trong phiên chạy tương ứng, nên không ảnh hưởng kết luận; chỉ giải thích vì sao thứ tự việc nhà
+ở ảnh 14 trở lại thứ tự gốc.
