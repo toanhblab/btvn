@@ -249,7 +249,10 @@ export default function QuayVideo({
       // Dong ho da dem duoc dung so giay THAT — dung no de va lai metadata
       // duration cua container (issue #32: MediaRecorder ghi sai so nay, khong
       // lam sai du lieu hinh/am, nhung cong cu doc metadata nhu "Save Video"
-      // vao Photos tren iOS se cat theo con so sai do).
+      // vao Photos tren iOS se cat theo con so sai do). Voi mp4 phan manh
+      // (Safari/Chrome deu ghi kieu nay) fixVideoDuration con chen them hop
+      // mvex>mehd de Safari khong hien thoi luong gap doi — Blob tra ve co
+      // the dai hon `out` 16 byte, khong con la cung mot buffer.
       const daGhiGiay = elapsedRef.current;
       fixVideoDuration(out, daGhiGiay).then((fixed) => {
         if (discardRef.current) return; // huy/roi trang trong luc dang va

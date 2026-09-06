@@ -63,10 +63,24 @@ Video con quay để nộp bài (`QuayVideo.tsx`, dùng `MediaRecorder`) luôn c
 `duration` SAI trong container (bug của trình duyệt, không phải lỗi ghép chunk) —
 `<video>` trong trang vẫn phát đủ vì nó đọc dữ liệu thật khi tua, nhưng bất kỳ
 công cụ nào DỰA VÀO metadata đó (như "Save Video" vào Photos trên iOS) sẽ cắt
-theo con số sai (issue #32). `lib/videoDuration.ts` vá lại 4-8 byte duration
-trong mp4 (mvhd/tkhd/mdhd) và webm (Segment>Info>Duration) bằng số giây THẬT mà
-`QuayVideo` đã tự đếm, ngay sau khi `onstop` ghép xong Blob — đọc chú thích đầu
-file đó trước khi đụng vào luồng quay/nộp video.
+theo con số sai (issue #32). `lib/videoDuration.ts` sửa lại ngay sau khi `onstop`
+ghép xong Blob, theo hai tầng: (1) vá tại chỗ `mvhd`/`tkhd`/`mdhd` (mp4) và
+`Segment>Info>Duration` (webm) bằng số giây THẬT — mỗi track một giá trị riêng
+tính từ `moof>traf>trun`; (2) CHÈN thêm hộp `mvex>mehd` 16 byte vào mp4 phân
+mảnh, vì Safari/AVFoundation thiếu hộp này sẽ cộng dồn hai track và hiện thời
+lượng GẤP ĐÔI. Tầng 2 đổi kích thước tệp nên phải dịch mọi offset tuyệt đối
+(`stco`/`co64`, `tfhd.base_data_offset`, `tfra.moof_offset`); nó duyệt cây hộp
+theo danh sách trắng và gặp hộp lạ là TỪ CHỐI, giữ nguyên kết quả tầng 1 — thà
+thiếu `mehd` còn hơn hỏng video. Đọc chú thích đầu file đó trước khi đụng vào
+luồng quay/nộp video; test trong `lib/videoDuration.test.ts` có sẵn bộ dựng mp4
+phân mảnh giả và bộ duyệt cây để kiểm từng offset.
+
+Không có driver Safari trên máy nên không tự quay được video Safari để thử;
+mẫu Safari THẬT lấy từ URL Vercel Blob public của video con đã nộp (đọc `src`
+của `<video>` trên trang bài sau khi đăng nhập PIN, rồi `curl`) — tệp có mặt trẻ
+em, phân tích xong phải xoá ngay. File Safari: `tfhd` flags `0x2001a`/`0x20038`
+là `default-base-is-moof` (offset tương đối), không có `mfra`; file Chrome có
+`mfra>tfra` (offset tuyệt đối) và `mvhd`/`tkhd` version 1.
 
 ## Maintaining this file
 
