@@ -20,8 +20,10 @@ export default async function DanhSachNhiemVu() {
   const [children, items, total] = await Promise.all([
     listChildren(familyId),
     listAssignments(familyId, { from: todayISO(-7), to: todayISO(7) }),
-    // Man nay chi liet ke 7 ngay quanh hom nay; nut xoa het phai noi dung tong
-    // so bai trong DB chu khong phai so bai dang nhin thay.
+    // Man nay chi liet ke 7 ngay quanh hom nay VA khong liet ke viec nha
+    // (listAssignments mac dinh loai chore_id); nut xoa het phai noi dung tong so
+    // dong trong DB — ke ca viec nha, vi thao tac do xoa that ca chung (issue #36
+    // muc 8). Chu trong XoaTatCa noi ro con so nay gom ca viec nha.
     countAssignments(familyId),
   ]);
 

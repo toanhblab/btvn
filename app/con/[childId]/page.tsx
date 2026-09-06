@@ -50,6 +50,11 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   if (!child) notFound();
   const todayItems = items.filter((a) => a.dueDate === today);
   const done = todayItems.filter((a) => a.status === 'done').length;
+  // Con bao nhieu thu cua hom nay chua xong (bai that + viec nha). ViecNhaBai
+  // can so nay de biet luc nao tick not viec cuoi cung thi day sang man khen —
+  // cung mot y voi `stillTodo` o bai/[id]/page.tsx, dem o day de khong phai
+  // them mot luot goi listAssignments nua.
+  const todoHomNay = todayItems.length - done;
 
   /** listAssignments da sap xep theo due_date tang dan nen chi can gom lien tiep. */
   function gomTheoNgay(mine: Assignment[]): { date: string; items: Assignment[] }[] {
@@ -222,7 +227,12 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                 // Viec nha: the tick nhe tai cho, KHONG dan sang /bai/[id] — man
                 // do co doc to + dong ho dem nguoc + co the quay video, khong hop
                 // voi mot viec don gian nhu "tat den hoc" (xem ViecNhaBai.tsx).
-                <ViecNhaBai items={g.items} />
+                <ViecNhaBai
+                  items={g.items}
+                  childId={child.id}
+                  laHomNay={g.date === today}
+                  todoHomNay={todoHomNay}
+                />
               ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-k-gutter">
             {g.items.map((a) => {

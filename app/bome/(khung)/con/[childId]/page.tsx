@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
-import { getChild, listAssignments, listChores, todayISO } from '@/lib/store';
+import { getChild, listAssignments, todayISO } from '@/lib/store';
 import { HW_SOURCES } from '@/lib/types';
 import XoaBai from './XoaBai';
 
@@ -36,18 +36,14 @@ export default async function ChiTietCon({
   // — captain dung ba con so do de theo bai tap (khong doi bang co nay: xem
   // listAssignments, includeChores mac dinh false).
   //
-  // Viec nha gio la dong assignments THAT (issue #36) — con tick qua PATCH
-  // /api/assignments/:id, KHONG con ghi vao daily_chore_checks nua, nen "da
-  // tick chua" phai doc tu day (includeChores: true), khong doc tu
-  // listChoreChecks nua (se luon tra rong tu khi #36 doi cach tick).
-  const [chores, choreAssignmentsHomNay] = await Promise.all([
-    listChores(familyId, { enabledOnly: true }),
-    listAssignments(familyId, { childId, date: today, includeChores: true }),
-  ]);
-  const daTick = choreAssignmentsHomNay
-    .filter((a) => a.choreId != null && a.status === 'done')
-    .map((a) => a.choreId as string);
-  const soViecXong = chores.filter((c) => daTick.includes(c.id)).length;
+  // Doc theo CAC DONG THAT da tao cho hom nay (issue #36), KHONG theo cau hinh
+  // dang bat (listChores): hai ben lech nhau ngay khi bo me sua danh sach giua
+  // chung, va ngay khong ai giao bai thi khong co dong nao duoc tao — bo me
+  // phai thay dung thu con dang thay, khong thi "0/3 xong" mai du con khong co
+  // gi de tick.
+  const choreItems = (await listAssignments(familyId, { childId, date: today, includeChores: true }))
+    .filter((a) => a.choreId != null);
+  const soViecXong = choreItems.filter((a) => a.status === 'done').length;
 
   const done = items.filter((a) => a.status === 'done').length;
   const pct = items.length ? Math.round((done / items.length) * 100) : 0;
@@ -113,17 +109,17 @@ export default async function ChiTietCon({
         </div>
       </section>
 
-      {chores.length > 0 && (
+      {choreItems.length > 0 && (
         <section className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-5">
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <h2 className="text-p-label uppercase text-on-surface-variant">Việc nhà hôm nay</h2>
             <span className="text-p-body-sm text-on-surface font-bold">
-              {soViecXong}/{chores.length} xong
+              {soViecXong}/{choreItems.length} xong
             </span>
           </div>
           <ul className="flex flex-col gap-1">
-            {chores.map((c) => {
-              const xong = daTick.includes(c.id);
+            {choreItems.map((c) => {
+              const xong = c.status === 'done';
               return (
                 <li key={c.id} className="flex items-center gap-1.5">
                   <span

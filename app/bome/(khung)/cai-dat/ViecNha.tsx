@@ -6,8 +6,10 @@ import { MAX_CHU_VIEC_NHA, type DailyChore } from '@/lib/types';
 /**
  * Danh sach "Nhiem vu moi ngay" o man Cai dat cua bo me.
  *
- * MOT danh sach chung ca nha (issue #25): sua mot lan la ca ba con deu thay o man
- * khen sau khi lam xong bai cuoi cung cua hom nay.
+ * MOT danh sach chung ca nha (issue #25): sua mot lan la ca ba con deu thay. Tu
+ * issue #36, moi viec dang bat sinh ra mot dong assignments THAT cho moi ngay CO
+ * bai duoc giao, xep cuoi danh sach bai hom do cua con (xem lib/store.ts
+ * saveSubmission) — sua/tat/bo chi an sang cac ngay TAO SAU do.
  *
  * Doi thu tu bang HAI NUT MUI TEN chu khong keo tha: bo me hay mo man nay tren
  * dien thoai, keo tha bang ngon cai tren danh sach ngan la de truot nham hon la
@@ -98,8 +100,9 @@ export default function ViecNha({ initial }: { initial: DailyChore[] }) {
   return (
     <>
       <p className="text-p-body-sm text-on-surface-variant mb-2 xl:mb-4">
-        Làm xong bài cuối cùng của ngày, các con sẽ thấy danh sách này ở màn khen
-        và tự tick từng việc. Cả nhà dùng chung một danh sách.
+        Những việc này được thêm vào cuối danh sách bài tập của các con, cho mỗi
+        ngày <b>có bài được giao</b> — con tự tick từng việc như tick một bài.
+        Cả nhà dùng chung một danh sách.
       </p>
 
       <div className="flex flex-col gap-p-tight mb-3">
@@ -110,8 +113,9 @@ export default function ViecNha({ initial }: { initial: DailyChore[] }) {
                 Xoá việc “{c.content}”?
               </p>
               <p className="text-p-body-sm text-on-error-container mb-3">
-                Những lần các con đã tick việc này cũng mất theo. Chỉ muốn tạm ẩn
-                thì tắt công tắc là được.
+                Việc này biến mất khỏi đây và không được thêm vào những ngày sau
+                nữa — không lấy lại được. Những ngày đã tạo vẫn giữ nguyên, kể cả
+                những lần các con đã tick. Chỉ muốn tạm ẩn thì tắt công tắc là được.
               </p>
               <div className="flex gap-2">
                 <button

@@ -612,9 +612,15 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
 
 /* ---------------- Nhiem vu moi ngay ("viec nha") ----------------
  *
- * MOT danh sach chung ca nha: bo me sua o man Cai dat, moi con deu thay danh
- * sach do o man khen sau khi lam xong bai cuoi cung cua hom nay. Danh dau da lam
- * thi lai theo (con, viec, ngay) — xem migrations/012_nhiem_vu_moi_ngay.sql.
+ * MOT danh sach CAU HINH chung ca nha: bo me sua o man Cai dat
+ * (migrations/012_nhiem_vu_moi_ngay.sql). Tu issue #36 day chi con la khuon: moi
+ * viec dang bat sinh ra mot DONG assignments that cho moi (con, ngay co bai duoc
+ * giao) trong saveSubmission, va con tick chinh dong do — bang daily_chore_checks
+ * khong con ai ghi vao nua.
+ *
+ * Ba trang thai, dung nham la mat du lieu: dang bat / tat (enabled = false, van
+ * hien o Cai dat, bat lai duoc) / da bo (archived_at, an han, khong khoi phuc —
+ * xem deleteChore va migrations/014_bo_viec_nha_thay_vi_xoa.sql).
  */
 
 /**
@@ -646,13 +652,19 @@ const toChore = (r: ChoreRow): DailyChore => ({
   enabled: Boolean(r.enabled),
 });
 
+/**
+ * Viec da BO (archived_at khong null) bi loai o day va o getChore, tuc o MOI
+ * duong doc — ke ca luot enabledOnly ma saveSubmission dung de tao dong viec nha
+ * cho mot ngay moi. Khac voi "tat" (enabled = false): tat thi van hien o man Cai
+ * dat va bat lai duoc. Xem migrations/014_bo_viec_nha_thay_vi_xoa.sql.
+ */
 export async function listChores(
   familyId: string,
   opts: { enabledOnly?: boolean } = {}
 ): Promise<DailyChore[]> {
   const rows = await query<ChoreRow>(
     `SELECT id, content, sort_order, enabled FROM daily_chores
-      WHERE family_id = $1 ${opts.enabledOnly ? 'AND enabled' : ''}
+      WHERE family_id = $1 AND archived_at IS NULL ${opts.enabledOnly ? 'AND enabled' : ''}
       ORDER BY sort_order ASC, created_at ASC, id ASC`,
     [familyId]
   );
@@ -687,10 +699,17 @@ export async function createChore(familyId: string, content: string): Promise<Da
   return chore;
 }
 
-/** Tra null neu viec nay thuoc nha khac — dung lam luon lop kiem tra so huu. */
+/**
+ * Tra null neu viec nay thuoc nha khac — dung lam luon lop kiem tra so huu.
+ *
+ * Viec da bo cung tra null: voi bo me no khong con ton tai (khong hien o Cai dat,
+ * khong co nut khoi phuc), nen sua/bo lai no qua API phai la 404 chu khong duoc
+ * am tham doi noi dung mot dong ma khong man nao hien ra.
+ */
 export async function getChore(familyId: string, id: string): Promise<DailyChore | null> {
   const r = await queryOne<ChoreRow>(
-    `SELECT id, content, sort_order, enabled FROM daily_chores WHERE id = $1 AND family_id = $2`,
+    `SELECT id, content, sort_order, enabled FROM daily_chores
+      WHERE id = $1 AND family_id = $2 AND archived_at IS NULL`,
     [id, familyId]
   );
   return r ? toChore(r) : null;
@@ -716,8 +735,21 @@ export async function updateChore(
   return getChore(familyId, id);
 }
 
+/**
+ * DANH DAU DA BO, khong xoa dong that: xoa that se keo theo chore_id cua moi
+ * dong assignments sinh tu viec nay ve NULL (ON DELETE SET NULL, migrations/013),
+ * bien chung thanh BAI TAP THAT — lot vao danh sach bai cua con va vao badge
+ * "Qua han" cua bo me. Xem migrations/014_bo_viec_nha_thay_vi_xoa.sql.
+ *
+ * Sau lenh nay listChores/getChore khong con tra ve viec do nua, nen no bien mat
+ * khoi man Cai dat va khong duoc dung de tao dong cho cac ngay sau.
+ */
 export async function deleteChore(familyId: string, id: string): Promise<void> {
-  await query(`DELETE FROM daily_chores WHERE id = $1 AND family_id = $2`, [id, familyId]);
+  await query(
+    `UPDATE daily_chores SET archived_at = now()
+      WHERE id = $1 AND family_id = $2 AND archived_at IS NULL`,
+    [id, familyId]
+  );
 }
 
 /**

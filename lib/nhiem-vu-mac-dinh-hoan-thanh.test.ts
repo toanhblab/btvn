@@ -34,6 +34,21 @@ let boChay: { query: (t: string, p?: unknown[]) => Promise<Record<string, unknow
 const rows = async (sql: string) => (await db.query(sql)).rows as Record<string, unknown>[];
 
 /**
+ * Mo phong nhanh "Qua han" cua progressUpcoming: han truoc hom nay, con 'todo',
+ * VA khong phai viec nha (chore_id IS NULL) — man bo me khong duoc thay viec nha
+ * lam phinh badge nay.
+ */
+async function quaHan(childId: string) {
+  const bai = await rows(
+    `SELECT status, due_date::text AS due_date, chore_id FROM assignments
+      WHERE child_id = '${childId}' AND (due_date >= '${HOM_NAY}' OR status = 'todo')`
+  );
+  return bai.filter(
+    (r) => String(r.due_date) < HOM_NAY && r.status === 'todo' && r.chore_id === null
+  ).length;
+}
+
+/**
  * Mo phong CHINH XAC cau truy van cua progressUpcoming (lib/store.ts) cho MOT
  * con: mot cau duy nhat tren assignments (chore_id de tach homeworkTotal), MOI
  * la khac voi ban truoc #36 — khong con cau rieng tren daily_chore_checks nua,
@@ -168,4 +183,54 @@ test('hai dot nop bai cung ngay cho cung mot con: khong tao trung viec nha (uniq
     `SELECT id FROM assignments WHERE child_id = 'con_z' AND due_date = '${NGAY}' AND chore_id IS NOT NULL`
   );
   assert.equal(soDongViecNha.length, 3, 'hai dot nop bai cung ngay chi duoc tao dung 3 dong viec nha, khong trung');
+});
+
+/**
+ * Hop dong luoc do ma deleteChore (lib/store.ts) dua vao, do
+ * migrations/013 + 014 dat ra: chore_id la dau hieu DUY NHAT phan biet mot dong
+ * assignments la viec nha hay bai tap that, nen bo mot viec nha KHONG duoc lam
+ * mat dau hieu do o cac dong da tao.
+ *
+ * Hai nhanh chay canh nhau tren cung mot du lieu de thay ro cai gia: DELETE that
+ * (deleteChore truoc day) keo chore_id ve NULL — dong viec nha qua han hoa thanh
+ * bai tap that va nhay vao badge "Qua han" cua bo me, ma con khong con duong nao
+ * tick no. Danh dau da bo (archived_at) giu nguyen chore_id.
+ */
+test('bo mot viec nha (archived_at) giu nguyen chore_id cua cac dong da tao; DELETE that thi khong', async () => {
+  const HOM_QUA = '2026-09-03';
+  await db.exec(
+    `INSERT INTO children (id, family_id, name, grade, color, avatar_url) VALUES
+       ('con_bo', 'fam_x', 'Ti', 'Lớp 1', 'primary', '/img/b.png');
+     INSERT INTO daily_chores (id, family_id, content, sort_order) VALUES
+       ('chr_bo', 'fam_x', 'Tưới cây', 8),
+       ('chr_xoa', 'fam_x', 'Gấp chăn', 9);
+     INSERT INTO assignments (id, child_id, subject, content, due_date, status, chore_id) VALUES
+       ('bo_1', 'con_bo', 'Việc nhà', 'Tưới cây', '${HOM_QUA}', 'todo', 'chr_bo'),
+       ('xoa_1', 'con_bo', 'Việc nhà', 'Gấp chăn', '${HOM_QUA}', 'todo', 'chr_xoa')`
+  );
+
+  assert.equal(await quaHan('con_bo'), 0, 'hai dong nay deu la viec nha nen chua tinh vao "Qua han"');
+
+  // Dung cau lenh deleteChore chay tu nay.
+  await db.exec(`UPDATE daily_chores SET archived_at = now() WHERE id = 'chr_bo'`);
+
+  // ...va cau lenh deleteChore chay TRUOC day, de doi chieu.
+  await db.exec(`DELETE FROM daily_chores WHERE id = 'chr_xoa'`);
+
+  const conHien = await rows(
+    `SELECT id FROM daily_chores WHERE family_id = 'fam_x' AND archived_at IS NULL AND id = 'chr_bo'`
+  );
+  assert.equal(conHien.length, 0, 'viec da bo phai bien mat khoi moi duong doc cua man Cai dat');
+
+  const [daBo] = await rows(`SELECT chore_id FROM assignments WHERE id = 'bo_1'`);
+  assert.equal(daBo.chore_id, 'chr_bo', 'dong lich su cua viec da bo phai giu nguyen chore_id');
+
+  const [daXoa] = await rows(`SELECT chore_id FROM assignments WHERE id = 'xoa_1'`);
+  assert.equal(daXoa.chore_id, null, 'DELETE that keo chore_id ve NULL — chinh la ly do khong xoa that nua');
+
+  assert.equal(
+    await quaHan('con_bo'),
+    1,
+    'chi dong cua viec bi XOA THAT lot vao "Qua han"; dong cua viec da bo van la viec nha'
+  );
 });
