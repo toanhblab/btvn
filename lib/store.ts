@@ -293,11 +293,19 @@ export async function listAssignments(
   if (opts.source)  { params.push(opts.source);  where.push(`a.source = $${params.length}`); }
   if (!opts.includeChores) where.push(`a.chore_id IS NULL`);
 
+  // dc.sort_order trong ORDER BY: moi dong viec nha deu mang cung subject
+  // (VIEC_NHA_SUBJECT) nen neu khong co no, khoa phan dinh cuoi cung la a.id —
+  // ma id sinh ngau nhien (newId), tuc thu tu bo me xep bang hai nut mui ten o
+  // man Cai dat (moveChore danh lai sort_order 1..n) khong toi duoc man nao.
+  // Sap o ngay ranh gioi nay de moi noi doc deu duoc dung thu tu, khong phai
+  // sap lai o tung man. Bai tap that co sort_order NULL nen NULLS FIRST giu
+  // chung dung truoc neu bo me tinh co go ten mon trung voi "Việc nhà".
   const rows = await query<AssignmentRow>(
     `SELECT a.* FROM assignments a
      JOIN children c ON c.id = a.child_id
+     LEFT JOIN daily_chores dc ON dc.id = a.chore_id
      WHERE ${where.join(' AND ')}
-     ORDER BY a.due_date ASC, a.subject ASC, a.id ASC`,
+     ORDER BY a.due_date ASC, a.subject ASC, dc.sort_order ASC NULLS FIRST, a.id ASC`,
     params
   );
   const media = await mediaByAssignment(rows.map((r) => r.id));
@@ -389,18 +397,39 @@ export async function saveSubmission(input: {
   // co the duoc giao bai cho cung mot ngay o hai lan goi saveSubmission khac
   // nhau (vd lop chinh nhap truoc, lop tieng Anh nhap sau), con thu hai van
   // phai duoc tao viec nha du con thu nhat da co roi.
-  const chores = await listChores(input.familyId, { enabledOnly: true });
-  if (chores.length > 0) {
-    const daCoRows = await query<{ child_id: string }>(
-      `SELECT DISTINCT child_id FROM assignments
-        WHERE due_date = $1 AND chore_id IS NOT NULL AND child_id = ANY($2)`,
-      [input.dueDate, childIds]
-    );
-    const daCoViecNha = new Set(daCoRows.map((r) => r.child_id));
+  //
+  // Ca khoi bi nuot loi, y het seedDefaultChores o insertFamily: cac dong bai
+  // tap that o tren da ghi xong va khong chung transaction voi khoi nay, nen nem
+  // loi len se tra 500 cho mot dot nhap DA THANH CONG — bo me nhap lai la sinh
+  // ban sao ca dot bai. Bai tap la bat buoc, viec nha chi la "co thi tot".
+  try {
+    const chores = await listChores(input.familyId, { enabledOnly: true });
+    if (chores.length > 0) {
+      const daCoRows = await query<{ child_id: string }>(
+        `SELECT DISTINCT child_id FROM assignments
+          WHERE due_date = $1 AND chore_id IS NOT NULL AND child_id = ANY($2)`,
+        [input.dueDate, childIds]
+      );
+      const daCoViecNha = new Set(daCoRows.map((r) => r.child_id));
 
-    for (const childId of childIds) {
-      if (daCoViecNha.has(childId)) continue;
-      for (const c of chores) {
+      // MOT lenh INSERT nhieu dong cho toan bo (con x viec): Neon la HTTP nen
+      // moi cau la mot vong goi rieng, 3 con x 3 viec ma chay tung cau la chin
+      // vong thua trong moi lan bo me luu bai.
+      const params: unknown[] = [];
+      const values: string[] = [];
+      for (const childId of childIds) {
+        if (daCoViecNha.has(childId)) continue;
+        for (const c of chores) {
+          const dong = [
+            newId('asg'), subId, childId, VIEC_NHA_SUBJECT, VIEC_NHA_ICON, c.content, null, 'vi',
+            input.dueDate, HW_SOURCE_DEFAULT, null, DURATION_DEFAULT, false, c.id,
+          ];
+          values.push(`(${dong.map((_, i) => `$${params.length + i + 1}`).join(',')})`);
+          params.push(...dong);
+        }
+      }
+
+      if (values.length > 0) {
         // ON CONFLICT tren unique index (child_id, due_date, chore_id) — chan
         // tao trung khi hai request nop bai dong thoi cung luot qua buoc SELECT
         // o tren truoc khi ben nao kip ghi (xem migrations/013_...).
@@ -408,15 +437,14 @@ export async function saveSubmission(input: {
           `INSERT INTO assignments
              (id, submission_id, child_id, subject, icon, content, note, lang, due_date, source,
               image_url, duration_minutes, requires_video, chore_id)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+           VALUES ${values.join(',')}
            ON CONFLICT (child_id, due_date, chore_id) WHERE chore_id IS NOT NULL DO NOTHING`,
-          [
-            newId('asg'), subId, childId, VIEC_NHA_SUBJECT, VIEC_NHA_ICON, c.content, null, 'vi',
-            input.dueDate, HW_SOURCE_DEFAULT, null, DURATION_DEFAULT, false, c.id,
-          ]
+          params
         );
       }
     }
+  } catch (e) {
+    console.error('Khong tao duoc dong viec nha cho ngay', input.dueDate, e);
   }
 
   return created;

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
 import { getChild, listAssignments, todayISO } from '@/lib/store';
-import { HW_SOURCES } from '@/lib/types';
+import { HW_SOURCES, type Assignment } from '@/lib/types';
 import XoaBai from './XoaBai';
 
 export const dynamic = 'force-dynamic';
@@ -26,9 +26,6 @@ export default async function ChiTietCon({
   if (!child) notFound();
 
   const today = todayISO();
-  const items = tuanNay
-    ? await listAssignments(familyId, { childId, from: todayISO(-6), to: todayISO(6) })
-    : await listAssignments(familyId, { childId, date: today });
 
   // Viec nha lay rieng va CHI CHO HOM NAY, ke ca khi dang xem tab "Tuan nay":
   // no la viec cua buoi toi hom nay, khong phai bai tap co han. Cung vi the no
@@ -41,8 +38,25 @@ export default async function ChiTietCon({
   // chung, va ngay khong ai giao bai thi khong co dong nao duoc tao — bo me
   // phai thay dung thu con dang thay, khong thi "0/3 xong" mai du con khong co
   // gi de tick.
-  const choreItems = (await listAssignments(familyId, { childId, date: today, includeChores: true }))
-    .filter((a) => a.choreId != null);
+  //
+  // Tab "Hom nay": MOT cau duy nhat roi tach hai phan bang choreId, vi hai ben
+  // chi khac moi co includeChores. Tab "Tuan nay": pham vi ngay khac nhau nen
+  // phai hai cau, cho chay song song — Neon la HTTP nen cho cau nay xong moi goi
+  // cau kia la cong them mot vong khong can thiet (nhu chu thich o man cua con).
+  let items: Assignment[];
+  let choreItems: Assignment[];
+  if (tuanNay) {
+    const [tuan, homNay] = await Promise.all([
+      listAssignments(familyId, { childId, from: todayISO(-6), to: todayISO(6) }),
+      listAssignments(familyId, { childId, date: today, includeChores: true }),
+    ]);
+    items = tuan;
+    choreItems = homNay.filter((a) => a.choreId != null);
+  } else {
+    const homNay = await listAssignments(familyId, { childId, date: today, includeChores: true });
+    items = homNay.filter((a) => a.choreId == null);
+    choreItems = homNay.filter((a) => a.choreId != null);
+  }
   const soViecXong = choreItems.filter((a) => a.status === 'done').length;
 
   const done = items.filter((a) => a.status === 'done').length;

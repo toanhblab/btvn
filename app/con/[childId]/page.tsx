@@ -163,7 +163,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
         {todayItems.length > 0 && (
           <div className="hidden xl:flex items-center shrink-0 bg-primary-container text-on-primary-container
                           text-k-headline px-8 py-4 rounded-full soft-shadow whitespace-nowrap">
-            {done}/{todayItems.length} bài hôm nay đã xong
+            {done}/{todayItems.length} xong hôm nay
           </div>
         )}
       </header>
@@ -189,7 +189,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
             ))}
           </div>
           <div className="text-k-headline text-on-surface xl:hidden">
-            {done}/{todayItems.length} bài hôm nay đã xong
+            {done}/{todayItems.length} xong hôm nay
           </div>
         </section>
       )}
@@ -213,7 +213,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                 sg.done === sg.total ? 'bg-success text-white' : 'bg-surface-container-highest text-on-surface'
               }`}
             >
-              {sg.done === sg.total ? '🎉 ' : ''}{sg.done}/{sg.total} bài xong
+              {sg.done === sg.total ? '🎉 ' : ''}{sg.done}/{sg.total} {sg.isChores ? 'việc' : 'bài'} xong
             </span>
           </div>
 
