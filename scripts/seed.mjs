@@ -62,11 +62,13 @@ await query(
 
 // 3b. Ba viec nha mac dinh — cheo lai VIEC_NHA_MAC_DINH trong lib/store.ts (script
 //     node khong import duoc TypeScript). Doi mot ben la phai doi ben kia.
-const chores = ['Cất sách vở vào ba lô', 'Tắt đèn học', 'Soạn sách vở cho ngày mai'];
-for (const [i, content] of chores.entries()) {
+const chores = ['Cất sách vở vào ba lô', 'Tắt đèn học', 'Soạn sách vở cho ngày mai'].map(
+  (content, i) => ({ id: id('chr'), content, sortOrder: i + 1 })
+);
+for (const c of chores) {
   await query(
     `INSERT INTO daily_chores (id, family_id, content, sort_order) VALUES ($1,$2,$3,$4)`,
-    [id('chr'), familyId, content, i + 1]
+    [c.id, familyId, c.content, c.sortOrder]
   );
 }
 
@@ -98,6 +100,10 @@ const twinTasks = [
   ['Vẽ',         '🎨', 'Vẽ ngôi nhà của em, tô màu cho thật đẹp.', 'Giấy A4',                'vi', 'primary_school', '/img/bai-ngoi-nha.jpg'],
 ];
 
+// Moi cap (con, ngay) duoc giao bai o duoi deu phai co viec nha di kem, dung
+// nhu luong that — xem muc 6.
+const capCoBai = new Set();
+
 let n = 0;
 for (const childId of ['minh', 'an']) {
   for (const [subject, icon, content, note, lang, source, img] of twinTasks) {
@@ -108,6 +114,7 @@ for (const childId of ['minh', 'an']) {
     );
     n++;
   }
+  capCoBai.add(`${childId}|${dateOffset(0)}`);
 }
 
 // Mot bai qua han cua Minh de thu trang thai "Qua han" tren bang dieu khien
@@ -117,6 +124,7 @@ await query(
   [id('asg'), null, 'minh', 'Tự nhiên', '🐝', 'Quan sát con ong, kể lại cho cô nghe.', null, 'vi', 'primary_school', dateOffset(-1), '/img/bai-con-ong.jpg']
 );
 n++;
+capCoBai.add(`minh|${dateOffset(-1)}`);
 
 // Be Na: hom nay KHONG co bai -> dung de thu man "Hom nay khong co bai tap"
 await query(
@@ -125,8 +133,30 @@ await query(
   [id('asg'), null, 'bena', 'Tiếng Anh', '🔤', 'Point at the picture and say: cat, dog, bird.', 'Bài của lớp tiếng Anh', 'en', 'english_class', dateOffset(1), '/img/bai-con-ong.jpg']
 );
 n++;
+capCoBai.add(`bena|${dateOffset(1)}`);
 
-console.log(`✓ 1 gia đình, ${children.length} con, ${n} bài tập, ${chores.length} việc nhà`);
+// 6. Dong viec nha cho dung nhung (con, ngay) vua duoc giao bai (issue #36).
+//    NHAN BAN logic tao dong viec nha trong saveSubmission (lib/store.ts) vi
+//    script node khong import duoc TypeScript — doi ben do thi phai doi ca o
+//    day: cung subject/icon (VIEC_NHA_SUBJECT/VIEC_NHA_ICON), cung
+//    HW_SOURCE_DEFAULT + DURATION_DEFAULT (lib/types.ts), cung chore_id va
+//    due_date. Khong seed dong nao cho ngay khong co bai — dung hanh vi that:
+//    hom nao khong ai giao bai thi hom do khong co viec nha (vd hom nay cua Bé
+//    Na, van dung de thu man "Hôm nay không có bài tập").
+let nViecNha = 0;
+for (const cap of capCoBai) {
+  const [childId, dueDate] = cap.split('|');
+  for (const c of chores) {
+    await query(
+      `INSERT INTO assignments (id, submission_id, child_id, subject, icon, content, note, lang, source, due_date, image_url, duration_minutes, requires_video, chore_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+      [id('asg'), null, childId, 'Việc nhà', '🧹', c.content, null, 'vi', 'primary_school', dueDate, null, 10, false, c.id]
+    );
+    nViecNha++;
+  }
+}
+
+console.log(`✓ 1 gia đình, ${children.length} con, ${n} bài tập, ${chores.length} việc nhà (${nViecNha} dòng)`);
 console.log(`  PIN bố mẹ      : ${PIN}`);
 console.log(`  Link cho iPad  : /nha/${slug}`);
 process.exit(0);

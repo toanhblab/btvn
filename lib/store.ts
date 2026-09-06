@@ -402,6 +402,9 @@ export async function saveSubmission(input: {
   // tap that o tren da ghi xong va khong chung transaction voi khoi nay, nen nem
   // loi len se tra 500 cho mot dot nhap DA THANH CONG — bo me nhap lai la sinh
   // ban sao ca dot bai. Bai tap la bat buoc, viec nha chi la "co thi tot".
+  //
+  // scripts/seed.mjs nhan ban khoi nay cho DB mau (script node khong import
+  // duoc TypeScript) — doi cach tao dong viec nha o day thi doi ca ben do.
   try {
     const chores = await listChores(input.familyId, { enabledOnly: true });
     if (chores.length > 0) {
