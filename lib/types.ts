@@ -109,8 +109,8 @@ export interface Assignment {
   choreId: string | null;
   /**
    * Moc con bam "Bat dau lam" (dong ho dem nguoc), do may con gui len luc tick
-   * xong — de xet "xong som" (+1 diem, lib/diem.ts) va cho bo me xem con lam
-   * bao lau. null = con khong bam dong ho / bai chua xong.
+   * xong — de xet "xong som" (+1 diem, lib/diem.ts) va luu lai lam bang chung
+   * cua phep so sanh do. null = con khong bam dong ho / bai chua xong.
    */
   startedAt: string | null;
 }

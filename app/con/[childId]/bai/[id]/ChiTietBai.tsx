@@ -35,8 +35,10 @@ export default function ChiTietBai({
   const [showSuccess, setShowSuccess] = useState(false);
   // Xong khi dong ho van con gio -> ban confetti + loi khen (an mung, khong bat buoc)
   const [xongSom, setXongSom] = useState(false);
-  // Diem may chu VUA cong cho lan tick nay (+1 xong som, +10 xong het ngay) —
-  // hien tren tam "Gioi qua!". null = chua co / may chu khong tra ve.
+  // Diem may chu VUA cong cho lan tick nay. Tam "Gioi qua!" chi bao +1 xong som
+  // (cua rieng bai nay) va so du; +10 "xong het ngay" thuoc man /xong ngay sau
+  // do — mot lan bao thoi, khong nhay hai lan trong hai giay. null = chua co /
+  // may chu khong tra ve.
   const [diemVuaCong, setDiemVuaCong] = useState<DiemVuaCong | null>(null);
   const [voiceWarning, setVoiceWarning] = useState('');
 
@@ -363,21 +365,14 @@ export default function ChiTietBai({
             </span>
             <h2 className="text-k-hero text-on-background">Giỏi quá!</h2>
 
-            {/* Diem may chu vua cong cho lan tick nay. Chi hien khi co gi de bao:
-                tick mot bai giua ngay, khong xong som thi tam nay y nhu cu. Chu
-                ngan + emoji vi con chua doc thao; so diem la thu con nhan ra. */}
-            {diemVuaCong && (diemVuaCong.xongSom > 0 || diemVuaCong.ngayXong > 0) && (
+            {/* +1 "xong som" cua CHINH bai vua lam. Khong xong som thi tam nay y
+                nhu cu; +10 cua ca ngay do man /xong bao (mot lan thoi). Chu ngan
+                + emoji vi con chua doc thao; so diem la thu con nhan ra. */}
+            {diemVuaCong && diemVuaCong.xongSom > 0 && (
               <div className="flex flex-col items-center gap-3">
-                {diemVuaCong.xongSom > 0 && (
-                  <span className="text-k-headline bg-tertiary-fixed text-on-tertiary-fixed px-8 py-3 rounded-full">
-                    ⭐ +{diemVuaCong.xongSom} điểm xong sớm!
-                  </span>
-                )}
-                {diemVuaCong.ngayXong > 0 && (
-                  <span className="text-k-headline bg-primary-fixed text-on-primary-fixed px-8 py-3 rounded-full">
-                    🏆 +{diemVuaCong.ngayXong} điểm xong hết bài!
-                  </span>
-                )}
+                <span className="text-k-headline bg-tertiary-fixed text-on-tertiary-fixed px-8 py-3 rounded-full">
+                  ⭐ +{diemVuaCong.xongSom} điểm xong sớm!
+                </span>
                 <span className="text-k-body text-on-surface-variant">
                   Con đang có {diemVuaCong.tong} ⭐
                 </span>

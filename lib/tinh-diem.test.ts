@@ -65,10 +65,11 @@ async function tickXong(asgId: string, startedAtMs: number | null, nowMs = Date.
     [asgId]
   );
   const kq = { xongSom: 0, ngayXong: 0 };
+  const ngayTinhDiem = ngayDuocTinhDiem(String(a.due_date), String(a.score_since));
 
   if (startedAtMs !== null && a.chore_id === null) {
     await db.query(`UPDATE assignments SET started_at = $2 WHERE id = $1`, [asgId, new Date(startedAtMs).toISOString()]);
-    if (xongSom(startedAtMs, nowMs, Number(a.duration_minutes))) {
+    if (ngayTinhDiem && xongSom(startedAtMs, nowMs, Number(a.duration_minutes))) {
       const ins = await rows(
         `INSERT INTO score_events (id, child_id, kind, points, event_date, assignment_id)
          VALUES ($1, $2, 'early_finish', $3, $4, $5)
@@ -80,7 +81,7 @@ async function tickXong(asgId: string, startedAtMs: number | null, nowMs = Date.
     }
   }
 
-  if (ngayDuocTinhDiem(String(a.due_date), String(a.score_since))) {
+  if (ngayTinhDiem) {
     const ngay = await rows(
       `SELECT status, chore_id FROM assignments WHERE child_id = $1 AND due_date = $2`,
       [a.child_id, a.due_date]
@@ -165,15 +166,22 @@ test('nha moi tao sau nay: score_since = ngay tao (DEFAULT)', async () => {
   assert.equal(score_since, hom_nay);
 });
 
-test('ngay TRUOC score_since: xong het ca bai lan viec nha van KHONG duoc 10 diem (khong hoi to)', async () => {
+test('ngay TRUOC score_since: xong het, xong ca SOM van KHONG duoc diem nao (khong hoi to)', async () => {
   await db.exec(`UPDATE families SET score_since = '2026-09-08' WHERE id = 'fam_cu'`);
   const NGAY_CU = '2026-09-07';
-  const bai = await themBai('con_a', NGAY_CU);
+  const bai = await themBai('con_a', NGAY_CU, { phut: 10 });
   const viec = await themBai('con_a', NGAY_CU, { chore: 'chr_1' });
 
-  assert.deepEqual(await tickXong(bai, null), { xongSom: 0, ngayXong: 0 });
+  // Tick kem moc bat dau 2' truoc: xong som THAT (10' cho bai 10'), nhung ngay
+  // nay truoc score_since nen khong duoc +1 — luat khong hoi to ap cho ca hai loai.
+  const gio = Date.now();
+  assert.deepEqual(await tickXong(bai, gio - 2 * PHUT, gio), { xongSom: 0, ngayXong: 0 });
   assert.deepEqual(await tickXong(viec, null), { xongSom: 0, ngayXong: 0 }, 'ngay cu xong het van khong cong');
   assert.equal(await soDu('con_a'), 0);
+
+  // Moc bat dau van duoc luu (bang chung cua phep so sanh), chi la khong cong diem.
+  const [{ started_at }] = await rows(`SELECT started_at FROM assignments WHERE id = $1`, [bai]);
+  assert.notEqual(started_at, null, 'van luu started_at du khong cong diem');
 });
 
 test('ngay tu score_since tro di: het bai tap ma con viec nha -> chua cong; tick not viec nha -> +10, dung mot lan', async () => {

@@ -26,7 +26,8 @@ type Ctx = { params: Promise<{ id: string }> };
  * startedAt (epoch ms) la moc con bam "Bat dau lam" tren dong ho dem nguoc,
  * von chi nam trong localStorage cua may con (DongHoLamBai.tsx) — gui len kem
  * luc tick xong de may chu xet "xong som" va cong diem (lib/diem.ts). Tra ve
- * them `diem` (DiemVuaCong) de man cua con bao ngay "+1", "+10".
+ * them `diem` (DiemVuaCong) — ca ba so, nhung tam "Gioi qua!" cua man con chi
+ * bao "+1" xong som; "+10" xong het ngay do man /xong bao (khong bao hai lan).
  *
  * Ca hai duong deu phai thuoc dung nha: duong tick khong can PIN nhung van can
  * may da gan voi nha do, khong thi con nha nay tick duoc bai nha khac neu doan
@@ -82,7 +83,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
     // Cong diem khi bai VUA chuyen sang xong. Loi o buoc nay KHONG duoc lam hong
     // cu tick da ghi thanh cong (con bam lai la tick ve todo roi lai done, roi
     // loan) — nuot loi, ghi log, tra ve khong co `diem`; man cua con chi thieu
-    // dong "+1"/"+10", diem van tinh lai dung o lan tick sau vi ON CONFLICT.
+    // dong "+1", diem van tinh lai dung o lan tick sau vi ON CONFLICT.
     let diem: DiemVuaCong | undefined;
     if (assignment.status === 'done' && current.status !== 'done') {
       try {

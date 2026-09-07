@@ -31,9 +31,9 @@
  *     khong co truong hop man hinh khen ma diem khong cong hay nguoc lai.
  *
  * Gioi han NOI RO: may chu tin moc bat dau do may con bao (app gia dinh, khong
- * chong gian lan). Con bam "Bat dau lam" roi tick ngay cung duoc +1 — bo me
- * nhin thay started_at o dong bai neu can hoi lai. Viec nha (chore_id khong
- * null) khong co dong ho nen khong bao gio duoc +1.
+ * chong gian lan). Con bam "Bat dau lam" roi tick ngay cung duoc +1; moc do
+ * luu lai o assignments.started_at lam bang chung cua phep so sanh. Viec nha
+ * (chore_id khong null) khong co dong ho nen khong bao gio duoc +1.
  */
 
 export const DIEM_NGAY_XONG = 10;

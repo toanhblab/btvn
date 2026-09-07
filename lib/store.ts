@@ -905,15 +905,21 @@ export async function ghiDiemSauKhiXong(
     return ketQua;
   }
 
+  // Khong hoi to (lib/diem.ts): ngay (due_date) truoc families.score_since
+  // khong duoc tinh diem — ap cho CA HAI loai, +1 xong som lan +10 ngay xong.
+  const family = await getFamilyById(familyId);
+  const ngayTinhDiem = family !== null && ngayDuocTinhDiem(a.dueDate, family.scoreSince);
+
   // 1. Xong som — chi bai tap that: viec nha (chore_id khong null) tick tai cho,
   //    khong co dong ho, khong bao gio duoc +1.
   if (startedAtMs !== null && a.choreId === null) {
-    // Luu moc bat dau du som hay khong, cho bo me xem con lam bao lau.
+    // Luu moc bat dau du co som hay khong, du ngay do co tinh diem hay khong:
+    // day la bang chung cua phep so sanh "xong som".
     await query(
       `UPDATE assignments SET started_at = $3 WHERE id = $1 AND ${OF_FAMILY}`,
       [a.id, familyId, new Date(startedAtMs).toISOString()]
     );
-    if (xongSom(startedAtMs, Date.now(), a.durationMinutes)) {
+    if (ngayTinhDiem && xongSom(startedAtMs, Date.now(), a.durationMinutes)) {
       const rows = await query<{ id: string }>(
         `INSERT INTO score_events (id, child_id, kind, points, event_date, assignment_id)
          VALUES ($1, $2, 'early_finish', $3, $4, $5)
@@ -925,11 +931,9 @@ export async function ghiDiemSauKhiXong(
     }
   }
 
-  // 2. Ngay xong — ca bai tap lan viec nha cua (con, ngay) deu done, ngay khong
-  //    truoc score_since. a.childId da qua getAssignment(familyId) nen thuoc
-  //    dung nha, khong can loc them.
-  const family = await getFamilyById(familyId);
-  if (family && ngayDuocTinhDiem(a.dueDate, family.scoreSince)) {
+  // 2. Ngay xong — ca bai tap lan viec nha cua (con, ngay) deu done. a.childId
+  //    da qua getAssignment(familyId) nen thuoc dung nha, khong can loc them.
+  if (ngayTinhDiem) {
     const rows = await query<{ status: string; chore_id: string | null }>(
       `SELECT status, chore_id FROM assignments WHERE child_id = $1 AND due_date = $2`,
       [a.childId, a.dueDate]
@@ -948,42 +952,6 @@ export async function ghiDiemSauKhiXong(
 
   ketQua.tong = await soDiem(familyId, a.childId);
   return ketQua;
-}
-
-/** Mot dong trong lich su diem cua mot con (cho bo me xem). */
-export interface DongLichSuDiem {
-  id: string;
-  kind: 'day_complete' | 'early_finish';
-  points: number;
-  /** Ngay cua bai (YYYY-MM-DD). */
-  eventDate: string;
-  /** De bai cua bai xong som, null neu la diem ngay hoac bai da bi xoa. */
-  assignmentContent: string | null;
-  createdAt: string;
-}
-
-export async function lichSuDiem(familyId: string, childId: string, limit = 20): Promise<DongLichSuDiem[]> {
-  const rows = await query<{
-    id: string; kind: string; points: number | string; event_date: string | Date;
-    content: string | null; created_at: string | Date;
-  }>(
-    `SELECT e.id, e.kind, e.points, e.event_date, a.content, e.created_at
-       FROM score_events e
-       JOIN children c ON c.id = e.child_id
-       LEFT JOIN assignments a ON a.id = e.assignment_id
-      WHERE c.family_id = $1 AND e.child_id = $2
-      ORDER BY e.created_at DESC, e.id DESC
-      LIMIT $3`,
-    [familyId, childId, limit]
-  );
-  return rows.map((r) => ({
-    id: r.id,
-    kind: r.kind as DongLichSuDiem['kind'],
-    points: Number(r.points),
-    eventDate: dateStr(r.event_date),
-    assignmentContent: r.content,
-    createdAt: new Date(r.created_at).toISOString(),
-  }));
 }
 
 /* ---- Phan thuong (bo me cau hinh) ---- */

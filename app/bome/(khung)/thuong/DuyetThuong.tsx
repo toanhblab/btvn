@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ChildColor, Redemption } from '@/lib/types';
 
@@ -21,10 +21,16 @@ export interface YeuCauChoDuyet {
  * khong hoi vi con khong mat gi, xin lai duoc. Xong thi bo dong do khoi danh
  * sach ngay va router.refresh() de "Da xu ly gan day" + so ⭐ tung con o trang
  * cha doc lai.
+ *
+ * `list` bo dong da xu ly NGAY (lac quan) nhung phai dong bo lai voi props
+ * `initial` moi khi trang cha render lai: giua luc bo me mo trang, con o iPad
+ * co the xin them — khong dong bo thi tieu de "Cho duyet (N)" cua trang cha
+ * dem dung con danh sach nay van thieu yeu cau moi cho den khi tai lai trang.
  */
 export default function DuyetThuong({ initial }: { initial: YeuCauChoDuyet[] }) {
   const router = useRouter();
   const [list, setList] = useState(initial);
+  useEffect(() => setList(initial), [initial]);
   const [hoi, setHoi] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');

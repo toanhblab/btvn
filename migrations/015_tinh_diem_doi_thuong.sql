@@ -22,7 +22,8 @@
 -- 2. assignments.started_at — moc con bam "Bat dau lam". Moc nay von chi song
 --    trong localStorage cua iPad (DongHoLamBai.tsx); tu nay may con gui kem
 --    luc tick xong (PATCH /api/assignments/:id { status, startedAt }) de may
---    chu xet "xong som" va luu lai cho bo me xem. NULL = con khong bam dong ho.
+--    chu xet "xong som", va luu lai lam bang chung cua phep so sanh do.
+--    NULL = con khong bam dong ho.
 --
 -- 3. score_events — so cong diem, MOI DONG LA MOT LAN CONG. Tong diem kiem duoc
 --    = SUM(points). Chi ghi diem CONG; diem TRU do doi thuong doc tu
