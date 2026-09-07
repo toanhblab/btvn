@@ -250,9 +250,10 @@ export default function QuayVideo({
       // duration cua container (issue #32: MediaRecorder ghi sai so nay, khong
       // lam sai du lieu hinh/am, nhung cong cu doc metadata nhu "Save Video"
       // vao Photos tren iOS se cat theo con so sai do). Voi mp4 phan manh
-      // (Safari/Chrome deu ghi kieu nay) fixVideoDuration con chen them hop
-      // mvex>mehd de Safari khong hien thoi luong gap doi — Blob tra ve co
-      // the dai hon `out` 16 byte, khong con la cung mot buffer.
+      // (Safari/Chrome deu ghi kieu nay) fixVideoDuration ghi mdhd = 0 (Safari
+      // CONG mdhd voi mau fragment — ghi so that vao do la gap doi, xem chu
+      // thich dau lib/videoDuration.ts) va chen them hop mvex>mehd — Blob tra
+      // ve co the dai hon `out` 16 byte, khong con la cung mot buffer.
       const daGhiGiay = elapsedRef.current;
       fixVideoDuration(out, daGhiGiay).then((fixed) => {
         if (discardRef.current) return; // huy/roi trang trong luc dang va

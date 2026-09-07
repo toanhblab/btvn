@@ -34,34 +34,37 @@
  *    qua cua tang 1 nguyen ven, khong bao gio xuat ra tep da dich offset do
  *    dang. Xem themMehd() ben duoi.
  *
- * MOI TRACK MANG THOI LUONG RIENG CUA NO (nguon: dieu tra
- * data/btvn-video-mau-that/report.md, tiep noi data/btvn-video-qua-dai).
- * Ban dau ham nay ghi CUNG mot `seconds` (elapsedRef tong the) vao mvhd VA
- * vao tkhd/mdhd cua MOI track no gap — khong phan biet track nao that su dai
- * bao nhieu. Tren mot file that (audio ~24s du lieu mau, video ~326s, ca hai
- * bi vá thanh cung 325s), Safari/AVFoundation hien thi 650s = tong 2 track
- * cung gia tri do (Chrome thi lay max nen khong lo). mvhd (chi mot gia tri
- * cho ca phim) VAN dung `seconds` chung nhu cu — dung nghia la tong the.
- * tkhd/mdhd cua TUNG track gio tinh tu tong `sample_duration` trong cac hop
- * `trun` (thuoc `moof > traf`, khop `tfhd.trackId` that) — thoi luong mau
- * that, doc lap voi header — roi ghi RIENG vao dung track do. Neu file khong
- * phan manh (khong co moof/trun, vi du webm hoac mp4 khong tu MediaRecorder)
- * hoac thieu du lieu track, roi ve dung `seconds` chung nhu truoc — khong pha
- * duong Chrome dang chay dung.
+ * HOP mdhd — VI SAO PHAI GHI 0 CHO MP4 PHAN MANH (DA DO TRUC TIEP tren Safari
+ * 26.6.2 macOS qua safaridriver va Safari 26.5 / iOS 18.7 tren iPhone that,
+ * nguon: data/btvn-video-safari-that/report.md trong home firstmate).
+ * Safari/AVFoundation tinh
+ *     duration = max theo track cua ( mdhd.duration + tong sample_duration
+ *                                   trong cac fragment moof > traf > trun )
+ * va BO QUA HAN mvhd, tkhd, mehd, mfra (dat mehd=99s, mvhd=77s, tkhd=33/55s
+ * deu khong doi ket qua; doi mdhd la ket qua doi theo dung cong thuc tren).
+ * Voi movie phan manh, moov KHONG chua mau nao, nen AVFoundation coi
+ * mdhd.duration la "phan da co san" roi CONG fragment vao sau. Chinh
+ * MediaRecorder cua Safari ghi mvhd/tkhd/mdhd = 0 (dung quy uoc fMP4) va
+ * Safari hien dung; ghi thoi luong THAT vao mdhd (ban vá cu, PR #33/#37) lam
+ * Safari hien GAP DOI — day la nguyen nhan cua toan bo chuoi bao cao
+ * btvn-video-qua-dai / -mau-that / -mau-that-2. Chrome lay max(mdhd, tong mau)
+ * nen mdhd = 0 khong anh huong.
  *
- * HOP mehd — VI SAO PHAI CHEN THEM (nguon: data/btvn-video-mau-that-2/report.md).
- * Vá "moi track dung gia tri rieng" o tren CHAY DUNG 100% (kiem chung byte
- * tren file that) nhung KHONG het trieu chung gap doi tren Safari: mot video
- * binh thuong co 2 track dai gan bang nhau (~20.69s va ~20.65s), tong van ra
- * ~41s cho video 20s. File MediaRecorder cua Safari co `mvex` (danh dau movie
- * phan manh) nhung KHONG co `mvex > mehd` — hop khai bao thoi luong tong o cap
- * movie cho movie phan manh. Thieu con so tong dang tin do, AVFoundation roi
- * vao nhanh cong don thoi luong cac track. Chen `mehd` mang `fragment_duration`
- * = thoi luong track dai nhat (theo timescale cua mvhd) cho Safari mot con so
- * tong de doc thay vi tu cong. Chrome khong doc mehd nen khong anh huong.
+ * Vi the voi file phan manh (co moof/trun): mdhd.duration = 0 cho TUNG track.
+ * Cac hop con lai giu nhu truoc vi WebKit khong doc, khong gay hai, va co the
+ * co ich cho cong cu khac (vd bo nhap Photos cua iOS, issue #32 — CHUA kiem):
+ *   - mvhd.duration = `seconds` chung (elapsedRef tong the);
+ *   - tkhd.duration = thoi luong mau THAT rieng cua track do (tong `trun`
+ *     theo dung `tfhd.trackId`, quy doi sang timescale cua mvhd);
+ *   - mvex > mehd = track dai nhat (tang 2, xem themMehd).
+ * File KHONG phan manh (khong co moof/trun: webm, mp4 thuong) khong co mau
+ * nao ngoai moov nen mdhd van ghi `seconds` nhu cu — Safari doc dung.
  *
- * GIOI HAN: chua kiem chung duoc tren Safari that (moi truong khong co driver
- * Safari) — chi kiem chung byte-level + Chrome van phat dung file sau khi chen.
+ * Bang so do tren Safari that cho cung mot video 6.4s (cot cuoi la ket qua):
+ *   raw Chrome (mdhd sai don vi ~0.3s)          -> 6.72
+ *   vá cu: mdhd = that, co/khong mehd, mvhd 77  -> 12.79 (gap doi)
+ *   mdhd = 22s / 44s                            -> 50.28 (= 44 + 6.28)
+ *   mdhd = 0, giu tkhd/mvhd/mehd                -> 6.40 (dung)
  */
 
 function readUintBE(view: DataView, offset: number, length: number): number {
@@ -217,15 +220,15 @@ function collectTrackSampleSums(view: DataView, totalLength: number): Map<number
 /**
  * Duyet cay box MP4 (ISO/IEC 14496-12), vá truong duration trong mvhd + tung
  * tkhd + mdhd. mvhd (chi mot gia tri cho ca phim) dung `seconds` chung
- * (elapsedRef tong the) nhu cu. tkhd/mdhd cua TUNG track dung thoi luong mau
- * THAT rieng cua chinh track do (tinh tu moof/trun, xem collectTrackSampleSums)
- * khi tinh duoc; neu khong (file khong phan manh, hoac thieu du lieu track)
- * thi roi ve `seconds` chung nhu hanh vi cu. mdhd.duration cung timescale voi
- * chinh no nen dung thang tong don vi mau (chinh xac tuyet doi, khong quy doi
- * qua giay); tkhd.duration lai theo timescale cua PHIM (mvhd) nen phai quy doi
- * tu don vi mau that (theo timescale track) sang giay roi nhan lai
- * movieTimescale — vi the phai doc mvhd TRUOC roi moi vá cac trak, dung thu tu
- * box trong file (mvhd luon dung truoc cac trak trong moov theo chuan).
+ * (elapsedRef tong the). tkhd cua TUNG track dung thoi luong mau THAT rieng
+ * cua chinh track do (tinh tu moof/trun, xem collectTrackSampleSums) khi tinh
+ * duoc; tkhd.duration theo timescale cua PHIM (mvhd) nen phai quy doi tu don
+ * vi mau that (theo timescale track) sang giay roi nhan lai movieTimescale —
+ * vi the phai doc mvhd TRUOC roi moi vá cac trak, dung thu tu box trong file
+ * (mvhd luon dung truoc cac trak trong moov theo chuan). mdhd cua track co
+ * mau trong fragment ghi 0 — Safari CONG mdhd voi tong mau fragment, xem "HOP
+ * mdhd" o dau file. Track khong co du lieu fragment (file khong phan manh,
+ * hoac thieu traf cua track do) roi ve `seconds` chung cho ca tkhd va mdhd.
  */
 function patchMp4Duration(buf: ArrayBuffer, seconds: number): boolean {
   const view = new DataView(buf);
@@ -271,9 +274,10 @@ function patchMp4Duration(buf: ArrayBuffer, seconds: number): boolean {
         const timescaleOffset = body + 4 + tSize * 2;
         const timescale = readUintBE(view, timescaleOffset, 4);
         if (timescale > 0) {
-          const rawUnits = currentTrackId !== null ? trackSampleUnitSums.get(currentTrackId) : undefined;
-          const value = rawUnits !== undefined ? rawUnits : Math.round(seconds * timescale);
-          writeUintBE(view, timescaleOffset + 4, tSize, value);
+          // Track co mau trong fragment: mdhd PHAI = 0 (Safari cong mdhd voi tong
+          // mau fragment — ghi so that vao day la gap doi). Khong co: ghi seconds.
+          const coFragment = currentTrackId !== null && trackSampleUnitSums.has(currentTrackId);
+          writeUintBE(view, timescaleOffset + 4, tSize, coFragment ? 0 : Math.round(seconds * timescale));
           changed = true;
         }
       }
