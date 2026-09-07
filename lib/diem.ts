@@ -26,9 +26,13 @@
  *   - Con lam ra giay truoc roi vao tick: KHONG co moc bat dau -> khong thuong.
  *     Muon thuong thi phai bam dong ho — dung y "lam trong N phut".
  *   - Con bam nham thi da co "Bo me dat lai gio" (DatLaiGio.tsx) xoa moc.
- *   - Cung mot moc, cung mot phep so sanh voi cau khen "Con lam xong som luon!"
- *     + confetti da co o ChiTietBai.tsx: con thay confetti la biet minh duoc +1,
- *     khong co truong hop man hinh khen ma diem khong cong hay nguoc lai.
+ *   - Cung mot moc voi cau khen "Con lam xong som luon!" + confetti da co o
+ *     ChiTietBai.tsx, nen con thay confetti la GAN NHU luon duoc +1. Hai ben
+ *     KHONG cung mot phep so sanh: loi khen do may con tu quyet (moc trong
+ *     localStorage, gio may con, so sanh luc nhan tra loi), con +1 do may chu
+ *     quyet va con doi thi ngay khong hoi to (ngayDuocTinhDiem) + do tre mang.
+ *     Nen co the lech o BIEN: bai cua ngay truoc score_since, hoac tick sat
+ *     giay cuoi cua dong ho — con duoc khen ma khong co chip +1.
  *
  * Gioi han NOI RO: may chu tin moc bat dau do may con bao (app gia dinh, khong
  * chong gian lan). Con bam "Bat dau lam" roi tick ngay cung duoc +1; moc do

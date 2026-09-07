@@ -25,9 +25,9 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
 
   // Con chi toi man nay khi vua xong bai CUOI cua HOM NAY, nen ngay duoc cong
   // 10 diem (neu co) chinh la hom nay. Doc lai tu DB thay vi tin may con: mo lai
-  // man nay ngay hom sau thi khong bao "+10" nua ma van hien tong.
+  // man nay ngay hom sau thi khong bao 10 diem cua ngay nua ma van hien tong.
   const today = todayISO();
-  const [child, diem, vuaCongNgay] = await Promise.all([
+  const [child, diem, coDiemNgay] = await Promise.all([
     getChild(familyId, childId),
     soDiem(familyId, childId),
     daCongDiemNgay(familyId, childId, today),
@@ -63,12 +63,16 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
           Con làm hết bài hôm nay rồi. Đi chơi thôi!
         </p>
 
-        {/* Diem: "+10" chi khi hom nay VUA duoc cong (ngay truoc score_since hay
-            mo lai man nay hom sau thi khong), tong thi luon hien. */}
+        {/* Diem cua ngay chi hien khi HOM NAY da co dong day_complete (ngay truoc
+            score_since hay mo lai man nay hom sau thi khong). Cau chu khang dinh
+            SU THAT CUA HOM NAY, khong noi "vua cong": con quay lai man nay lan
+            nua trong ngay, hay bo me them bai roi con lam tiep, thi 10 diem do
+            khong duoc cong lai (unique index) nhung van dung la diem cua hom nay.
+            Tong thi luon hien. */}
         <div className="flex flex-col items-center gap-3 mb-8">
-          {vuaCongNgay && (
+          {coDiemNgay && (
             <span className="text-k-headline bg-primary-fixed text-on-primary-fixed px-8 py-3 rounded-full soft-shadow">
-              🏆 +{DIEM_NGAY_XONG} điểm hôm nay!
+              🏆 Hôm nay con được {DIEM_NGAY_XONG} điểm!
             </span>
           )}
           <span className="text-k-headline bg-tertiary-fixed text-on-tertiary-fixed px-8 py-3 rounded-full soft-shadow">

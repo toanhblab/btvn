@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ChildColor, Redemption } from '@/lib/types';
 
@@ -26,11 +26,24 @@ export interface YeuCauChoDuyet {
  * `initial` moi khi trang cha render lai: giua luc bo me mo trang, con o iPad
  * co the xin them — khong dong bo thi tieu de "Cho duyet (N)" cua trang cha
  * dem dung con danh sach nay van thieu yeu cau moi cho den khi tai lai trang.
+ *
+ * Dong bo phai LOC lai nhung id bo me vua quyet dinh tai may nay (`daQuyetDinh`):
+ * bo me bam hai dong lien tay thi payload cua router.refresh() lan TRUOC duoc
+ * render khi dong thu hai con 'pending', ve sau moi ve — ghi de thang thi dong
+ * da duyet nhay lai duoi "Cho duyet" va bam tiep se an bao loi "da duoc xu ly
+ * roi". Id nao may chu khong con liet ke nua thi bo khoi tap cho do rac.
  */
 export default function DuyetThuong({ initial }: { initial: YeuCauChoDuyet[] }) {
   const router = useRouter();
+  const daQuyetDinh = useRef<Set<string>>(new Set());
   const [list, setList] = useState(initial);
-  useEffect(() => setList(initial), [initial]);
+  useEffect(() => {
+    const conCho = new Set(initial.map((y) => y.redemption.id));
+    for (const id of daQuyetDinh.current) {
+      if (!conCho.has(id)) daQuyetDinh.current.delete(id);
+    }
+    setList(initial.filter((y) => !daQuyetDinh.current.has(y.redemption.id)));
+  }, [initial]);
   const [hoi, setHoi] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -52,6 +65,7 @@ export default function DuyetThuong({ initial }: { initial: YeuCauChoDuyet[] }) 
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? 'Không lưu được');
+      daQuyetDinh.current.add(id);
       setList((ds) => ds.filter((y) => y.redemption.id !== id));
       setHoi(null);
       router.refresh();
