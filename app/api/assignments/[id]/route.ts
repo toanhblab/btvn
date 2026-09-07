@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { parentFamilyId, viewingFamilyId } from '@/lib/auth';
+import { locMocBatDau } from '@/lib/diem';
 import { laUrlTepAppCap } from '@/lib/media';
-import { deleteAssignment, getAssignment, setStatus, submitVideo, updateAssignment } from '@/lib/store';
-import { hwSourceOf, sanitizeDuration } from '@/lib/types';
+import {
+  deleteAssignment, getAssignment, ghiDiemSauKhiXong, setStatus, submitVideo, updateAssignment,
+} from '@/lib/store';
+import { hwSourceOf, sanitizeDuration, type DiemVuaCong } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +13,8 @@ type Ctx = { params: Promise<{ id: string }> };
 
 /**
  * PATCH /api/assignments/:id
- *   { status?: 'done' | 'todo', videoUrl?: string }        -> con tick / nop video, KHONG can PIN
+ *   { status?: 'done' | 'todo', videoUrl?: string, startedAt?: number }
+ *                                                          -> con tick / nop video, KHONG can PIN
  *   { subject?, content?, note?, lang?, dueDate?, source?, media?,
  *     requiresVideo? }                                     -> bo me sua, CAN PIN
  *
@@ -18,6 +22,11 @@ type Ctx = { params: Promise<{ id: string }> };
  * phep sua noi dung de bai. Duong cua con gio nhan them videoUrl — video con
  * quay de nop bai; thuong gui kem status:'done' vi nop video chinh la cach
  * hoan thanh bai co yeu cau quay.
+ *
+ * startedAt (epoch ms) la moc con bam "Bat dau lam" tren dong ho dem nguoc,
+ * von chi nam trong localStorage cua may con (DongHoLamBai.tsx) — gui len kem
+ * luc tick xong de may chu xet "xong som" va cong diem (lib/diem.ts). Tra ve
+ * them `diem` (DiemVuaCong) de man cua con bao ngay "+1", "+10".
  *
  * Ca hai duong deu phai thuoc dung nha: duong tick khong can PIN nhung van can
  * may da gan voi nha do, khong thi con nha nay tick duoc bai nha khac neu doan
@@ -30,7 +39,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
   // Chi doi trang thai / nop video -> cho phep khong can PIN
   const keys = Object.keys(body);
-  if (keys.length >= 1 && keys.every((k) => k === 'status' || k === 'videoUrl')) {
+  const KEYS_CUA_CON = new Set(['status', 'videoUrl', 'startedAt']);
+  if (keys.length >= 1 && keys.every((k) => KEYS_CUA_CON.has(k))) {
     const familyId = await viewingFamilyId();
     if (!familyId) {
       return NextResponse.json({ error: 'Máy này chưa gắn với nhà nào.' }, { status: 401 });
@@ -68,7 +78,20 @@ export async function PATCH(req: Request, { params }: Ctx) {
     if ('status' in body && !nopVaXong) {
       assignment = (await setStatus(familyId, id, body.status === 'done')) ?? assignment;
     }
-    return NextResponse.json({ assignment });
+
+    // Cong diem khi bai VUA chuyen sang xong. Loi o buoc nay KHONG duoc lam hong
+    // cu tick da ghi thanh cong (con bam lai la tick ve todo roi lai done, roi
+    // loan) — nuot loi, ghi log, tra ve khong co `diem`; man cua con chi thieu
+    // dong "+1"/"+10", diem van tinh lai dung o lan tick sau vi ON CONFLICT.
+    let diem: DiemVuaCong | undefined;
+    if (assignment.status === 'done' && current.status !== 'done') {
+      try {
+        diem = await ghiDiemSauKhiXong(familyId, assignment, locMocBatDau(body.startedAt, Date.now()));
+      } catch (e) {
+        console.error('Khong cong duoc diem cho bai', id, e);
+      }
+    }
+    return NextResponse.json({ assignment, diem });
   }
 
   const familyId = await parentFamilyId();

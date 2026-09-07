@@ -2,7 +2,9 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
 import { SO_NGAY_QUET_GAN_DAY, ngayGanNhatCoBai } from '@/lib/ngay';
-import { getFamilyById, listAssignments, progressUpcoming, todayISO } from '@/lib/store';
+import {
+  countPendingRedemptions, getFamilyById, listAssignments, progressUpcoming, todayISO,
+} from '@/lib/store';
 import { HW_SOURCES } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +18,7 @@ export default async function BangDieuKhien() {
   if (!familyId) redirect('/bome/pin');
 
   const today = todayISO();
-  const [family, rows, homNay, ganDay] = await Promise.all([
+  const [family, rows, homNay, ganDay, choDuyet] = await Promise.all([
     getFamilyById(familyId),
     progressUpcoming(familyId),
     // Dung hai cho: danh sach "Bai hom nay" (chi co o co Macbook) va nut
@@ -31,6 +33,8 @@ export default async function BangDieuKhien() {
       from: todayISO(-SO_NGAY_QUET_GAN_DAY),
       to: today,
     }),
+    // So yeu cau doi thuong dang cho — hien the nhac ngay duoi ba o tinh trang
+    countPendingRedemptions(familyId),
   ]);
 
   const baiTiengAnh = homNay.filter((a) => a.source === 'english_class');
@@ -136,6 +140,30 @@ export default async function BangDieuKhien() {
         </Link>
       )}
 
+      {/* Con vua xin doi thuong: nhac ngay o trang chu, bam la sang man duyet.
+          Khong hien khi khong co gi cho — trang chu da du day. */}
+      {choDuyet > 0 && (
+        <Link
+          href="/bome/thuong"
+          className="bg-tertiary-fixed rounded-card card-shadow flex items-center gap-3
+                     p-3 mb-6 min-h-p-tap xl:p-6 xl:mb-10"
+        >
+          <span className="flex items-center justify-center w-11 h-11 rounded-full bg-surface-container-lowest
+                           shrink-0 xl:w-14 xl:h-14 text-2xl">
+            🎁
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-p-body text-on-tertiary-fixed font-bold">
+              {choDuyet} yêu cầu đổi thưởng chờ duyệt
+            </span>
+            <span className="block text-p-body-sm text-on-tertiary-fixed-variant">
+              Duyệt thì điểm của con mới bị trừ
+            </span>
+          </span>
+          <span className="material-symbols-outlined text-on-tertiary-fixed-variant shrink-0">chevron_right</span>
+        </Link>
+      )}
+
       <h2 className="text-p-headline-md text-on-background mb-3 xl:mb-4">Các con</h2>
 
       {/* Nha moi tao chua co con nao: nhap bai luc nay se khong giao duoc cho ai,
@@ -158,7 +186,7 @@ export default async function BangDieuKhien() {
       )}
 
       <div className="flex flex-col gap-p-tight mb-6 xl:grid xl:grid-cols-3 xl:gap-6 xl:mb-10">
-        {rows.map(({ child, total, done, overdue }) => (
+        {rows.map(({ child, total, done, overdue, points }) => (
           <Link
             key={child.id}
             href={`/bome/con/${child.id}`}
@@ -177,7 +205,14 @@ export default async function BangDieuKhien() {
               />
               <span className="flex-1 min-w-0">
                 <span className="block text-p-body text-on-surface font-bold">{child.name}</span>
-                <span className="block text-p-body-sm text-on-surface-variant">{child.grade}</span>
+                <span className="block text-p-body-sm text-on-surface-variant">
+                  {child.grade}
+                  {/* Diem dang co — cung con so con thay o man chon-con */}
+                  <span className="ml-2 inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full
+                                   bg-tertiary-fixed text-on-tertiary-fixed text-p-label">
+                    ⭐ {points}
+                  </span>
+                </span>
               </span>
             </span>
             <span className="flex items-center gap-2 shrink-0 xl:flex-col xl:items-stretch xl:gap-2 xl:w-full">

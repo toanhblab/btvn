@@ -13,6 +13,7 @@ const TABS = [
   { href: '/bome', icon: 'home', label: 'Trang chủ' },
   { href: '/bome/them', icon: 'photo_camera', label: 'Thêm bài' },
   { href: '/bome/nhiem-vu', icon: 'checklist', label: 'Nhiệm vụ' },
+  { href: '/bome/thuong', icon: 'redeem', label: 'Thưởng' },
   { href: '/bome/cai-dat', icon: 'settings', label: 'Cài đặt' },
 ];
 

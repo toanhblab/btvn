@@ -10,12 +10,15 @@ import { usePathname } from 'next/navigation';
  * Bon tep thiet ke Macbook ve thanh ben KHAC NHAU (dau thanh co bon kieu, ten
  * muc doi giua "Nhiem vu"/"Bai tap" va "Them bai"/"Them moi", mau muc dang chon
  * luc xanh luc cam). Chung sinh roi tung man mot nen lech nhau; lay APP lam
- * chuan: dung y bon muc + bon icon cua ThanhDuoi, mau dang chon la primary.
+ * chuan: dung y cac muc + icon cua ThanhDuoi, mau dang chon la primary. Muc
+ * "Thuong" (/bome/thuong: duyet doi thuong + danh sach phan thuong) them sau,
+ * khong co trong ban thiet ke nao — hai thanh phai luon cung mot danh sach.
  */
 const TABS = [
   { href: '/bome', icon: 'home', label: 'Trang chủ' },
   { href: '/bome/them', icon: 'photo_camera', label: 'Thêm bài' },
   { href: '/bome/nhiem-vu', icon: 'checklist', label: 'Nhiệm vụ' },
+  { href: '/bome/thuong', icon: 'redeem', label: 'Thưởng' },
   { href: '/bome/cai-dat', icon: 'settings', label: 'Cài đặt' },
 ];
 

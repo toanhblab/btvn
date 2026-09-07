@@ -1,9 +1,13 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { viewingFamilyId } from '@/lib/auth';
+import { DIEM_NGAY_XONG, xepHang } from '@/lib/diem';
 import { progressUpcoming } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
+
+/** Huy chuong theo hang; tu hang 4 tro di chi con so. */
+const HUY_CHUONG: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
 /**
  * Man "Hom nay con la ai?" — nen tu Stitch 05.
@@ -11,12 +15,20 @@ export const dynamic = 'force-dynamic';
  * Chi hien cac con CUA NHA GAN VOI MAY NAY. May chua gan nha nao (mo lan dau,
  * hoac xoa du lieu trinh duyet) thi phai chon nha truoc — bang link /nha/<slug>
  * hoac nhap PIN mot lan.
+ *
+ * Diem thuong hien NGAY O DAY, cho ca nha cung thay (captain chot, nguoc voi de
+ * xuat "giau di" trong bao cao khao sat vi so anh chi em so bi): moi con mot
+ * vien ⭐ duoi ten, va mot bang xep hang chung o duoi. So hien la diem DANG CO
+ * (da tru phan thuong da doi) — mot con so duy nhat cho tre 4-6 tuoi, cung con
+ * so o cua hang phan thuong; doi thuong thi tut hang la dieu chap nhan.
  */
 export default async function ChonCon() {
   const familyId = await viewingFamilyId();
   if (!familyId) redirect('/vao');
 
   const rows = await progressUpcoming(familyId);
+  const bangXepHang = xepHang(rows.map((r) => ({ child: r.child, points: r.points })));
+  const chuaAiCoDiem = rows.every((r) => r.points === 0);
 
   const RING: Record<string, string> = {
     primary: 'border-primary',
@@ -30,7 +42,7 @@ export default async function ChonCon() {
   };
 
   return (
-    <main className="kid-scope min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+    <main className="kid-scope min-h-screen flex flex-col items-center justify-center relative overflow-hidden py-8">
       {/* Mang mau mo lam nen, thuan trang tri */}
       <div className="absolute top-[-10%] left-[-5%] w-[40vw] h-[40vw] rounded-full bg-primary-fixed opacity-40 blur-3xl -z-10 pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-5%] w-[50vw] h-[50vw] rounded-full bg-tertiary-fixed opacity-30 blur-3xl -z-10 pointer-events-none" />
@@ -38,7 +50,7 @@ export default async function ChonCon() {
       {/* Khung 1100px (bo Macbook 01): tren man rong, de avatar trai het chieu
           ngang 1440px thi ba con nam xa nhau, mat phai quet ca man moi tim ten. */}
       <div className="w-full max-w-[1100px] mx-auto flex flex-col items-center px-k-edge">
-        <h1 className="text-k-hero text-on-surface mb-10 xl:mb-3 text-center">
+        <h1 className="text-k-hero text-on-surface mb-8 xl:mb-3 text-center">
           {rows.length === 0 ? 'Chưa có bạn nào ở đây' : 'Hôm nay con là ai?'}
         </h1>
 
@@ -59,7 +71,7 @@ export default async function ChonCon() {
         )}
 
         <div className="flex flex-row flex-wrap justify-center items-start gap-12 xl:gap-14 w-full">
-        {rows.map(({ child, total, done, homeworkTotal }) => {
+        {rows.map(({ child, total, done, homeworkTotal, points }) => {
           const left = total - done;
           return (
             <Link
@@ -104,10 +116,57 @@ export default async function ChonCon() {
               <div className="bg-surface-container-lowest px-8 py-3 rounded-2xl soft-shadow border-b-4 border-surface-container-high">
                 <span className={`text-k-headline ${NAME[child.color]}`}>{child.name}</span>
               </div>
+
+              {/* Diem dang co cua con nay — ngay duoi ten, cho con biet minh co bao
+                  nhieu ⭐ truoc ca khi bam vao. Mau ho phach (tertiary-fixed) dung
+                  chung cho MOI cho hien ⭐ trong app de con nhan ra "day la sao". */}
+              <span className="mt-3 inline-flex items-center gap-1.5 bg-tertiary-fixed text-on-tertiary-fixed
+                               text-k-label px-5 py-1.5 rounded-full soft-shadow">
+                <span aria-hidden>⭐</span>
+                {points}
+              </span>
             </Link>
           );
         })}
         </div>
+
+        {/* Bang xep hang — chi co y nghia khi nha co tu hai con. Cung hang khi
+            bang diem (xepHang). Ngay ra mat chua ai co diem thi thay huy chuong
+            bang mot cau nhac luat de con biet lam gi de duoc sao. */}
+        {rows.length >= 2 && (
+          <section
+            aria-label="Bảng xếp hạng"
+            className="mt-10 xl:mt-12 bg-surface-container-lowest rounded-[32px] soft-shadow px-8 py-5
+                       flex flex-col items-center gap-4 max-w-full"
+          >
+            <h2 className="text-k-label uppercase tracking-wider text-on-surface-variant">
+              🏆 Bảng xếp hạng
+            </h2>
+            {chuaAiCoDiem ? (
+              <p className="text-k-body text-on-surface-variant text-center">
+                Làm xong hết bài một ngày là được {DIEM_NGAY_XONG} ⭐ nhé!
+              </p>
+            ) : (
+              <ol className="flex flex-row flex-wrap justify-center gap-x-10 gap-y-3">
+                {bangXepHang.map(({ child, points, rank }) => (
+                  <li key={child.id} className="flex items-center gap-3">
+                    <span className="text-[40px] leading-none w-12 text-center" aria-label={`Hạng ${rank}`}>
+                      {HUY_CHUONG[rank] ?? <span className="text-k-headline text-outline">{rank}</span>}
+                    </span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={child.avatarUrl}
+                      alt=""
+                      className={`w-12 h-12 rounded-full object-cover border-4 ${RING[child.color]}`}
+                    />
+                    <span className={`text-k-headline ${NAME[child.color]}`}>{child.name}</span>
+                    <span className="text-k-headline text-on-surface whitespace-nowrap">{points} ⭐</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        )}
       </div>
 
       {/* Loi vao cua bo me — de nho va mo de tre bo qua (PRD 4.5) */}

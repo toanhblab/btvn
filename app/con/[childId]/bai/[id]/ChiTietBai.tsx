@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { Assignment, Lang } from '@/lib/types';
+import type { Assignment, DiemVuaCong, Lang } from '@/lib/types';
 import { driveFileIdTu, drivePreviewUrl } from '@/lib/media';
 import { pickVoice, splitSpeech } from '@/lib/speech';
 import Confetti from '../../xong/Confetti';
-import DongHoLamBai, { conThoiGian, noi, xoaDongHo } from './DongHoLamBai';
+import DongHoLamBai, { conThoiGian, docMocBatDau, noi, xoaDongHo } from './DongHoLamBai';
 import QuayVideo from './QuayVideo';
 import QuetQR from './QuetQR';
 
@@ -35,6 +35,9 @@ export default function ChiTietBai({
   const [showSuccess, setShowSuccess] = useState(false);
   // Xong khi dong ho van con gio -> ban confetti + loi khen (an mung, khong bat buoc)
   const [xongSom, setXongSom] = useState(false);
+  // Diem may chu VUA cong cho lan tick nay (+1 xong som, +10 xong het ngay) —
+  // hien tren tam "Gioi qua!". null = chua co / may chu khong tra ve.
+  const [diemVuaCong, setDiemVuaCong] = useState<DiemVuaCong | null>(null);
   const [voiceWarning, setVoiceWarning] = useState('');
 
   /* De hay tron hai thu tieng ("Viết các từ: apple, banana") -> tach thanh doan
@@ -90,17 +93,32 @@ export default function ChiTietBai({
     }
   }
 
+  /**
+   * Moc "Bat dau lam" gui kem luc tick xong de may chu xet "xong som" va cong
+   * +1 diem (lib/diem.ts). Moc nay chi co trong localStorage cua may nay nen
+   * KHONG the tinh o may chu neu khong gui — con khong bam dong ho thi khong gui
+   * gi (undefined bi JSON.stringify bo qua). Doc TRUOC khi goi API vi sau do
+   * xoaDongHo xoa moc.
+   */
+  function mocBatDau(): number | undefined {
+    return docMocBatDau(assignment.id) ?? undefined;
+  }
+
   async function setStatus(nextDone: boolean) {
     setSaving(true);
     try {
       const res = await fetch(`/api/assignments/${assignment.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: nextDone ? 'done' : 'todo' }),
+        body: JSON.stringify(
+          nextDone ? { status: 'done', startedAt: mocBatDau() } : { status: 'todo' }
+        ),
       });
       if (!res.ok) throw new Error();
+      const data = await res.json().catch(() => ({}));
       setDone(nextDone);
       if (nextDone) {
+        setDiemVuaCong(data.diem ?? null);
         // Con gio tren dong ho -> an mung xong som; dong ho da xong viec thi xoa
         const som = conThoiGian(assignment.id, assignment.durationMinutes);
         xoaDongHo(assignment.id);
@@ -127,14 +145,15 @@ export default function ChiTietBai({
     const res = await fetch(`/api/assignments/${assignment.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ videoUrl: url, status: 'done' }),
+      body: JSON.stringify({ videoUrl: url, status: 'done', startedAt: mocBatDau() }),
     });
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
       throw new Error(data.error ?? 'Chưa gửi được video. Con thử lại nhé!');
     }
     setVideoUrl(url);
     setDone(true);
+    setDiemVuaCong(data.diem ?? null);
     // Gui video la lam xong bai -> dong ho cung phai dung, y nhu duong tick
     const som = conThoiGian(assignment.id, assignment.durationMinutes);
     xoaDongHo(assignment.id);
@@ -343,6 +362,28 @@ export default function ChiTietBai({
               star
             </span>
             <h2 className="text-k-hero text-on-background">Giỏi quá!</h2>
+
+            {/* Diem may chu vua cong cho lan tick nay. Chi hien khi co gi de bao:
+                tick mot bai giua ngay, khong xong som thi tam nay y nhu cu. Chu
+                ngan + emoji vi con chua doc thao; so diem la thu con nhan ra. */}
+            {diemVuaCong && (diemVuaCong.xongSom > 0 || diemVuaCong.ngayXong > 0) && (
+              <div className="flex flex-col items-center gap-3">
+                {diemVuaCong.xongSom > 0 && (
+                  <span className="text-k-headline bg-tertiary-fixed text-on-tertiary-fixed px-8 py-3 rounded-full">
+                    ⭐ +{diemVuaCong.xongSom} điểm xong sớm!
+                  </span>
+                )}
+                {diemVuaCong.ngayXong > 0 && (
+                  <span className="text-k-headline bg-primary-fixed text-on-primary-fixed px-8 py-3 rounded-full">
+                    🏆 +{diemVuaCong.ngayXong} điểm xong hết bài!
+                  </span>
+                )}
+                <span className="text-k-body text-on-surface-variant">
+                  Con đang có {diemVuaCong.tong} ⭐
+                </span>
+              </div>
+            )}
+
             <button
               onClick={afterSuccess}
               className="btn-3d-primary bg-primary text-on-primary rounded-3xl px-12 h-20 text-k-headline"

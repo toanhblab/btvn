@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { viewingFamilyId } from '@/lib/auth';
-import { getChild } from '@/lib/store';
+import { DIEM_NGAY_XONG } from '@/lib/diem';
+import { daCongDiemNgay, getChild, soDiem, todayISO } from '@/lib/store';
 import Confetti from './Confetti';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,15 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
   const familyId = await viewingFamilyId();
   if (!familyId) redirect('/vao');
 
-  const child = await getChild(familyId, childId);
+  // Con chi toi man nay khi vua xong bai CUOI cua HOM NAY, nen ngay duoc cong
+  // 10 diem (neu co) chinh la hom nay. Doc lai tu DB thay vi tin may con: mo lai
+  // man nay ngay hom sau thi khong bao "+10" nua ma van hien tong.
+  const today = todayISO();
+  const [child, diem, vuaCongNgay] = await Promise.all([
+    getChild(familyId, childId),
+    soDiem(familyId, childId),
+    daCongDiemNgay(familyId, childId, today),
+  ]);
   if (!child) notFound();
 
   return (
@@ -50,19 +59,43 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
           className="w-56 h-56 xl:w-60 xl:h-60 object-cover rounded-full mb-6 animate-pulse-glow soft-shadow"
         />
         <h1 className="text-k-hero text-primary mb-4">Giỏi quá {child.name}!</h1>
-        <p className="text-k-body text-on-surface-variant mb-8">
+        <p className="text-k-body text-on-surface-variant mb-6">
           Con làm hết bài hôm nay rồi. Đi chơi thôi!
         </p>
 
-        <Link
-          href="/con"
-          className="flex items-center justify-center gap-4 bg-primary text-on-primary text-k-headline
-                     h-20 px-12 xl:min-w-[280px] rounded-[40px] border-b-8 border-on-primary-fixed-variant
-                     active:border-b-0 active:translate-y-2 transition-all"
-        >
-          <span className="material-symbols-outlined text-[40px]">arrow_back</span>
-          <span>Quay lại</span>
-        </Link>
+        {/* Diem: "+10" chi khi hom nay VUA duoc cong (ngay truoc score_since hay
+            mo lai man nay hom sau thi khong), tong thi luon hien. */}
+        <div className="flex flex-col items-center gap-3 mb-8">
+          {vuaCongNgay && (
+            <span className="text-k-headline bg-primary-fixed text-on-primary-fixed px-8 py-3 rounded-full soft-shadow">
+              🏆 +{DIEM_NGAY_XONG} điểm hôm nay!
+            </span>
+          )}
+          <span className="text-k-headline bg-tertiary-fixed text-on-tertiary-fixed px-8 py-3 rounded-full soft-shadow">
+            Con đang có {diem} ⭐
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-6">
+          <Link
+            href="/con"
+            className="flex items-center justify-center gap-4 bg-primary text-on-primary text-k-headline
+                       h-20 px-12 xl:min-w-[280px] rounded-[40px] border-b-8 border-on-primary-fixed-variant
+                       active:border-b-0 active:translate-y-2 transition-all"
+          >
+            <span className="material-symbols-outlined text-[40px]">arrow_back</span>
+            <span>Quay lại</span>
+          </Link>
+          <Link
+            href={`/con/${childId}/thuong`}
+            className="flex items-center justify-center gap-4 bg-tertiary-fixed-dim text-on-tertiary-fixed text-k-headline
+                       h-20 px-12 xl:min-w-[280px] rounded-[40px] border-b-8 border-tertiary
+                       active:border-b-0 active:translate-y-2 transition-all"
+          >
+            <span className="text-[40px] leading-none">🎁</span>
+            <span>Đổi thưởng</span>
+          </Link>
+        </div>
       </div>
     </main>
   );

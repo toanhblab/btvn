@@ -46,6 +46,7 @@ console.log('✓ Da tao bang');
 
 // 2. Xoa du lieu cu
 for (const t of [
+  'reward_redemptions', 'score_events', 'rewards',
   'daily_chore_checks', 'daily_chores',
   'assignments', 'submission_images', 'submissions', 'children', 'families',
 ]) {
@@ -156,7 +157,25 @@ for (const cap of capCoBai) {
   }
 }
 
-console.log(`✓ 1 gia đình, ${children.length} con, ${n} bài tập, ${chores.length} việc nhà (${nViecNha} dòng)`);
+// 7. Vai phan thuong mau de cua hang cua con (/con/<id>/thuong) co gi de xem.
+//    Nha that thi bo me tu them o /bome/thuong; migration 015 KHONG nap mac dinh
+//    (gia diem la chuyen tung nha, khong doan duoc). Diem thi KHONG seed: con tick
+//    bai la duoc cong that (lib/store.ts ghiDiemSauKhiXong), seed diem gia se lam
+//    lech voi so bai da tick.
+const rewards = [
+  ['📖', 'Bố mẹ đọc truyện trước khi ngủ', 10],
+  ['🍦', 'Ăn kem', 30],
+  ['📺', 'Xem phim tối thứ Bảy', 50],
+  ['🎡', 'Đi công viên', 100],
+];
+for (const [icon, name, cost] of rewards) {
+  await query(
+    `INSERT INTO rewards (id, family_id, name, icon, cost) VALUES ($1,$2,$3,$4,$5)`,
+    [id('rwd'), familyId, name, icon, cost]
+  );
+}
+
+console.log(`✓ 1 gia đình, ${children.length} con, ${n} bài tập, ${chores.length} việc nhà (${nViecNha} dòng), ${rewards.length} phần thưởng`);
 console.log(`  PIN bố mẹ      : ${PIN}`);
 console.log(`  Link cho iPad  : /nha/${slug}`);
 process.exit(0);

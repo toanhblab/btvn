@@ -107,6 +107,12 @@ export interface Assignment {
    * do se hien mot nut co the bam nham cho mot bai THAT.
    */
   choreId: string | null;
+  /**
+   * Moc con bam "Bat dau lam" (dong ho dem nguoc), do may con gui len luc tick
+   * xong — de xet "xong som" (+1 diem, lib/diem.ts) va cho bo me xem con lam
+   * bao lau. null = con khong bam dong ho / bai chua xong.
+   */
+  startedAt: string | null;
 }
 
 /** Mot bai do AI tach ra, chua luu — bo me con phai duyet o man "Kiem tra lai". */
@@ -187,3 +193,85 @@ export interface DailyChore {
 
 /** Chu cua mot viec — dai hon thi tran ra khoi dong to o man cua con. */
 export const MAX_CHU_VIEC_NHA = 60;
+
+/* ---------------- Diem thuong & doi thuong ----------------
+ *
+ * Luat cong diem nam o lib/diem.ts; luoc do o migrations/015_tinh_diem_doi_thuong.sql.
+ * Phan thuong la MOT danh sach chung ca nha (nhu viec nha): bo me dat ten, icon
+ * va gia diem o man Phan thuong; moi con thay cung danh sach do o cua hang cua
+ * minh va xin doi, bo me duyet roi diem moi bi tru.
+ */
+
+export interface Reward {
+  id: string;
+  name: string;
+  /** Mot emoji — con chua doc duoc chu nen icon la thu con nhan ra truoc. */
+  icon: string;
+  /** Gia bang diem, nguyen duong. */
+  cost: number;
+  /** Tat thi con khong thay o cua hang nua, lich su doi van con. */
+  enabled: boolean;
+}
+
+export type RedemptionStatus = 'pending' | 'approved' | 'rejected';
+
+/**
+ * Mot lan con xin doi thuong. Ten/icon/gia CHEP tu phan thuong luc xin, nen bo
+ * me sua hay xoa phan thuong sau do khong doi yeu cau dang cho va lich su.
+ */
+export interface Redemption {
+  id: string;
+  childId: string;
+  rewardId: string | null;
+  rewardName: string;
+  rewardIcon: string;
+  cost: number;
+  status: RedemptionStatus;
+  requestedAt: string;
+  decidedAt: string | null;
+}
+
+/**
+ * Diem vua cong trong MOT lan tick (tra ve tu PATCH /api/assignments/:id) — de
+ * man cua con bao ngay "+1", "+10". Xem ghiDiemSauKhiXong trong lib/store.ts.
+ */
+export interface DiemVuaCong {
+  /** DIEM_XONG_SOM neu bai nay vua duoc cong "xong som" o lan tick nay, 0 neu khong. */
+  xongSom: number;
+  /** DIEM_NGAY_XONG neu ngay cua bai nay VUA duoc cong o lan tick nay, 0 neu khong. */
+  ngayXong: number;
+  /** So diem con dang co sau lan tick nay. */
+  tong: number;
+}
+
+/** Ten phan thuong — dai hon thi tran the o cua hang cua con. */
+export const MAX_CHU_PHAN_THUONG = 40;
+/** Gia toi da — chan go nham (10 diem/ngay thi 9999 diem la ~3 nam). */
+export const MAX_GIA_PHAN_THUONG = 9999;
+
+/** Icon mac dinh + goi y cho bo me chon nhanh khi them phan thuong. */
+export const ICON_PHAN_THUONG_MAC_DINH = '🎁';
+export const ICON_PHAN_THUONG_GOI_Y = ['🎁', '🍦', '🍕', '📺', '🎮', '🧸', '🎡', '📚', '🚲', '🏊', '🎬', '🍫'];
+
+/**
+ * Lay dung MOT ky tu hien thi (emoji co the la nhieu code point) tu chu bo me
+ * go; trong thi ve icon mac dinh. Dung Intl.Segmenter khi co (Node 16+/Safari
+ * 14.1+), khong thi lay tu Array.from (tach theo code point — emoji ghep se
+ * mat phan sau, van hien duoc mot hinh).
+ */
+export function lamSachIcon(v: unknown): string {
+  const s = String(v ?? '').trim();
+  if (!s) return ICON_PHAN_THUONG_MAC_DINH;
+  const Seg = (Intl as unknown as { Segmenter?: new (l: string, o: { granularity: string }) => { segment: (s: string) => Iterable<{ segment: string }> } }).Segmenter;
+  if (Seg) {
+    for (const g of new Seg('vi', { granularity: 'grapheme' }).segment(s)) return g.segment;
+  }
+  return Array.from(s)[0] ?? ICON_PHAN_THUONG_MAC_DINH;
+}
+
+/** Gia diem bo me nhap: so nguyen duong, kep tran MAX_GIA_PHAN_THUONG; hong -> null. */
+export function lamSachGia(v: unknown): number | null {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.min(n, MAX_GIA_PHAN_THUONG);
+}

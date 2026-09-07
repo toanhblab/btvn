@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { viewingFamilyId } from '@/lib/auth';
-import { getChild, listAssignments, todayISO, VIEC_NHA_ICON, VIEC_NHA_SUBJECT } from '@/lib/store';
+import { getChild, listAssignments, soDiem, todayISO, VIEC_NHA_ICON, VIEC_NHA_SUBJECT } from '@/lib/store';
 import type { Assignment, HwSource } from '@/lib/types';
 import { HW_SOURCES } from '@/lib/types';
 import ViecNhaBai from './ViecNhaBai';
@@ -43,11 +43,28 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   // trong app (man bo me, progressUpcoming) khong xin co nay nen tu dong giu
   // nguyen hanh vi cu, chi trang nay + tinh celebrate o bai/[id]/page.tsx la
   // can thay ca viec nha.
-  const [child, items] = await Promise.all([
+  //
+  // soDiem: diem dang co cua con, hien o goc tren canh nut "Doi thuong" — cau
+  // thu ba chay song song cung ly do tren.
+  const [child, items, diem] = await Promise.all([
     getChild(familyId, childId),
     listAssignments(familyId, { childId, from: today, includeChores: true }),
+    soDiem(familyId, childId),
   ]);
   if (!child) notFound();
+
+  // Nut sang cua hang phan thuong, mang theo so ⭐ dang co. Dung o CA HAI nhanh
+  // (co bai / khong co bai): con khong co bai hom nay van doi thuong duoc.
+  const nutDoiThuong = (
+    <Link
+      href={`/con/${childId}/thuong`}
+      className="inline-flex items-center gap-3 bg-tertiary-fixed text-on-tertiary-fixed rounded-full
+                 px-6 min-h-k-tap interactive-shadow shrink-0 whitespace-nowrap"
+    >
+      <span className="text-k-headline">⭐ {diem}</span>
+      <span className="text-k-label">🎁 Đổi thưởng</span>
+    </Link>
+  );
   const todayItems = items.filter((a) => a.dueDate === today);
   const done = todayItems.filter((a) => a.status === 'done').length;
   // Con bao nhieu thu cua hom nay chua xong (bai that + viec nha). ViecNhaBai
@@ -124,13 +141,16 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
           <h1 className="text-k-hero text-on-background mb-3">Hôm nay không có bài tập 🎉</h1>
           <p className="text-k-headline text-on-surface-variant mb-8">{child.name} đi chơi thôi!</p>
 
-          <Link
-            href="/con"
-            className="h-k-tap min-w-[280px] xl:min-w-[320px] rounded-3xl border-4 border-primary text-primary
-                       flex items-center justify-center px-12 text-k-label hover:bg-primary-fixed transition-colors"
-          >
-            <span className="material-symbols-outlined mr-3">home</span>Về trang chính
-          </Link>
+          <div className="flex flex-wrap items-center justify-center gap-6">
+            <Link
+              href="/con"
+              className="h-k-tap min-w-[280px] xl:min-w-[320px] rounded-3xl border-4 border-primary text-primary
+                         flex items-center justify-center px-12 text-k-label hover:bg-primary-fixed transition-colors"
+            >
+              <span className="material-symbols-outlined mr-3">home</span>Về trang chính
+            </Link>
+            {nutDoiThuong}
+          </div>
         </div>
       </main>
     );
@@ -158,14 +178,17 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
           <h1 className="text-k-hero text-primary">Bài tập của {child.name}</h1>
         </div>
 
-        {/* Chi hien tu 1280px tro len; duoi nguong do tien do van nam trong the
-            o duoi (xl:hidden ben trong the do) — khong nhan doi tren man iPad. */}
-        {todayItems.length > 0 && (
-          <div className="hidden xl:flex items-center shrink-0 bg-primary-container text-on-primary-container
-                          text-k-headline px-8 py-4 rounded-full soft-shadow whitespace-nowrap">
-            {done}/{todayItems.length} xong hôm nay
-          </div>
-        )}
+        <div className="flex items-center gap-4 shrink-0 ml-auto">
+          {nutDoiThuong}
+          {/* Chi hien tu 1280px tro len; duoi nguong do tien do van nam trong the
+              o duoi (xl:hidden ben trong the do) — khong nhan doi tren man iPad. */}
+          {todayItems.length > 0 && (
+            <div className="hidden xl:flex items-center shrink-0 bg-primary-container text-on-primary-container
+                            text-k-headline px-8 py-4 rounded-full soft-shadow whitespace-nowrap">
+              {done}/{todayItems.length} xong hôm nay
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Tien do chi tinh bai hom nay: do la thu con phai lam xong truoc khi di choi (PRD 4.3) */}
