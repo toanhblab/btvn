@@ -167,7 +167,7 @@ function timTatCaBox(buf: Uint8Array, start: number, end: number, type: string):
   return ketQua;
 }
 
-test('mp4: moi track (audio/video) duoc va bang thoi luong mau THAT rieng cua no, khong con bi ep ve cung mot so', async () => {
+test('mp4 phan manh: tkhd moi track = thoi luong mau THAT rieng cua no, mdhd = 0, mvhd = elapsedRef', async () => {
   const movieTimescale = 1000;
   const saiDuration = 999_000; // placeholder sai chung, giong loi goc truoc khi va
 
@@ -233,9 +233,11 @@ test('mp4: moi track (audio/video) duoc va bang thoi luong mau THAT rieng cua no
   const audio = theoTrackId.get(AUDIO_ID)!;
   const video = theoTrackId.get(VIDEO_ID)!;
 
-  // mdhd: cung timescale voi chinh track do -> ghi THANG tong don vi mau that, chinh xac tuyet doi.
-  assert.equal(audio.mdhdDuration, audioSampleUnits, 'mdhd audio phai la thoi luong mau THAT cua chinh no');
-  assert.equal(video.mdhdDuration, videoSampleUnits, 'mdhd video phai la thoi luong mau THAT cua chinh no');
+  // mdhd: track co mau trong fragment -> PHAI = 0. Safari/iOS tinh duration =
+  // mdhd + tong mau fragment (do truc tiep, data/btvn-video-safari-that); ghi
+  // so that vao day (hanh vi cu) la Safari hien gap doi.
+  assert.equal(audio.mdhdDuration, 0, 'mdhd audio phai = 0 voi file phan manh');
+  assert.equal(video.mdhdDuration, 0, 'mdhd video phai = 0 voi file phan manh');
 
   // tkhd: theo timescale cua PHIM (mvhd) -> quy doi tu giay that cua tung track.
   assert.equal(audio.tkhdDuration, Math.round(24 * movieTimescale), 'tkhd audio phai khop 24s that cua no');
@@ -243,7 +245,6 @@ test('mp4: moi track (audio/video) duoc va bang thoi luong mau THAT rieng cua no
 
   // Diem mau chot cua bug goc: hai track KHONG con bi ep ve cung mot gia tri.
   assert.notEqual(audio.tkhdDuration, video.tkhdDuration, 'tkhd 2 track phai khac nhau (khong con bi ep chung)');
-  assert.notEqual(audio.mdhdDuration, video.mdhdDuration, 'mdhd 2 track phai khac nhau (khong con bi ep chung)');
 });
 
 test('mp4: khong doi Blob goc khi khong nhan dien duoc box can va', async () => {
@@ -668,7 +669,7 @@ function kiemTraDaChen(goc: Uint8Array, ra: Uint8Array): void {
   const insertPos = mvexGoc.offset + mvexGoc.headerSize;
   const dich = (x: number) => (x >= insertPos ? x + MEHD_SIZE : x);
 
-  // Tang 1 (PR #37) van chay: mvhd = elapsed, tkhd/mdhd = thoi luong that tung track.
+  // Tang 1 van chay: mvhd = elapsed, tkhd = thoi luong that tung track, mdhd = 0 (phan manh).
   const mvhdRa = timHop(cayRa, 'moov/mvhd')!;
   assert.equal(docU32(ra, mvhdRa.offset + 8 + 12 + 4), ELAPSED_GIAY * MOVIE_TIMESCALE, 'mvhd van la elapsedRef');
   for (const trak of timHop(cayRa, 'moov')!.children.filter((h) => h.type === 'trak')) {
@@ -677,7 +678,7 @@ function kiemTraDaChen(goc: Uint8Array, ra: Uint8Array): void {
     const mdhd = timHop(trak.children, 'mdia/mdhd')!;
     const units = trackId === AUDIO_ID ? AUDIO_UNITS : VIDEO_UNITS;
     const ts = trackId === AUDIO_ID ? AUDIO_TIMESCALE : VIDEO_TIMESCALE;
-    assert.equal(docU32(ra, mdhd.offset + 8 + 12 + 4), units, `mdhd track ${trackId}`);
+    assert.equal(docU32(ra, mdhd.offset + 8 + 12 + 4), 0, `mdhd track ${trackId} phai = 0`);
     assert.equal(docU32(ra, tkhd.offset + 8 + 12 + 8), Math.round((units / ts) * MOVIE_TIMESCALE), `tkhd track ${trackId}`);
   }
 
@@ -867,4 +868,92 @@ test('mehd: tep khong phan manh (khong co mvex) thi khong can — kich thuoc giu
   const daVa = await fixVideoDuration(new Blob([goc as BlobPart], { type: 'video/mp4' }), 10);
   assert.equal((await daVa.arrayBuffer()).byteLength, goc.length);
   assert.deepEqual(themMehd(goc.slice().buffer, 10), { kieu: 'khong-can' });
+});
+
+// ------------------------------------- Hoi quy: Safari/iOS cong mdhd voi mau fragment
+//
+// Nguon: data/btvn-video-safari-that/report.md — do TRUC TIEP tren Safari 26.6.2
+// macOS (safaridriver) va Safari 26.5 / iOS 18.7 (iPhone that): voi mp4 phan
+// manh, WebKit/AVFoundation tinh duration = max theo track cua
+// (mdhd.duration + tong sample_duration trong moof/trun), bo qua mvhd/tkhd/
+// mehd/mfra. MediaRecorder cua Safari ghi mdhd = 0 nen raw hien dung; ban vá
+// cu ghi thoi luong that vao mdhd -> gap doi. Test nay mo phong dung phep tinh
+// do tren tep sau khi vá va doi hoi ket qua bang thoi luong that.
+
+/** Mo phong Safari/AVFoundation: max theo track cua (mdhd.duration + tong trun) tinh bang giay. */
+function safariDocDuration(buf: Uint8Array): number {
+  const cay = cayHop(buf);
+  const mdhdTheoTrack = new Map<number, { duration: number; timescale: number }>();
+  for (const trak of timHop(cay, 'moov')!.children.filter((h) => h.type === 'trak')) {
+    const tkhd = trak.children.find((h) => h.type === 'tkhd')!;
+    const trackId = docU32(buf, tkhd.offset + 8 + 12);
+    const mdhd = timHop(trak.children, 'mdia/mdhd')!;
+    mdhdTheoTrack.set(trackId, { timescale: docU32(buf, mdhd.offset + 8 + 12), duration: docU32(buf, mdhd.offset + 8 + 16) });
+  }
+  let max = 0;
+  for (const traf of timTatCa(cay, 'traf')) {
+    const trackId = docU32(buf, traf.children.find((h) => h.type === 'tfhd')!.offset + 8 + 4);
+    let units = 0;
+    for (const trun of traf.children.filter((h) => h.type === 'trun')) {
+      const body = trun.offset + 8;
+      const flags = docU32(buf, body) & 0xffffff;
+      const n = docU32(buf, body + 4);
+      let p = body + 8;
+      if (flags & 0x1) p += 4;
+      if (flags & 0x4) p += 4;
+      for (let i = 0; i < n; i++) {
+        if (flags & 0x100) { units += docU32(buf, p); p += 4; }
+        if (flags & 0x200) p += 4;
+        if (flags & 0x400) p += 4;
+        if (flags & 0x800) p += 4;
+      }
+    }
+    const m = mdhdTheoTrack.get(trackId)!;
+    max = Math.max(max, (m.duration + units) / m.timescale);
+  }
+  return max;
+}
+
+test('Safari/iOS: mp4 phan manh sau khi vá phai co mdhd = 0 de duration Safari tinh ra = thoi luong that, khong gap doi', async () => {
+  // Bo cuc giong file Safari that (default-base-is-moof, khong mfra) — cung tep dung cho test mehd.
+  const goc = dungTepPhanManh({ tfhd: 'default-base-is-moof', khongMfra: true });
+  const thatGiay = Math.max(AUDIO_UNITS / AUDIO_TIMESCALE, VIDEO_UNITS / VIDEO_TIMESCALE);
+
+  // Tep goc (placeholder 777s trong mdhd) — Safari se cong 777s voi mau: sai, dung de chac phep mo phong co "nhin thay" mdhd.
+  assert.ok(safariDocDuration(goc) > 700, 'mo phong phai phan anh mdhd sai cua tep goc');
+
+  const ra = await chayFix(goc);
+  const cay = cayHop(ra);
+
+  // mdhd = 0 o CA HAI track; tkhd/mvhd/mehd van mang gia tri nhu truoc.
+  for (const trak of timHop(cay, 'moov')!.children.filter((h) => h.type === 'trak')) {
+    const tkhd = trak.children.find((h) => h.type === 'tkhd')!;
+    const trackId = docU32(ra, tkhd.offset + 8 + 12);
+    const mdhd = timHop(trak.children, 'mdia/mdhd')!;
+    assert.equal(docU32(ra, mdhd.offset + 8 + 16), 0, `mdhd track ${trackId} phai = 0`);
+    const units = trackId === AUDIO_ID ? AUDIO_UNITS : VIDEO_UNITS;
+    const ts = trackId === AUDIO_ID ? AUDIO_TIMESCALE : VIDEO_TIMESCALE;
+    assert.equal(docU32(ra, tkhd.offset + 8 + 20), Math.round((units / ts) * MOVIE_TIMESCALE), `tkhd track ${trackId} van la thoi luong that`);
+  }
+  assert.equal(docU32(ra, timHop(cay, 'moov/mvhd')!.offset + 8 + 16), ELAPSED_GIAY * MOVIE_TIMESCALE, 'mvhd van la elapsedRef');
+  assert.equal(docU32(ra, timHop(cay, 'moov/mvex/mehd')!.offset + 12), KY_VONG_MEHD, 'mehd van duoc chen voi max(track)');
+
+  // Phep tinh cua Safari tren tep da vá = thoi luong that (khong con 2x).
+  const safariGiay = safariDocDuration(ra);
+  assert.ok(Math.abs(safariGiay - thatGiay) < 1e-6, `Safari se hien ${safariGiay}s, mong ${thatGiay}s`);
+  assert.ok(safariGiay < thatGiay * 1.5, 'khong duoc gap doi');
+});
+
+test('mp4 KHONG phan manh: mdhd van ghi thoi luong that (khong co mau fragment de Safari cong them)', async () => {
+  const timescale = 1000;
+  const goc = tepMp4(timescale, 5_000); // chi moov, khong moof/trun
+  const buf = new Uint8Array(await (await fixVideoDuration(new Blob([goc as BlobPart], { type: 'video/mp4' }), 42)).arrayBuffer());
+  const moovBody = timBox(buf, 0, buf.length, 'moov');
+  const moovSize = docU32(buf, moovBody - 8);
+  const trakBody = timBox(buf, moovBody, moovBody + moovSize - 8, 'trak');
+  const trakSize = docU32(buf, trakBody - 8);
+  const mdiaBody = timBox(buf, trakBody, trakBody + trakSize - 8, 'mdia');
+  const mdiaSize = docU32(buf, mdiaBody - 8);
+  const mdhdBody = timBox(buf, mdiaBody, mdiaBody + mdiaSize - 8, 'mdhd');
+  assert.equal(docU32(buf, mdhdBody + 12 + 4), 42 * timescale, 'khong phan manh: mdhd = seconds nhu hanh vi cu');
 });
