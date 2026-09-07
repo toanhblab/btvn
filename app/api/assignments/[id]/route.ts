@@ -80,12 +80,14 @@ export async function PATCH(req: Request, { params }: Ctx) {
       assignment = (await setStatus(familyId, id, body.status === 'done')) ?? assignment;
     }
 
-    // Cong diem khi bai VUA chuyen sang xong. Loi o buoc nay KHONG duoc lam hong
-    // cu tick da ghi thanh cong (con bam lai la tick ve todo roi lai done, roi
-    // loan) — nuot loi, ghi log, tra ve khong co `diem`; man cua con chi thieu
-    // dong "+1", diem van tinh lai dung o lan tick sau vi ON CONFLICT.
+    // Cong diem cho MOI PATCH cua con ma bai dang xong — khong chi lan vua
+    // chuyen todo -> done. ghiDiemSauKhiXong idempotent (ON CONFLICT DO NOTHING
+    // ... RETURNING) nen goi lai khong cong trung, va do la duong khoi phuc that:
+    // loi o buoc nay KHONG duoc lam hong cu tick da ghi thanh cong (con bam lai
+    // la tick ve todo roi lai done, roi loan) nen nuot loi + ghi log, tra ve
+    // khong co `diem`; lan PATCH sau cua chinh bai do se cong not phan con thieu.
     let diem: DiemVuaCong | undefined;
-    if (assignment.status === 'done' && current.status !== 'done') {
+    if (assignment.status === 'done') {
       try {
         diem = await ghiDiemSauKhiXong(familyId, assignment, locMocBatDau(body.startedAt, Date.now()));
       } catch (e) {

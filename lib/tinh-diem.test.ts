@@ -4,7 +4,7 @@
  * giong lib/nhiem-vu-mac-dinh-hoan-thanh.test.ts.
  *
  * Khong import lib/store.ts duoc (import khong duoi, xem chu thich o test kia),
- * nen ham `tickXong` duoi day MO PHONG LAI dung cac cau SQL cua
+ * nen ham `ghiDiem` duoi day MO PHONG LAI dung cac cau SQL cua
  * ghiDiemSauKhiXong (lib/store.ts) + cac ham thuan trong lib/diem.ts — sua logic
  * cong diem o store.ts thi phai sua ca o day cho khop.
  *
@@ -18,6 +18,8 @@
  *   4. Moi con mot yeu cau dang cho; duyet xong thi xin tiep duoc.
  *   5. Xoa bai / xoa phan thuong khong lam mat diem hay lich su; xoa con thi
  *      keo theo het (CASCADE).
+ *   6. Ghi diem loi giua duong: lan goi sau cua chinh bai do cong not phan con
+ *      thieu (nho started_at / completed_at trong DB), va khong cong trung.
  */
 
 import { test, before, after } from 'node:test';
@@ -51,53 +53,79 @@ async function soDu(childId: string): Promise<number> {
   return Number(r.points);
 }
 
+const soMs = (v: unknown): number | null => (v ? new Date(v as string).getTime() : null);
+
 /**
- * Mo phong ghiDiemSauKhiXong: bai `asgId` vua chuyen sang done luc `nowMs`, may
- * con bao moc bat dau `startedAtMs` (null = khong bam dong ho). Tra ve diem vua
- * cong o lan nay.
+ * Mo phong ghiDiemSauKhiXong: doc lai bai tu DB (nhu route lam sau khi cap nhat)
+ * roi chay dung cac cau SQL cua ham do. `startedAtMs` la moc bat dau may con bao
+ * len (null = khong gui). Tra ve diem VUA cong o lan goi nay.
+ *
+ * Tach khoi tickXong vi ham that duoc goi o MOI PATCH cua con ma bai dang done,
+ * khong chi lan vua tick — day la duong khoi phuc khi lan truoc ghi diem loi.
  */
-async function tickXong(asgId: string, startedAtMs: number | null, nowMs = Date.now()) {
-  await db.query(`UPDATE assignments SET status = 'done', completed_at = now() WHERE id = $1`, [asgId]);
+async function ghiDiem(asgId: string, startedAtMs: number | null) {
   const [a] = await rows(
-    `SELECT a.child_id, a.due_date::text AS due_date, a.duration_minutes, a.chore_id, f.score_since::text AS score_since
-       FROM assignments a JOIN children c ON c.id = a.child_id JOIN families f ON f.id = c.family_id
-      WHERE a.id = $1`,
+    `SELECT child_id, due_date::text AS due_date, duration_minutes, chore_id, status,
+            started_at, completed_at
+       FROM assignments WHERE id = $1`,
     [asgId]
   );
   const kq = { xongSom: 0, ngayXong: 0 };
-  const ngayTinhDiem = ngayDuocTinhDiem(String(a.due_date), String(a.score_since));
+  if (a.status !== 'done') return kq;
 
   if (startedAtMs !== null && a.chore_id === null) {
     await db.query(`UPDATE assignments SET started_at = $2 WHERE id = $1`, [asgId, new Date(startedAtMs).toISOString()]);
-    if (ngayTinhDiem && xongSom(startedAtMs, nowMs, Number(a.duration_minutes))) {
-      const ins = await rows(
-        `INSERT INTO score_events (id, child_id, kind, points, event_date, assignment_id)
-         VALUES ($1, $2, 'early_finish', $3, $4, $5)
-         ON CONFLICT (assignment_id) WHERE kind = 'early_finish' DO NOTHING
-         RETURNING id`,
-        [id('sce'), a.child_id, DIEM_XONG_SOM, a.due_date, asgId]
-      );
-      if (ins.length > 0) kq.xongSom = DIEM_XONG_SOM;
-    }
   }
 
-  if (ngayTinhDiem) {
-    const ngay = await rows(
-      `SELECT status, chore_id FROM assignments WHERE child_id = $1 AND due_date = $2`,
-      [a.child_id, a.due_date]
+  const ngay = await rows(
+    `SELECT a.status, a.chore_id, f.score_since::text AS score_since
+       FROM assignments a
+       JOIN children c ON c.id = a.child_id
+       JOIN families f ON f.id = c.family_id
+      WHERE a.child_id = $1 AND a.due_date = $2`,
+    [a.child_id, a.due_date]
+  );
+  const ngayTinhDiem =
+    ngay.length > 0 && ngayDuocTinhDiem(String(a.due_date), String(ngay[0].score_since));
+
+  const mocBatDau = startedAtMs ?? soMs(a.started_at);
+  const mocXong = soMs(a.completed_at) ?? Date.now();
+  if (ngayTinhDiem && mocBatDau !== null && a.chore_id === null &&
+      xongSom(mocBatDau, mocXong, Number(a.duration_minutes))) {
+    const ins = await rows(
+      `INSERT INTO score_events (id, child_id, kind, points, event_date, assignment_id)
+       VALUES ($1, $2, 'early_finish', $3, $4, $5)
+       ON CONFLICT (assignment_id) WHERE kind = 'early_finish' DO NOTHING
+       RETURNING id`,
+      [id('sce'), a.child_id, DIEM_XONG_SOM, a.due_date, asgId]
     );
-    if (ngayHoanThanh(ngay.map((r) => ({ status: String(r.status), choreId: r.chore_id as string | null })))) {
-      const ins = await rows(
-        `INSERT INTO score_events (id, child_id, kind, points, event_date)
-         VALUES ($1, $2, 'day_complete', $3, $4)
-         ON CONFLICT (child_id, event_date) WHERE kind = 'day_complete' DO NOTHING
-         RETURNING id`,
-        [id('sce'), a.child_id, DIEM_NGAY_XONG, a.due_date]
-      );
-      if (ins.length > 0) kq.ngayXong = DIEM_NGAY_XONG;
-    }
+    if (ins.length > 0) kq.xongSom = DIEM_XONG_SOM;
+  }
+
+  if (ngayTinhDiem &&
+      ngayHoanThanh(ngay.map((r) => ({ status: String(r.status), choreId: r.chore_id as string | null })))) {
+    const ins = await rows(
+      `INSERT INTO score_events (id, child_id, kind, points, event_date)
+       VALUES ($1, $2, 'day_complete', $3, $4)
+       ON CONFLICT (child_id, event_date) WHERE kind = 'day_complete' DO NOTHING
+       RETURNING id`,
+      [id('sce'), a.child_id, DIEM_NGAY_XONG, a.due_date]
+    );
+    if (ins.length > 0) kq.ngayXong = DIEM_NGAY_XONG;
   }
   return kq;
+}
+
+/**
+ * Con tick xong bai `asgId` luc `nowMs` (setStatus ghi completed_at), may con
+ * bao moc bat dau `startedAtMs` (null = khong bam dong ho), roi route ghi diem.
+ */
+async function tickXong(asgId: string, startedAtMs: number | null, nowMs = Date.now()) {
+  await db.query(
+    `UPDATE assignments SET status = 'done', completed_at = $2 WHERE id = $1`,
+    [asgId, new Date(nowMs).toISOString()]
+  );
+  return ghiDiem(asgId, startedAtMs);
 }
 
 async function themBai(childId: string, dueDate: string, opts: { chore?: string; phut?: number } = {}) {
@@ -137,7 +165,8 @@ before(async () => {
     `INSERT INTO families (id, name, slug, parent_pin_hash) VALUES ('fam_cu', 'Nhà cũ', 'nha-cu', 'h1');
      INSERT INTO children (id, family_id, name, grade, color, avatar_url) VALUES
        ('con_a', 'fam_cu', 'Minh', 'Lớp 1', 'primary', '/a.png'),
-       ('con_b', 'fam_cu', 'An', 'Lớp 1', 'secondary', '/b.png');
+       ('con_b', 'fam_cu', 'An', 'Lớp 1', 'secondary', '/b.png'),
+       ('con_c', 'fam_cu', 'Bình', 'Lớp 1', 'tertiary', '/c.png');
      INSERT INTO daily_chores (id, family_id, content, sort_order) VALUES ('chr_1', 'fam_cu', 'Tắt đèn', 1);`
   );
   await chayMigrations(boChay);
@@ -239,6 +268,31 @@ test('xong som: qua gio -> khong +1; khong bam dong ho -> khong +1; viec nha co 
   const kq = await tickXong(viec, Date.now() - 10_000);
   assert.equal(kq.xongSom, 0, 'viec nha khong bao gio duoc +1 du co moc');
   assert.equal(kq.ngayXong, DIEM_NGAY_XONG, 'nhung ngay van duoc +10 khi xong het');
+});
+
+test('ghi diem loi giua duong: lan PATCH sau cua chinh bai do cong not +1 va +10', async () => {
+  const NGAY = '2026-09-12';
+  const bai = await themBai('con_c', NGAY, { phut: 5 });
+  const truoc = await soDu('con_c');
+  const gio = Date.now();
+
+  // Cu tick da ghi xong (status + completed_at + started_at) nhung buoc ghi diem
+  // nem loi giua duong (Neon rot ket noi): khong co dong score_events nao.
+  await db.query(
+    `UPDATE assignments SET status = 'done', completed_at = $2, started_at = $3 WHERE id = $1`,
+    [bai, new Date(gio).toISOString(), new Date(gio - 4 * PHUT).toISOString()]
+  );
+  assert.equal(await soDu('con_c'), truoc, 'chua cong duoc diem nao');
+
+  // Lan PATCH sau cua chinh bai do: may con khong con moc trong localStorage nua
+  // (da xoa luc tick), nhung DB con started_at + completed_at nen van xet duoc.
+  assert.deepEqual(await ghiDiem(bai, null), { xongSom: DIEM_XONG_SOM, ngayXong: DIEM_NGAY_XONG },
+    'cong not ca +1 xong som va +10 ngay xong');
+  assert.equal(await soDu('con_c'), truoc + DIEM_XONG_SOM + DIEM_NGAY_XONG);
+
+  assert.deepEqual(await ghiDiem(bai, null), { xongSom: 0, ngayXong: 0 },
+    'goi lai lan nua khong cong trung');
+  assert.equal(await soDu('con_c'), truoc + DIEM_XONG_SOM + DIEM_NGAY_XONG);
 });
 
 test('doi thuong: moi con MOT yeu cau dang cho; xin trung bi unique chan', async () => {

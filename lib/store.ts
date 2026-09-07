@@ -880,15 +880,24 @@ export async function daCongDiemNgay(familyId: string, childId: string, date: st
 }
 
 /**
- * Cong diem sau khi mot bai VUA chuyen sang 'done' (PATCH /api/assignments/:id,
- * duong cua con). Goi voi bai da doc lai tu DB sau khi cap nhat.
+ * Cong diem cho mot bai dang 'done' (PATCH /api/assignments/:id, duong cua con).
+ * Goi voi bai da doc lai tu DB sau khi cap nhat.
  *
  * @param startedAtMs  moc con bam "Bat dau lam" do may con gui len (epoch ms,
  *                     da qua locMocBatDau trong lib/diem.ts), null neu khong bam.
  *
- * Ca hai lan INSERT deu ON CONFLICT DO NOTHING tren unique index cua migration
- * 015 va doc RETURNING de biet co cong THAT hay khong: con bo tick roi tick lai,
- * hay hai request dong thoi, thi lan sau khong cong them va ket qua bao 0.
+ * IDEMPOTENT — goi lai bao nhieu lan cung khong cong trung: ca hai lan INSERT
+ * deu ON CONFLICT DO NOTHING tren unique index cua migration 015 va doc
+ * RETURNING de biet co cong THAT hay khong. Nho vay route goi ham nay o MOI
+ * PATCH cua con ma bai dang 'done' (khong chi luc vua chuyen todo -> done):
+ * lan truoc ghi diem loi giua duong (Neon rot ket noi) thi lan sau cong not,
+ * khong mat diem. Cac lan goi lai tra ve xongSom/ngayXong = 0, dung nghia
+ * "VUA cong o lan nay".
+ *
+ * De lan goi lai do van xet duoc "xong som", hai moc lay tu DB chu khong tu
+ * dong ho luc goi: moc bat dau la moc may con vua gui, hoac assignments.started_at
+ * da luu tu lan truoc; moc xong la assignments.completed_at (setStatus /
+ * submitVideo vua ghi). Tren duong tick binh thuong hai cach cho cung ket qua.
  *
  * Khong tru diem khi con bo tick ("Chua lam xong") sau khi da duoc cong — MVP
  * chap nhan lach nho trong nha; bo me sua/xoa bai cua mot ngay da cong cung
@@ -905,49 +914,57 @@ export async function ghiDiemSauKhiXong(
     return ketQua;
   }
 
-  // Khong hoi to (lib/diem.ts): ngay (due_date) truoc families.score_since
-  // khong duoc tinh diem — ap cho CA HAI loai, +1 xong som lan +10 ngay xong.
-  const family = await getFamilyById(familyId);
-  const ngayTinhDiem = family !== null && ngayDuocTinhDiem(a.dueDate, family.scoreSince);
-
-  // 1. Xong som — chi bai tap that: viec nha (chore_id khong null) tick tai cho,
-  //    khong co dong ho, khong bao gio duoc +1.
+  // Luu moc bat dau may con vua gui, du co som hay khong, du ngay do co tinh
+  // diem hay khong: day la bang chung cua phep so sanh "xong som", va la cach
+  // lan goi lai sau nay con biet con da bam dong ho.
   if (startedAtMs !== null && a.choreId === null) {
-    // Luu moc bat dau du co som hay khong, du ngay do co tinh diem hay khong:
-    // day la bang chung cua phep so sanh "xong som".
     await query(
       `UPDATE assignments SET started_at = $3 WHERE id = $1 AND ${OF_FAMILY}`,
       [a.id, familyId, new Date(startedAtMs).toISOString()]
     );
-    if (ngayTinhDiem && xongSom(startedAtMs, Date.now(), a.durationMinutes)) {
-      const rows = await query<{ id: string }>(
-        `INSERT INTO score_events (id, child_id, kind, points, event_date, assignment_id)
-         VALUES ($1, $2, 'early_finish', $3, $4, $5)
-         ON CONFLICT (assignment_id) WHERE kind = 'early_finish' DO NOTHING
-         RETURNING id`,
-        [newId('sce'), a.childId, DIEM_XONG_SOM, a.dueDate, a.id]
-      );
-      if (rows.length > 0) ketQua.xongSom = DIEM_XONG_SOM;
-    }
   }
 
-  // 2. Ngay xong — ca bai tap lan viec nha cua (con, ngay) deu done. a.childId
-  //    da qua getAssignment(familyId) nen thuoc dung nha, khong can loc them.
-  if (ngayTinhDiem) {
-    const rows = await query<{ status: string; chore_id: string | null }>(
-      `SELECT status, chore_id FROM assignments WHERE child_id = $1 AND due_date = $2`,
-      [a.childId, a.dueDate]
+  // Mot cau cho ca hai viec: cac dong cua (con, ngay) de xet "ngay xong", va
+  // families.score_since de xet "khong hoi to" (lib/diem.ts — ap cho CA HAI
+  // loai, +1 xong som lan +10 ngay xong). Neon tinh tien theo vong thua nen
+  // khong doc family bang mot cau rieng. a.childId da qua getAssignment(familyId)
+  // nen thuoc dung nha; danh sach luon co it nhat chinh dong `a`.
+  const rows = await query<{ status: string; chore_id: string | null; score_since: string | Date }>(
+    `SELECT a.status, a.chore_id, f.score_since
+       FROM assignments a
+       JOIN children c ON c.id = a.child_id
+       JOIN families f ON f.id = c.family_id
+      WHERE a.child_id = $1 AND a.due_date = $2`,
+    [a.childId, a.dueDate]
+  );
+  const ngayTinhDiem = rows.length > 0 && ngayDuocTinhDiem(a.dueDate, dateStr(rows[0].score_since));
+
+  // 1. Xong som — chi bai tap that: viec nha (chore_id khong null) tick tai cho,
+  //    khong co dong ho, khong bao gio duoc +1.
+  const mocBatDau = startedAtMs ?? (a.startedAt === null ? null : new Date(a.startedAt).getTime());
+  const mocXong = a.completedAt === null ? Date.now() : new Date(a.completedAt).getTime();
+  if (ngayTinhDiem && mocBatDau !== null && a.choreId === null &&
+      xongSom(mocBatDau, mocXong, a.durationMinutes)) {
+    const ins = await query<{ id: string }>(
+      `INSERT INTO score_events (id, child_id, kind, points, event_date, assignment_id)
+       VALUES ($1, $2, 'early_finish', $3, $4, $5)
+       ON CONFLICT (assignment_id) WHERE kind = 'early_finish' DO NOTHING
+       RETURNING id`,
+      [newId('sce'), a.childId, DIEM_XONG_SOM, a.dueDate, a.id]
     );
-    if (ngayHoanThanh(rows.map((r) => ({ status: r.status, choreId: r.chore_id })))) {
-      const ins = await query<{ id: string }>(
-        `INSERT INTO score_events (id, child_id, kind, points, event_date)
-         VALUES ($1, $2, 'day_complete', $3, $4)
-         ON CONFLICT (child_id, event_date) WHERE kind = 'day_complete' DO NOTHING
-         RETURNING id`,
-        [newId('sce'), a.childId, DIEM_NGAY_XONG, a.dueDate]
-      );
-      if (ins.length > 0) ketQua.ngayXong = DIEM_NGAY_XONG;
-    }
+    if (ins.length > 0) ketQua.xongSom = DIEM_XONG_SOM;
+  }
+
+  // 2. Ngay xong — ca bai tap lan viec nha cua (con, ngay) deu done.
+  if (ngayTinhDiem && ngayHoanThanh(rows.map((r) => ({ status: r.status, choreId: r.chore_id })))) {
+    const ins = await query<{ id: string }>(
+      `INSERT INTO score_events (id, child_id, kind, points, event_date)
+       VALUES ($1, $2, 'day_complete', $3, $4)
+       ON CONFLICT (child_id, event_date) WHERE kind = 'day_complete' DO NOTHING
+       RETURNING id`,
+      [newId('sce'), a.childId, DIEM_NGAY_XONG, a.dueDate]
+    );
+    if (ins.length > 0) ketQua.ngayXong = DIEM_NGAY_XONG;
   }
 
   ketQua.tong = await soDiem(familyId, a.childId);
