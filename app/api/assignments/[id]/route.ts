@@ -72,27 +72,28 @@ export async function PATCH(req: Request, { params }: Ctx) {
     // Gui video kem status:'done' la mot viec duy nhat -> mot cau UPDATE duy nhat
     const nopVaXong = Boolean(body.videoUrl) && body.status === 'done';
 
+    // Moc bat dau di CUNG cau UPDATE danh dau xong (xem setStatus): no la bang
+    // chung duy nhat cua "xong som" va may con xoa ban trong localStorage ngay
+    // sau khi luu duoc, nen khong duoc de buoc cong diem o duoi giu no.
+    const moc = locMocBatDau(body.startedAt, Date.now());
+
     let assignment = current;
     if (body.videoUrl) {
-      assignment = (await submitVideo(familyId, id, body.videoUrl, nopVaXong)) ?? assignment;
+      assignment = (await submitVideo(familyId, id, body.videoUrl, nopVaXong, moc)) ?? assignment;
     }
     if ('status' in body && !nopVaXong) {
-      assignment = (await setStatus(familyId, id, body.status === 'done')) ?? assignment;
+      assignment = (await setStatus(familyId, id, body.status === 'done', moc)) ?? assignment;
     }
 
     // Cong diem cho MOI PATCH cua con ma bai dang xong — khong chi lan vua
     // chuyen todo -> done. ghiDiemSauKhiXong idempotent (ON CONFLICT DO NOTHING
-    // ... RETURNING) nen goi lai khong cong trung, va do la duong khoi phuc that:
-    // loi o buoc nay KHONG duoc lam hong cu tick da ghi thanh cong (con bam lai
-    // la tick ve todo roi lai done, roi loan) nen nuot loi + ghi log, tra ve
-    // khong co `diem`; lan PATCH sau cua chinh bai do se cong not phan con thieu.
+    // ... RETURNING) nen goi lai khong cong trung. Loi o day thi tra 5xx cho may
+    // con: duong khoi phuc la CON BAM LAI khi thay bao loi — ca ba cho bam
+    // (ChiTietBai, nopVideo, ViecNhaBai) deu gui trang thai tuong minh 'done'
+    // nen lan sau se cong not phan con thieu, khong co gi bi dao nguoc.
     let diem: DiemVuaCong | undefined;
     if (assignment.status === 'done') {
-      try {
-        diem = await ghiDiemSauKhiXong(familyId, assignment, locMocBatDau(body.startedAt, Date.now()));
-      } catch (e) {
-        console.error('Khong cong duoc diem cho bai', id, e);
-      }
+      diem = await ghiDiemSauKhiXong(familyId, assignment);
     }
     return NextResponse.json({ assignment, diem });
   }

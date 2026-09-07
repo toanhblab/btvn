@@ -28,8 +28,9 @@
 -- 3. score_events — so cong diem, MOI DONG LA MOT LAN CONG. Tong diem kiem duoc
 --    = SUM(points). Chi ghi diem CONG; diem TRU do doi thuong doc tu
 --    reward_redemptions (status = 'approved') — khong ghi mot dong am vao day de
---    khong phai giu hai bang khop nhau khi bo me duyet (lib/db.ts khong co
---    transaction qua Neon HTTP). So du = SUM(score_events.points)
+--    khong phai giu hai bang khop nhau khi bo me duyet: lib/db.ts hien chay moi
+--    cau mot request, va cach tinh so du nay khong can transaction nao ca.
+--    So du = SUM(score_events.points)
 --    - SUM(reward_redemptions.cost WHERE approved), xem soDiem trong lib/store.ts.
 --
 --    Hai unique index CHINH LA luat "cong mot lan": (child_id, event_date) cho

@@ -477,16 +477,43 @@ export async function saveSubmission(input: {
   return created;
 }
 
-/** Tick xong / bo tick. PRD 4.3: tre tick nham phai bo duoc. */
+/**
+ * Tick xong / bo tick. PRD 4.3: tre tick nham phai bo duoc.
+ *
+ * @param startedAtMs  moc con bam "Bat dau lam" may con gui kem luc tick (epoch
+ *   ms, da qua locMocBatDau trong lib/diem.ts), null neu khong gui.
+ *
+ * Moc do ghi TRONG CUNG cau UPDATE voi status, khong tach ra cau rieng o buoc
+ * cong diem: no la bang chung DUY NHAT cua "xong som" va truoc luc gui chi nam
+ * trong localStorage cua may con (may con xoa ngay sau khi tick thanh cong), nen
+ * neu buoc cong diem loi giua duong thi moc phai da nam trong DB roi.
+ *
+ * Hai COALESCE cho phep tick lai nhieu lan ma khong lam xau di: `completed_at`
+ * giu moc xong DAU TIEN (bam lai khong day no ra sau vai giay, con dang bi xet
+ * "xong som" khong bi mat oan), `started_at` giu moc cu khi lan nay khong gui
+ * gi. Bo tick thi xoa completed_at nhu cu, con started_at giu nguyen.
+ */
 export async function setStatus(
   familyId: string,
   id: string,
-  done: boolean
+  done: boolean,
+  startedAtMs: number | null = null
 ): Promise<Assignment | null> {
-  await query(
-    `UPDATE assignments SET status = $3, completed_at = $4 WHERE id = $1 AND ${OF_FAMILY}`,
-    [id, familyId, done ? 'done' : 'todo', done ? new Date().toISOString() : null]
-  );
+  if (done) {
+    await query(
+      `UPDATE assignments
+          SET status = 'done',
+              completed_at = COALESCE(completed_at, now()),
+              started_at = COALESCE($3::timestamptz, started_at)
+        WHERE id = $1 AND ${OF_FAMILY}`,
+      [id, familyId, startedAtMs === null ? null : new Date(startedAtMs).toISOString()]
+    );
+  } else {
+    await query(
+      `UPDATE assignments SET status = 'todo', completed_at = NULL WHERE id = $1 AND ${OF_FAMILY}`,
+      [id, familyId]
+    );
+  }
   return getAssignment(familyId, id);
 }
 
@@ -558,19 +585,28 @@ export async function updateAssignment(
  * viec do phai vao CUNG MOT cau UPDATE. Tach thanh hai cau thi cau sau tach ra
  * loi giua duong (Neon rot ket noi) se de lai hang co video ma status van 'todo':
  * con bam gui lai la tai len them mot ban 35MB nua khong ai tro toi.
+ *
+ * startedAtMs vao cung cau do, cung ly do va cung hai COALESCE nhu setStatus.
  */
 export async function submitVideo(
   familyId: string,
   id: string,
   url: string,
-  markDone = false
+  markDone = false,
+  startedAtMs: number | null = null
 ): Promise<Assignment | null> {
   await query(
     `UPDATE assignments
         SET submitted_video_url = $3, submitted_video_at = now()
-            ${markDone ? `, status = 'done', completed_at = now()` : ''}
+            ${markDone
+              ? `, status = 'done',
+                   completed_at = COALESCE(completed_at, now()),
+                   started_at = COALESCE($4::timestamptz, started_at)`
+              : ''}
       WHERE id = $1 AND ${OF_FAMILY}`,
-    [id, familyId, url]
+    markDone
+      ? [id, familyId, url, startedAtMs === null ? null : new Date(startedAtMs).toISOString()]
+      : [id, familyId, url]
   );
   return getAssignment(familyId, id);
 }
@@ -881,47 +917,29 @@ export async function daCongDiemNgay(familyId: string, childId: string, date: st
 
 /**
  * Cong diem cho mot bai dang 'done' (PATCH /api/assignments/:id, duong cua con).
- * Goi voi bai da doc lai tu DB sau khi cap nhat.
+ * Goi voi bai da doc lai tu DB sau khi setStatus / submitVideo cap nhat.
  *
- * @param startedAtMs  moc con bam "Bat dau lam" do may con gui len (epoch ms,
- *                     da qua locMocBatDau trong lib/diem.ts), null neu khong bam.
+ * KHONG ghi gi vao assignments: hai moc de xet "xong som" (started_at,
+ * completed_at) do setStatus / submitVideo luu san trong cung cau UPDATE danh
+ * dau xong, ham nay chi DOC tu `a`. Nho vay moc song sot moi loi o day.
  *
  * IDEMPOTENT — goi lai bao nhieu lan cung khong cong trung: ca hai lan INSERT
  * deu ON CONFLICT DO NOTHING tren unique index cua migration 015 va doc
  * RETURNING de biet co cong THAT hay khong. Nho vay route goi ham nay o MOI
  * PATCH cua con ma bai dang 'done' (khong chi luc vua chuyen todo -> done):
- * lan truoc ghi diem loi giua duong (Neon rot ket noi) thi lan sau cong not,
- * khong mat diem. Cac lan goi lai tra ve xongSom/ngayXong = 0, dung nghia
+ * lan truoc ghi diem loi giua duong (Neon rot ket noi) thi con bam lai la cong
+ * not phan con thieu. Cac lan goi lai tra ve xongSom/ngayXong = 0, dung nghia
  * "VUA cong o lan nay".
- *
- * De lan goi lai do van xet duoc "xong som", hai moc lay tu DB chu khong tu
- * dong ho luc goi: moc bat dau la moc may con vua gui, hoac assignments.started_at
- * da luu tu lan truoc; moc xong la assignments.completed_at (setStatus /
- * submitVideo vua ghi). Tren duong tick binh thuong hai cach cho cung ket qua.
  *
  * Khong tru diem khi con bo tick ("Chua lam xong") sau khi da duoc cong — MVP
  * chap nhan lach nho trong nha; bo me sua/xoa bai cua mot ngay da cong cung
  * khong lam mat diem (khong co gi tru).
  */
-export async function ghiDiemSauKhiXong(
-  familyId: string,
-  a: Assignment,
-  startedAtMs: number | null
-): Promise<DiemVuaCong> {
+export async function ghiDiemSauKhiXong(familyId: string, a: Assignment): Promise<DiemVuaCong> {
   const ketQua: DiemVuaCong = { xongSom: 0, ngayXong: 0, tong: 0 };
   if (a.status !== 'done') {
     ketQua.tong = await soDiem(familyId, a.childId);
     return ketQua;
-  }
-
-  // Luu moc bat dau may con vua gui, du co som hay khong, du ngay do co tinh
-  // diem hay khong: day la bang chung cua phep so sanh "xong som", va la cach
-  // lan goi lai sau nay con biet con da bam dong ho.
-  if (startedAtMs !== null && a.choreId === null) {
-    await query(
-      `UPDATE assignments SET started_at = $3 WHERE id = $1 AND ${OF_FAMILY}`,
-      [a.id, familyId, new Date(startedAtMs).toISOString()]
-    );
   }
 
   // Mot cau cho ca hai viec: cac dong cua (con, ngay) de xet "ngay xong", va
@@ -941,7 +959,7 @@ export async function ghiDiemSauKhiXong(
 
   // 1. Xong som — chi bai tap that: viec nha (chore_id khong null) tick tai cho,
   //    khong co dong ho, khong bao gio duoc +1.
-  const mocBatDau = startedAtMs ?? (a.startedAt === null ? null : new Date(a.startedAt).getTime());
+  const mocBatDau = a.startedAt === null ? null : new Date(a.startedAt).getTime();
   const mocXong = a.completedAt === null ? Date.now() : new Date(a.completedAt).getTime();
   if (ngayTinhDiem && mocBatDau !== null && a.choreId === null &&
       xongSom(mocBatDau, mocXong, a.durationMinutes)) {

@@ -121,9 +121,11 @@ export default function ChiTietBai({
       setDone(nextDone);
       if (nextDone) {
         setDiemVuaCong(data.diem ?? null);
-        // Con gio tren dong ho -> an mung xong som; dong ho da xong viec thi xoa
+        // Con gio tren dong ho -> an mung xong som. Chi xoa moc khi may chu da
+        // ghi diem xong (`diem` co trong tra loi): khong co no thi moc trong
+        // localStorage la ban duy nhat con lai de lan bam sau gui lai.
         const som = conThoiGian(assignment.id, assignment.durationMinutes);
-        xoaDongHo(assignment.id);
+        if (data.diem) xoaDongHo(assignment.id);
         setXongSom(som);
         if (som) {
           window.speechSynthesis?.cancel();   // cat cau nhac dang doc do, uu tien loi khen
@@ -157,8 +159,9 @@ export default function ChiTietBai({
     setDone(true);
     setDiemVuaCong(data.diem ?? null);
     // Gui video la lam xong bai -> dong ho cung phai dung, y nhu duong tick
+    // (cung chi xoa moc khi may chu da ghi diem xong).
     const som = conThoiGian(assignment.id, assignment.durationMinutes);
-    xoaDongHo(assignment.id);
+    if (data.diem) xoaDongHo(assignment.id);
     setXongSom(som);
     if (som) {
       window.speechSynthesis?.cancel();
