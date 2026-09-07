@@ -117,7 +117,7 @@ Nguyên tắc: **không có tài khoản, không email, không mật khẩu.**
 
 - Nhắc nhở tự động (thông báo/push, "8h tối rồi, còn 2 bài chưa xong").
 - Upload **ảnh** bài con đã làm để bố mẹ kiểm tra (riêng **video** nộp bài thì đã làm — xem mục 4.2 và 4.3).
-- Thống kê dài hạn, streak, phần thưởng / huy hiệu.
+- Thống kê dài hạn, streak, huy hiệu (riêng **điểm thưởng + đổi thưởng có bố mẹ duyệt** thì đã làm — xem README mục "Điểm thưởng").
 - Chia sẻ với giáo viên, lớp học.
 - Tài khoản thật (email/Google), lấy lại PIN khi quên, phân quyền trong nhà.
 - Chặn dò PIN ở mức hạ tầng (hiện chỉ đếm số lần sai trong RAM của từng instance).

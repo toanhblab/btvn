@@ -18,7 +18,7 @@ tính của nhà: nhập PIN ra đúng một nhà, nên hai nhà không được
 
 ```bash
 npm install
-npm run db:seed      # tạo bảng + 1 nhà + 3 con + bài tập mẫu + 3 việc nhà, PIN mặc định 1234
+npm run db:seed      # tạo bảng + 1 nhà + 3 con + bài tập mẫu + 3 việc nhà + 4 phần thưởng mẫu, PIN mặc định 1234
 npm run dev
 ```
 
@@ -55,9 +55,9 @@ lần. Đường này **chỉ** gắn máy vào nhà, không mở phần bố m�
 trên iPad của các con vẫn an toàn.
 
 Mọi truy vấn trong `lib/store.ts` đều nhận `familyId` và tự lọc theo nó — kể cả
-đường con tick bài xong (việc nhà cũng đi đúng đường này) và con nộp video (hai
-việc duy nhất không cần PIN, cùng xác thực bằng cookie thiết bị). Biết id con
-hay id bài của nhà khác cũng không đọc/sửa được gì.
+đường con tick bài xong (việc nhà cũng đi đúng đường này), con nộp video và con
+xin đổi thưởng (ba việc duy nhất không cần PIN, cùng xác thực bằng cookie thiết
+bị). Biết id con hay id bài của nhà khác cũng không đọc/sửa được gì.
 
 ## Migration
 
@@ -134,19 +134,23 @@ các migration chạy được trên cả hai.
 ```
 app/vao/        chọn nhà cho máy chưa gắn nhà nào (nhập PIN / tạo nhà mới)
 app/nha/[slug]/ link gắn iPad vào một nhà (route handler, đặt cookie rồi redirect)
-app/con/        4 màn của trẻ: chọn con → bài hôm nay → chi tiết → chúc mừng
+app/con/        5 màn của trẻ: chọn con → bài hôm nay → chi tiết → chúc mừng,
+                và cửa hàng phần thưởng (thuong/)
 app/bome/       màn của bố mẹ: PIN, tạo nhà, tổng quan, thêm bài, kiểm tra lại,
-                nhập tay, sửa bài, thêm con, chi tiết theo con, danh sách, cài đặt
+                nhập tay, sửa bài, thêm con, chi tiết theo con, danh sách,
+                thưởng (duyệt đổi thưởng + danh sách phần thưởng), cài đặt
 app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 nha (gắn máy), extract (Nous Portal), upload (ảnh đề bài),
                 upload-media (tệp bố mẹ đính kèm), nop-video (video con nộp),
                 viec-nha (cấu hình nhiệm vụ mỗi ngày của bố mẹ, cần PIN),
+                phan-thuong (bố mẹ đặt phần thưởng, cần PIN), doi-thuong (con
+                xin đổi — không cần PIN; bố mẹ duyệt — cần PIN),
                 tep (đọc tệp đã ghi ở .data/uploads khi dev)
 app/_components/ BanPhimPin — bàn phím số dùng chung cho 4 chỗ nhập PIN
 lib/            db (Neon|PGlite), store (truy vấn theo familyId), auth (PIN +
-                cookie có chữ ký), pin (PIN_LEN dùng cả hai phía), media +
-                upload-route (giới hạn tệp, tên/URL tệp, thân chung hai route
-                tải lên), avatar, ai, types
+                cookie có chữ ký), pin (PIN_LEN dùng cả hai phía), diem (luật
+                tính điểm, hàm thuần), media + upload-route (giới hạn tệp,
+                tên/URL tệp, thân chung hai route tải lên), avatar, ai, types
 proxy.ts        chặn /bome/* khi chưa nhập PIN
 migrations/     từng bước thay đổi lược đồ, chạy theo thứ tự tên tệp (bám PRD mục 7)
 scripts/        db.mjs (kết nối + bộ chạy migration), migrate.mjs (CLI, chạy khi
@@ -191,15 +195,18 @@ giọng nói nhắc mỗi 5 phút và phút cuối, hết giờ chuông dịu + 
 (không phạt), xong khi còn giờ thì confetti + lời khen. Mốc bắt đầu lưu trong
 `localStorage` theo id bài nên lỡ reload giờ không trôi; quá giờ hơn một tiếng
 thì mốc hết hiệu lực và nút "Bắt đầu làm" hiện lại, để bài con bỏ dở hôm trước
-không kẹt mãi ở trạng thái quá giờ.
+không kẹt mãi ở trạng thái quá giờ. Lúc con tick xong, máy con gửi mốc đó lên
+kèm (`assignments.started_at`) để máy chủ xét "xong sớm" và cộng điểm (mục
+**Điểm thưởng** ở dưới).
 
 Con bấm nhầm "Bắt đầu làm" thì bố mẹ xoá mốc đó bằng nút nhỏ **"Bố mẹ đặt lại
 giờ"** ngay dưới đồng hồ (`DatLaiGio.tsx`): nhập mã PIN của nhà là bài quay về
-trạng thái chưa bấm. Nút phải nằm **trên chính máy của con** vì mốc bắt đầu chỉ
-có trong `localStorage` của máy đó, máy chủ không giữ bản nào — một nút đặt lại
-đặt ở phần `/bome` sẽ không với tới được iPad của con. PIN ở đây chỉ được *kiểm
-tra* qua `POST /api/pin/kiem-tra`, không đặt cookie `btvn_parent`, để máy dùng
-chung của các con không vô tình mở được phần bố mẹ (PRD 4.5).
+trạng thái chưa bấm. Nút phải nằm **trên chính máy của con** vì mốc của bài đang
+làm chỉ có trong `localStorage` của máy đó (máy chủ chỉ nhận một bản lúc con tick
+xong, để làm bằng chứng tính điểm) — một nút đặt lại đặt ở phần `/bome` sẽ không
+với tới được iPad của con. PIN ở đây chỉ được *kiểm tra* qua
+`POST /api/pin/kiem-tra`, không đặt cookie `btvn_parent`, để máy dùng chung của
+các con không vô tình mở được phần bố mẹ (PRD 4.5).
 
 **Nộp bài bằng video.** Bài kiểu "đọc to", "đọc thuộc lòng", "quay video gửi cô",
 thể dục/biểu diễn có trường `requires_video` — AI tự bật khi tách bài, bố mẹ
@@ -256,6 +263,24 @@ việc nhà (`listAssignments` mặc định loại chúng), còn Hoàn thành /
 có — chưa tick hết việc nhà của hôm nay thì chưa được coi là xong. Vì việc nhà
 là bài tập thật, nút **"Xoá tất cả bài tập và việc nhà"** xoá luôn cả lịch sử
 việc nhà.
+
+**Điểm thưởng.** Xong hết một ngày (cả bài tập **lẫn** việc nhà của ngày đó) được
+**+10 điểm**, cộng một lần cho mỗi con mỗi ngày; mỗi bài xong sớm hơn thời lượng
+dự kiến của chính bài đó được **+1**. Luật đầy đủ — "sớm" đo bằng mốc con bấm
+"Bắt đầu làm", và ngày trước `families.score_since` **không** được tính (không
+hồi tố) — ở chú thích đầu `lib/diem.ts` và
+[migrations/015_tinh_diem_doi_thuong.sql](migrations/015_tinh_diem_doi_thuong.sql).
+Con thấy số ⭐ của **mình và của anh chị em** ngay ở màn chọn con, kèm **bảng xếp
+hạng** cả nhà (bố mẹ chốt để cả nhà cùng thấy); +1 hiện ở tấm "Giỏi quá!" của
+từng bài, +10 hiện ở màn khen cuối ngày. Bố mẹ thấy điểm từng con ở màn tổng quan.
+
+**Đổi thưởng.** Phần thưởng là **một danh sách chung cả nhà** (như việc nhà): bố
+mẹ đặt tên, icon và giá ⭐ ở màn **Thưởng**, bật/tắt hoặc xoá được; con thấy đúng
+danh sách đó ở 🎁 **"Đổi thưởng"**, bấm rồi hỏi lại một lần trước khi gửi. **Bố
+mẹ duyệt thì điểm mới bị trừ** — từ chối thì con giữ nguyên điểm và xin lại được,
+mỗi con chỉ có **một** yêu cầu chờ cùng lúc. Số dư = tổng điểm cộng **trừ** các
+lần đổi đã duyệt; không có dòng điểm âm nào, và con bỏ tick hay bố mẹ xoá bài
+cũng không làm con mất điểm đã kiếm.
 
 **Không bao giờ để bố mẹ bị kẹt.** AI hỏng, hết quota hay chưa có key thì vẫn
 tách tạm theo dòng kèm cảnh báo, và luôn có đường "Nhập tay từng bài".
