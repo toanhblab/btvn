@@ -1,0 +1,22 @@
+score_since: [{"name":"Nhà mình","score_since":"2026-09-07T00:00:00.000Z"}]
+
+score_events:
+  {"child_id":"an","kind":"day_complete","points":10,"event_date":"2026-09-07T00:00:00.000Z","subject":null}
+  {"child_id":"minh","kind":"day_complete","points":10,"event_date":"2026-09-07T00:00:00.000Z","subject":null}
+  {"child_id":"minh","kind":"early_finish","points":1,"event_date":"2026-09-07T00:00:00.000Z","subject":"Tiếng Việt"}
+
+redemptions:
+  {"child_id":"minh","reward_name":"Bố mẹ đọc truyện trước khi ngủ","cost":10,"status":"approved"}
+
+so du:
+  {"name":"Minh","so_du":1}
+  {"name":"An","so_du":10}
+  {"name":"Bé Na","so_du":0}
+
+bai cua An theo ngay:
+  {"subject":"Tiếng Anh","due_date":"2026-09-07T00:00:00.000Z","status":"done","bai_that":true}
+  {"subject":"Tiếng Việt","due_date":"2026-09-07T00:00:00.000Z","status":"done","bai_that":true}
+  {"subject":"Việc nhà","due_date":"2026-09-07T00:00:00.000Z","status":"done","bai_that":false}
+  {"subject":"Việc nhà","due_date":"2026-09-07T00:00:00.000Z","status":"done","bai_that":false}
+  {"subject":"Việc nhà","due_date":"2026-09-07T00:00:00.000Z","status":"done","bai_that":false}
+  {"subject":"Toán","due_date":"2026-09-08T00:00:00.000Z","status":"done","bai_that":true}
