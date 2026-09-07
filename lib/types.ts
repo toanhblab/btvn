@@ -240,8 +240,13 @@ export interface DiemVuaCong {
   xongSom: number;
   /** DIEM_NGAY_XONG neu ngay cua bai nay VUA duoc cong o lan tick nay, 0 neu khong. */
   ngayXong: number;
-  /** So diem con dang co sau lan tick nay. */
-  tong: number;
+  /**
+   * So diem con dang co sau lan tick nay — CHI co khi lan tick nay THUC SU cong
+   * diem (xongSom hay ngayXong khac 0). Khong cong gi thi khong tinh: man cua
+   * con chi hien so nay kem chip "+1", nen doc no moi luc la mot vong thua Neon
+   * khong ai dung.
+   */
+  tong?: number;
 }
 
 /** Ten phan thuong — dai hon thi tran the o cua hang cua con. */

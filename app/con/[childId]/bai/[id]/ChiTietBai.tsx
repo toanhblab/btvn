@@ -121,11 +121,13 @@ export default function ChiTietBai({
       setDone(nextDone);
       if (nextDone) {
         setDiemVuaCong(data.diem ?? null);
-        // Con gio tren dong ho -> an mung xong som. Chi xoa moc khi may chu da
-        // ghi diem xong (`diem` co trong tra loi): khong co no thi moc trong
-        // localStorage la ban duy nhat con lai de lan bam sau gui lai.
+        // Con gio tren dong ho -> an mung xong som. Xoa moc o may nay duoc:
+        // setStatus da luu moc vao assignments.started_at trong cung cau UPDATE
+        // danh dau xong, nen day khong con la ban duy nhat. Xoa vo dieu kien de
+        // con bo tick sau nay thay lai nut "Bat dau lam", khong phai dong ho
+        // dang chay tiep tu moc cu.
         const som = conThoiGian(assignment.id, assignment.durationMinutes);
-        if (data.diem) xoaDongHo(assignment.id);
+        xoaDongHo(assignment.id);
         setXongSom(som);
         if (som) {
           window.speechSynthesis?.cancel();   // cat cau nhac dang doc do, uu tien loi khen
@@ -159,9 +161,9 @@ export default function ChiTietBai({
     setDone(true);
     setDiemVuaCong(data.diem ?? null);
     // Gui video la lam xong bai -> dong ho cung phai dung, y nhu duong tick
-    // (cung chi xoa moc khi may chu da ghi diem xong).
+    // (submitVideo cung da luu moc vao started_at trong cung cau UPDATE).
     const som = conThoiGian(assignment.id, assignment.durationMinutes);
-    if (data.diem) xoaDongHo(assignment.id);
+    xoaDongHo(assignment.id);
     setXongSom(som);
     if (som) {
       window.speechSynthesis?.cancel();
@@ -376,9 +378,11 @@ export default function ChiTietBai({
                 <span className="text-k-headline bg-tertiary-fixed text-on-tertiary-fixed px-8 py-3 rounded-full">
                   ⭐ +{diemVuaCong.xongSom} điểm xong sớm!
                 </span>
-                <span className="text-k-body text-on-surface-variant">
-                  Con đang có {diemVuaCong.tong} ⭐
-                </span>
+                {diemVuaCong.tong !== undefined && (
+                  <span className="text-k-body text-on-surface-variant">
+                    Con đang có {diemVuaCong.tong} ⭐
+                  </span>
+                )}
               </div>
             )}
 

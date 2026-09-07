@@ -4,9 +4,10 @@
  * giong lib/nhiem-vu-mac-dinh-hoan-thanh.test.ts.
  *
  * Khong import lib/store.ts duoc (import khong duoi, xem chu thich o test kia),
- * nen hai ham `danhDauXong` / `ghiDiem` duoi day MO PHONG LAI dung cac cau SQL
- * cua setStatus va ghiDiemSauKhiXong (lib/store.ts) + cac ham thuan trong
- * lib/diem.ts — sua logic cong diem o store.ts thi phai sua ca o day cho khop.
+ * nen ba ham `danhDauXong` / `congDiemNgay` / `ghiDiem` duoi day MO PHONG LAI
+ * dung cac cau SQL cua setStatus, congDiemNgayNeuXong va ghiDiemSauKhiXong
+ * (lib/store.ts) + cac ham thuan trong lib/diem.ts — sua logic cong diem o
+ * store.ts thi phai sua ca o day cho khop.
  *
  * Nhung dieu de vo ma khong ai thay, kiem o day:
  *   1. Nang DB dang co nha: score_since cua nha cu = ngay migration chay
@@ -20,6 +21,8 @@
  *      keo theo het (CASCADE).
  *   6. Ghi diem loi giua duong: lan goi sau cua chinh bai do cong not phan con
  *      thieu (nho started_at / completed_at trong DB), va khong cong trung.
+ *   7. Bo me BOT viec cua mot ngay (xoa bai / doi dueDate sang ngay khac) lam
+ *      ngay do thanh hoan thanh: van duoc +10, dung mot lan, dung nha.
  */
 
 import { test, before, after } from 'node:test';
@@ -76,6 +79,38 @@ async function danhDauXong(asgId: string, startedAtMs: number | null, nowMs: num
 }
 
 /**
+ * Mo phong congDiemNgayNeuXong(familyId, childId, dueDate): xet ca ngay va cong
+ * +10 neu xong het. Ham that duoc goi ca tu duong tick cua con VA tu hai thao
+ * tac cua bo me lam bot viec cua ngay (xoa bai / doi dueDate).
+ */
+async function congDiemNgay(familyId: string, childId: string, dueDate: string) {
+  const ngay = await rows(
+    `SELECT a.status, a.chore_id, f.score_since::text AS score_since
+       FROM assignments a
+       JOIN children c ON c.id = a.child_id
+       JOIN families f ON f.id = c.family_id
+      WHERE a.child_id = $1 AND a.due_date = $2 AND c.family_id = $3`,
+    [childId, dueDate, familyId]
+  );
+  if (ngay.length === 0) return { ngayXong: 0, ngayTinhDiem: false };
+
+  const ngayTinhDiem = ngayDuocTinhDiem(dueDate, String(ngay[0].score_since));
+  if (!ngayTinhDiem) return { ngayXong: 0, ngayTinhDiem: false };
+  if (!ngayHoanThanh(ngay.map((r) => ({ status: String(r.status), choreId: r.chore_id as string | null })))) {
+    return { ngayXong: 0, ngayTinhDiem };
+  }
+
+  const ins = await rows(
+    `INSERT INTO score_events (id, child_id, kind, points, event_date)
+     VALUES ($1, $2, 'day_complete', $3, $4)
+     ON CONFLICT (child_id, event_date) WHERE kind = 'day_complete' DO NOTHING
+     RETURNING id`,
+    [id('sce'), childId, DIEM_NGAY_XONG, dueDate]
+  );
+  return { ngayXong: ins.length > 0 ? DIEM_NGAY_XONG : 0, ngayTinhDiem };
+}
+
+/**
  * Mo phong ghiDiemSauKhiXong: doc lai bai tu DB (nhu route lam sau khi cap nhat)
  * roi chay dung cac cau SQL cua ham do. Tra ve diem VUA cong o lan goi nay.
  *
@@ -83,7 +118,7 @@ async function danhDauXong(asgId: string, startedAtMs: number | null, nowMs: num
  * done, khong chi lan vua tick — day la duong khoi phuc khi lan truoc ghi diem
  * loi. Ham nay KHONG ghi gi vao assignments, chi doc hai moc da luu.
  */
-async function ghiDiem(asgId: string) {
+async function ghiDiem(asgId: string, familyId = 'fam_cu') {
   const [a] = await rows(
     `SELECT child_id, due_date::text AS due_date, duration_minutes, chore_id, status,
             started_at, completed_at
@@ -93,20 +128,12 @@ async function ghiDiem(asgId: string) {
   const kq = { xongSom: 0, ngayXong: 0 };
   if (a.status !== 'done') return kq;
 
-  const ngay = await rows(
-    `SELECT a.status, a.chore_id, f.score_since::text AS score_since
-       FROM assignments a
-       JOIN children c ON c.id = a.child_id
-       JOIN families f ON f.id = c.family_id
-      WHERE a.child_id = $1 AND a.due_date = $2`,
-    [a.child_id, a.due_date]
-  );
-  const ngayTinhDiem =
-    ngay.length > 0 && ngayDuocTinhDiem(String(a.due_date), String(ngay[0].score_since));
+  const ngay = await congDiemNgay(familyId, String(a.child_id), String(a.due_date));
+  kq.ngayXong = ngay.ngayXong;
 
   const mocBatDau = soMs(a.started_at);
   const mocXong = soMs(a.completed_at) ?? Date.now();
-  if (ngayTinhDiem && mocBatDau !== null && a.chore_id === null &&
+  if (ngay.ngayTinhDiem && mocBatDau !== null && a.chore_id === null &&
       xongSom(mocBatDau, mocXong, Number(a.duration_minutes))) {
     const ins = await rows(
       `INSERT INTO score_events (id, child_id, kind, points, event_date, assignment_id)
@@ -116,18 +143,6 @@ async function ghiDiem(asgId: string) {
       [id('sce'), a.child_id, DIEM_XONG_SOM, a.due_date, asgId]
     );
     if (ins.length > 0) kq.xongSom = DIEM_XONG_SOM;
-  }
-
-  if (ngayTinhDiem &&
-      ngayHoanThanh(ngay.map((r) => ({ status: String(r.status), choreId: r.chore_id as string | null })))) {
-    const ins = await rows(
-      `INSERT INTO score_events (id, child_id, kind, points, event_date)
-       VALUES ($1, $2, 'day_complete', $3, $4)
-       ON CONFLICT (child_id, event_date) WHERE kind = 'day_complete' DO NOTHING
-       RETURNING id`,
-      [id('sce'), a.child_id, DIEM_NGAY_XONG, a.due_date]
-    );
-    if (ins.length > 0) kq.ngayXong = DIEM_NGAY_XONG;
   }
   return kq;
 }
@@ -311,6 +326,60 @@ test('ghi diem loi giua duong: con bam lai la cong not +1 va +10, khong cong tru
   assert.deepEqual(await ghiDiem(bai), { xongSom: 0, ngayXong: 0 },
     'goi lai lan nua khong cong trung');
   assert.equal(await soDu('con_c'), truoc + DIEM_XONG_SOM + DIEM_NGAY_XONG);
+});
+
+test('bo me xoa dong cuoi con todo: ngay thanh hoan thanh -> +10, dung mot lan', async () => {
+  const NGAY = '2026-09-13';
+  const truoc = await soDu('con_c');
+  const baiA = await themBai('con_c', NGAY);
+  const baiB = await themBai('con_c', NGAY);
+
+  // Con xong A, B con todo -> chua du dieu kien "ngay xong"
+  assert.deepEqual(await tickXong(baiA, null), { xongSom: 0, ngayXong: 0 }, 'con B chua xong');
+  assert.equal(await soDu('con_c'), truoc);
+
+  // Bo me xoa B: con khong tick gi nua, nhung ngay do gio da xong het
+  await db.query(`DELETE FROM assignments WHERE id = $1`, [baiB]);
+  assert.deepEqual(await congDiemNgay('fam_cu', 'con_c', NGAY), { ngayXong: DIEM_NGAY_XONG, ngayTinhDiem: true });
+  assert.equal(await soDu('con_c'), truoc + DIEM_NGAY_XONG);
+
+  assert.deepEqual(await congDiemNgay('fam_cu', 'con_c', NGAY), { ngayXong: 0, ngayTinhDiem: true },
+    'goi lai khong cong trung');
+  assert.equal(await soDu('con_c'), truoc + DIEM_NGAY_XONG);
+
+  // Bo me xoa NOT ca ngay -> khong con dong nao, khong cong gi (va khong no)
+  await db.query(`DELETE FROM assignments WHERE id = $1`, [baiA]);
+  assert.deepEqual(await congDiemNgay('fam_cu', 'con_c', NGAY), { ngayXong: 0, ngayTinhDiem: false });
+  assert.equal(await soDu('con_c'), truoc + DIEM_NGAY_XONG, 'xoa bai khong lam mat diem da cong');
+});
+
+test('bo me doi dueDate roi khoi ngay cu: ngay CU thanh hoan thanh -> +10', async () => {
+  const NGAY = '2026-09-14';
+  const MAI = '2026-09-15';
+  const truoc = await soDu('con_c');
+  const baiA = await themBai('con_c', NGAY);
+  const baiB = await themBai('con_c', NGAY);
+
+  assert.deepEqual(await tickXong(baiA, null), { xongSom: 0, ngayXong: 0 });
+
+  await db.query(`UPDATE assignments SET due_date = $2 WHERE id = $1`, [baiB, MAI]);
+  assert.equal((await congDiemNgay('fam_cu', 'con_c', NGAY)).ngayXong, DIEM_NGAY_XONG,
+    'ngay cu chi con bai A da xong -> +10');
+  assert.equal((await congDiemNgay('fam_cu', 'con_c', MAI)).ngayXong, 0,
+    'ngay moi con bai B todo -> chua cong');
+  assert.equal(await soDu('con_c'), truoc + DIEM_NGAY_XONG);
+});
+
+test('congDiemNgay khong cong cho con cua nha khac', async () => {
+  const NGAY = '2026-09-16';
+  const truoc = await soDu('con_c');
+  const bai = await themBai('con_c', NGAY);
+  assert.deepEqual(await tickXong(bai, null), { xongSom: 0, ngayXong: DIEM_NGAY_XONG });
+
+  await db.query(`DELETE FROM score_events WHERE child_id = 'con_c' AND event_date = $1`, [NGAY]);
+  assert.deepEqual(await congDiemNgay('fam_moi', 'con_c', NGAY), { ngayXong: 0, ngayTinhDiem: false },
+    'familyId khac -> khong thay dong nao, khong cong');
+  assert.equal(await soDu('con_c'), truoc);
 });
 
 test('doi thuong: moi con MOT yeu cau dang cho; xin trung bi unique chan', async () => {

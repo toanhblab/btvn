@@ -3,7 +3,8 @@ import { parentFamilyId, viewingFamilyId } from '@/lib/auth';
 import { locMocBatDau } from '@/lib/diem';
 import { laUrlTepAppCap } from '@/lib/media';
 import {
-  deleteAssignment, getAssignment, ghiDiemSauKhiXong, setStatus, submitVideo, updateAssignment,
+  congDiemNgayNeuXong, deleteAssignment, getAssignment, ghiDiemSauKhiXong, setStatus,
+  submitVideo, updateAssignment,
 } from '@/lib/store';
 import { hwSourceOf, sanitizeDuration, type DiemVuaCong } from '@/lib/types';
 
@@ -100,7 +101,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
   const familyId = await parentFamilyId();
   if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
-  if (!(await getAssignment(familyId, id))) {
+  const truoc = await getAssignment(familyId, id);
+  if (!truoc) {
     return NextResponse.json({ error: 'Không tìm thấy bài tập.' }, { status: 404 });
   }
 
@@ -124,7 +126,15 @@ export async function PATCH(req: Request, { params }: Ctx) {
         kind: m.kind === 'audio' || m.kind === 'image' ? m.kind : 'video',
       }));
   }
-  return NextResponse.json({ assignment: await updateAssignment(familyId, id, body) });
+  const assignment = await updateAssignment(familyId, id, body);
+
+  // Doi bai sang ngay khac la BOT mot dong cua ngay CU: cac dong con lai cua
+  // (con, ngay cu) co the da done het roi, va con thi khong tick gi nua nen
+  // duong cua con khong bao gio xet lai. Xet o day, idempotent nen an toan.
+  if (assignment && assignment.dueDate !== truoc.dueDate) {
+    await congDiemNgayNeuXong(familyId, truoc.childId, truoc.dueDate);
+  }
+  return NextResponse.json({ assignment });
 }
 
 /** DELETE /api/assignments/:id — chi bo me, chi bai cua nha minh. */
@@ -133,9 +143,14 @@ export async function DELETE(_req: Request, { params }: Ctx) {
   if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
 
   const { id } = await params;
-  if (!(await getAssignment(familyId, id))) {
+  const bai = await getAssignment(familyId, id);
+  if (!bai) {
     return NextResponse.json({ error: 'Không tìm thấy bài tập.' }, { status: 404 });
   }
   await deleteAssignment(familyId, id);
+
+  // Xoa dong cuoi con 'todo' cua mot ngay -> ngay do vua thanh hoan thanh, cung
+  // ly do nhu nhanh doi dueDate o tren.
+  await congDiemNgayNeuXong(familyId, bai.childId, bai.dueDate);
   return NextResponse.json({ ok: true });
 }

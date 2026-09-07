@@ -916,6 +916,58 @@ export async function daCongDiemNgay(familyId: string, childId: string, date: st
 }
 
 /**
+ * Xet mot NGAY cua mot con: neu moi dong cua (con, ngay) da 'done' (ngayHoanThanh
+ * trong lib/diem.ts) va ngay do duoc tinh diem thi cong +DIEM_NGAY_XONG.
+ *
+ * IDEMPOTENT: unique index partial cua migration 015 + ON CONFLICT DO NOTHING,
+ * doc RETURNING de biet lan nay co cong THAT hay khong. Goi lai bao nhieu lan
+ * cung khong cong trung, nen moi thao tac co the lam mot ngay thanh hoan thanh
+ * deu goi duoc: con tick bai cuoi (ghiDiemSauKhiXong), va bo me BOT viec cua
+ * ngay do — xoa bai (DELETE /api/assignments/:id) hay doi dueDate sang ngay khac
+ * (PATCH cua bo me, xet cho ngay CU). Khong co no thi ngay con lam xong that
+ * nhung dong cuoi bi bo me xoa se khong bao gio duoc cong.
+ *
+ * @returns ngayXong    DIEM_NGAY_XONG neu VUA cong o lan nay, 0 neu khong.
+ * @returns ngayTinhDiem  ngay nay co duoc tinh diem khong (khong hoi to) — de
+ *   nguoi goi khoi phai doc lai families.score_since bang mot vong thua nua.
+ */
+export async function congDiemNgayNeuXong(
+  familyId: string,
+  childId: string,
+  dueDate: string
+): Promise<{ ngayXong: number; ngayTinhDiem: boolean }> {
+  // Mot cau cho ca hai viec: cac dong cua (con, ngay) de xet "ngay xong", va
+  // families.score_since de xet "khong hoi to" (lib/diem.ts). Neon tinh tien
+  // theo vong thua nen khong doc family bang mot cau rieng.
+  const rows = await query<{ status: string; chore_id: string | null; score_since: string | Date }>(
+    `SELECT a.status, a.chore_id, f.score_since
+       FROM assignments a
+       JOIN children c ON c.id = a.child_id
+       JOIN families f ON f.id = c.family_id
+      WHERE a.child_id = $1 AND a.due_date = $2 AND c.family_id = $3`,
+    [childId, dueDate, familyId]
+  );
+  // Khong con dong nao (bo me xoa het bai cua ngay do, hay con khong thuoc nha
+  // nay) -> khong co "ngay xong" nao de cong.
+  if (rows.length === 0) return { ngayXong: 0, ngayTinhDiem: false };
+
+  const ngayTinhDiem = ngayDuocTinhDiem(dueDate, dateStr(rows[0].score_since));
+  if (!ngayTinhDiem) return { ngayXong: 0, ngayTinhDiem: false };
+  if (!ngayHoanThanh(rows.map((r) => ({ status: r.status, choreId: r.chore_id })))) {
+    return { ngayXong: 0, ngayTinhDiem };
+  }
+
+  const ins = await query<{ id: string }>(
+    `INSERT INTO score_events (id, child_id, kind, points, event_date)
+     VALUES ($1, $2, 'day_complete', $3, $4)
+     ON CONFLICT (child_id, event_date) WHERE kind = 'day_complete' DO NOTHING
+     RETURNING id`,
+    [newId('sce'), childId, DIEM_NGAY_XONG, dueDate]
+  );
+  return { ngayXong: ins.length > 0 ? DIEM_NGAY_XONG : 0, ngayTinhDiem };
+}
+
+/**
  * Cong diem cho mot bai dang 'done' (PATCH /api/assignments/:id, duong cua con).
  * Goi voi bai da doc lai tu DB sau khi setStatus / submitVideo cap nhat.
  *
@@ -936,32 +988,20 @@ export async function daCongDiemNgay(familyId: string, childId: string, date: st
  * khong lam mat diem (khong co gi tru).
  */
 export async function ghiDiemSauKhiXong(familyId: string, a: Assignment): Promise<DiemVuaCong> {
-  const ketQua: DiemVuaCong = { xongSom: 0, ngayXong: 0, tong: 0 };
-  if (a.status !== 'done') {
-    ketQua.tong = await soDiem(familyId, a.childId);
-    return ketQua;
-  }
+  const ketQua: DiemVuaCong = { xongSom: 0, ngayXong: 0 };
+  if (a.status !== 'done') return ketQua;
 
-  // Mot cau cho ca hai viec: cac dong cua (con, ngay) de xet "ngay xong", va
-  // families.score_since de xet "khong hoi to" (lib/diem.ts — ap cho CA HAI
-  // loai, +1 xong som lan +10 ngay xong). Neon tinh tien theo vong thua nen
-  // khong doc family bang mot cau rieng. a.childId da qua getAssignment(familyId)
-  // nen thuoc dung nha; danh sach luon co it nhat chinh dong `a`.
-  const rows = await query<{ status: string; chore_id: string | null; score_since: string | Date }>(
-    `SELECT a.status, a.chore_id, f.score_since
-       FROM assignments a
-       JOIN children c ON c.id = a.child_id
-       JOIN families f ON f.id = c.family_id
-      WHERE a.child_id = $1 AND a.due_date = $2`,
-    [a.childId, a.dueDate]
-  );
-  const ngayTinhDiem = rows.length > 0 && ngayDuocTinhDiem(a.dueDate, dateStr(rows[0].score_since));
+  // 1. Ngay xong — ca bai tap lan viec nha cua (con, ngay) deu done. Tra ve kem
+  //    ngayTinhDiem de nhanh "xong som" duoi day dung lai, khong doc score_since
+  //    lan hai.
+  const ngay = await congDiemNgayNeuXong(familyId, a.childId, a.dueDate);
+  ketQua.ngayXong = ngay.ngayXong;
 
-  // 1. Xong som — chi bai tap that: viec nha (chore_id khong null) tick tai cho,
+  // 2. Xong som — chi bai tap that: viec nha (chore_id khong null) tick tai cho,
   //    khong co dong ho, khong bao gio duoc +1.
   const mocBatDau = a.startedAt === null ? null : new Date(a.startedAt).getTime();
   const mocXong = a.completedAt === null ? Date.now() : new Date(a.completedAt).getTime();
-  if (ngayTinhDiem && mocBatDau !== null && a.choreId === null &&
+  if (ngay.ngayTinhDiem && mocBatDau !== null && a.choreId === null &&
       xongSom(mocBatDau, mocXong, a.durationMinutes)) {
     const ins = await query<{ id: string }>(
       `INSERT INTO score_events (id, child_id, kind, points, event_date, assignment_id)
@@ -973,19 +1013,12 @@ export async function ghiDiemSauKhiXong(familyId: string, a: Assignment): Promis
     if (ins.length > 0) ketQua.xongSom = DIEM_XONG_SOM;
   }
 
-  // 2. Ngay xong — ca bai tap lan viec nha cua (con, ngay) deu done.
-  if (ngayTinhDiem && ngayHoanThanh(rows.map((r) => ({ status: r.status, choreId: r.chore_id })))) {
-    const ins = await query<{ id: string }>(
-      `INSERT INTO score_events (id, child_id, kind, points, event_date)
-       VALUES ($1, $2, 'day_complete', $3, $4)
-       ON CONFLICT (child_id, event_date) WHERE kind = 'day_complete' DO NOTHING
-       RETURNING id`,
-      [newId('sce'), a.childId, DIEM_NGAY_XONG, a.dueDate]
-    );
-    if (ins.length > 0) ketQua.ngayXong = DIEM_NGAY_XONG;
+  // So du chi doc khi lan nay CO cong diem: man cua con chi hien "Con dang co N
+  // ⭐" cung voi chip +1, khong cong gi thi khong ai doc so do (bo mot vong thua
+  // Neon cho moi cu tick viec nha / tick khong som).
+  if (ketQua.xongSom > 0 || ketQua.ngayXong > 0) {
+    ketQua.tong = await soDiem(familyId, a.childId);
   }
-
-  ketQua.tong = await soDiem(familyId, a.childId);
   return ketQua;
 }
 
