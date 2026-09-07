@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Du lieu PGlite local
 .data/
+
+# Thu muc lam viec cua duong ong kiem dinh (no-mistakes), khong phai ma nguon
+.no-mistakes/

@@ -77,6 +77,19 @@ kích thước tệp nên phải dịch mọi offset tuyệt đối; gặp hộp
 kết quả vá tại chỗ. Test `lib/videoDuration.test.ts` có bộ dựng mp4 phân mảnh
 giả, bộ duyệt cây kiểm từng offset, và hàm mô phỏng phép tính của Safari.
 
+Điểm thưởng (+10 một ngày xong hết, +1 mỗi bài xong sớm hơn `duration_minutes`,
+đổi thưởng có bố mẹ duyệt): luật là hàm thuần trong `lib/diem.ts` (đọc chú thích
+đầu file trước — nó giải thích vì sao "xong sớm" đo bằng mốc con bấm "Bắt đầu
+làm" của đồng hồ sẵn có và giới hạn của cách đó), SQL cộng điểm ở
+`ghiDiemSauKhiXong` + `congDiemNgayNeuXong` trong `lib/store.ts` (đường con tick
+KHÔNG phải chỗ duy nhất gọi: route xoá bài / đổi ngày của bố mẹ gọi hàm sau),
+lược đồ + lý do ở `migrations/015_tinh_diem_doi_thuong.sql`. Hai điều dễ vấp:
+(1) "cộng một lần" KHÔNG nằm trong code mà nằm ở hai unique index partial của
+`score_events` + `ON CONFLICT ... RETURNING` — đổi luật thì sửa index trước;
+(2) số dư = tổng `score_events` TRỪ `reward_redemptions` đã duyệt, không có dòng
+điểm âm nào, đừng thêm. Test PGlite trong `lib/tinh-diem.test.ts` mô phỏng lại đúng SQL của
+store — sửa một bên là phải sửa bên kia.
+
 Máy này đã bật Safari > Develop > Allow Remote Automation: `safaridriver -p <cổng
 riêng>` + WebDriver W3C lái được Safari thật để đo `video.duration` (phục vụ tệp
 qua server HTTP có `Range`, Safari không phát nếu thiếu 206). Quay mẫu bằng Safari

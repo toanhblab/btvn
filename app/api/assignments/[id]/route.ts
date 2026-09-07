@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { parentFamilyId, viewingFamilyId } from '@/lib/auth';
+import { locMocBatDau } from '@/lib/diem';
 import { laUrlTepAppCap } from '@/lib/media';
-import { deleteAssignment, getAssignment, setStatus, submitVideo, updateAssignment } from '@/lib/store';
-import { hwSourceOf, sanitizeDuration } from '@/lib/types';
+import {
+  congDiemNgayNeuXong, deleteAssignment, getAssignment, ghiDiemSauKhiXong, setStatus,
+  submitVideo, updateAssignment,
+} from '@/lib/store';
+import { hwSourceOf, sanitizeDuration, type DiemVuaCong } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +14,8 @@ type Ctx = { params: Promise<{ id: string }> };
 
 /**
  * PATCH /api/assignments/:id
- *   { status?: 'done' | 'todo', videoUrl?: string }        -> con tick / nop video, KHONG can PIN
+ *   { status?: 'done' | 'todo', videoUrl?: string, startedAt?: number }
+ *                                                          -> con tick / nop video, KHONG can PIN
  *   { subject?, content?, note?, lang?, dueDate?, source?, media?,
  *     requiresVideo? }                                     -> bo me sua, CAN PIN
  *
@@ -18,6 +23,12 @@ type Ctx = { params: Promise<{ id: string }> };
  * phep sua noi dung de bai. Duong cua con gio nhan them videoUrl — video con
  * quay de nop bai; thuong gui kem status:'done' vi nop video chinh la cach
  * hoan thanh bai co yeu cau quay.
+ *
+ * startedAt (epoch ms) la moc con bam "Bat dau lam" tren dong ho dem nguoc,
+ * von chi nam trong localStorage cua may con (DongHoLamBai.tsx) — gui len kem
+ * luc tick xong de may chu xet "xong som" va cong diem (lib/diem.ts). Tra ve
+ * them `diem` (DiemVuaCong) — ca ba so, nhung tam "Gioi qua!" cua man con chi
+ * bao "+1" xong som; "+10" xong het ngay do man /xong bao (khong bao hai lan).
  *
  * Ca hai duong deu phai thuoc dung nha: duong tick khong can PIN nhung van can
  * may da gan voi nha do, khong thi con nha nay tick duoc bai nha khac neu doan
@@ -30,7 +41,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
   // Chi doi trang thai / nop video -> cho phep khong can PIN
   const keys = Object.keys(body);
-  if (keys.length >= 1 && keys.every((k) => k === 'status' || k === 'videoUrl')) {
+  const KEYS_CUA_CON = new Set(['status', 'videoUrl', 'startedAt']);
+  if (keys.length >= 1 && keys.every((k) => KEYS_CUA_CON.has(k))) {
     const familyId = await viewingFamilyId();
     if (!familyId) {
       return NextResponse.json({ error: 'Máy này chưa gắn với nhà nào.' }, { status: 401 });
@@ -61,19 +73,36 @@ export async function PATCH(req: Request, { params }: Ctx) {
     // Gui video kem status:'done' la mot viec duy nhat -> mot cau UPDATE duy nhat
     const nopVaXong = Boolean(body.videoUrl) && body.status === 'done';
 
+    // Moc bat dau di CUNG cau UPDATE danh dau xong (xem setStatus): no la bang
+    // chung duy nhat cua "xong som" va may con xoa ban trong localStorage ngay
+    // sau khi luu duoc, nen khong duoc de buoc cong diem o duoi giu no.
+    const moc = locMocBatDau(body.startedAt, Date.now());
+
     let assignment = current;
     if (body.videoUrl) {
-      assignment = (await submitVideo(familyId, id, body.videoUrl, nopVaXong)) ?? assignment;
+      assignment = (await submitVideo(familyId, id, body.videoUrl, nopVaXong, moc)) ?? assignment;
     }
     if ('status' in body && !nopVaXong) {
-      assignment = (await setStatus(familyId, id, body.status === 'done')) ?? assignment;
+      assignment = (await setStatus(familyId, id, body.status === 'done', moc)) ?? assignment;
     }
-    return NextResponse.json({ assignment });
+
+    // Cong diem cho MOI PATCH cua con ma bai dang xong — khong chi lan vua
+    // chuyen todo -> done. ghiDiemSauKhiXong idempotent (ON CONFLICT DO NOTHING
+    // ... RETURNING) nen goi lai khong cong trung. Loi o day thi tra 5xx cho may
+    // con: duong khoi phuc la CON BAM LAI khi thay bao loi — ca ba cho bam
+    // (ChiTietBai, nopVideo, ViecNhaBai) deu gui trang thai tuong minh 'done'
+    // nen lan sau se cong not phan con thieu, khong co gi bi dao nguoc.
+    let diem: DiemVuaCong | undefined;
+    if (assignment.status === 'done') {
+      diem = await ghiDiemSauKhiXong(familyId, assignment);
+    }
+    return NextResponse.json({ assignment, diem });
   }
 
   const familyId = await parentFamilyId();
   if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
-  if (!(await getAssignment(familyId, id))) {
+  const truoc = await getAssignment(familyId, id);
+  if (!truoc) {
     return NextResponse.json({ error: 'Không tìm thấy bài tập.' }, { status: 404 });
   }
 
@@ -97,7 +126,15 @@ export async function PATCH(req: Request, { params }: Ctx) {
         kind: m.kind === 'audio' || m.kind === 'image' ? m.kind : 'video',
       }));
   }
-  return NextResponse.json({ assignment: await updateAssignment(familyId, id, body) });
+  const assignment = await updateAssignment(familyId, id, body);
+
+  // Doi bai sang ngay khac la BOT mot dong cua ngay CU: cac dong con lai cua
+  // (con, ngay cu) co the da done het roi, va con thi khong tick gi nua nen
+  // duong cua con khong bao gio xet lai. Xet o day, idempotent nen an toan.
+  if (assignment && assignment.dueDate !== truoc.dueDate) {
+    await congDiemNgayNeuXong(familyId, truoc.childId, truoc.dueDate);
+  }
+  return NextResponse.json({ assignment });
 }
 
 /** DELETE /api/assignments/:id — chi bo me, chi bai cua nha minh. */
@@ -106,9 +143,14 @@ export async function DELETE(_req: Request, { params }: Ctx) {
   if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
 
   const { id } = await params;
-  if (!(await getAssignment(familyId, id))) {
+  const bai = await getAssignment(familyId, id);
+  if (!bai) {
     return NextResponse.json({ error: 'Không tìm thấy bài tập.' }, { status: 404 });
   }
   await deleteAssignment(familyId, id);
+
+  // Xoa dong cuoi con 'todo' cua mot ngay -> ngay do vua thanh hoan thanh, cung
+  // ly do nhu nhanh doi dueDate o tren.
+  await congDiemNgayNeuXong(familyId, bai.childId, bai.dueDate);
   return NextResponse.json({ ok: true });
 }

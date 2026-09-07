@@ -1,7 +1,10 @@
 import { query, queryOne } from './db';
+import {
+  DIEM_NGAY_XONG, DIEM_XONG_SOM, ngayDuocTinhDiem, ngayHoanThanh, xongSom,
+} from './diem';
 import type {
-  Assignment, AttachedMedia, Child, ChildColor, DailyChore, DraftAssignment, HwSource, Lang,
-  MediaKind,
+  Assignment, AttachedMedia, Child, ChildColor, DailyChore, DiemVuaCong, DraftAssignment, HwSource,
+  Lang, MediaKind, Redemption, RedemptionStatus, Reward,
 } from './types';
 import { DURATION_DEFAULT, HW_SOURCE_DEFAULT, hwSourceOf } from './types';
 
@@ -28,25 +31,43 @@ export interface Family {
   id: string;
   name: string;
   slug: string;
+  /**
+   * Ngay bat dau tinh diem (YYYY-MM-DD) — bai co due_date truoc ngay nay khong
+   * duoc cong 10 diem "ngay xong" (khong hoi to). Migration 015 dat = ngay
+   * migration chay cho nha dang co, nha moi = ngay tao.
+   */
+  scoreSince: string;
 }
 
-const FAMILY_COLS = 'id, name, slug';
+interface FamilyRow { id: string; name: string; slug: string; score_since: string | Date }
+
+const FAMILY_COLS = 'id, name, slug, score_since';
+
+const toFamily = (r: FamilyRow): Family => ({
+  id: r.id,
+  name: r.name,
+  slug: r.slug,
+  scoreSince: dateStr(r.score_since),
+});
 
 export async function getFamilyById(id: string): Promise<Family | null> {
-  return queryOne<Family>(`SELECT ${FAMILY_COLS} FROM families WHERE id = $1`, [id]);
+  const r = await queryOne<FamilyRow>(`SELECT ${FAMILY_COLS} FROM families WHERE id = $1`, [id]);
+  return r ? toFamily(r) : null;
 }
 
 /** Tra nha tu duong dan chia se cho iPad (/nha/<slug>). */
 export async function getFamilyBySlug(slug: string): Promise<Family | null> {
-  return queryOne<Family>(`SELECT ${FAMILY_COLS} FROM families WHERE slug = $1`, [slug]);
+  const r = await queryOne<FamilyRow>(`SELECT ${FAMILY_COLS} FROM families WHERE slug = $1`, [slug]);
+  return r ? toFamily(r) : null;
 }
 
 /** Tra nha tu ma PIN da hash — day la cach "dang nhap" duy nhat cua app. */
 export async function findFamilyByPinHash(pinHash: string): Promise<Family | null> {
-  return queryOne<Family>(
+  const r = await queryOne<FamilyRow>(
     `SELECT ${FAMILY_COLS} FROM families WHERE parent_pin_hash = $1`,
     [pinHash]
   );
+  return r ? toFamily(r) : null;
 }
 
 export async function pinHashTaken(pinHash: string, exceptFamilyId?: string): Promise<boolean> {
@@ -67,15 +88,16 @@ export async function pinHashTaken(pinHash: string, exceptFamilyId?: string): Pr
  * phai kiem pinHashTaken truoc de bao loi tu te, day chi la chot cuoi.
  */
 export async function insertFamily(name: string, pinHash: string): Promise<Family> {
-  const family: Family = {
-    id: newId('fam'),
-    name,
-    slug: crypto.randomUUID().replace(/-/g, '').slice(0, 12),
-  };
-  await query(
-    `INSERT INTO families (id, name, slug, parent_pin_hash) VALUES ($1,$2,$3,$4)`,
-    [family.id, family.name, family.slug, pinHash]
+  const id = newId('fam');
+  const slug = crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+  // score_since lay DEFAULT CURRENT_DATE cua DB (migrations/015) roi doc lai,
+  // khong tu tinh o day de hai ben khong lech mui gio.
+  const rows = await query<FamilyRow>(
+    `INSERT INTO families (id, name, slug, parent_pin_hash) VALUES ($1,$2,$3,$4)
+     RETURNING ${FAMILY_COLS}`,
+    [id, name, slug, pinHash]
   );
+  const family = toFamily(rows[0]);
   // Nha moi co san ba viec nha mac dinh, giong nhung nha da co tu truoc (migration
   // 012 nap cho ho). Bo me sua/tat/xoa duoc ngay o man Cai dat.
   //
@@ -207,6 +229,7 @@ interface AssignmentRow {
   requires_video: boolean; submitted_video_url: string | null;
   submitted_video_at: string | Date | null;
   chore_id: string | null;
+  started_at: string | Date | null;
 }
 
 /** Neon tra due_date dang string, PGlite tra Date — chuan hoa ve YYYY-MM-DD. */
@@ -238,6 +261,7 @@ const toAssignment = (r: AssignmentRow, media: AttachedMedia[]): Assignment => (
   submittedVideoUrl: r.submitted_video_url,
   submittedVideoAt: r.submitted_video_at ? new Date(r.submitted_video_at).toISOString() : null,
   choreId: r.chore_id,
+  startedAt: r.started_at ? new Date(r.started_at).toISOString() : null,
 });
 
 /**
@@ -453,16 +477,43 @@ export async function saveSubmission(input: {
   return created;
 }
 
-/** Tick xong / bo tick. PRD 4.3: tre tick nham phai bo duoc. */
+/**
+ * Tick xong / bo tick. PRD 4.3: tre tick nham phai bo duoc.
+ *
+ * @param startedAtMs  moc con bam "Bat dau lam" may con gui kem luc tick (epoch
+ *   ms, da qua locMocBatDau trong lib/diem.ts), null neu khong gui.
+ *
+ * Moc do ghi TRONG CUNG cau UPDATE voi status, khong tach ra cau rieng o buoc
+ * cong diem: no la bang chung DUY NHAT cua "xong som" va truoc luc gui chi nam
+ * trong localStorage cua may con (may con xoa ngay sau khi tick thanh cong), nen
+ * neu buoc cong diem loi giua duong thi moc phai da nam trong DB roi.
+ *
+ * Hai COALESCE cho phep tick lai nhieu lan ma khong lam xau di: `completed_at`
+ * giu moc xong DAU TIEN (bam lai khong day no ra sau vai giay, con dang bi xet
+ * "xong som" khong bi mat oan), `started_at` giu moc cu khi lan nay khong gui
+ * gi. Bo tick thi xoa completed_at nhu cu, con started_at giu nguyen.
+ */
 export async function setStatus(
   familyId: string,
   id: string,
-  done: boolean
+  done: boolean,
+  startedAtMs: number | null = null
 ): Promise<Assignment | null> {
-  await query(
-    `UPDATE assignments SET status = $3, completed_at = $4 WHERE id = $1 AND ${OF_FAMILY}`,
-    [id, familyId, done ? 'done' : 'todo', done ? new Date().toISOString() : null]
-  );
+  if (done) {
+    await query(
+      `UPDATE assignments
+          SET status = 'done',
+              completed_at = COALESCE(completed_at, now()),
+              started_at = COALESCE($3::timestamptz, started_at)
+        WHERE id = $1 AND ${OF_FAMILY}`,
+      [id, familyId, startedAtMs === null ? null : new Date(startedAtMs).toISOString()]
+    );
+  } else {
+    await query(
+      `UPDATE assignments SET status = 'todo', completed_at = NULL WHERE id = $1 AND ${OF_FAMILY}`,
+      [id, familyId]
+    );
+  }
   return getAssignment(familyId, id);
 }
 
@@ -534,19 +585,28 @@ export async function updateAssignment(
  * viec do phai vao CUNG MOT cau UPDATE. Tach thanh hai cau thi cau sau tach ra
  * loi giua duong (Neon rot ket noi) se de lai hang co video ma status van 'todo':
  * con bam gui lai la tai len them mot ban 35MB nua khong ai tro toi.
+ *
+ * startedAtMs vao cung cau do, cung ly do va cung hai COALESCE nhu setStatus.
  */
 export async function submitVideo(
   familyId: string,
   id: string,
   url: string,
-  markDone = false
+  markDone = false,
+  startedAtMs: number | null = null
 ): Promise<Assignment | null> {
   await query(
     `UPDATE assignments
         SET submitted_video_url = $3, submitted_video_at = now()
-            ${markDone ? `, status = 'done', completed_at = now()` : ''}
+            ${markDone
+              ? `, status = 'done',
+                   completed_at = COALESCE(completed_at, now()),
+                   started_at = COALESCE($4::timestamptz, started_at)`
+              : ''}
       WHERE id = $1 AND ${OF_FAMILY}`,
-    [id, familyId, url]
+    markDone
+      ? [id, familyId, url, startedAtMs === null ? null : new Date(startedAtMs).toISOString()]
+      : [id, familyId, url]
   );
   return getAssignment(familyId, id);
 }
@@ -598,6 +658,8 @@ export interface ChildProgress {
   // viec nha)". Viec nha KHONG duoc tinh vao day, giong ly do cu (#25): tinh
   // ca viec nha thi badge "Chua co bai" kho bien mat dung luc can hien nhat.
   homeworkTotal: number;
+  /** So diem con DANG CO (da tru phan thuong bo me duyet) — xem soDiemTheoCon. */
+  points: number;
 }
 
 /**
@@ -614,16 +676,21 @@ export interface ChildProgress {
  */
 export async function progressUpcoming(familyId: string): Promise<ChildProgress[]> {
   const today = todayISO();
-  const children = await listChildren(familyId);
-  // Bai da xong cua nhung ngay truoc khong con y nghia -> chi lay bai sap toi
-  // va bai con no. chore_id de tach rieng homeworkTotal (bai THAT) khoi total
-  // (bai THAT + viec nha) ben duoi.
-  const rows = await query<{ child_id: string; status: string; due_date: string | Date; chore_id: string | null }>(
-    `SELECT a.child_id, a.status, a.due_date, a.chore_id FROM assignments a
-     JOIN children c ON c.id = a.child_id
-     WHERE c.family_id = $1 AND (a.due_date >= $2 OR a.status = 'todo')`,
-    [familyId, today]
-  );
+  // Ba cau chay SONG SONG (Neon la HTTP, moi cau mot vong goi). Bai da xong cua
+  // nhung ngay truoc khong con y nghia -> chi lay bai sap toi va bai con no.
+  // chore_id de tach rieng homeworkTotal (bai THAT) khoi total (bai THAT + viec
+  // nha) ben duoi. Diem lay kem o day vi ca hai man goi ham nay (chon-con cua
+  // con, tong quan cua bo me) deu hien diem canh tien do.
+  const [children, rows, diem] = await Promise.all([
+    listChildren(familyId),
+    query<{ child_id: string; status: string; due_date: string | Date; chore_id: string | null }>(
+      `SELECT a.child_id, a.status, a.due_date, a.chore_id FROM assignments a
+       JOIN children c ON c.id = a.child_id
+       WHERE c.family_id = $1 AND (a.due_date >= $2 OR a.status = 'todo')`,
+      [familyId, today]
+    ),
+    soDiemTheoCon(familyId),
+  ]);
 
   return children.map((child) => {
     const mine = rows.filter((r) => r.child_id === child.id);
@@ -637,6 +704,7 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
       // — man bo me khong duoc thay viec nha lam phinh badge nay.
       overdue: mine.filter((r) => dateStr(r.due_date) < today && r.status === 'todo' && r.chore_id === null).length,
       homeworkTotal: upcoming.filter((r) => r.chore_id === null).length,
+      points: diem.get(child.id) ?? 0,
     };
   });
 }
@@ -805,3 +873,375 @@ export async function moveChore(familyId: string, id: string, huong: -1 | 1): Pr
   }
 }
 
+
+/* ---------------- Diem thuong & doi thuong ----------------
+ *
+ * Luat o lib/diem.ts, luoc do o migrations/015_tinh_diem_doi_thuong.sql. Tom tat:
+ * +10 mot ngay xong het (mot lan cho moi (con, ngay)), +1 moi bai xong som hon
+ * thoi luong du kien, khong hoi to truoc families.score_since. So du = tong
+ * score_events - tong reward_redemptions da duyet.
+ *
+ * score_events va reward_redemptions khong co family_id: thuoc nha nao la qua
+ * child_id -> children.family_id (nhu assignments), nen moi cau deu join/loc
+ * qua children.
+ */
+
+/** So diem DANG CO cua tung con trong nha: kiem duoc tru di da doi (bo me duyet). */
+export async function soDiemTheoCon(familyId: string): Promise<Map<string, number>> {
+  const rows = await query<{ id: string; points: number | string }>(
+    `SELECT c.id,
+            COALESCE((SELECT SUM(e.points) FROM score_events e WHERE e.child_id = c.id), 0)
+          - COALESCE((SELECT SUM(r.cost) FROM reward_redemptions r
+                       WHERE r.child_id = c.id AND r.status = 'approved'), 0) AS points
+       FROM children c
+      WHERE c.family_id = $1`,
+    [familyId]
+  );
+  return new Map(rows.map((r) => [r.id, Number(r.points)]));
+}
+
+export async function soDiem(familyId: string, childId: string): Promise<number> {
+  return (await soDiemTheoCon(familyId)).get(childId) ?? 0;
+}
+
+/** Ngay nay (due_date) cua con nay da duoc cong 10 diem "ngay xong" chua. */
+export async function daCongDiemNgay(familyId: string, childId: string, date: string): Promise<boolean> {
+  const r = await queryOne<{ id: string }>(
+    `SELECT e.id FROM score_events e
+       JOIN children c ON c.id = e.child_id
+      WHERE c.family_id = $1 AND e.child_id = $2 AND e.kind = 'day_complete' AND e.event_date = $3`,
+    [familyId, childId, date]
+  );
+  return r !== null;
+}
+
+/**
+ * Xet mot NGAY cua mot con: neu moi dong cua (con, ngay) da 'done' (ngayHoanThanh
+ * trong lib/diem.ts) va ngay do duoc tinh diem thi cong +DIEM_NGAY_XONG.
+ *
+ * IDEMPOTENT: unique index partial cua migration 015 + ON CONFLICT DO NOTHING,
+ * doc RETURNING de biet lan nay co cong THAT hay khong. Goi lai bao nhieu lan
+ * cung khong cong trung, nen moi thao tac co the lam mot ngay thanh hoan thanh
+ * deu goi duoc: con tick bai cuoi (ghiDiemSauKhiXong), va bo me BOT viec cua
+ * ngay do — xoa bai (DELETE /api/assignments/:id) hay doi dueDate sang ngay khac
+ * (PATCH cua bo me, xet cho ngay CU). Khong co no thi ngay con lam xong that
+ * nhung dong cuoi bi bo me xoa se khong bao gio duoc cong.
+ *
+ * @returns ngayXong    DIEM_NGAY_XONG neu VUA cong o lan nay, 0 neu khong.
+ * @returns ngayTinhDiem  ngay nay co duoc tinh diem khong (khong hoi to) — de
+ *   nguoi goi khoi phai doc lai families.score_since bang mot vong thua nua.
+ */
+export async function congDiemNgayNeuXong(
+  familyId: string,
+  childId: string,
+  dueDate: string
+): Promise<{ ngayXong: number; ngayTinhDiem: boolean }> {
+  // Mot cau cho ca hai viec: cac dong cua (con, ngay) de xet "ngay xong", va
+  // families.score_since de xet "khong hoi to" (lib/diem.ts). Neon tinh tien
+  // theo vong thua nen khong doc family bang mot cau rieng.
+  const rows = await query<{ status: string; chore_id: string | null; score_since: string | Date }>(
+    `SELECT a.status, a.chore_id, f.score_since
+       FROM assignments a
+       JOIN children c ON c.id = a.child_id
+       JOIN families f ON f.id = c.family_id
+      WHERE a.child_id = $1 AND a.due_date = $2 AND c.family_id = $3`,
+    [childId, dueDate, familyId]
+  );
+  // Khong con dong nao (bo me xoa het bai cua ngay do, hay con khong thuoc nha
+  // nay) -> khong co "ngay xong" nao de cong.
+  if (rows.length === 0) return { ngayXong: 0, ngayTinhDiem: false };
+
+  const ngayTinhDiem = ngayDuocTinhDiem(dueDate, dateStr(rows[0].score_since));
+  if (!ngayTinhDiem) return { ngayXong: 0, ngayTinhDiem: false };
+  if (!ngayHoanThanh(rows.map((r) => ({ status: r.status, choreId: r.chore_id })))) {
+    return { ngayXong: 0, ngayTinhDiem };
+  }
+
+  const ins = await query<{ id: string }>(
+    `INSERT INTO score_events (id, child_id, kind, points, event_date)
+     VALUES ($1, $2, 'day_complete', $3, $4)
+     ON CONFLICT (child_id, event_date) WHERE kind = 'day_complete' DO NOTHING
+     RETURNING id`,
+    [newId('sce'), childId, DIEM_NGAY_XONG, dueDate]
+  );
+  return { ngayXong: ins.length > 0 ? DIEM_NGAY_XONG : 0, ngayTinhDiem };
+}
+
+/**
+ * Cong diem cho mot bai dang 'done' (PATCH /api/assignments/:id, duong cua con).
+ * Goi voi bai da doc lai tu DB sau khi setStatus / submitVideo cap nhat.
+ *
+ * KHONG ghi gi vao assignments: hai moc de xet "xong som" (started_at,
+ * completed_at) do setStatus / submitVideo luu san trong cung cau UPDATE danh
+ * dau xong, ham nay chi DOC tu `a`. Nho vay moc song sot moi loi o day.
+ *
+ * IDEMPOTENT — goi lai bao nhieu lan cung khong cong trung: ca hai lan INSERT
+ * deu ON CONFLICT DO NOTHING tren unique index cua migration 015 va doc
+ * RETURNING de biet co cong THAT hay khong. Nho vay route goi ham nay o MOI
+ * PATCH cua con ma bai dang 'done' (khong chi luc vua chuyen todo -> done):
+ * lan truoc ghi diem loi giua duong (Neon rot ket noi) thi con bam lai la cong
+ * not phan con thieu. Cac lan goi lai tra ve xongSom/ngayXong = 0, dung nghia
+ * "VUA cong o lan nay".
+ *
+ * Khong tru diem khi con bo tick ("Chua lam xong") sau khi da duoc cong — MVP
+ * chap nhan lach nho trong nha; bo me sua/xoa bai cua mot ngay da cong cung
+ * khong lam mat diem (khong co gi tru).
+ */
+export async function ghiDiemSauKhiXong(familyId: string, a: Assignment): Promise<DiemVuaCong> {
+  const ketQua: DiemVuaCong = { xongSom: 0, ngayXong: 0 };
+  if (a.status !== 'done') return ketQua;
+
+  // 1. Ngay xong — ca bai tap lan viec nha cua (con, ngay) deu done. Tra ve kem
+  //    ngayTinhDiem de nhanh "xong som" duoi day dung lai, khong doc score_since
+  //    lan hai.
+  const ngay = await congDiemNgayNeuXong(familyId, a.childId, a.dueDate);
+  ketQua.ngayXong = ngay.ngayXong;
+
+  // 2. Xong som — chi bai tap that: viec nha (chore_id khong null) tick tai cho,
+  //    khong co dong ho, khong bao gio duoc +1.
+  const mocBatDau = a.startedAt === null ? null : new Date(a.startedAt).getTime();
+  const mocXong = a.completedAt === null ? Date.now() : new Date(a.completedAt).getTime();
+  if (ngay.ngayTinhDiem && mocBatDau !== null && a.choreId === null &&
+      xongSom(mocBatDau, mocXong, a.durationMinutes)) {
+    const ins = await query<{ id: string }>(
+      `INSERT INTO score_events (id, child_id, kind, points, event_date, assignment_id)
+       VALUES ($1, $2, 'early_finish', $3, $4, $5)
+       ON CONFLICT (assignment_id) WHERE kind = 'early_finish' DO NOTHING
+       RETURNING id`,
+      [newId('sce'), a.childId, DIEM_XONG_SOM, a.dueDate, a.id]
+    );
+    if (ins.length > 0) ketQua.xongSom = DIEM_XONG_SOM;
+  }
+
+  // So du chi doc khi lan nay CO cong diem: man cua con chi hien "Con dang co N
+  // ⭐" cung voi chip +1, khong cong gi thi khong ai doc so do (bo mot vong thua
+  // Neon cho moi cu tick viec nha / tick khong som).
+  if (ketQua.xongSom > 0 || ketQua.ngayXong > 0) {
+    ketQua.tong = await soDiem(familyId, a.childId);
+  }
+  return ketQua;
+}
+
+/* ---- Phan thuong (bo me cau hinh) ---- */
+
+interface RewardRow { id: string; name: string; icon: string; cost: number | string; enabled: boolean }
+
+const toReward = (r: RewardRow): Reward => ({
+  id: r.id,
+  name: r.name,
+  icon: r.icon,
+  cost: Number(r.cost),
+  enabled: Boolean(r.enabled),
+});
+
+const REWARD_COLS = 'id, name, icon, cost, enabled';
+
+/** Sap theo gia tang dan: cua hang cua con hien thu re (de voi) truoc. */
+export async function listRewards(
+  familyId: string,
+  opts: { enabledOnly?: boolean } = {}
+): Promise<Reward[]> {
+  const rows = await query<RewardRow>(
+    `SELECT ${REWARD_COLS} FROM rewards
+      WHERE family_id = $1 ${opts.enabledOnly ? 'AND enabled' : ''}
+      ORDER BY cost ASC, created_at ASC, id ASC`,
+    [familyId]
+  );
+  return rows.map(toReward);
+}
+
+/** Tra null neu phan thuong thuoc nha khac — dung lam luon lop kiem tra so huu. */
+export async function getReward(familyId: string, id: string): Promise<Reward | null> {
+  const r = await queryOne<RewardRow>(
+    `SELECT ${REWARD_COLS} FROM rewards WHERE id = $1 AND family_id = $2`,
+    [id, familyId]
+  );
+  return r ? toReward(r) : null;
+}
+
+export async function createReward(
+  familyId: string,
+  input: { name: string; icon: string; cost: number }
+): Promise<Reward> {
+  const id = newId('rwd');
+  await query(
+    `INSERT INTO rewards (id, family_id, name, icon, cost) VALUES ($1,$2,$3,$4,$5)`,
+    [id, familyId, input.name, input.icon, input.cost]
+  );
+  return (await getReward(familyId, id))!;
+}
+
+export async function updateReward(
+  familyId: string,
+  id: string,
+  patch: Partial<Pick<Reward, 'name' | 'icon' | 'cost' | 'enabled'>>
+): Promise<Reward | null> {
+  const sets: string[] = [];
+  const params: unknown[] = [id, familyId];
+  for (const col of ['name', 'icon', 'cost', 'enabled'] as const) {
+    const v = patch[col];
+    if (v !== undefined) { params.push(v); sets.push(`${col} = $${params.length}`); }
+  }
+  if (sets.length) {
+    await query(`UPDATE rewards SET ${sets.join(', ')} WHERE id = $1 AND family_id = $2`, params);
+  }
+  return getReward(familyId, id);
+}
+
+/**
+ * Xoa that (khac viec nha): reward_redemptions da CHEP ten/icon/gia luc con xin
+ * va reward_id ON DELETE SET NULL, nen yeu cau dang cho va lich su van doc
+ * duoc nguyen ven, khong co gi bi keo theo.
+ */
+export async function deleteReward(familyId: string, id: string): Promise<void> {
+  await query(`DELETE FROM rewards WHERE id = $1 AND family_id = $2`, [id, familyId]);
+}
+
+/* ---- Doi thuong (con xin, bo me duyet) ---- */
+
+interface RedemptionRow {
+  id: string; child_id: string; reward_id: string | null; reward_name: string; reward_icon: string;
+  cost: number | string; status: string; requested_at: string | Date; decided_at: string | Date | null;
+}
+
+const toRedemption = (r: RedemptionRow): Redemption => ({
+  id: r.id,
+  childId: r.child_id,
+  rewardId: r.reward_id,
+  rewardName: r.reward_name,
+  rewardIcon: r.reward_icon,
+  cost: Number(r.cost),
+  status: r.status as RedemptionStatus,
+  requestedAt: new Date(r.requested_at).toISOString(),
+  decidedAt: r.decided_at ? new Date(r.decided_at).toISOString() : null,
+});
+
+/** Loc "yeu cau nay thuoc nha do" — bang khong co family_id, di qua children. */
+const REDEMPTION_OF_FAMILY = `r.child_id IN (SELECT id FROM children WHERE family_id = $2)`;
+
+export async function getRedemption(familyId: string, id: string): Promise<Redemption | null> {
+  const r = await queryOne<RedemptionRow>(
+    `SELECT r.* FROM reward_redemptions r WHERE r.id = $1 AND ${REDEMPTION_OF_FAMILY}`,
+    [id, familyId]
+  );
+  return r ? toRedemption(r) : null;
+}
+
+/** Moi nhat truoc. */
+export async function listRedemptions(
+  familyId: string,
+  opts: { childId?: string; status?: RedemptionStatus; limit?: number } = {}
+): Promise<Redemption[]> {
+  const where: string[] = ['c.family_id = $1'];
+  const params: unknown[] = [familyId];
+  if (opts.childId) { params.push(opts.childId); where.push(`r.child_id = $${params.length}`); }
+  if (opts.status)  { params.push(opts.status);  where.push(`r.status = $${params.length}`); }
+  params.push(opts.limit ?? 50);
+  const rows = await query<RedemptionRow>(
+    `SELECT r.* FROM reward_redemptions r
+       JOIN children c ON c.id = r.child_id
+      WHERE ${where.join(' AND ')}
+      ORDER BY r.requested_at DESC, r.id DESC
+      LIMIT $${params.length}`,
+    params
+  );
+  return rows.map(toRedemption);
+}
+
+export async function countPendingRedemptions(familyId: string): Promise<number> {
+  const r = await queryOne<{ n: number | string }>(
+    `SELECT COUNT(*) AS n FROM reward_redemptions r
+       JOIN children c ON c.id = r.child_id
+      WHERE c.family_id = $1 AND r.status = 'pending'`,
+    [familyId]
+  );
+  return Number(r?.n ?? 0);
+}
+
+export type KetQuaDoiThuong =
+  | { ok: true; redemption: Redemption }
+  | { ok: false; status: number; error: string };
+
+/**
+ * Con xin doi mot phan thuong (duong KHONG can PIN, xac thuc bang cookie thiet
+ * bi nhu tick bai). Chi xin duoc khi: phan thuong dang bat, con chua co yeu cau
+ * nao dang cho, va du diem. Diem CHUA bi tru — bo me duyet moi tru
+ * (duyetDoiThuong). Loi tra ve bang chu tieng Viet cho con doc/nghe duoc.
+ *
+ * Unique index reward_redemptions_pending_once_idx la chot cuoi cho "mot yeu cau
+ * dang cho": hai lan bam lien tay cung qua buoc SELECT kiem tra truoc khi ben
+ * nao kip ghi thi lan sau vap unique -> tra 409 giong nhu da kiem thay.
+ */
+export async function xinDoiThuong(
+  familyId: string,
+  childId: string,
+  rewardId: string
+): Promise<KetQuaDoiThuong> {
+  const child = await getChild(familyId, childId);
+  if (!child) return { ok: false, status: 404, error: 'Không tìm thấy con này.' };
+
+  const reward = await getReward(familyId, rewardId);
+  if (!reward || !reward.enabled) {
+    return { ok: false, status: 404, error: 'Phần thưởng này không còn nữa.' };
+  }
+
+  const dangCho = await listRedemptions(familyId, { childId, status: 'pending', limit: 1 });
+  if (dangCho.length > 0) {
+    return { ok: false, status: 409, error: 'Con đang có một yêu cầu chờ bố mẹ duyệt rồi.' };
+  }
+
+  const diem = await soDiem(familyId, childId);
+  if (diem < reward.cost) {
+    return { ok: false, status: 400, error: `Con còn thiếu ${reward.cost - diem} điểm nữa.` };
+  }
+
+  const id = newId('rdm');
+  try {
+    await query(
+      `INSERT INTO reward_redemptions (id, child_id, reward_id, reward_name, reward_icon, cost)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [id, childId, reward.id, reward.name, reward.icon, reward.cost]
+    );
+  } catch (e) {
+    if (/duplicate key|23505|pending_once/i.test(e instanceof Error ? e.message : String(e))) {
+      return { ok: false, status: 409, error: 'Con đang có một yêu cầu chờ bố mẹ duyệt rồi.' };
+    }
+    throw e;
+  }
+  return { ok: true, redemption: (await getRedemption(familyId, id))! };
+}
+
+/**
+ * Bo me duyet / tu choi. Duyet thi diem bi tru NGAY: so du doc tu status =
+ * 'approved' (soDiemTheoCon), khong ghi them dong nao — mot cau UPDATE duy nhat,
+ * khong co buoc thu hai de lech nhau. Kiem du diem lai luc duyet (khong chi luc
+ * con xin) lam chot cuoi cho so du am, vi re va vi luat co the doi sau nay.
+ */
+export async function duyetDoiThuong(
+  familyId: string,
+  id: string,
+  approve: boolean
+): Promise<KetQuaDoiThuong> {
+  const r = await getRedemption(familyId, id);
+  if (!r) return { ok: false, status: 404, error: 'Không tìm thấy yêu cầu này.' };
+  if (r.status !== 'pending') {
+    return { ok: false, status: 409, error: 'Yêu cầu này đã được xử lý rồi.' };
+  }
+  if (approve) {
+    const diem = await soDiem(familyId, r.childId);
+    if (diem < r.cost) {
+      return {
+        ok: false, status: 400,
+        error: `Con chỉ còn ${diem} điểm, chưa đủ ${r.cost} điểm. Bố mẹ có thể từ chối để con chọn lại.`,
+      };
+    }
+  }
+  const rows = await query<RedemptionRow>(
+    `UPDATE reward_redemptions r SET status = $3, decided_at = now()
+      WHERE r.id = $1 AND r.status = 'pending' AND ${REDEMPTION_OF_FAMILY}
+      RETURNING r.*`,
+    [id, familyId, approve ? 'approved' : 'rejected']
+  );
+  if (rows.length === 0) return { ok: false, status: 409, error: 'Yêu cầu này đã được xử lý rồi.' };
+  return { ok: true, redemption: toRedemption(rows[0]) };
+}
