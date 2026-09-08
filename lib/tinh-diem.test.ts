@@ -586,6 +586,119 @@ test('xoa dong nhiem vu da cong sao: dong diem giu nguyen (assignment_id ve NULL
   assert.equal(await soDu('con_b'), truoc + 3);
 });
 
+/**
+ * Mo phong HAI buoc cua saveSubmission (lib/store.ts) cho mot (con, ngay): tao
+ * cac dong bai THAT, roi goi taoNhiemVuNgay cho DUNG ngay do — ke ca ngay mai.
+ *
+ * Cau `INSERT ... SELECT` duoi day la ban NHAN BAN cua taoNhiemVuNgay; xem
+ * AGENTS.md de biet cac ban khac phai sua kem.
+ */
+async function giaoBai(
+  familyId: string,
+  childId: string,
+  dueDate: string,
+  opts: { taoNhiemVu?: boolean } = {}
+) {
+  const bai = await themBai(childId, dueDate);
+  if (opts.taoNhiemVu !== false) {
+    await db.query(
+      `INSERT INTO assignments
+         (id, child_id, subject, icon, content, lang, due_date, source, duration_minutes,
+          requires_video, chore_id, stars)
+       SELECT 'asg_' || substr(md5(random()::text || c.id || dc.id || $2::text), 1, 16),
+              c.id, $3, dc.icon, dc.content, 'vi', $2::date, $4, $5, false, dc.id, dc.stars
+         FROM daily_chores dc
+         JOIN children c ON c.family_id = dc.family_id
+        WHERE dc.family_id = $1 AND dc.enabled AND dc.archived_at IS NULL
+          AND (dc.child_ids IS NULL OR c.id = ANY(dc.child_ids))
+          AND ($6::text[] IS NULL OR c.id = ANY($6::text[]))
+       ON CONFLICT (child_id, due_date, chore_id) WHERE chore_id IS NOT NULL DO NOTHING`,
+      [familyId, dueDate, 'Việc nhà', 'primary_school', 10, [childId]]
+    );
+  }
+  return bai;
+}
+
+/**
+ * HANG RAO +10 CUA NGAY MAI — ly do duy nhat con lai de giu loi goi
+ * taoNhiemVuNgay trong saveSubmission (chu thich o lib/store.ts tro tới day).
+ *
+ * `congDiemNgayNeuXong` KHONG kiem "ngay do da toi chua": no chi hoi "moi dong
+ * cua (con, ngay do) da done chua". Bo me nhap bai cho NGAY MAI toi nay, con lam
+ * het bai ngay mai ngay toi nay (duoc phep — man cua con ve bai ngay mai duoi
+ * tieu de "Ngày mai" va cho tick). Cai duy nhat chan +10 cua ngay mai cong som
+ * la dong nhiem vu 'todo' cua ngay mai da duoc tao san.
+ *
+ * Nhanh thu hai chay CUNG kich ban nhung KHONG tao dong nhiem vu, de thay ro
+ * cai gia: +10 cua ngay mai cong ngay toi nay, va sang mai con tick het nhiem vu
+ * cung khong con gi de cong (unique index theo (child_id, event_date)).
+ */
+test('bai cua NGAY MAI lam xong toi nay: dong nhiem vu ngay mai da tao san chan +10 cong som', async () => {
+  const NGAY_MAI = '2026-09-25';
+  const bai = await giaoBai('fam_cu', 'con_c', NGAY_MAI);
+
+  const nv = await rows(
+    `SELECT id, status FROM assignments
+      WHERE child_id = 'con_c' AND due_date = $1 AND chore_id IS NOT NULL`,
+    [NGAY_MAI]
+  );
+  assert.equal(nv.length, 1, 'saveSubmission tao san dong nhiem vu cua ngay mai');
+  assert.equal(nv[0].status, 'todo', 'dong do dang todo — chinh no la hang rao');
+
+  const truoc = await soDu('con_c');
+  assert.deepEqual(
+    await tickXong(bai, null),
+    { xongSom: 0, ngayXong: 0, nhiemVu: 0 },
+    'lam het BAI cua ngay mai toi nay van chua duoc +10: nhiem vu ngay mai chua tick'
+  );
+  assert.equal(await soDu('con_c'), truoc, 'khong cong dong diem nao truoc han');
+
+  // Sang mai con tick not nhiem vu -> luc do moi +10, kem ⭐ cua chinh nhiem vu
+  // (taoNhiemVuNgay chep dc.stars = 1 vao dong, xem migration 016).
+  assert.deepEqual(
+    await tickXong(String(nv[0].id), null),
+    { xongSom: 0, ngayXong: DIEM_NGAY_XONG, nhiemVu: 1 },
+    'tick not nhiem vu cua ngay do -> +10 va +1 ⭐ cua nhiem vu'
+  );
+  assert.equal(await soDu('con_c'), truoc + DIEM_NGAY_XONG + 1);
+});
+
+test('cai gia neu KHONG tao san dong nhiem vu cua ngay mai: +10 cong som mot ngay', async () => {
+  const NGAY_MAI = '2026-09-26';
+  const bai = await giaoBai('fam_cu', 'con_c', NGAY_MAI, { taoNhiemVu: false });
+
+  const truoc = await soDu('con_c');
+  assert.deepEqual(
+    await tickXong(bai, null),
+    { xongSom: 0, ngayXong: DIEM_NGAY_XONG, nhiemVu: 0 },
+    'khong co dong nhiem vu nao -> tap dong cua ngay mai chi co bai -> +10 ngay toi nay'
+  );
+  assert.equal(await soDu('con_c'), truoc + DIEM_NGAY_XONG);
+
+  // Sang mai tao luoi moi sinh dong nhiem vu; con tick het cung khong con gi de
+  // cong vi (con, ngay) da co dong day_complete.
+  await db.query(
+    `INSERT INTO assignments (id, child_id, subject, content, due_date, status, chore_id, stars)
+     VALUES ($1, 'con_c', 'Việc nhà', 'Tắt đèn', $2, 'todo', 'chr_1', 1)`,
+    [id('asg'), NGAY_MAI]
+  );
+  const nv = await rows(
+    `SELECT id FROM assignments
+      WHERE child_id = 'con_c' AND due_date = $1 AND chore_id IS NOT NULL`,
+    [NGAY_MAI]
+  );
+  assert.deepEqual(
+    await tickXong(String(nv[0].id), null),
+    { xongSom: 0, ngayXong: 0, nhiemVu: 1 },
+    'chi con ⭐ cua rieng nhiem vu; +10 cua ngay do da bi an truoc khi lam nhiem vu'
+  );
+  assert.equal(
+    await soDu('con_c'),
+    truoc + DIEM_NGAY_XONG + 1,
+    'con an +10 cho mot ngay ma luc cong chua lam nhiem vu nao'
+  );
+});
+
 test('score_events chan diem am va kind la (CHECK)', async () => {
   await assert.rejects(
     db.exec(`INSERT INTO score_events (id, child_id, kind, points, event_date) VALUES ('x1', 'con_b', 'day_complete', -3, '2026-09-12')`),

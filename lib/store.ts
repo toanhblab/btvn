@@ -449,8 +449,16 @@ export async function saveSubmission(input: {
   // lam het bai ngay mai ngay toi nay (duoc phep, co ve duoi "Ngày mai"): neu
   // dong nhiem vu cua ngay mai chua ton tai thi tap dong cua ngay mai chi co bai
   // -> +10 cua ngay mai cong NGAY TOI NAY, sang mai con tick nhiem vu that thi
-  // khong con gi de cong. Dong 'todo' tao san chinh la cai chan do (test
-  // lib/nhiem-vu-mac-dinh-hoan-thanh.test.ts ghim hanh vi nay).
+  // khong con gi de cong. Dong 'todo' tao san chinh la cai chan do — hai test
+  // "bai cua NGAY MAI lam xong toi nay..." va "cai gia neu KHONG tao san dong
+  // nhiem vu cua ngay mai..." trong lib/tinh-diem.test.ts ghim ca hai nhanh.
+  //
+  // Day la hang rao BEST-EFFORT: khoi duoi nuot loi (xem ngay duoi), nen mot lan
+  // INSERT that bat (Neon rot ket noi) la +10 cua ngay mai co the cong som ma
+  // khong bao gi. Doi thanh chac chan thi phai them kiem "ngay do da toi chua"
+  // vao congDiemNgayNeuXong — nhung the lai mo lo khac: con khong duoc giao
+  // nhiem vu nao ma lam het bai ngay mai toi nay thi sang mai KHONG con cu tick
+  // nao de kich +10 (cong diem theo su kien, khong co cron).
   //
   // Idempotent nen goi thua khong sao.
   //
