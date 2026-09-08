@@ -258,6 +258,23 @@ export function lamSachSao(v: unknown): number | null {
   return n;
 }
 
+/**
+ * Bam mot chip con o hang "Giao cho" (man /bome/nhiem-vu-hang-ngay): dang
+ * "Cả nhà" (null) -> chi giao cho con do; dang danh sach -> them / bo con do.
+ *
+ * Bo con CUOI CUNG la KHONG LAM GI — tra ve dung `hienTai` (cung tham chieu, de
+ * noi goi biet la khong co gi thay doi). Mang rong thi API chan, ma quy ve null
+ * thi thanh "Cả nhà": bo me bam de BO giao mot con lai hoa ra giao cho CA BA
+ * con, nguoc han y dinh va khong bao loi gi. Muon ve ca nha thi bam chip
+ * "Cả nhà" — day la duong duy nhat, co y.
+ */
+export function docChildIds(hienTai: string[] | null, childId: string): string[] | null {
+  if (hienTai === null) return [childId];
+  if (!hienTai.includes(childId)) return [...hienTai, childId];
+  const moi = hienTai.filter((x) => x !== childId);
+  return moi.length === 0 ? hienTai : moi;
+}
+
 /* ---------------- Diem thuong & doi thuong ----------------
  *
  * Luat cong diem nam o lib/diem.ts; luoc do o migrations/015_tinh_diem_doi_thuong.sql.

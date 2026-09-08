@@ -19,14 +19,14 @@
  *      live qua JOIN (dung nhu listAssignments).
  *   4. Loc theo nhom cho hai nhom tren man cua con.
  *   5. CHECK: stars ngoai 1..10 va nhom la bi chan.
- *   6. Hai ham thuan lamSachSao / nhomNhiemVuOf (lib/types.ts).
+ *   6. Ba ham thuan lamSachSao / nhomNhiemVuOf / docChildIds (lib/types.ts).
  */
 
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { chayMigrations } from '../scripts/db.mjs';
-import { lamSachSao, nhomNhiemVuOf, MAX_SAO_NHIEM_VU } from './types.ts';
+import { docChildIds, lamSachSao, nhomNhiemVuOf, MAX_SAO_NHIEM_VU } from './types.ts';
 
 const TEP_016 = '016_nhiem_vu_hang_ngay_thuong_sao.sql';
 
@@ -269,4 +269,19 @@ test('lamSachSao / nhomNhiemVuOf (ham thuan)', () => {
   assert.equal(nhomNhiemVuOf('after_study'), 'after_study');
   assert.equal(nhomNhiemVuOf('gi-do'), 'after_study');
   assert.equal(nhomNhiemVuOf(undefined), 'after_study');
+});
+
+test('docChildIds (ham thuan): bam chip con o hang "Giao cho"', () => {
+  // Dang "Cả nhà" -> bam mot con la chi giao cho con do.
+  assert.deepEqual(docChildIds(null, 'minh'), ['minh']);
+  // Them / bo con khi dang co danh sach.
+  assert.deepEqual(docChildIds(['minh'], 'an'), ['minh', 'an']);
+  assert.deepEqual(docChildIds(['minh', 'an'], 'minh'), ['an']);
+
+  // Bo con CUOI CUNG: khong lam gi, va tra ve dung tham chieu cu de man bo me
+  // biet la khong co gi doi (khong goi PATCH). Truoc day cho nay tra null =
+  // "Cả nhà", nghia la bam de BO giao cho Minh lai hoa ra giao cho CA NHA.
+  const chiMinh = ['minh'];
+  assert.equal(docChildIds(chiMinh, 'minh'), chiMinh);
+  assert.notEqual(docChildIds(chiMinh, 'minh'), null);
 });

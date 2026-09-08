@@ -658,12 +658,19 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
   // chore_id de tach rieng homeworkTotal (bai THAT) khoi total (bai THAT + viec
   // nha) ben duoi. Diem lay kem o day vi ca hai man goi ham nay (chon-con cua
   // con, tong quan cua bo me) deu hien diem canh tien do.
+  //
+  // "Bai con no" chi tinh bai THAT (chore_id IS NULL): tu issue #42 moi ngay
+  // sinh mot dong nhiem vu cho moi con, ngay nao con khong tick het thi dong do
+  // nam lai 'todo' MAI MAI — vai nghin dong mot nam keo ve moi lan dung hai man
+  // duoc mo nhieu nhat, ma khong dong nao vao duoc ket qua: `upcoming` loc theo
+  // due_date, con `overdue` da loc chore_id IS NULL san.
   const [children, rows, diem] = await Promise.all([
     listChildren(familyId),
     query<{ child_id: string; status: string; due_date: string | Date; chore_id: string | null }>(
       `SELECT a.child_id, a.status, a.due_date, a.chore_id FROM assignments a
        JOIN children c ON c.id = a.child_id
-       WHERE c.family_id = $1 AND (a.due_date >= $2 OR a.status = 'todo')`,
+       WHERE c.family_id = $1
+         AND (a.due_date >= $2 OR (a.status = 'todo' AND a.chore_id IS NULL))`,
       [familyId, today]
     ),
     soDiemTheoCon(familyId),

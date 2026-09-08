@@ -2,20 +2,10 @@
 
 import { useState } from 'react';
 import {
-  ICON_NHIEM_VU_GOI_Y, ICON_NHIEM_VU_MAC_DINH, MAX_CHU_VIEC_NHA, MAX_SAO_NHIEM_VU,
+  docChildIds, ICON_NHIEM_VU_GOI_Y, ICON_NHIEM_VU_MAC_DINH, MAX_CHU_VIEC_NHA, MAX_SAO_NHIEM_VU,
   NHOM_NHIEM_VU, NHOM_NHIEM_VU_MAC_DINH, SAO_NHIEM_VU_MAC_DINH,
   type Child, type DailyChore, type NhomNhiemVu,
 } from '@/lib/types';
-
-/**
- * Bam mot chip con: dang "Cả nhà" (null) -> chi con do; dang danh sach -> them/bo
- * con do; bo den con cuoi cung thi quay ve "Cả nhà" (API khong nhan mang rong).
- */
-function docChildIds(hienTai: string[] | null, childId: string): string[] | null {
-  if (hienTai === null) return [childId];
-  const moi = hienTai.includes(childId) ? hienTai.filter((x) => x !== childId) : [...hienTai, childId];
-  return moi.length === 0 ? null : moi;
-}
 
 /** Hang chip chon nhom — dung cho ca the dang co va o them moi. */
 function ChonNhom({ value, onChange, busy }: { value: NhomNhiemVu; onChange: (n: NhomNhiemVu) => void; busy: boolean }) {
@@ -62,13 +52,16 @@ function GiaoCho({ value, onChange, busy, cacCon }: {
       </button>
       {cacCon.map((ch) => {
         const chon = value !== null && value.includes(ch.id);
+        const sauKhiBam = docChildIds(value, ch.id);
         return (
           <button
             key={ch.id}
             type="button"
             aria-pressed={chon}
             disabled={busy}
-            onClick={() => onChange(docChildIds(value, ch.id))}
+            onClick={() => {
+              if (sauKhiBam !== value) onChange(sauKhiBam);
+            }}
             className={`min-h-9 pl-1 pr-3 rounded-full text-p-body-sm font-bold border flex items-center gap-1.5
                         disabled:opacity-60
                         ${chon

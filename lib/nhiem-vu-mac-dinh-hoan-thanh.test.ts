@@ -39,31 +39,39 @@ let boChay: { query: (t: string, p?: unknown[]) => Promise<Record<string, unknow
 const rows = async (sql: string) => (await db.query(sql)).rows as Record<string, unknown>[];
 
 /**
+ * Mo phong CHINH XAC dieu kien WHERE cua progressUpcoming (lib/store.ts) cho
+ * MOT con: mot cau duy nhat tren assignments (chore_id de tach homeworkTotal),
+ * MOI la khac voi ban truoc #36 — khong con cau rieng tren daily_chore_checks
+ * nua, vi dong viec nha da nam san trong assignments.
+ *
+ * Nhanh "bai con no" chi nhan bai THAT (chore_id IS NULL): tu #42 moi ngay sinh
+ * mot dong nhiem vu cho moi con nen dong nhiem vu cu chua tick nam lai 'todo'
+ * mai mai — keo het ve la vai nghin dong mot nam cho mot ket qua khong dung den
+ * chung.
+ */
+async function dongDuocKeo(childId: string) {
+  return rows(
+    `SELECT status, due_date::text AS due_date, chore_id FROM assignments
+      WHERE child_id = '${childId}'
+        AND (due_date >= '${HOM_NAY}' OR (status = 'todo' AND chore_id IS NULL))`
+  );
+}
+
+/**
  * Mo phong nhanh "Qua han" cua progressUpcoming: han truoc hom nay, con 'todo',
  * VA khong phai viec nha (chore_id IS NULL) — man bo me khong duoc thay viec nha
  * lam phinh badge nay.
  */
 async function quaHan(childId: string) {
-  const bai = await rows(
-    `SELECT status, due_date::text AS due_date, chore_id FROM assignments
-      WHERE child_id = '${childId}' AND (due_date >= '${HOM_NAY}' OR status = 'todo')`
-  );
+  const bai = await dongDuocKeo(childId);
   return bai.filter(
     (r) => String(r.due_date) < HOM_NAY && r.status === 'todo' && r.chore_id === null
   ).length;
 }
 
-/**
- * Mo phong CHINH XAC cau truy van cua progressUpcoming (lib/store.ts) cho MOT
- * con: mot cau duy nhat tren assignments (chore_id de tach homeworkTotal), MOI
- * la khac voi ban truoc #36 — khong con cau rieng tren daily_chore_checks nua,
- * vi dong viec nha da nam san trong assignments.
- */
+/** Mo phong total / done / homeworkTotal cua progressUpcoming cho MOT con. */
 async function tienDo(childId: string) {
-  const bai = await rows(
-    `SELECT status, due_date::text AS due_date, chore_id FROM assignments
-      WHERE child_id = '${childId}' AND (due_date >= '${HOM_NAY}' OR status = 'todo')`
-  );
+  const bai = await dongDuocKeo(childId);
   const upcoming = bai.filter((r) => String(r.due_date) >= HOM_NAY);
   return {
     total: upcoming.length,
@@ -200,6 +208,39 @@ test('con khong duoc giao bai nao: sau buoc tao luoi cua #42 van co du nhiem vu 
   // Goi lai (moi lan mo man la mot lan goi) khong duoc sinh them dong nao.
   await taoNhiemVuNgay('fam_x', HOM_NAY, null);
   assert.equal((await tienDo('con_y')).total, 3, 'tao luoi phai idempotent');
+});
+
+test('dong nhiem vu cu chua tick KHONG bi keo ve nua; bai THAT con no thi van keo', async () => {
+  // Tu #42 moi ngay moi con co mot dong nhiem vu, ngay nao con khong tick het
+  // (cuoi tuan, om, quen) thi dong do nam lai 'todo' mai mai. Nhanh "bai con no"
+  // cua progressUpcoming phai loai chung ra: chung khong vao duoc truong nao
+  // (`upcoming` loc theo due_date, `overdue` loc chore_id IS NULL), chi lam cau
+  // truy van phinh len theo thoi gian.
+  const HOM_KIA = '2026-08-30';
+  const [chore] = await rows(
+    `SELECT id FROM daily_chores WHERE family_id = 'fam_x' AND enabled ORDER BY sort_order LIMIT 1`
+  );
+  await db.exec(
+    `INSERT INTO children (id, family_id, name, grade, color, avatar_url) VALUES
+       ('con_cu', 'fam_x', 'Ha', 'Lớp 1', 'primary', '/img/h.png');
+     INSERT INTO assignments (id, child_id, subject, content, due_date, status, chore_id) VALUES
+       ('cu_nv', 'con_cu', 'Việc nhà', 'viec cu', '${HOM_KIA}', 'todo', '${chore.id}'),
+       ('cu_bai', 'con_cu', 'Toán', 'Trang 7', '${HOM_KIA}', 'todo', NULL)`
+  );
+
+  const keo = await dongDuocKeo('con_cu');
+  assert.deepEqual(
+    keo.map((r) => r.chore_id),
+    [null],
+    'chi con bai THAT qua han duoc keo ve; dong nhiem vu cu bi loai ngay o SQL'
+  );
+
+  // Ket qua tra ve khong doi mot chut nao so voi truoc khi loc.
+  const { total, done, homeworkTotal } = await tienDo('con_cu');
+  assert.equal(total, 0, 'con nay khong co gi tu hom nay tro di');
+  assert.equal(done, 0);
+  assert.equal(homeworkTotal, 0);
+  assert.equal(await quaHan('con_cu'), 1, 'dung mot bai THAT qua han vao badge "Qua han"');
 });
 
 test('hai dot nop bai cung ngay cho cung mot con: khong tao trung viec nha (unique index)', async () => {
