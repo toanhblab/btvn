@@ -160,8 +160,14 @@ capCoBai.add(`bena|${dateOffset(1)}`);
 //    (lib/sqlNhiemVu.ts — mot ban duy nhat cho store, seed va ba tep test); ba
 //    tham so hang so o day phai khop VIEC_NHA_SUBJECT (lib/store.ts) +
 //    HW_SOURCE_DEFAULT / DURATION_DEFAULT (lib/types.ts).
+//    Bo qua ngay DA QUA y het `taoNhiemVuNgayNeuChuaQua` (lib/store.ts): san pham
+//    khong tao dong nhiem vu cho ngay da qua (khong ai tick duoc, ma lai khoa +10
+//    cua ngay do), nen DB mau cung khong duoc co — capCoBai co mot cap cua HOM QUA
+//    (bai qua han cua Minh, de thu badge "Qua han").
 const taoNhiemVu = (dueDate, childIds) =>
-  query(SQL_TAO_NHIEM_VU_NGAY, [familyId, dueDate, 'Việc nhà', 'primary_school', 10, childIds]);
+  dueDate < dateOffset(0)
+    ? Promise.resolve()
+    : query(SQL_TAO_NHIEM_VU_NGAY, [familyId, dueDate, 'Việc nhà', 'primary_school', 10, childIds]);
 await taoNhiemVu(dateOffset(0), null);
 for (const cap of capCoBai) {
   const [childId, dueDate] = cap.split('|');

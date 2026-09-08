@@ -4,7 +4,9 @@ import { viewingFamilyId } from '@/lib/auth';
 import { getChild, listAssignments, soDiem, taoNhiemVuNgay, todayISO } from '@/lib/store';
 import type { Assignment, HwSource, NhomNhiemVu } from '@/lib/types';
 import { HW_SOURCES, NHOM_NHIEM_VU } from '@/lib/types';
-import { dongTrenManCuaCon, nhomNhiemVuHomNay } from '@/lib/nhomNhiemVu';
+import {
+  dongTrenManCuaCon, nhomBaiTheoNoiGiao, nhomNhiemVuHomNay, tienDoNhom,
+} from '@/lib/nhomNhiemVu';
 import TickHomNay from './TickHomNay';
 import ViecNhaBai from './ViecNhaBai';
 
@@ -110,51 +112,38 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   // HW_SOURCES cho hai nhom do de khong phai them 'viec nha' vao hang so day.
   //
   // Hai nhom nhiem vu chi ve dong cua HOM NAY (mot danh sach phang, khong tieu de
-  // ngay — xem lib/nhomNhiemVu.ts), con nhom bai tap van gom theo ngay vi bai cua
-  // ngay mai phai hien. Tien do o dau moi nhom cung chi tinh HOM NAY, giong moi
-  // con so khac cua man nay ("x/y xong hom nay", todoHomNay, dieu kien day sang
-  // /xong) — xem AGENTS.md, truc thoi gian.
+  // ngay), con nhom bai tap gom theo ngay vi bai cua ngay mai phai hien. Tien do
+  // o dau moi nhom dem DUNG tap ma than nhom do ve ra — ca hai deu qua
+  // `tienDoNhom`, khac o tap dua vao (xem lib/nhomNhiemVu.ts va bat bien o
+  // AGENTS.md).
   type NhomHien = { key: string; icon: string; label: string; total: number; done: number;
     xongHet: boolean } & (
       | { isChores: true; choreItems: Assignment[] }
       | { isChores: false; byDate: { date: string; items: Assignment[] }[] }
     );
   const sourceGroups: NhomHien[] =
-    (Object.keys(HW_SOURCES) as HwSource[])
-      .map((source): NhomHien => {
-        const mine = items.filter((a) => a.source === source && a.choreId == null);
-        const homNay = mine.filter((a) => a.dueDate === today);
-        const done = homNay.filter((a) => a.status === 'done').length;
-        return {
-          key: source,
-          icon: HW_SOURCES[source].icon,
-          label: HW_SOURCES[source].label,
-          isChores: false,
-          byDate: gomTheoNgay(mine),
-          total: homNay.length,
-          done,
-          xongHet: homNay.length > 0 && done === homNay.length,
-        };
-      })
-      // Nhom chi co bai cua ngay mai van phai hien (total = 0 nhung byDate co
-      // dong) — loc theo byDate, khong loc theo total.
-      .filter((g) => !g.isChores && g.byDate.length > 0);
+    nhomBaiTheoNoiGiao(items, Object.keys(HW_SOURCES) as HwSource[])
+      .map(({ source, items: mine }): NhomHien => ({
+        key: source,
+        icon: HW_SOURCES[source].icon,
+        label: HW_SOURCES[source].label,
+        isChores: false,
+        byDate: gomTheoNgay(mine),
+        ...tienDoNhom(mine),
+      }));
 
   for (const { nhom, items: choreItems } of nhomNhiemVuHomNay(
     items,
     today,
     Object.keys(NHOM_NHIEM_VU) as NhomNhiemVu[]
   )) {
-    const choreDone = choreItems.filter((a) => a.status === 'done').length;
     sourceGroups.push({
       key: `nhiem-vu-${nhom}`,
       icon: NHOM_NHIEM_VU[nhom].icon,
       label: NHOM_NHIEM_VU[nhom].label,
       isChores: true,
       choreItems,
-      total: choreItems.length,
-      done: choreDone,
-      xongHet: choreDone === choreItems.length,
+      ...tienDoNhom(choreItems),
     });
   }
 
@@ -266,9 +255,9 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
           {/* Dau moi nhom: noi giao + tien do RIENG cua nhom do, de con lam het
               mot loai bai (vd het bai cua mot ma trong HW_SOURCES) roi moi sang loai kia.
               Hai nhom nhiem vu luon xep cuoi mang sourceGroups (issue #36 muc 7, #42).
-              Nhom khong co gi cua hom nay (chi co bai ngay mai) thi KHONG hien chip
-              tien do: "0/0 xong" khong noi len dieu gi, ma to xanh + 🎉 cho no thi
-              con tuong da xong mot viec chua den luot lam. */}
+              Nhom nao duoc hien cung co it nhat mot dong nen chip tien do luon co
+              nghia; nhom bai chi co bai ngay mai thi doc "0/3 bài xong" — dung, vi
+              than nhom dang ve dung ba the do. */}
           <div
             className={`flex items-center gap-4 rounded-2xl p-4 mb-4 soft-shadow ${
               sg.xongHet ? 'bg-success-container' : 'bg-surface-container-low'
@@ -278,15 +267,13 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
             <h2 className="text-k-headline text-on-surface flex-1 min-w-0">
               {sg.label}
             </h2>
-            {sg.total > 0 && (
-              <span
-                className={`text-k-label px-5 py-2 rounded-full shrink-0 ${
-                  sg.xongHet ? 'bg-success text-white' : 'bg-surface-container-highest text-on-surface'
-                }`}
-              >
-                {sg.xongHet ? '🎉 ' : ''}{sg.done}/{sg.total} {sg.isChores ? 'việc' : 'bài'} xong
-              </span>
-            )}
+            <span
+              className={`text-k-label px-5 py-2 rounded-full shrink-0 ${
+                sg.xongHet ? 'bg-success text-white' : 'bg-surface-container-highest text-on-surface'
+              }`}
+            >
+              {sg.xongHet ? '🎉 ' : ''}{sg.done}/{sg.total} {sg.isChores ? 'việc' : 'bài'} xong
+            </span>
           </div>
 
           {sg.isChores ? (

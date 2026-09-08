@@ -106,7 +106,10 @@ ba tệp test PGlite đều import từ đó (tệp không import gì lúc chạ
 
 **Hàng rào "+10 của ngày mai" nằm ở MỘT hàm**: `taoNhiemVuNgayNeuChuaQua` — hai
 đường mà bố mẹ tự chọn ngày (`saveSubmission` khi nhập bài, `xuLySauKhiDoiHanChot`
-khi đổi hạn chót) đều gọi nó, đừng gọi `taoNhiemVuNgay` trực tiếp từ đó nữa. Hàm
+khi đổi hạn chót) đều gọi nó, đừng gọi `taoNhiemVuNgay` trực tiếp từ đó nữa.
+`xuLySauKhiDoiHanChot` còn gọi `congDiemNgayNeuXong` cho **cả hai** ngày (cũ vừa
+bớt một dòng, mới vừa nhận một dòng có thể đã 'done') — tiền lệ: mọi thao tác có
+thể làm một ngày thành "xong hết" đều gọi hàm đó, và nó idempotent. Hàm
 đó giữ cả hai chiều của cùng một luật, đọc chú thích ở đó trước khi định sửa:
 `congDiemNgayNeuXong` không kiểm "ngày đó đã tới chưa", nên (a) ngày **từ hôm nay
 trở đi** PHẢI có dòng nhiệm vụ `'todo'` — nó là thứ duy nhất chặn +10 cộng sớm một
@@ -127,6 +130,12 @@ lại điều kiện bằng SQL hay JS riêng.** Hàm đó là `veTrenManCuaCon`
 `dongTrenManCuaCon` trong `lib/nhomNhiemVu.ts` (bài tập: từ hôm nay trở đi;
 nhiệm vụ hàng ngày: chỉ hôm nay — đọc chú thích đầu file), dùng ở cả
 `app/con/[childId]/page.tsx` lẫn `progressUpcoming` trong `lib/store.ts`.
+
+Bất biến này áp cả **trong một màn**: tiến độ ở đầu mỗi nhóm đếm đúng tập mà
+thân nhóm đó vẽ — nhóm bài tập tính cả bài "Ngày mai" (`nhomBaiTheoNoiGiao`),
+nhóm nhiệm vụ chỉ tính hôm nay (`nhomNhiemVuHomNay`), cả hai qua cùng
+`tienDoNhom`. Đếm lệch một bên là đầu nhóm tô xanh + "🎉 2/2 bài xong" trong khi
+ngay dưới còn ba thẻ bài chưa làm.
 
 **Phép thử về-0:** mở màn của con, tick hết mọi thứ đang thấy, thì mọi con số dẫn
 tới màn đó (huy hiệu chọn tên, hai ô "Hoàn thành"/"Đang chờ", tiến độ nhóm) phải

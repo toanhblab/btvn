@@ -831,9 +831,16 @@ async function taoNhiemVuNgayNeuChuaQua(
  *    dung, cung mot ham: `taoNhiemVuNgayNeuChuaQua` (doc chu thich o do de biet
  *    vi sao PHAI tao cho ngay tu hom nay tro di va vi sao KHONG tao cho ngay da
  *    qua).
- * 2. Ngay CU vua BOT mot dong: cac dong con lai co the da done het, ma con thi
- *    khong tick gi nua nen duong cua con khong bao gio xet lai. Xet o day,
- *    idempotent nen an toan.
+ * 2. XET LAI CA HAI NGAY bang `congDiemNgayNeuXong` — tien le: moi thao tac co
+ *    the lam mot ngay thanh "xong het" deu goi ham do (duong con tick, route xoa
+ *    bai), va no idempotent nho unique index nen goi thua vo hai.
+ *    - Ngay CU vua BOT mot dong: cac dong con lai co the da done het, ma con thi
+ *      khong tick gi nua nen duong cua con khong bao gio xet lai.
+ *    - Ngay MOI vua NHAN mot dong: neu dong do da 'done' thi ngay moi co the vua
+ *      thanh "xong het" ngay luc nay. Vd cuoi tuan con da tick het nhiem vu
+ *      (chua duoc +10 vi ngay khong co bai that), bo me doi han mot bai da lam
+ *      xong ve hom nay -> hom nay du dieu kien, nhung khong con cu tick nao de
+ *      kich +10 (cong diem theo su kien, khong co cron).
  */
 export async function xuLySauKhiDoiHanChot(
   familyId: string,
@@ -843,6 +850,7 @@ export async function xuLySauKhiDoiHanChot(
 ): Promise<void> {
   await taoNhiemVuNgayNeuChuaQua(familyId, ngayMoi, [childId]);
   await congDiemNgayNeuXong(familyId, childId, ngayCu);
+  await congDiemNgayNeuXong(familyId, childId, ngayMoi);
 }
 
 /**

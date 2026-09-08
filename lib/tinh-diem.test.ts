@@ -689,7 +689,9 @@ async function doiNgay(
   if (opts.taoNhiemVu !== false) {
     await taoNhiemVuNeuChuaQua(familyId, ngayMoi, String(truoc.child_id));
   }
-  return congDiemNgay(familyId, String(truoc.child_id), String(truoc.due_date));
+  const cu = await congDiemNgay(familyId, String(truoc.child_id), String(truoc.due_date));
+  const moi = await congDiemNgay(familyId, String(truoc.child_id), ngayMoi);
+  return { cu, moi };
 }
 
 /**
@@ -748,7 +750,7 @@ test('bo me doi han chot: ngay CU bot mot dong nen thanh hoan thanh -> +10 cho n
 
   const truoc = await soDu('con_b');
   const kq = await doiNgay('fam_cu', bai2, NGAY_MOI);
-  assert.equal(kq.ngayXong, DIEM_NGAY_XONG, 'bot bai2 di la ngay CU xong het -> +10');
+  assert.equal(kq.cu.ngayXong, DIEM_NGAY_XONG, 'bot bai2 di la ngay CU xong het -> +10');
   assert.equal(await soDu('con_b'), truoc + DIEM_NGAY_XONG);
 });
 
@@ -814,6 +816,46 @@ test('cai gia neu KHONG tao san dong nhiem vu cua ngay mai: +10 cong som mot nga
  * Nha rieng voi `score_since` cu (30 ngay truoc) de ngay hom qua VAN duoc tinh
  * diem — khong thi cua chan "khong hoi to" da loai truoc, khong thay duoc gi.
  */
+/**
+ * Ngay MOI vua NHAN mot dong da 'done' co the vua thanh "xong het" — luc do
+ * khong con cu tick nao de kich +10 (cong diem theo su kien, khong co cron), nen
+ * `xuLySauKhiDoiHanChot` phai xet lai CA ngay moi, khong chi ngay cu.
+ *
+ * Kich ban cuoi tuan cua nha captain: hom nay con khong co bai that, da tick het
+ * nhiem vu (chi duoc ⭐ tung nhiem vu, chua +10 vi `ngayHoanThanh` doi >= 1 bai
+ * that). Bo me doi han mot bai con DA LAM XONG ve hom nay -> hom nay du dieu kien.
+ */
+test('doi han chot mot bai DA XONG ve ngay co san nhiem vu da tick: ngay MOI duoc +10', async () => {
+  const HOM_NAY = '2026-10-05';
+  const NGAY_SAU = '2026-10-06';
+
+  // Hom nay: chi co nhiem vu, con da tick het -> chua +10.
+  await taoNhiemVuNgay('fam_cu', HOM_NAY, 'con_c');
+  const nvHomNay = await rows(
+    `SELECT id FROM assignments
+      WHERE child_id = 'con_c' AND due_date = $1 AND chore_id IS NOT NULL`,
+    [HOM_NAY]
+  );
+  assert.equal(nvHomNay.length, 1, 'hom nay co dong nhiem vu');
+  const kqNv = await tickXong(String(nvHomNay[0].id), null);
+  assert.equal(kqNv.ngayXong, 0, 'ngay chi co nhiem vu thi khong +10 (doi >= 1 bai that)');
+
+  // Mot bai cua NGAY SAU ma con da lam xong som.
+  const bai = await themBai('con_c', NGAY_SAU);
+  await tickXong(bai, null);
+
+  // Bo me doi han bai do ve HOM NAY -> hom nay = 1 bai done + 1 nhiem vu done.
+  const truoc = await soDu('con_c');
+  const kq = await doiNgay('fam_cu', bai, HOM_NAY);
+  assert.equal(kq.moi.ngayXong, DIEM_NGAY_XONG, 'ngay MOI vua thanh xong het -> +10');
+  assert.equal(await soDu('con_c'), truoc + DIEM_NGAY_XONG);
+
+  // Goi lai (idempotent nho unique index): khong cong lan hai.
+  const lai = await congDiemNgay('fam_cu', 'con_c', HOM_NAY);
+  assert.equal(lai.ngayXong, 0);
+  assert.equal(await soDu('con_c'), truoc + DIEM_NGAY_XONG);
+});
+
 test('nhap bai bu cho ngay DA QUA: khong sinh dong nhiem vu, ngay do van cong duoc +10', async () => {
   await db.exec(
     `INSERT INTO families (id, name, slug, parent_pin_hash, score_since)

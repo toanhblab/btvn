@@ -23,7 +23,7 @@
  * Ham thuan, khong import gi luc chay (chi import type) de node --test nap duoc.
  */
 
-import type { Assignment, NhomNhiemVu } from './types';
+import type { Assignment, HwSource, NhomNhiemVu } from './types';
 
 /** Dong nay co nam tren man cua con (duoc VE va cho TICK) hom nay khong? */
 export function veTrenManCuaCon(
@@ -65,4 +65,41 @@ export function nhomNhiemVuHomNay(
       ),
     }))
     .filter((g) => g.items.length > 0);
+}
+
+/**
+ * Tach cac dong BAI TAP cua man cua con thanh mot nhom cho moi noi giao (moi ma
+ * trong HW_SOURCES): con lam xong het bai cua mot noi roi moi sang noi kia, nen
+ * moi noi can mot khoi rieng voi tien do rieng. Dong nhiem vu (choreId khong
+ * null) bi LOAI khoi day du "source" cua no la gi — chore_id moi la dau hieu
+ * that, xem lib/types.ts.
+ *
+ * @param sources cac noi giao theo dung thu tu muon hien — `Object.keys(HW_SOURCES)`.
+ * @returns cac nhom CO dong, giu nguyen thu tu `sources` va thu tu dong ben trong.
+ */
+export function nhomBaiTheoNoiGiao(
+  items: Assignment[],
+  sources: HwSource[]
+): { source: HwSource; items: Assignment[] }[] {
+  return sources
+    .map((source) => ({
+      source,
+      items: items.filter((a) => a.choreId == null && a.source === source),
+    }))
+    .filter((g) => g.items.length > 0);
+}
+
+/**
+ * Tien do o dau mot nhom tren man cua con — dem DUNG nhung dong ma than nhom do
+ * VE RA, khong hon khong kem (bat bien o AGENTS.md, o pham vi trong mot man):
+ *   - nhom BAI TAP ve ca bai cua ngay mai (duoi tieu de "Ngày mai") nen tien do
+ *     phai tinh ca chung. Neu chi dem hom nay thi con lam xong hai bai hom nay
+ *     la dau nhom to xanh + "🎉 2/2 bài xong" trong khi ngay duoi con ba the bai
+ *     ngay mai chua lam.
+ *   - nhom NHIEM VU chi ve dong cua hom nay (`nhomNhiemVuHomNay`) nen tien do
+ *     cung chi co dong cua hom nay — dung cung ham nay, khac o tap dua vao.
+ */
+export function tienDoNhom(items: Assignment[]): { total: number; done: number; xongHet: boolean } {
+  const done = items.filter((a) => a.status === 'done').length;
+  return { total: items.length, done, xongHet: items.length > 0 && done === items.length };
 }

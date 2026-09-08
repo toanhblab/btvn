@@ -16,7 +16,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dongTrenManCuaCon, nhomNhiemVuHomNay, veTrenManCuaCon } from './nhomNhiemVu.ts';
+import {
+  dongTrenManCuaCon, nhomBaiTheoNoiGiao, nhomNhiemVuHomNay, tienDoNhom, veTrenManCuaCon,
+} from './nhomNhiemVu.ts';
 import { HW_SOURCES, NHOM_NHIEM_VU, type Assignment, type HwSource, type NhomNhiemVu } from './types.ts';
 
 const HOM_NAY = '2026-09-08';
@@ -129,9 +131,7 @@ test('bat bien: tap DEM (con so tom tat) == tap VE (man cua con) tren cung fixtu
   // bai (theo HW_SOURCES, gom theo ngay) va hai nhom nhiem vu.
   const veRa = dongTrenManCuaCon(fixture, HOM_NAY);
   const veTheoNhom = [
-    ...(Object.keys(HW_SOURCES) as HwSource[]).flatMap((source) =>
-      veRa.filter((a) => a.source === source && a.choreId == null)
-    ),
+    ...nhomBaiTheoNoiGiao(veRa, Object.keys(HW_SOURCES) as HwSource[]).flatMap((g) => g.items),
     ...nhomNhiemVuHomNay(veRa, HOM_NAY, NHOMS).flatMap((g) => g.items),
   ];
 
@@ -155,4 +155,59 @@ test('loc BAT KE status: dong nhiem vu ngay mai da done cung khong duoc dem', ()
     dong({ id: 'nv_mai_done', dueDate: NGAY_MAI, status: 'done' }),
   ];
   assert.deepEqual(dongTrenManCuaCon(items, HOM_NAY), []);
+});
+
+/**
+ * Tien do o dau nhom BAI TAP phai dem ca bai cua NGAY MAI — chinh nhung the ma
+ * than nhom do dang ve duoi tieu de "Ngày mai". Dem rieng hom nay thi con lam
+ * xong hai bai hom nay la dau nhom to xanh + "🎉 2/2 bài xong" trong khi ngay
+ * duoi con ba the chua lam, va cung luc huy hieu man chon ten doc "3 việc".
+ */
+test('tien do nhom BAI TAP: con ba bai ngay mai chua lam thi chua "xong het"', () => {
+  const fixture = [
+    dong({ id: 'hn1', dueDate: HOM_NAY, choreId: null, choreNhom: null, status: 'done' }),
+    dong({ id: 'hn2', dueDate: HOM_NAY, choreId: null, choreNhom: null, status: 'done' }),
+    dong({ id: 'nm1', dueDate: NGAY_MAI, choreId: null, choreNhom: null }),
+    dong({ id: 'nm2', dueDate: NGAY_MAI, choreId: null, choreNhom: null }),
+    dong({ id: 'nm3', dueDate: NGAY_MAI, choreId: null, choreNhom: null }),
+  ];
+  const veRa = dongTrenManCuaCon(fixture, HOM_NAY);
+  const [nhomBai] = nhomBaiTheoNoiGiao(veRa, Object.keys(HW_SOURCES) as HwSource[]);
+
+  assert.deepEqual(tienDoNhom(nhomBai.items), { total: 5, done: 2, xongHet: false });
+
+  // Lam not ba bai ngay mai -> luc do moi "xong het".
+  const xongCa = veRa.map((a) => ({ ...a, status: 'done' as const }));
+  const [nhomXong] = nhomBaiTheoNoiGiao(xongCa, Object.keys(HW_SOURCES) as HwSource[]);
+  assert.deepEqual(tienDoNhom(nhomXong.items), { total: 5, done: 5, xongHet: true });
+});
+
+test('tien do nhom NHIEM VU chi tinh hom nay (than nhom cung chi ve hom nay)', () => {
+  const fixture = [
+    dong({ id: 'nv_hn', dueDate: HOM_NAY, choreNhom: 'housework', status: 'done' }),
+    dong({ id: 'nv_nm', dueDate: NGAY_MAI, choreNhom: 'housework' }),
+  ];
+  const [nhom] = nhomNhiemVuHomNay(dongTrenManCuaCon(fixture, HOM_NAY), HOM_NAY, NHOMS);
+  assert.deepEqual(
+    tienDoNhom(nhom.items),
+    { total: 1, done: 1, xongHet: true },
+    'dong cua ngay mai khong duoc ve nen khong duoc dem'
+  );
+});
+
+test('nhom bai theo noi giao: loai dong nhiem vu, giu thu tu, bo nhom rong', () => {
+  const fixture = [
+    dong({ id: 'ns1', dueDate: HOM_NAY, choreId: null, choreNhom: null, source: 'primary_school' }),
+    dong({ id: 'ec1', dueDate: HOM_NAY, choreId: null, choreNhom: null, source: 'english_class' }),
+    dong({ id: 'nv', dueDate: HOM_NAY, source: 'primary_school' }),
+    dong({ id: 'ns2', dueDate: NGAY_MAI, choreId: null, choreNhom: null, source: 'primary_school' }),
+  ];
+  const nhoms = nhomBaiTheoNoiGiao(fixture, Object.keys(HW_SOURCES) as HwSource[]);
+  assert.deepEqual(
+    nhoms.map((g) => [g.source, g.items.map((a) => a.id)]),
+    (Object.keys(HW_SOURCES) as HwSource[])
+      .map((s) => [s, s === 'primary_school' ? ['ns1', 'ns2'] : s === 'english_class' ? ['ec1'] : []])
+      .filter(([, ids]) => (ids as string[]).length > 0),
+    'dong nhiem vu bi loai du source cua no la gi; nhom khong co bai thi khong hien'
+  );
 });
