@@ -9,12 +9,13 @@
  *     truoc cho hom sau, con lam bai truoc mot ngay la tot — man cua con ve bai
  *     ngay mai duoi tieu de "Ngày mai" va cho lam, nen phai dem.
  *   - Nhiem vu hang ngay: CHI HOM NAY. Dong cua ngay mai van duoc tao san
- *     (saveSubmission goi taoNhiemVuNgay cho ngay bo me giao bai — loi goi do
- *     con gac +10, xem lib/store.ts) nhung KHONG ve: tick mot dong nhiem vu la
- *     an ⭐ ngay, nen ve dong ngay mai la con bam "Đánh răng buổi tối" cua mai
- *     tu toi nay — ⭐ truoc mot ngay cho viec chua lam, nguoc han muc dich "ren
- *     ky luat va tu giac" cua chinh tinh nang nay. Khong ve cung khong mat gi:
- *     taoNhiemVuNgay chay luoi moi ngay nen sang mai mo man la co du.
+ *     (saveSubmission goi taoNhiemVuNgayNeuChuaQua cho ngay bo me giao bai —
+ *     loi goi do con gac +10, xem lib/store.ts) nhung KHONG ve: tick mot dong
+ *     nhiem vu la an ⭐ ngay, nen ve dong ngay mai la con bam "Đánh răng buổi
+ *     tối" cua mai tu toi nay — ⭐ truoc mot ngay cho viec chua lam, nguoc han
+ *     muc dich "ren ky luat va tu giac" cua chinh tinh nang nay. Khong ve cung
+ *     khong mat gi: taoNhiemVuNgay chay luoi moi ngay nen sang mai mo man la
+ *     co du.
  *
  * Loc BAT KE status: neu chi loai dong 'todo' cua ngay mai ma giu dong 'done'
  * (tick qua ma cu truoc khi deploy, hay qua API) thi `total` phinh ma `left`

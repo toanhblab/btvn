@@ -144,12 +144,10 @@ chỗ tick — **sửa bộ lọc, không sửa chữ**. (Buổi tối bố mẹ
 thì huy hiệu đọc "1 việc" vì bài ngày mai CÓ vẽ và CÓ tick được — đó là đếm đúng,
 không phải lỗi.)
 
-Sáu vòng sửa liên tiếp của #42 đều cùng một dạng lỗi: một con số được định nghĩa
-bằng bộ lọc riêng viết lại tại chỗ thay vì suy ra từ danh sách nó tóm tắt. Từ bất
-biến trên suy ra được cả hai điều mà trước đây phải liệt kê theo từng màn: đếm gộp
-bài tập và nhiệm vụ (vì màn của con vẽ cả hai — đừng thêm lại trường kiểu
+Từ bất biến trên suy ra được cả hai điều mà trước đây phải liệt kê theo từng màn:
+đếm gộp bài tập và nhiệm vụ (vì màn của con vẽ cả hai — đừng thêm lại trường kiểu
 `homeworkTotal`/`homeworkTodo`), và bài đếm từ hôm nay trở đi còn nhiệm vụ chỉ
-hôm nay (vì màn vẽ đúng như vậy).
+hôm nay (vì màn vẽ đúng như vậy). Hồi quy ghim ở `lib/nhomNhiemVu.test.ts`.
 
 Hai ngoại lệ CÓ Ý: badge "Quá hạn" (nhiệm vụ hôm qua không phải bài quá hạn) và
 hộp "Nhiệm vụ hàng ngày" ở màn chi tiết con của bố mẹ (tách khỏi tiến độ bài tập,

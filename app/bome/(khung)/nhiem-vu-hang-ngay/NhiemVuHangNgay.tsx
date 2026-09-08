@@ -103,8 +103,8 @@ function chuaGiaoAi(childIds: string[] | null): boolean {
  *
  * Moi nhiem vu (Q7): icon (mot emoji) + ten + so ⭐ (1..10) + NHOM (hai lua chon,
  * Q1) + "Giao cho" (chip "Cả nhà" = childIds null, hoac bam chon tung con) +
- * hai nut mui ten doi thu tu (nhu ViecNha.tsx cu — keo tha tren dien thoai de
- * truot nham) + cong tac bat/tat + nut xoa (hoi lai mot nhip).
+ * hai nut mui ten doi thu tu (nhu ViecNha.tsx cu, da xoa — keo tha tren dien
+ * thoai de truot nham) + cong tac bat/tat + nut xoa (hoi lai mot nhip).
  *
  * Moi thay doi CHI anh huong dong tao SAU do (dong cua hom nay da tao giu
  * ten/icon/sao cu, sao da cong giu nguyen) — tru NHOM: doc live, doi la dong hom

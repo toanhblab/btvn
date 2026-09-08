@@ -273,8 +273,9 @@ những gì màn của con đang vẽ và cho tick**: bài tập từ hôm nay t
 của hôm nay, đếm gộp hai loại. Nên tối bố mẹ đã nhập bài cho hôm sau, con tick
 xong hết việc hôm nay thì badge đọc "1 việc" (bài ngày mai) chứ chưa phải "Xong
 hết 🎉" — muốn "Xong hết 🎉" thì làm luôn bài ngày mai. "Chưa có bài" chỉ khi
-không có gì cả. Cùng một bộ lọc dùng cho ba ô của bố mẹ ("Việc từ hôm nay trở
-đi") — xem `lib/nhomNhiemVu.ts` và bất biến ở AGENTS.md.
+không có gì cả. Cùng một bộ lọc dùng cho hai ô "Hoàn thành" / "Đang chờ" ở màn
+tổng quan của bố mẹ (khối "Việc từ hôm nay trở đi"; ô "Quá hạn" thì loại nhiệm vụ
+ra, xem đoạn dưới) — xem `lib/nhomNhiemVu.ts` và bất biến ở AGENTS.md.
 
 **Một danh sách chung cả nhà**, bố mẹ sửa ở trang riêng **Cài đặt → "Nhiệm vụ hàng
 ngày"** (cũng vào được từ dòng dẫn trên màn Thưởng): đổi chữ / icon / sao / nhóm /
