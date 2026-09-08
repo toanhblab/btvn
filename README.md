@@ -154,8 +154,11 @@ app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
 app/_components/ BanPhimPin — bàn phím số dùng chung cho 4 chỗ nhập PIN
 lib/            db (Neon|PGlite), store (truy vấn theo familyId), auth (PIN +
                 cookie có chữ ký), pin (PIN_LEN dùng cả hai phía), diem (luật
-                tính điểm, hàm thuần), media + upload-route (giới hạn tệp,
-                tên/URL tệp, thân chung hai route tải lên), avatar, ai, types
+                tính điểm, hàm thuần), nhomNhiemVu (dòng nào nằm trên màn của
+                con + hai nhóm nhiệm vụ), sqlNhiemVu (câu SQL tạo dòng nhiệm vụ
+                của ngày, dùng chung với seed và test), media + upload-route
+                (giới hạn tệp, tên/URL tệp, thân chung hai route tải lên),
+                avatar, ai, types
 proxy.ts        chặn /bome/* khi chưa nhập PIN
 migrations/     từng bước thay đổi lược đồ, chạy theo thứ tự tên tệp (bám PRD mục 7)
 scripts/        db.mjs (kết nối + bộ chạy migration), migrate.mjs (CLI, chạy khi
@@ -256,8 +259,11 @@ ngày"** — việc nhà của con. Mỗi nhiệm vụ có tên, icon một emoj
 nhóm và **"giao cho"** (mặc định cả nhà, hoặc chọn từng con — `child_ids`, NULL =
 cả nhà). Nhiệm vụ hiện **mỗi ngày, kể cả cuối tuần và ngày không có bài**: dòng của
 ngày được **tạo lười khi mở màn** (`taoNhiemVuNgay` — một câu `INSERT … SELECT …
-ON CONFLICT DO NOTHING`, gọi ở màn của con, màn chọn-con, chi tiết con của bố mẹ và
-lúc bố mẹ giao bài), không cần cron. Trên màn của con chúng xếp thành **hai nhóm
+ON CONFLICT DO NOTHING`, gọi ở màn của con, màn chọn-con, chi tiết con của bố mẹ,
+lúc bố mẹ giao bài và lúc bố mẹ đổi hạn chót một bài sang ngày khác), không cần
+cron. Hai lời gọi sau cùng còn **gác điểm +10**: dòng nhiệm vụ `todo` của ngày đó
+là thứ chặn "+10 một ngày xong hết" cộng sớm khi con làm xong bài của ngày mai
+ngay tối nay. Trên màn của con chúng xếp thành **hai nhóm
 riêng cuối cùng** và **chỉ hiện việc của hôm nay** (dòng của ngày mai vẫn tạo sẵn
 nhưng không vẽ — tick được là ⭐ trước một ngày; bài tập ngày mai thì vẫn hiện),
 mỗi dòng có icon + chip "⭐ N"; con bấm là tick ngay tại chỗ (không mở màn chi

@@ -8,6 +8,7 @@ import type {
 } from './types';
 import { DURATION_DEFAULT, HW_SOURCE_DEFAULT, hwSourceOf, nhomNhiemVuOf } from './types';
 import { veTrenManCuaCon } from './nhomNhiemVu';
+import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu';
 
 /** Ngay hom nay theo gio dia phuong, YYYY-MM-DD (toISOString la UTC nen lech mui gio). */
 export function todayISO(offsetDays = 0): string {
@@ -782,8 +783,8 @@ export const VIEC_NHA_SUBJECT = 'Việc nhà';
  * mai): dong moi la dong TAO MOI, khong sua dong da co, nen khong trai luat
  * "sua chi anh huong dong tao sau".
  *
- * scripts/seed.mjs nhan ban cau nay cho DB mau (script node khong import duoc
- * TypeScript) — doi o day thi doi ca ben do.
+ * Cau SQL nam o lib/sqlNhiemVu.ts — MOT ban dung chung voi scripts/seed.mjs va
+ * ba tep test PGlite (khong tep nao nap duoc store.ts, xem chu thich ben do).
  *
  * @param childIds  null = moi con trong nha; hoac chi cac con nay (da loc theo
  *   nha o noi goi — cau SQL van JOIN children theo family_id nen id nha khac
@@ -794,22 +795,44 @@ export async function taoNhiemVuNgay(
   date: string,
   childIds: string[] | null
 ): Promise<void> {
-  // id sinh trong SQL (md5 ngau nhien) vi so dong chi biet sau khi SELECT;
-  // tien to 'asg_' + 16 hex de cung hinh dang voi newId('asg').
-  await query(
-    `INSERT INTO assignments
-       (id, child_id, subject, icon, content, lang, due_date, source, duration_minutes,
-        requires_video, chore_id, stars)
-     SELECT 'asg_' || substr(md5(random()::text || c.id || dc.id || $2::text), 1, 16),
-            c.id, $3, dc.icon, dc.content, 'vi', $2::date, $4, $5, false, dc.id, dc.stars
-       FROM daily_chores dc
-       JOIN children c ON c.family_id = dc.family_id
-      WHERE dc.family_id = $1 AND dc.enabled AND dc.archived_at IS NULL
-        AND (dc.child_ids IS NULL OR c.id = ANY(dc.child_ids))
-        AND ($6::text[] IS NULL OR c.id = ANY($6::text[]))
-     ON CONFLICT (child_id, due_date, chore_id) WHERE chore_id IS NOT NULL DO NOTHING`,
-    [familyId, date, VIEC_NHA_SUBJECT, HW_SOURCE_DEFAULT, DURATION_DEFAULT, childIds]
-  );
+  await query(SQL_TAO_NHIEM_VU_NGAY, [
+    familyId, date, VIEC_NHA_SUBJECT, HW_SOURCE_DEFAULT, DURATION_DEFAULT, childIds,
+  ]);
+}
+
+/**
+ * Hai viec phai lam SAU KHI bo me doi han chot cua mot bai (route PATCH
+ * /api/assignments/:id, nhanh bo me) — de o lop nay chu khong o tep route vi ca
+ * hai la LUAT, va bo test PGlite chi voi tay den duoc lop nay:
+ *
+ * 1. Ngay MOI phai co dong nhiem vu cua no — cung hang rao ma saveSubmission
+ *    dung: `congDiemNgayNeuXong` KHONG kiem "ngay do da toi chua", nen doi mot
+ *    bai sang NGAY MAI roi con lam xong bai do ngay toi nay se lam tap dong cua
+ *    ngay mai chi con mot bai -> +10 cua ngay mai bay ra som mot ngay, va sang
+ *    mai con lam nhiem vu that thi khong con gi de cong.
+ *    CHI tao cho ngay TU HOM NAY TRO DI: ngay da qua thi khong con gi phai gac
+ *    (khong the cong som cho no nua), ma them dong 'todo' khong ai tick duoc
+ *    (man cua con liet ke tu hom nay) la khoa luon +10 cua ngay do mai mai.
+ *    Nuot loi y het saveSubmission: dong bai da ghi xong va khong chung
+ *    transaction, nem loi len la tra 500 cho mot lan sua DA THANH CONG.
+ * 2. Ngay CU vua BOT mot dong: cac dong con lai co the da done het, ma con thi
+ *    khong tick gi nua nen duong cua con khong bao gio xet lai. Xet o day,
+ *    idempotent nen an toan.
+ */
+export async function xuLySauKhiDoiHanChot(
+  familyId: string,
+  childId: string,
+  ngayCu: string,
+  ngayMoi: string
+): Promise<void> {
+  if (ngayMoi >= todayISO()) {
+    try {
+      await taoNhiemVuNgay(familyId, ngayMoi, [childId]);
+    } catch (e) {
+      console.error('Khong tao duoc dong nhiem vu cho ngay', ngayMoi, e);
+    }
+  }
+  await congDiemNgayNeuXong(familyId, childId, ngayCu);
 }
 
 /**

@@ -95,14 +95,27 @@ một bên là phải sửa bên kia.
 
 Nhiệm vụ hàng ngày (`daily_chores` + dòng `assignments` có `chore_id`, hai nhóm
 `category`, sao/icon/`child_ids`): dòng của ngày được tạo LƯỜI bằng
-`taoNhiemVuNgay` trong `lib/store.ts` — gọi ở đầu màn của con, `progressUpcoming`,
-chi tiết con của bố mẹ và `saveSubmission`; không có cron. Câu `INSERT … SELECT`
-đó được NHÂN BẢN ở `scripts/seed.mjs`, `lib/nhiem-vu-hang-ngay.test.ts`,
-`lib/nhiem-vu-mac-dinh-hoan-thanh.test.ts` và `lib/tinh-diem.test.ts` (node không
-import được TS) — đổi một chỗ là đổi cả năm. Lời gọi trong `saveSubmission` còn
-**gác +10 của ngày mai**, không chỉ để hiển thị: đọc chú thích ở đó trước khi
-định bỏ nó. `stars`/`icon`/`content` CHÉP vào dòng lúc tạo (sửa cấu hình
-chỉ ảnh hưởng dòng tạo sau), riêng nhóm đọc LIVE qua `LEFT JOIN daily_chores`
+`taoNhiemVuNgay` trong `lib/store.ts` — **năm nơi gọi**: đầu màn của con,
+`progressUpcoming`, chi tiết con của bố mẹ, `saveSubmission`, và
+`xuLySauKhiDoiHanChot` (nhánh bố mẹ đổi hạn chót của `PATCH
+/api/assignments/:id`); không có cron. Câu `INSERT … SELECT` nằm ở
+**`lib/sqlNhiemVu.ts`** — một bản duy nhất, `lib/store.ts` + `scripts/seed.mjs` +
+ba tệp test PGlite đều import từ đó (tệp không import gì lúc chạy nên cả Next,
+`node --test` và `node scripts/seed.mjs` đều nạp được); chỉ còn ba hằng số
+`subject`/`source`/`duration` là seed/test truyền tay.
+
+**Hàng rào "+10 của ngày mai" nằm ở HAI lời gọi**: `saveSubmission` (bố mẹ nhập
+bài cho ngày mai) và `xuLySauKhiDoiHanChot` (bố mẹ đổi hạn chót sang ngày mai).
+`congDiemNgayNeuXong` không kiểm "ngày đó đã tới chưa", nên dòng nhiệm vụ `'todo'`
+tạo sẵn của ngày đó là thứ duy nhất chặn +10 cộng sớm một ngày — đọc chú thích ở
+cả hai nơi trước khi định bỏ. `xuLySauKhiDoiHanChot` chỉ tạo cho ngày **từ hôm nay
+trở đi** (ngày đã qua thì không còn gì phải gác, mà thêm dòng không ai tick được
+là khoá luôn +10 của ngày đó). Cả hai đều best-effort (nuốt lỗi để không 500 một
+lần ghi đã thành công); test ghim ở `lib/tinh-diem.test.ts`.
+
+`stars`/`icon`/`content` CHÉP vào dòng lúc tạo (sửa cấu hình chỉ ảnh hưởng dòng
+tạo sau, và **tắt công tắc chỉ ngăn dòng tạo SAU** — dòng của hôm nay đã tạo vẫn
+hiện, vẫn tick được, vẫn ăn ⭐), riêng nhóm đọc LIVE qua `LEFT JOIN daily_chores`
 trong `ASSIGNMENT_SELECT` — giống `sort_order`. Xoá nhiệm vụ là `archived_at`,
 không DELETE (migration 014 giải thích vì sao).
 

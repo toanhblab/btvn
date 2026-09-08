@@ -10,6 +10,7 @@
  */
 
 import { chayMigrations, moKetNoi, CONN } from './db.mjs';
+import { SQL_TAO_NHIEM_VU_NGAY } from '../lib/sqlNhiemVu.ts';
 
 const FORCE = process.argv.includes('--force');
 if (CONN && !FORCE) {
@@ -155,28 +156,16 @@ capCoBai.add(`bena|${dateOffset(1)}`);
 
 // 6. Dong nhiem vu hang ngay (issue #36, #42): cho HOM NAY voi CA NHA (nhu
 //    taoNhiemVuNgay chay luc mo man chon-con), va cho moi (con, ngay) vua duoc
-//    giao bai o tren (nhu saveSubmission). NHAN BAN dung cau INSERT ... SELECT
-//    cua taoNhiemVuNgay trong lib/store.ts vi script node khong import duoc
-//    TypeScript — doi ben do thi phai doi ca o day: cung subject
-//    (VIEC_NHA_SUBJECT), cung HW_SOURCE_DEFAULT + DURATION_DEFAULT (lib/types.ts),
-//    chep icon/content/stars tu daily_chores, loc theo child_ids, ON CONFLICT
-//    tren (child_id, due_date, chore_id).
-const TAO_NHIEM_VU = `
-  INSERT INTO assignments
-    (id, child_id, subject, icon, content, lang, due_date, source, duration_minutes,
-     requires_video, chore_id, stars)
-  SELECT 'asg_' || substr(md5(random()::text || c.id || dc.id || $2::text), 1, 16),
-         c.id, 'Việc nhà', dc.icon, dc.content, 'vi', $2::date, 'primary_school', 10, false, dc.id, dc.stars
-    FROM daily_chores dc
-    JOIN children c ON c.family_id = dc.family_id
-   WHERE dc.family_id = $1 AND dc.enabled AND dc.archived_at IS NULL
-     AND (dc.child_ids IS NULL OR c.id = ANY(dc.child_ids))
-     AND ($3::text[] IS NULL OR c.id = ANY($3::text[]))
-  ON CONFLICT (child_id, due_date, chore_id) WHERE chore_id IS NOT NULL DO NOTHING`;
-await query(TAO_NHIEM_VU, [familyId, dateOffset(0), null]);
+//    giao bai o tren (nhu saveSubmission). Dung CHINH cau SQL cua taoNhiemVuNgay
+//    (lib/sqlNhiemVu.ts — mot ban duy nhat cho store, seed va ba tep test); ba
+//    tham so hang so o day phai khop VIEC_NHA_SUBJECT (lib/store.ts) +
+//    HW_SOURCE_DEFAULT / DURATION_DEFAULT (lib/types.ts).
+const taoNhiemVu = (dueDate, childIds) =>
+  query(SQL_TAO_NHIEM_VU_NGAY, [familyId, dueDate, 'Việc nhà', 'primary_school', 10, childIds]);
+await taoNhiemVu(dateOffset(0), null);
 for (const cap of capCoBai) {
   const [childId, dueDate] = cap.split('|');
-  await query(TAO_NHIEM_VU, [familyId, dueDate, [childId]]);
+  await taoNhiemVu(dueDate, [childId]);
 }
 const [{ n: nNhiemVu }] = await query(`SELECT COUNT(*) AS n FROM assignments WHERE chore_id IS NOT NULL`);
 

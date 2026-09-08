@@ -31,6 +31,7 @@ import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { chayMigrations } from '../scripts/db.mjs';
 import { veTrenManCuaCon } from './nhomNhiemVu.ts';
+import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu.ts';
 
 const HOM_NAY = '2026-09-04';
 
@@ -95,27 +96,13 @@ async function tienDo(childId: string) {
 }
 
 /**
- * Mo phong CHINH XAC cau INSERT ... SELECT cua taoNhiemVuNgay (lib/store.ts) —
- * buoc tao luoi ma progressUpcoming chay TRUOC khi dem tu issue #42. Cau nay
- * con duoc nhan ban o scripts/seed.mjs va lib/nhiem-vu-hang-ngay.test.ts (node
- * khong import duoc lib/store.ts, xem chu thich dau file): sua mot cho la phai
- * sua het.
+ * Buoc tao luoi ma progressUpcoming chay TRUOC khi dem (issue #42), dung CHINH
+ * cau SQL cua taoNhiemVuNgay — lay tu lib/sqlNhiemVu.ts (mot ban duy nhat cho
+ * lib/store.ts, scripts/seed.mjs va ba tep test; node khong nap duoc store.ts,
+ * xem chu thich dau file).
  */
 async function taoNhiemVuNgay(familyId: string, date: string, childIds: string[] | null) {
-  await db.query(
-    `INSERT INTO assignments
-       (id, child_id, subject, icon, content, lang, due_date, source, duration_minutes,
-        requires_video, chore_id, stars)
-     SELECT 'asg_' || substr(md5(random()::text || c.id || dc.id || $2::text), 1, 16),
-            c.id, $3, dc.icon, dc.content, 'vi', $2::date, $4, $5, false, dc.id, dc.stars
-       FROM daily_chores dc
-       JOIN children c ON c.family_id = dc.family_id
-      WHERE dc.family_id = $1 AND dc.enabled AND dc.archived_at IS NULL
-        AND (dc.child_ids IS NULL OR c.id = ANY(dc.child_ids))
-        AND ($6::text[] IS NULL OR c.id = ANY($6::text[]))
-     ON CONFLICT (child_id, due_date, chore_id) WHERE chore_id IS NOT NULL DO NOTHING`,
-    [familyId, date, 'Việc nhà', 'primary_school', 10, childIds]
-  );
+  await db.query(SQL_TAO_NHIEM_VU_NGAY, [familyId, date, 'Việc nhà', 'primary_school', 10, childIds]);
 }
 
 before(async () => {

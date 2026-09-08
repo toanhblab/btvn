@@ -4,9 +4,9 @@
  * giong lib/nhiem-vu-mac-dinh-hoan-thanh.test.ts.
  *
  * Khong import lib/store.ts duoc (import khong duoi, xem chu thich o test kia),
- * nen `taoNhiemVuNgay` duoi day MO PHONG LAI dung cau INSERT ... SELECT cua ham
- * cung ten trong lib/store.ts (va scripts/seed.mjs cung nhan ban cau do) — sua
- * mot ben la phai sua ca ba.
+ * nen `taoNhiemVuNgay` duoi day tu goi `db.query` — nhung dung CHINH cau SQL cua
+ * ham cung ten trong lib/store.ts, lay tu lib/sqlNhiemVu.ts (mot ban duy nhat cho
+ * store, seed va ba tep test).
  *
  * Nhung dieu de vo ma khong ai thay, kiem o day:
  *   1. Nang DB dang co nha: ba viec mac dinh GIU NGUYEN id, nhan DEFAULT 1 ⭐ /
@@ -29,6 +29,7 @@ import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { chayMigrations } from '../scripts/db.mjs';
 import { docChildIds, lamSachSao, nhomNhiemVuOf, MAX_SAO_NHIEM_VU } from './types.ts';
+import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu.ts';
 
 const TEP_016 = '016_nhiem_vu_hang_ngay_thuong_sao.sql';
 
@@ -38,22 +39,9 @@ let boChay: { query: (t: string, p?: unknown[]) => Promise<Record<string, unknow
 const rows = async (sql: string, params: unknown[] = []) =>
   (await db.query(sql, params)).rows as Record<string, unknown>[];
 
-/** Mo phong CHINH XAC taoNhiemVuNgay (lib/store.ts). */
+/** Chay CHINH cau SQL cua taoNhiemVuNgay (lib/sqlNhiemVu.ts) — nhu lib/store.ts goi. */
 async function taoNhiemVuNgay(familyId: string, date: string, childIds: string[] | null) {
-  await db.query(
-    `INSERT INTO assignments
-       (id, child_id, subject, icon, content, lang, due_date, source, duration_minutes,
-        requires_video, chore_id, stars)
-     SELECT 'asg_' || substr(md5(random()::text || c.id || dc.id || $2::text), 1, 16),
-            c.id, $3, dc.icon, dc.content, 'vi', $2::date, $4, $5, false, dc.id, dc.stars
-       FROM daily_chores dc
-       JOIN children c ON c.family_id = dc.family_id
-      WHERE dc.family_id = $1 AND dc.enabled AND dc.archived_at IS NULL
-        AND (dc.child_ids IS NULL OR c.id = ANY(dc.child_ids))
-        AND ($6::text[] IS NULL OR c.id = ANY($6::text[]))
-     ON CONFLICT (child_id, due_date, chore_id) WHERE chore_id IS NOT NULL DO NOTHING`,
-    [familyId, date, 'Việc nhà', 'primary_school', 10, childIds]
-  );
+  await db.query(SQL_TAO_NHIEM_VU_NGAY, [familyId, date, 'Việc nhà', 'primary_school', 10, childIds]);
 }
 
 /** Mo phong phan doc cua listAssignments(includeChores) cho (con, ngay): nhom doc LIVE qua JOIN. */

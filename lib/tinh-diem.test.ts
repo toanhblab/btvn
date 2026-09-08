@@ -36,6 +36,7 @@ import { chayMigrations } from '../scripts/db.mjs';
 import {
   DIEM_NGAY_XONG, DIEM_XONG_SOM, ngayDuocTinhDiem, ngayHoanThanh, xongSom,
 } from './diem.ts';
+import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu.ts';
 
 const TEP_015 = '015_tinh_diem_doi_thuong.sql';
 const PHUT = 60_000;
@@ -593,21 +594,9 @@ test('xoa dong nhiem vu da cong sao: dong diem giu nguyen (assignment_id ve NULL
  * Cau `INSERT ... SELECT` duoi day la ban NHAN BAN cua taoNhiemVuNgay; xem
  * AGENTS.md de biet cac ban khac phai sua kem.
  */
+/** Chay CHINH cau SQL cua taoNhiemVuNgay (lib/sqlNhiemVu.ts), cho mot con. */
 async function taoNhiemVuNgay(familyId: string, dueDate: string, childId: string) {
-  await db.query(
-    `INSERT INTO assignments
-       (id, child_id, subject, icon, content, lang, due_date, source, duration_minutes,
-        requires_video, chore_id, stars)
-     SELECT 'asg_' || substr(md5(random()::text || c.id || dc.id || $2::text), 1, 16),
-            c.id, $3, dc.icon, dc.content, 'vi', $2::date, $4, $5, false, dc.id, dc.stars
-       FROM daily_chores dc
-       JOIN children c ON c.family_id = dc.family_id
-      WHERE dc.family_id = $1 AND dc.enabled AND dc.archived_at IS NULL
-        AND (dc.child_ids IS NULL OR c.id = ANY(dc.child_ids))
-        AND ($6::text[] IS NULL OR c.id = ANY($6::text[]))
-     ON CONFLICT (child_id, due_date, chore_id) WHERE chore_id IS NOT NULL DO NOTHING`,
-    [familyId, dueDate, 'Việc nhà', 'primary_school', 10, [childId]]
-  );
+  await db.query(SQL_TAO_NHIEM_VU_NGAY, [familyId, dueDate, 'Việc nhà', 'primary_school', 10, [childId]]);
 }
 
 async function giaoBai(
@@ -666,9 +655,10 @@ test('bai cua NGAY MAI lam xong toi nay: dong nhiem vu ngay mai da tao san chan 
 });
 
 /**
- * Mo phong nhanh BO ME DOI HAN CHOT cua PATCH /api/assignments/:id: ghi due_date
- * moi, tao dong nhiem vu cho ngay MOI (hang rao +10, chi cho ngay tu hom nay tro
- * di), roi xet lai ngay CU vi no vua bot mot dong.
+ * Mo phong duong bo me DOI HAN CHOT: `updateAssignment` ghi due_date moi, roi
+ * route goi `xuLySauKhiDoiHanChot` (lib/store.ts) — hai buoc cua ham do la tao
+ * dong nhiem vu cho ngay MOI khi ngay do tu hom nay tro di (hang rao +10), va
+ * xet lai ngay CU vua bot mot dong.
  */
 async function doiNgay(
   familyId: string,
@@ -692,8 +682,9 @@ async function doiNgay(
  * Duong THU HAI toi cung cai bay "+10 cua ngay mai cong som": bo me khong nhap
  * bai moi ma DOI HAN CHOT mot bai san sang ngay mai (o input date cua
  * /bome/bai/<id>, khong chan ngay tuong lai). Luc do saveSubmission khong chay,
- * nen route PATCH phai tu tao dong nhiem vu cho ngay MOI — khong thi tap dong
- * cua ngay mai chi con mot bai, con lam xong toi nay la +10 cua ngay mai bay ra.
+ * nen `xuLySauKhiDoiHanChot` phai tu tao dong nhiem vu cho ngay MOI — khong thi
+ * tap dong cua ngay mai chi con mot bai, con lam xong toi nay la +10 cua ngay
+ * mai bay ra.
  */
 test('bo me doi han chot sang NGAY MAI: ngay moi cung co dong nhiem vu gac +10', async () => {
   const HOM_NAY = '2026-09-27';

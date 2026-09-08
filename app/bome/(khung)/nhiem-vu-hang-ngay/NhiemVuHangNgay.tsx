@@ -203,7 +203,9 @@ export default function NhiemVuHangNgay({
               <p className="text-p-body-sm text-on-error-container mb-3">
                 Nhiệm vụ này biến mất khỏi đây và không được thêm vào những ngày sau
                 nữa — không lấy lại được. Những ngày đã tạo vẫn giữ nguyên, kể cả
-                những lần các con đã tick và ⭐ đã cộng. Chỉ muốn tạm ẩn thì tắt công tắc là được.
+                những lần các con đã tick và ⭐ đã cộng. Chỉ muốn tạm dừng thì tắt
+                công tắc: từ ngày mai con không thấy việc này nữa, việc của hôm nay
+                đã tạo rồi thì vẫn còn.
               </p>
               <div className="flex gap-2">
                 <button
