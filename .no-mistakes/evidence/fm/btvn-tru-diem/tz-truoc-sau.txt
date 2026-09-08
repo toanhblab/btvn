@@ -1,0 +1,8 @@
+$ # Mốc thật của hai dòng "Bố mẹ đã trừ ⭐" của An (score_penalties.created_at, UTC)
+  2026-09-08T17:29:29.900Z   (= 00:29 sáng 9/9 giờ nhà, Asia/Ho_Chi_Minh)
+
+$ TZ=UTC node -e "..."   # hàm Vercel chạy TZ=UTC
+  cách CŨ  new Date(iso).toLocaleDateString("vi-VN") -> 8/9/2026
+  cách MỚI ngayNha(iso)                             -> 9/9/2026
+
+$ # Màn thật do máy chủ TZ=UTC dựng (ảnh 13/14): mọi dòng đọc 9/9/2026, không dòng nào 8/9/2026

@@ -1,0 +1,9 @@
+"Không âm" là luật của SỐ DƯ, áp cho CẢ HAI đường trừ (bố mẹ trừ tay + duyệt đổi thưởng).
+Chạy trên dev server thật (Next 16 + PGlite), đã đăng nhập PIN bố mẹ.
+
+con Minh (10 ⭐) xin đổi "Bố mẹ đọc truyện" giá 10 ⭐   ->  pending
+bố bấm Duyệt                                          ->  HTTP 200  duyệt xong, status=approved
+mẹ bấm Duyệt lần 2                                    ->  HTTP 409  "Yêu cầu này đã được xử lý rồi."
+                                                          (KHÔNG phải "chưa đủ điểm" — không mời bố mẹ
+                                                           đi từ chối một thứ đã cho rồi)
+bố mẹ trừ tiếp 2 ⭐ của Minh (duyệt đã đưa số dư về 0) ->  HTTP 400  {"error":"Minh không còn ⭐ nào để trừ.","conLai":0}

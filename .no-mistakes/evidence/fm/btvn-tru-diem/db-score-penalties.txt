@@ -1,0 +1,12 @@
+score_penalties (mỗi lần bấm = MỘT dòng, lưu đúng số đã trừ lần đó):
+   minh   -3   Không nghe lời   2026-09-08T17:28:54.709Z
+   an     -2   Không dọn đồ     2026-09-08T17:29:29.900Z
+   an     -3   Cãi bố mẹ        2026-09-08T17:29:40.247Z
+   bena   -1   (để trống)       2026-09-08T17:30:21.702Z
+
+Số dư = SUM(score_events) - SUM(đổi thưởng đã duyệt) - SUM(score_penalties):
+   Minh    cộng  12  trừ   3  => số dư   9   (không âm)
+   An      cộng   5  trừ   5  => số dư   0   (không âm)
+   Bé Na   cộng   3  trừ   1  => số dư   2   (không âm)
+
+Không có dòng điểm âm nào trong score_events: true

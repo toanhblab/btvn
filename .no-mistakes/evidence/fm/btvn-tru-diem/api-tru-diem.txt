@@ -1,0 +1,10 @@
+POST /api/tru-diem (đã đăng nhập PIN bố mẹ) — chỉ TRỪ, không có đường cộng tay (quyết định 5)
+
+cộng tay: points -3     ->  HTTP 400  {"error":"Số ⭐ trừ phải là một số lớn hơn 0."}
+points 0                ->  HTTP 400  {"error":"Số ⭐ trừ phải là một số lớn hơn 0."}
+points "abc"            ->  HTTP 400  {"error":"Số ⭐ trừ phải là một số lớn hơn 0."}
+thiếu points            ->  HTTP 400  {"error":"Số ⭐ trừ phải là một số lớn hơn 0."}
+con hết ⭐ (An 0)        ->  HTTP 400  {"error":"An không còn ⭐ nào để trừ.","conLai":0}
+childId lạ              ->  HTTP 404  {"error":"Không tìm thấy con này.","conLai":0}
+
+Lý do từ chối DUY NHẤT là con không còn ⭐ nào; mọi lần khác máy chủ kẹp LEAST(số trên nhãn, số dư thật).
