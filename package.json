@@ -12,6 +12,7 @@
     "db:migrate": "node scripts/migrate.mjs",
     "db:seed": "node scripts/seed.mjs",
     "db:seed:demo": "node scripts/seed-demo.mjs",
+    "lint": "tsc --noEmit && npm run quet:chu-viet",
     "test": "node --import ./scripts/test-hook.mjs --experimental-test-module-mocks --test lib/*.test.ts",
     "quet:chu-viet": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/quet-chu-viet.mjs"
   },

@@ -370,6 +370,7 @@ export const JA: Record<Key, string> = {
   'Nhóm': 'グループ',
   'Icon': 'アイコン',
   'Minh': 'たろう',
+  'Phim Google Drive': 'Google ドライブの動画',
   'Giao cho': '担当',
   'Giao cho:': '担当：',
   'Cả nhà': 'みんな',

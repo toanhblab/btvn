@@ -390,6 +390,7 @@ export const EN = {
   'Nhóm': 'Group',
   'Icon': 'Icon',
   'Minh': 'Alex',
+  'Phim Google Drive': 'Google Drive video',
   'Giao cho': 'Assign to',
   'Giao cho:': 'Assign to:',
   'Cả nhà': 'Everyone',

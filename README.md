@@ -127,6 +127,9 @@ chữ tràn trong JSX (`>Chữ<`, và `{n} chữ</span>`); (3) trong `app/**`, g
 chuỗi của `placeholder`/`aria-label`/`title`/`alt`. Hai phép sau báo oan nhiều hơn
 — đó là chủ ý, cái nào oan thật thì thêm vào `MIEN_TRU` kèm lý do.
 
+Phép quét chạy trong `npm run lint` (`tsc --noEmit` + `npm run quet:chu-viet`), nên
+không phải nhớ gọi tay.
+
 Mọi truy vấn trong `lib/store.ts` đều nhận `familyId` và tự lọc theo nó — kể cả
 đường con tick bài xong (việc nhà cũng đi đúng đường này), con nộp video và con
 xin đổi thưởng (ba việc duy nhất không cần PIN, cùng xác thực bằng cookie thiết

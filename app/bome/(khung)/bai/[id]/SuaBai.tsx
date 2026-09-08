@@ -86,7 +86,7 @@ export default function SuaBai({
     }
     setMedia((prev) => [
       ...prev,
-      { url: `https://drive.google.com/file/d/${fileId}/view`, name: 'Phim Google Drive', kind: 'video' },
+      { url: `https://drive.google.com/file/d/${fileId}/view`, name: T('Phim Google Drive'), kind: 'video' },
     ]);
     setDriveUrl('');
     setDriveError('');

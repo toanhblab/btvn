@@ -4,29 +4,13 @@ import { parentFamilyId } from '@/lib/auth';
 import { lechNgay, ngayTiengViet } from '@/lib/ngay';
 import { listAssignments, listChildren, todayISO } from '@/lib/store';
 import { HW_SOURCES } from '@/lib/types';
+import { tenTepNop } from '@/lib/media';
 import ChiaSeVideo, { type NhomNop } from './ChiaSeVideo';
 import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
 const NGAY_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-/** "Bé Na" -> "BeNa". Ten tep gui cho co nen bo dau: Zalo va may cua co doi khi
-    lam hong ten tep co dau, con so o cuoi thi luon doc duoc. */
-function khongDau(s: string): string {
-  return s
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .replace(/[^A-Za-z0-9]/g, '');
-}
-
-/** An-TiengAnh-2026-09-02.mp4 — co nhin ten tep la biet con nao, bai gi, ngay nao. */
-function tenTepNop(tenCon: string, mon: string, ngay: string, url: string): string {
-  const duoi = /\.[a-z0-9]{1,5}$/i.exec(url.split('?')[0])?.[0] ?? '.mp4';
-  return `${khongDau(tenCon)}-${khongDau(mon)}-${ngay}${duoi}`;
-}
 
 const BAR: Record<string, string> = {
   primary: 'bg-primary',

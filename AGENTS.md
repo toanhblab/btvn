@@ -202,7 +202,15 @@ tràn trong JSX, và giá trị chuỗi của `placeholder`/`aria-label`/`title`
 Icon Material Symbols nhận ra bằng CHÍNH THẺ chứa nó, đừng đoán theo hình dạng chữ
 (một từ thường như `add` là tên icon thật, mà "xong" cũng vậy). Đó là
 bước QUÉT MÃ NGUỒN đứng riêng, KHÔNG nằm trong `npm test`; `lib/i18n.test.ts` chỉ
-giữ phần hành vi (từ điển đủ khoá, `dich`/`dienTham`, PIN demo). Chữ bố mẹ tự gõ
+giữ phần hành vi (từ điển đủ khoá, `dich`/`dienTham`, PIN demo). Phép quét chạy
+bằng `npm run lint` (cùng với `tsc --noEmit`).
+
+**Gỡ một hàng rào ra khỏi chỗ cũ thì phải nối nó vào chỗ mới TRONG CÙNG một lần
+sửa.** Phép quét chữ Việt từng nằm trong `npm test`; tách ra thành lệnh riêng là
+đúng (bằng chứng của nó là ký tự trong mã nguồn, không phải hành vi) nhưng lần
+tách đó không nối lại chỗ nào chạy nó, và ngay sau đó một câu tiếng Việt lọt ra
+đúng khoảng trống ấy. Đổi chỗ một hàng rào mà chưa có lệnh nào gọi nó thì coi như
+đã bỏ hàng rào. Chữ bố mẹ tự gõ
 (đề bài, tên nhiệm vụ, phần thưởng) KHÔNG dịch — kể cả tên nhà mặc định "Nhà mình"
 của nhà mới, vì nhà mới luôn bắt đầu ở `ui_locale` `vi`. Tiếng Nhật/Hàn/Anh chỉ để
 captain demo bằng ba nhà riêng PIN 1111/2222/3333 (`PIN_DEMO`, giữ chỗ vĩnh viễn) —

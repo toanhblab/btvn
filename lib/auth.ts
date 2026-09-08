@@ -162,8 +162,12 @@ export async function setDeviceFamily(familyId: string): Promise<void> {
   if (doiNha) jar.delete(PARENT_COOKIE);
 }
 
-/** Gan thiet bi khi tra ve mot response da tao san (vi du redirect). */
-export async function attachDeviceFamily(res: NextResponse, familyId: string): Promise<void> {
+/**
+ * Gan thiet bi khi tra ve mot response da tao san (vi du redirect). KHONG export:
+ * no dat cookie thiet bi ma khong kiem phien bo me, tuc dung la duong gan may thu
+ * ba ma luat tren cam. Ngoai tep nay chi co `setDeviceFamily` / `attachFamilyLink`.
+ */
+async function attachDeviceFamily(res: NextResponse, familyId: string): Promise<void> {
   res.cookies.set(DEVICE_COOKIE, await seal(familyId), { ...baseOpts, maxAge: DEVICE_MAX_AGE });
 }
 

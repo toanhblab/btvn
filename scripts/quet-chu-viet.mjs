@@ -56,8 +56,8 @@ const MIEN_TRU = {
   'app/bome/tao-nha/TaoNha.tsx': [/placeholder="Nhà mình"/],
   // Bang chu cai dung de NHAN DIEN tieng Viet trong de bai (regex), khong hien.
   'lib/speech.ts': [/\/\[[^\]]*\]\/i/],
-  // Bo dau de dat ten tep video nop cho co (regex), khong hien.
-  'app/bome/(khung)/nop-co/page.tsx': [/\.replace\(\/[đĐ]\/g, '[dD]'\)/g],
+  // Bo dau de dat ten tep video nop cho co (regex trong boDau), khong hien.
+  'lib/media.ts': [/\.replace\(\/[đĐ]\/g, '[dD]'\)/g],
 };
 
 function* tepGiaoDien(dir) {

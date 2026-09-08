@@ -46,6 +46,53 @@ export const MEDIA_ACCEPT = 'video/*,audio/*,image/*';
  */
 export const TEN_TEP_RE = /^([0-9a-f]{32})(\.[a-z0-9]{1,5})$/;
 
+/**
+ * Ten tep video nop cho co: `Be Na-Tieng Anh-2026-09-02.mp4` — co nhin ten la biet
+ * con nao, bai gi, ngay nao.
+ *
+ * BO DAU tieng Viet vi Zalo va may cua co doi khi lam hong ten tep co dau. Nhung
+ * KHONG loc theo kieu "chi giu A-Za-z0-9": lam vay thi ten tieng Nhat / tieng Han
+ * (nha demo, issue #46) bi xoa SACH, ra ten `--2026-09-02.mp4` — ma ten nay hien
+ * len man "Nop bai cho co" va la ten tep that gui qua navigator.share. Chi loai
+ * ky tu PHA ten tep va ky tu dieu khien, con lai giu nguyen.
+ */
+const KY_TU_PHA_TEN_TEP = /[/\\?%*:|"<>]/g;
+const KY_TU_DIEU_KHIEN = /[\u0000-\u001f\u007f]/g;
+
+/**
+ * "Bé Na" -> "Be Na"; "さくら" -> "さくら"; "민준" -> "민준".
+ *
+ * Ghep lai NFC o cuoi: NFD tach mot chu Han (Hangul) thanh cac jamo roi, nhin thi
+ * y het nhung la chuoi khac — ten tep dang tach roi la thu hay lam hong cho nhan.
+ */
+export function boDau(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .normalize('NFC');
+}
+
+/** Gop khoang trang TRUOC: tab/xuong dong vua la ky tu dieu khien vua la khoang
+    trang, xoa han thi "Na\tHai" dinh lien thanh "NaHai". */
+function phanTen(s: string): string {
+  return boDau(s)
+    .replace(/\s+/g, ' ')
+    .replace(KY_TU_DIEU_KHIEN, '')
+    .replace(KY_TU_PHA_TEN_TEP, '')
+    .replace(/^[\s.]+|[\s.]+$/g, '');
+}
+
+/**
+ * Phan nao rong thi BO HAN, khong de lai dau gach thua — `2026-09-02.mp4` doc
+ * duoc, `--2026-09-02.mp4` thi khong.
+ */
+export function tenTepNop(tenCon: string, mon: string, ngay: string, url: string): string {
+  const duoi = /\.[a-z0-9]{1,5}$/i.exec(url.split('?')[0])?.[0] ?? '.mp4';
+  return `${[phanTen(tenCon), phanTen(mon), ngay].filter(Boolean).join('-')}${duoi}`;
+}
+
 const TEP_PREFIX = '/api/tep/';
 
 /** Duong dan app tra ve cho tep ghi o .data/uploads (che do dev chua bat Blob). */

@@ -15,8 +15,16 @@ import { NGON_NGU_MAC_DINH, type NgonNgu } from './ngonNgu';
 export const ngonNguHienTai = cache(async (): Promise<NgonNgu> => {
   const familyId = await viewingFamilyId();
   if (!familyId) return NGON_NGU_MAC_DINH;
-  const family = await getFamilyById(familyId);
-  return family?.ngonNgu ?? NGON_NGU_MAC_DINH;
+  try {
+    const family = await getFamilyById(familyId);
+    return family?.ngonNgu ?? NGON_NGU_MAC_DINH;
+  } catch {
+    // Layout GOC goi ham nay, nen mot loi DB thoang qua se thanh 500 cho MOI trang
+    // — ke ca /vao, /bome/pin, /bome/tao-nha la nhung man khong can du lieu gi.
+    // Chi boc rieng loi goi DB: `viewingFamilyId` doc cookie, nuot loi cua no la
+    // pha mat duong bail-out khi Next dung san trang /_not-found.
+    return NGON_NGU_MAC_DINH;
+  }
 });
 
 /** Ham dich cho server component va route handler. */

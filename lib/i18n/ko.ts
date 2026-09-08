@@ -370,6 +370,7 @@ export const KO: Record<Key, string> = {
   'Nhóm': '그룹',
   'Icon': '아이콘',
   'Minh': '민준',
+  'Phim Google Drive': 'Google 드라이브 동영상',
   'Giao cho': '담당',
   'Giao cho:': '담당:',
   'Cả nhà': '모두',
