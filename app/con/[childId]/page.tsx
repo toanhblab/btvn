@@ -4,7 +4,7 @@ import { viewingFamilyId } from '@/lib/auth';
 import { getChild, listAssignments, soDiem, taoNhiemVuNgay, todayISO } from '@/lib/store';
 import type { Assignment, HwSource, NhomNhiemVu } from '@/lib/types';
 import { HW_SOURCES, NHOM_NHIEM_VU } from '@/lib/types';
-import { nhomNhiemVuHomNay } from '@/lib/nhomNhiemVu';
+import { dongTrenManCuaCon, nhomNhiemVuHomNay } from '@/lib/nhomNhiemVu';
 import TickHomNay from './TickHomNay';
 import ViecNhaBai from './ViecNhaBai';
 
@@ -53,12 +53,18 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   // cho con nay duoc tao luoi ngay luc mo man, ke ca ngay khong co bai — phai
   // xong roi listAssignments moi thay chung. Khong co gi de chen thi no-op re.
   await taoNhiemVuNgay(familyId, today, [childId]);
-  const [child, items, diem] = await Promise.all([
+  const [child, tuDB, diem] = await Promise.all([
     getChild(familyId, childId),
     listAssignments(familyId, { childId, from: today, includeChores: true }),
     soDiem(familyId, childId),
   ]);
   if (!child) notFound();
+
+  // MOT bo loc duy nhat cho ca man nay: bai tu hom nay tro di, nhiem vu chi hom
+  // nay (lib/nhomNhiemVu.ts). `progressUpcoming` dem bang CHINH ham do, nen huy
+  // hieu "N viec" o man chon ten khong bao gio noi ve mot dong ma man nay khong
+  // cho tick — xem bat bien o AGENTS.md.
+  const items = dongTrenManCuaCon(tuDB, today);
 
   // Nut sang cua hang phan thuong, mang theo so ⭐ dang co. Dung o CA HAI nhanh
   // (co bai / khong co bai): con khong co bai hom nay van doi thuong duoc.

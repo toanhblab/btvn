@@ -25,9 +25,14 @@
 --      tran 10 chan go nham (cung y MAX_GIA_PHAN_THUONG).
 --    - child_ids TEXT[] NULL = ca nha. Mang thay cho bang noi: nha co 3 con,
 --      `= ANY($n)` da dung san o lib/store.ts, va NULL lam ba viec mac dinh
---      khong can sua gi + con them sau tu duoc nhan. Xoa mot con de lai id la
---      trong mang thi vo hai (khong khop ai). Bang noi "dung sach" hon nhung
---      them mot join va mot bo CRUD cho dung mot gia dinh.
+--      khong can sua gi + con them sau tu duoc nhan. Xoa mot con thi `deleteChild`
+--      (lib/store.ts) GO id do khoi mang bang array_remove — de lai id la KHONG
+--      vo hai: man /bome/nhiem-vu-hang-ngay doc nguyen mang roi gui lai khi bo me
+--      bam mot chip, locChildIdsGiaoCho tra 400 "Có con không thuộc nhà mình" va
+--      hang "Giao cho" cua nhiem vu ay khong sua duoc nua. Mang RONG con lai la
+--      trang thai that "chua giao cho ai": khong sinh dong nao, man cua bo me bao
+--      ro va lam mo the. Bang noi "dung sach" hon nhung them mot join va mot bo
+--      CRUD cho dung mot gia dinh.
 --    - category DEFAULT 'after_study' de ba dong dang co roi vao dung nhom.
 --
 -- 2. assignments.stars — dong cua tung ngay CHEP so sao luc tao (tien le: content

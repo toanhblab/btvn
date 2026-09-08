@@ -262,9 +262,13 @@ riêng cuối cùng** và **chỉ hiện việc của hôm nay** (dòng của ng
 nhưng không vẽ — tick được là ⭐ trước một ngày; bài tập ngày mai thì vẫn hiện),
 mỗi dòng có icon + chip "⭐ N"; con bấm là tick ngay tại chỗ (không mở màn chi
 tiết bài), tick xong hiện chip "+N ⭐". Xong hết cả bài lẫn nhiệm
-vụ mới sang màn khen "Giỏi quá!". Badge ở màn chọn-con nói **"N việc"** — đếm gộp
-bài tập và nhiệm vụ còn lại, không tách hai loại — "Xong hết 🎉" khi hết việc, và
-"Chưa có bài" chỉ khi không có gì cả.
+vụ mới sang màn khen "Giỏi quá!". Badge ở màn chọn-con nói **"N việc"** = **đúng
+những gì màn của con đang vẽ và cho tick**: bài tập từ hôm nay trở đi + nhiệm vụ
+của hôm nay, đếm gộp hai loại. Nên tối bố mẹ đã nhập bài cho hôm sau, con tick
+xong hết việc hôm nay thì badge đọc "1 việc" (bài ngày mai) chứ chưa phải "Xong
+hết 🎉" — muốn "Xong hết 🎉" thì làm luôn bài ngày mai. "Chưa có bài" chỉ khi
+không có gì cả. Cùng một bộ lọc dùng cho ba ô của bố mẹ ("Việc từ hôm nay trở
+đi") — xem `lib/nhomNhiemVu.ts` và bất biến ở AGENTS.md.
 
 **Một danh sách chung cả nhà**, bố mẹ sửa ở trang riêng **Cài đặt → "Nhiệm vụ hàng
 ngày"** (cũng vào được từ dòng dẫn trên màn Thưởng): đổi chữ / icon / sao / nhóm /

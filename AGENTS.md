@@ -104,30 +104,32 @@ chỉ ảnh hưởng dòng tạo sau), riêng nhóm đọc LIVE qua `LEFT JOIN d
 trong `ASSIGNMENT_SELECT` — giống `sort_order`. Xoá nhiệm vụ là `archived_at`,
 không DELETE (migration 014 giải thích vì sao).
 
-Mọi con số TÓM TẮT có hai trục, sai một trục là con số nói dối:
+**Một con số tóm tắt đếm đúng những dòng mà màn nó đại diện VẼ RA và cho TICK —
+không hơn, không kém — và phải được lọc bằng CÙNG một hàm với màn đó, không viết
+lại điều kiện bằng SQL hay JS riêng.** Hàm đó là `veTrenManCuaCon` /
+`dongTrenManCuaCon` trong `lib/nhomNhiemVu.ts` (bài tập: từ hôm nay trở đi;
+nhiệm vụ hàng ngày: chỉ hôm nay — đọc chú thích đầu file), dùng ở cả
+`app/con/[childId]/page.tsx` lẫn `progressUpcoming` trong `lib/store.ts`.
 
-- **Trục LOẠI VIỆC: đếm GỘP bài tập và nhiệm vụ hàng ngày, không tách hai loại**
-  — huy hiệu "N việc" ở màn chọn con, hai ô "Hoàn thành"/"Đang chờ" ở tổng quan
-  của bố mẹ (`total`/`done` của `progressUpcoming`), "x/y xong hôm nay" và tiến
-  độ từng nhóm ở màn của con. Đừng thêm lại trường kiểu
-  `homeworkTotal`/`homeworkTodo`: tách ra thì con số nào cũng sai một nửa (đếm
-  riêng bài thật thì ngày không có bài huy hiệu lại nói "1 bài" vì một bài của
-  NGÀY MAI, còn nhiệm vụ hôm nay không ai đếm).
-- **Trục THỜI GIAN: màn của con tính theo HÔM NAY, TRỪ bài tập** — "x/y xong hôm
-  nay", `todoHomNay`, điều kiện đẩy sang `/xong` và tiến độ đầu mỗi nhóm đều chỉ
-  đếm hôm nay. Nhiệm vụ hàng ngày thì **chỉ VẼ dòng của hôm nay**
-  (`nhomNhiemVuHomNay` trong `lib/nhomNhiemVu.ts` — đọc chú thích đầu file):
-  dòng của ngày mai vẫn được tạo sẵn nhưng vẽ ra là con tick được, mà tick là ăn
-  ⭐ ngay, tức là ⭐ trước một ngày cho việc chưa làm. **Bài tập thì ngược lại** —
-  bài ngày mai VẪN hiện dưới tiêu đề "Ngày mai" (làm bài trước là tốt), chỉ
-  không vào tiến độ nhóm; nhóm không có gì của hôm nay thì ẩn chip tiến độ.
-- **Huy hiệu màn chọn tên (và ba ô của bố mẹ) là TẤT CẢ CÒN LẠI, "từ hôm nay trở
-  đi"** — không phải riêng hôm nay: bố mẹ nhập bài tối hôm trước cho hôm sau nên
-  hai màn đó phải thấy trước.
+**Phép thử về-0:** mở màn của con, tick hết mọi thứ đang thấy, thì mọi con số dẫn
+tới màn đó (huy hiệu chọn tên, hai ô "Hoàn thành"/"Đang chờ", tiến độ nhóm) phải
+về 0 hoặc "Xong hết"; còn một số nào khác 0 là có dòng đang được đếm mà không có
+chỗ tick — **sửa bộ lọc, không sửa chữ**. (Buổi tối bố mẹ đã nhập bài cho hôm sau
+thì huy hiệu đọc "1 việc" vì bài ngày mai CÓ vẽ và CÓ tick được — đó là đếm đúng,
+không phải lỗi.)
 
-Hai chỗ tách loại là CÓ Ý, đừng gộp: badge "Quá hạn" (nhiệm vụ hôm qua không
-phải bài quá hạn) và màn chi tiết con của bố mẹ (tiến độ bài tập và hộp "Nhiệm vụ
-hàng ngày" là hai khối riêng, hộp nhiệm vụ chỉ tính HÔM NAY).
+Sáu vòng sửa liên tiếp của #42 đều cùng một dạng lỗi: một con số được định nghĩa
+bằng bộ lọc riêng viết lại tại chỗ thay vì suy ra từ danh sách nó tóm tắt. Từ bất
+biến trên suy ra được cả hai điều mà trước đây phải liệt kê theo từng màn: đếm gộp
+bài tập và nhiệm vụ (vì màn của con vẽ cả hai — đừng thêm lại trường kiểu
+`homeworkTotal`/`homeworkTodo`), và bài đếm từ hôm nay trở đi còn nhiệm vụ chỉ
+hôm nay (vì màn vẽ đúng như vậy).
+
+Hai ngoại lệ CÓ Ý: badge "Quá hạn" (nhiệm vụ hôm qua không phải bài quá hạn) và
+hộp "Nhiệm vụ hàng ngày" ở màn chi tiết con của bố mẹ (tách khỏi tiến độ bài tập,
+chỉ tính HÔM NAY). Cả hai KHÔNG phải con số dẫn tới màn của con nên không chịu
+phép thử về-0. Muốn thêm một con số mới thì phải trả lời được: **nó tóm tắt màn
+nào, dùng hàm lọc nào của màn đó** — không trả lời được thì chưa được thêm.
 
 Máy này đã bật Safari > Develop > Allow Remote Automation: `safaridriver -p <cổng
 riêng>` + WebDriver W3C lái được Safari thật để đo `video.duration` (phục vụ tệp

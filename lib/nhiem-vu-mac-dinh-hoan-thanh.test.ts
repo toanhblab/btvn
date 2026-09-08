@@ -30,6 +30,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { chayMigrations } from '../scripts/db.mjs';
+import { veTrenManCuaCon } from './nhomNhiemVu.ts';
 
 const HOM_NAY = '2026-09-04';
 
@@ -73,13 +74,19 @@ async function quaHan(childId: string) {
  * Mo phong total / done cua progressUpcoming cho MOT con — hai so nay dem GOP
  * bai tap va nhiem vu, khong tach hai loai (luat chung o AGENTS.md).
  *
+ * Buoc loc `upcoming` goi CHINH ham ma man cua con dung (`veTrenManCuaCon`),
+ * dung nhu progressUpcoming: bai tu hom nay tro di, nhiem vu CHI hom nay. Day la
+ * bat bien "tap dem == tap ve" — dung viet lai dieu kien o day.
+ *
  * `baiThat` KHONG phai truong tra ve cua progressUpcoming (khong con truong nao
  * tach rieng bai that nua): no chi de ghim kich ban cua tung bai test duoi day —
  * "con nay co may bai THAT tu hom nay tro di".
  */
 async function tienDo(childId: string) {
   const bai = await dongDuocKeo(childId);
-  const upcoming = bai.filter((r) => String(r.due_date) >= HOM_NAY);
+  const upcoming = bai.filter((r) =>
+    veTrenManCuaCon(r.chore_id as string | null, String(r.due_date), HOM_NAY)
+  );
   return {
     total: upcoming.length,
     done: upcoming.filter((r) => r.status === 'done').length,
@@ -248,6 +255,52 @@ test('dong nhiem vu cu chua tick KHONG bi keo ve nua; bai THAT con no thi van ke
   assert.equal(done, 0);
   assert.equal(baiThat, 0);
   assert.equal(await quaHan('con_cu'), 1, 'dung mot bai THAT qua han vao badge "Qua han"');
+});
+
+test('dong nhiem vu cua NGAY MAI khong vao total/done; bai cua ngay mai thi vao', async () => {
+  // Luong thuong ngay: bo me nhap bai cho NGAY MAI toi nay -> saveSubmission tao
+  // luon dong nhiem vu cua ngay mai. Man cua con khong ve dong nhiem vu do (chi
+  // ve cua hom nay) nen huy hieu khong duoc dem no: dem mot viec khong co cho
+  // tick thi "Xong hết 🎉" thanh bat kha moi toi.
+  const NGAY_MAI = '2026-09-05';
+  await db.exec(
+    `INSERT INTO children (id, family_id, name, grade, color, avatar_url) VALUES
+       ('con_mai', 'fam_x', 'Mai', 'Lớp 1', 'primary', '/img/m.png')`
+  );
+  await taoNhiemVuNgay('fam_x', HOM_NAY, ['con_mai']);
+  await taoNhiemVuNgay('fam_x', NGAY_MAI, ['con_mai']);
+  await db.exec(
+    `INSERT INTO assignments (id, child_id, subject, content, due_date, status) VALUES
+       ('mai_bai', 'con_mai', 'Toán', 'Trang 9', '${NGAY_MAI}', 'todo')`
+  );
+
+  const daTao = await rows(
+    `SELECT id FROM assignments WHERE child_id = 'con_mai' AND chore_id IS NOT NULL`
+  );
+  assert.equal(daTao.length, 6, '3 nhiem vu hom nay + 3 nhiem vu ngay mai da nam trong DB');
+
+  const truoc = await tienDo('con_mai');
+  assert.equal(truoc.total, 4, '3 nhiem vu HOM NAY + 1 bai cua ngay mai; 3 nhiem vu ngay mai bi loai');
+  assert.equal(truoc.baiThat, 1, 'bai cua ngay mai VAN dem — man cua con co ve va cho lam');
+
+  // Con tick het moi thu man cua con dang ve cua hom nay: con lai dung 1 (bai
+  // ngay mai), khong phai 4.
+  await db.exec(
+    `UPDATE assignments SET status = 'done'
+      WHERE child_id = 'con_mai' AND due_date = '${HOM_NAY}' AND chore_id IS NOT NULL`
+  );
+  const sau = await tienDo('con_mai');
+  assert.equal(sau.total - sau.done, 1, 'chi con bai cua ngay mai');
+
+  // ...va tick bat ke status: dong nhiem vu 'done' cua ngay mai cung khong duoc
+  // lam phinh total (neu khong thi total tang ma left khong doi).
+  await db.exec(
+    `UPDATE assignments SET status = 'done'
+      WHERE child_id = 'con_mai' AND due_date = '${NGAY_MAI}' AND chore_id IS NOT NULL`
+  );
+  const sauNua = await tienDo('con_mai');
+  assert.equal(sauNua.total, 4, 'total khong doi khi dong nhiem vu ngay mai chuyen sang done');
+  assert.equal(sauNua.total - sauNua.done, 1, 'van dung con bai cua ngay mai');
 });
 
 test('hai dot nop bai cung ngay cho cung mot con: khong tao trung viec nha (unique index)', async () => {

@@ -7,6 +7,7 @@ import type {
   Lang, MediaKind, NhomNhiemVu, Redemption, RedemptionStatus, Reward,
 } from './types';
 import { DURATION_DEFAULT, HW_SOURCE_DEFAULT, hwSourceOf, nhomNhiemVuOf } from './types';
+import { veTrenManCuaCon } from './nhomNhiemVu';
 
 /** Ngay hom nay theo gio dia phuong, YYYY-MM-DD (toISOString la UTC nen lech mui gio). */
 export function todayISO(offsetDays = 0): string {
@@ -437,12 +438,21 @@ export async function saveSubmission(input: {
   }
 
   // Nhiem vu hang ngay (issue #36, #42): dot bai nay cho (con, ngay) thi cac
-  // dong nhiem vu cua (con, ngay) do cung duoc tao ngay — ke ca ngay mai — de
-  // tien do cua ngay do day du ngay tu luc giao bai. Man cua con KHONG ve dong
-  // cua ngay mai (tick duoc la an ⭐ truoc mot ngay — xem lib/nhomNhiemVu.ts),
-  // sang mai mo man la thay. Tu #42 day KHONG con la noi duy nhat tao dong:
-  // ngay khong co bai thi taoNhiemVuNgay chay luc mo man cua con / man chon-con
-  // (progressUpcoming). Idempotent nen goi thua khong sao.
+  // dong nhiem vu cua (con, ngay) do cung duoc tao ngay — ke ca ngay mai.
+  //
+  // ĐỪNG BỎ loi goi nay du no khong con can cho HIEN THI (tu #42 tao luoi da
+  // chay o man cua con, progressUpcoming va chi tiet con cua bo me; man cua con
+  // cung khong ve dong cua ngay mai nua — xem lib/nhomNhiemVu.ts). No dang gac
+  // +10 CUA NGAY MAI: `ghiDiemSauKhiXong` goi `congDiemNgayNeuXong` voi ngay cua
+  // chinh bai vua tick, va ham do +10 khi MOI dong cua (con, ngay do) da 'done'
+  // — khong co kiem "ngay do da toi chua". Bo me nhap bai ngay mai toi nay, con
+  // lam het bai ngay mai ngay toi nay (duoc phep, co ve duoi "Ngày mai"): neu
+  // dong nhiem vu cua ngay mai chua ton tai thi tap dong cua ngay mai chi co bai
+  // -> +10 cua ngay mai cong NGAY TOI NAY, sang mai con tick nhiem vu that thi
+  // khong con gi de cong. Dong 'todo' tao san chinh la cai chan do (test
+  // lib/nhiem-vu-mac-dinh-hoan-thanh.test.ts ghim hanh vi nay).
+  //
+  // Idempotent nen goi thua khong sao.
   //
   // Nuot loi, y het seedDefaultChores o insertFamily: cac dong bai tap that o
   // tren da ghi xong va khong chung transaction voi khoi nay, nen nem loi len se
@@ -684,7 +694,14 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
 
   return children.map((child) => {
     const mine = rows.filter((r) => r.child_id === child.id);
-    const upcoming = mine.filter((r) => dateStr(r.due_date) >= today);
+    // CUNG mot ham loc voi man cua con (lib/nhomNhiemVu.ts): con so tom tat chi
+    // duoc dem nhung dong man do VE RA va cho TICK — bai tu hom nay tro di,
+    // nhiem vu chi hom nay. Dem dong nhiem vu cua ngay mai (co san khi bo me da
+    // nhap bai cho hom sau) la dem viec khong co cho tick: "Xong hết 🎉" thanh
+    // bat kha ca toi. Xem bat bien o AGENTS.md.
+    const upcoming = mine.filter((r) =>
+      veTrenManCuaCon(r.chore_id, dateStr(r.due_date), today)
+    );
     return {
       child,
       total: upcoming.length,

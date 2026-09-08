@@ -38,10 +38,13 @@ export default async function ChiTietCon({
   // includeChores mac dinh false).
   //
   // O man tong quan thi KHAC, va la co y: hai o "Hoàn thành" / "Đang chờ" dem
-  // ca dong nhiem vu (total/done cua progressUpcoming khong loc chore_id), chi
-  // o "Quá hạn" moi loai chung ra. Tu issue #42 dong nhiem vu sinh moi ngay nen
-  // hai o do khong bao gio ve 0 nua — captain da chot giu nguyen cach dem nay,
-  // dung "sua" bang cach them bo loc chore_id vao progressUpcoming.
+  // ca dong nhiem vu (total/done cua progressUpcoming KHONG loc theo LOAI), chi
+  // o "Quá hạn" moi loai chung ra. Captain da chot giu cach dem gop nay: dung
+  // "sua" bang cach them bo loc chore_id vao progressUpcoming.
+  //
+  // Loc theo NGAY thi lai DUNG va da co: progressUpcoming dem bai tu hom nay tro
+  // di nhung nhiem vu CHI hom nay, bang cung mot ham voi man cua con
+  // (`veTrenManCuaCon`, lib/nhomNhiemVu.ts) — hai chuyen khac nhau, dung lan.
   //
   // Doc theo CAC DONG THAT da tao cho hom nay (issue #36), KHONG theo cau hinh
   // dang bat (listChores): hai ben lech nhau ngay khi bo me sua danh sach giua
