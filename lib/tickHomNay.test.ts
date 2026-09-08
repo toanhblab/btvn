@@ -79,9 +79,13 @@ test('bo tick mot dong may chu da thay la xong: so viec con lai tang len', () =>
 });
 
 test('tick dong cua NGAY MAI khong lam thay doi so viec cua hom nay', () => {
-  // Nhom nhiem vu cua ngay mai cung hien tren man nay (bo me da giao bai ngay
-  // mai). Dong do khong co trong moc cua hom nay nen phai bi bo qua — khong thi
-  // con tick truoc viec cua ngay mai la bi day sang man khen som.
+  // HANG RAO PHONG THAN. Man cua con KHONG ve dong nhiem vu cua ngay mai nua
+  // (nhomNhiemVuHomNay chi tra dong cua hom nay — lib/nhomNhiemVu.ts), nen
+  // <ViecNhaBai> khong bao gio nhan dong do va `daTick` khong bao gio co id cua
+  // no. Dong do van TON TAI trong DB (saveSubmission tao san). Nhanh nay ghim
+  // luat chung cua conLaiHomNay: id khong nam trong `moc` cua hom nay thi khong
+  // duoc tinh vao so viec cua hom nay — bai tap cua ngay mai (co ve, co tick)
+  // cung di qua duong nay.
   assert.equal(conLaiHomNay(4, MOC_CHUA_TICK, { mai1: true }), 4);
   assert.equal(
     conLaiHomNay(4, MOC_CHUA_TICK, { a1: true, a2: true, a3: true, mai1: true }),

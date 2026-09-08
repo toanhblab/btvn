@@ -4,7 +4,7 @@ import { locMocBatDau } from '@/lib/diem';
 import { laUrlTepAppCap } from '@/lib/media';
 import {
   congDiemNgayNeuXong, deleteAssignment, getAssignment, ghiDiemSauKhiXong, setStatus,
-  submitVideo, updateAssignment,
+  submitVideo, taoNhiemVuNgay, todayISO, updateAssignment,
 } from '@/lib/store';
 import { hwSourceOf, sanitizeDuration, type DiemVuaCong } from '@/lib/types';
 
@@ -128,10 +128,29 @@ export async function PATCH(req: Request, { params }: Ctx) {
   }
   const assignment = await updateAssignment(familyId, id, body);
 
-  // Doi bai sang ngay khac la BOT mot dong cua ngay CU: cac dong con lai cua
-  // (con, ngay cu) co the da done het roi, va con thi khong tick gi nua nen
-  // duong cua con khong bao gio xet lai. Xet o day, idempotent nen an toan.
   if (assignment && assignment.dueDate !== truoc.dueDate) {
+    // Ngay MOI phai co dong nhiem vu cua no — cung hang rao ma saveSubmission
+    // dung (xem chu thich taoNhiemVuNgay o lib/store.ts): doi mot bai sang NGAY
+    // MAI roi con lam xong bai do ngay toi nay thi tap dong cua ngay mai chi co
+    // bai, `congDiemNgayNeuXong` khong kiem "ngay do da toi chua" nen +10 cua
+    // ngay mai cong som mot ngay va sang mai lam nhiem vu that khong duoc gi.
+    //
+    // Chi tao cho ngay TU HOM NAY TRO DI: ngay da qua thi khong con gi phai gac
+    // (khong the cong som cho no nua), ma them dong 'todo' con khong ai tick duoc
+    // (man cua con liet ke tu hom nay) la khoa luon +10 cua ngay do mai mai.
+    //
+    // Nuot loi y het saveSubmission: dong bai da ghi xong va khong chung
+    // transaction, nem loi len la tra 500 cho mot lan sua DA THANH CONG.
+    if (assignment.dueDate >= todayISO()) {
+      try {
+        await taoNhiemVuNgay(familyId, assignment.dueDate, [assignment.childId]);
+      } catch (e) {
+        console.error('Khong tao duoc dong nhiem vu cho ngay', assignment.dueDate, e);
+      }
+    }
+    // Doi bai sang ngay khac la BOT mot dong cua ngay CU: cac dong con lai cua
+    // (con, ngay cu) co the da done het roi, va con thi khong tick gi nua nen
+    // duong cua con khong bao gio xet lai. Xet o day, idempotent nen an toan.
     await congDiemNgayNeuXong(familyId, truoc.childId, truoc.dueDate);
   }
   return NextResponse.json({ assignment });
