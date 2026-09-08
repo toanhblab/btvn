@@ -443,35 +443,10 @@ export async function saveSubmission(input: {
   //
   // ĐỪNG BỎ loi goi nay du no khong con can cho HIEN THI (tu #42 tao luoi da
   // chay o man cua con, progressUpcoming va chi tiet con cua bo me; man cua con
-  // cung khong ve dong cua ngay mai nua — xem lib/nhomNhiemVu.ts). No dang gac
-  // +10 CUA NGAY MAI: `ghiDiemSauKhiXong` goi `congDiemNgayNeuXong` voi ngay cua
-  // chinh bai vua tick, va ham do +10 khi MOI dong cua (con, ngay do) da 'done'
-  // — khong co kiem "ngay do da toi chua". Bo me nhap bai ngay mai toi nay, con
-  // lam het bai ngay mai ngay toi nay (duoc phep, co ve duoi "Ngày mai"): neu
-  // dong nhiem vu cua ngay mai chua ton tai thi tap dong cua ngay mai chi co bai
-  // -> +10 cua ngay mai cong NGAY TOI NAY, sang mai con tick nhiem vu that thi
-  // khong con gi de cong. Dong 'todo' tao san chinh la cai chan do — hai test
-  // "bai cua NGAY MAI lam xong toi nay..." va "cai gia neu KHONG tao san dong
-  // nhiem vu cua ngay mai..." trong lib/tinh-diem.test.ts ghim ca hai nhanh.
-  //
-  // Day la hang rao BEST-EFFORT: khoi duoi nuot loi (xem ngay duoi), nen mot lan
-  // INSERT that bat (Neon rot ket noi) la +10 cua ngay mai co the cong som ma
-  // khong bao gi. Doi thanh chac chan thi phai them kiem "ngay do da toi chua"
-  // vao congDiemNgayNeuXong — nhung the lai mo lo khac: con khong duoc giao
-  // nhiem vu nao ma lam het bai ngay mai toi nay thi sang mai KHONG con cu tick
-  // nao de kich +10 (cong diem theo su kien, khong co cron).
-  //
-  // Idempotent nen goi thua khong sao.
-  //
-  // Nuot loi, y het seedDefaultChores o insertFamily: cac dong bai tap that o
-  // tren da ghi xong va khong chung transaction voi khoi nay, nen nem loi len se
-  // tra 500 cho mot dot nhap DA THANH CONG — bo me nhap lai la sinh ban sao ca
-  // dot bai. Bai tap la bat buoc, nhiem vu chi la "co thi tot".
-  try {
-    await taoNhiemVuNgay(input.familyId, input.dueDate, childIds);
-  } catch (e) {
-    console.error('Khong tao duoc dong nhiem vu cho ngay', input.dueDate, e);
-  }
+  // cung khong ve dong cua ngay mai nua — xem lib/nhomNhiemVu.ts): no dang GAC
+  // +10 cua ngay mai. Ly do day du + hang rao ngay da qua o
+  // `taoNhiemVuNgayNeuChuaQua` ben duoi.
+  await taoNhiemVuNgayNeuChuaQua(input.familyId, input.dueDate, childIds);
 
   return created;
 }
@@ -768,11 +743,14 @@ export const VIEC_NHA_SUBJECT = 'Việc nhà';
  * tao moi dong mot lan, hai request mo man cung luc cung khong tao trung, va
  * khong can buoc SELECT-kiem-truoc nao. Khong co gi de chen thi la no-op re.
  *
- * Goi tu: man cua con (hom nay, con do), progressUpcoming (hom nay, ca nha —
- * man chon-con va tong quan bo me), man chi tiet con cua bo me, va
- * saveSubmission (ngay cua dot bai, cac con duoc giao — ke ca ngay mai). Ngay
- * khong ai mo man thi khong co dong cho ngay do — chap nhan: khong ai tick thi
- * cung khong co gi de ghi.
+ * NAM noi goi: (1) man cua con (hom nay, con do), (2) progressUpcoming (hom nay,
+ * ca nha — man chon-con va tong quan bo me), (3) man chi tiet con cua bo me,
+ * (4) saveSubmission (ngay cua dot bai) va (5) xuLySauKhiDoiHanChot (ngay MOI khi
+ * bo me doi han chot). Ba noi dau luon truyen HOM NAY; hai noi sau truyen ngay
+ * BO ME CHON nen goi qua `taoNhiemVuNgayNeuChuaQua` — ham nay khong tu chan ngay
+ * qua khu (no chi la mot cau SQL, va ba tep test mo phong dung no). Ngay khong ai
+ * mo man thi khong co dong cho ngay do — chap nhan: khong ai tick thi cung khong
+ * co gi de ghi.
  *
  * CHEP stars/icon/content vao dong luc tao (tien le: content o 013, gia phan
  * thuong o 015): bo me sua cau hinh sau do chi anh huong dong tao SAU. Nhom thi
@@ -801,20 +779,58 @@ export async function taoNhiemVuNgay(
 }
 
 /**
+ * `taoNhiemVuNgay` cho hai duong mà NGAY do BO ME CHON (nhap bai, doi han chot) —
+ * mot cho duy nhat giu ca hai luat, de khong con noi nao phai nho:
+ *
+ * 1. CHI tao cho ngay TU HOM NAY TRO DI. Ngay da qua thi khong con gi phai gac
+ *    (khong the cong +10 som cho no nua), ma them mot dong 'todo' KHONG AI TICK
+ *    DUOC (man cua con liet ke tu hom nay) la khoa luon +10 cua ngay do mai mai:
+ *    bo me nhap bu mot bai cho ngay 1/9 sau khi vua them mot nhiem vu moi thi
+ *    ngay 1/9 nhan mot dong nhiem vu la, va ngay do khong bao gio "xong het" nua.
+ * 2. Ngay TU HOM NAY TRO DI thi PHAI tao — day la hang rao "+10 cua ngay mai":
+ *    `congDiemNgayNeuXong` +10 khi MOI dong cua (con, ngay do) da 'done' va
+ *    KHONG kiem "ngay do da toi chua". Bo me nhap bai / doi han chot sang NGAY
+ *    MAI roi con lam xong bai do ngay toi nay (duoc phep, co ve duoi "Ngày mai"):
+ *    neu dong nhiem vu cua ngay mai chua ton tai thi tap dong cua ngay mai chi co
+ *    bai -> +10 cua ngay mai cong NGAY TOI NAY, sang mai con lam nhiem vu that
+ *    thi khong con gi de cong. Dong 'todo' tao san chinh la cai chan do.
+ *    Doi thanh chac chan bang cach them kiem "ngay do da toi chua" vao
+ *    `congDiemNgayNeuXong` thi mo lo khac: con khong duoc giao nhiem vu nao ma
+ *    lam het bai ngay mai toi nay thi sang mai KHONG con cu tick nao de kich +10
+ *    (cong diem theo su kien, khong co cron).
+ *
+ * BEST-EFFORT, nuot loi y het seedDefaultChores o insertFamily: cac dong bai tap
+ * that da ghi xong va khong chung transaction voi loi goi nay, nem loi len se tra
+ * 500 cho mot dot nhap / mot lan sua DA THANH CONG — bo me lam lai la sinh ban
+ * sao ca dot bai. Bai tap la bat buoc, nhiem vu chi la "co thi tot". Nghia la mot
+ * lan INSERT that bat (Neon rot ket noi) van co the de +10 cong som ma khong bao
+ * gi. Idempotent nen goi thua khong sao.
+ *
+ * Test ghim ca ba nhanh (tao cho ngay mai / khong tao cho ngay da qua / cai gia
+ * neu khong tao) o lib/tinh-diem.test.ts.
+ */
+async function taoNhiemVuNgayNeuChuaQua(
+  familyId: string,
+  date: string,
+  childIds: string[] | null
+): Promise<void> {
+  if (date < todayISO()) return;
+  try {
+    await taoNhiemVuNgay(familyId, date, childIds);
+  } catch (e) {
+    console.error('Khong tao duoc dong nhiem vu cho ngay', date, e);
+  }
+}
+
+/**
  * Hai viec phai lam SAU KHI bo me doi han chot cua mot bai (route PATCH
  * /api/assignments/:id, nhanh bo me) — de o lop nay chu khong o tep route vi ca
  * hai la LUAT, va bo test PGlite chi voi tay den duoc lop nay:
  *
  * 1. Ngay MOI phai co dong nhiem vu cua no — cung hang rao ma saveSubmission
- *    dung: `congDiemNgayNeuXong` KHONG kiem "ngay do da toi chua", nen doi mot
- *    bai sang NGAY MAI roi con lam xong bai do ngay toi nay se lam tap dong cua
- *    ngay mai chi con mot bai -> +10 cua ngay mai bay ra som mot ngay, va sang
- *    mai con lam nhiem vu that thi khong con gi de cong.
- *    CHI tao cho ngay TU HOM NAY TRO DI: ngay da qua thi khong con gi phai gac
- *    (khong the cong som cho no nua), ma them dong 'todo' khong ai tick duoc
- *    (man cua con liet ke tu hom nay) la khoa luon +10 cua ngay do mai mai.
- *    Nuot loi y het saveSubmission: dong bai da ghi xong va khong chung
- *    transaction, nem loi len la tra 500 cho mot lan sua DA THANH CONG.
+ *    dung, cung mot ham: `taoNhiemVuNgayNeuChuaQua` (doc chu thich o do de biet
+ *    vi sao PHAI tao cho ngay tu hom nay tro di va vi sao KHONG tao cho ngay da
+ *    qua).
  * 2. Ngay CU vua BOT mot dong: cac dong con lai co the da done het, ma con thi
  *    khong tick gi nua nen duong cua con khong bao gio xet lai. Xet o day,
  *    idempotent nen an toan.
@@ -825,13 +841,7 @@ export async function xuLySauKhiDoiHanChot(
   ngayCu: string,
   ngayMoi: string
 ): Promise<void> {
-  if (ngayMoi >= todayISO()) {
-    try {
-      await taoNhiemVuNgay(familyId, ngayMoi, [childId]);
-    } catch (e) {
-      console.error('Khong tao duoc dong nhiem vu cho ngay', ngayMoi, e);
-    }
-  }
+  await taoNhiemVuNgayNeuChuaQua(familyId, ngayMoi, [childId]);
   await congDiemNgayNeuXong(familyId, childId, ngayCu);
 }
 

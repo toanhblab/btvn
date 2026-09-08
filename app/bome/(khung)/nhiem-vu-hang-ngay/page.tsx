@@ -35,7 +35,8 @@ export default async function Page() {
         Mỗi ngày — kể cả cuối tuần và ngày không có bài — các nhiệm vụ này hiện trên màn của
         từng con, chia hai nhóm <b>{NHOM_NHIEM_VU.after_study.label}</b> và{' '}
         <b>{NHOM_NHIEM_VU.housework.label}</b>. Bố mẹ và con cùng tick ở đó; tick xong là được ⭐
-        của nhiệm vụ ngay, xong hết cả bài lẫn nhiệm vụ trong ngày được thêm +{DIEM_NGAY_XONG} ⭐.
+        của nhiệm vụ ngay, và ngày nào <b>có bài tập</b> mà xong hết cả bài lẫn nhiệm vụ thì được
+        thêm +{DIEM_NGAY_XONG} ⭐ (ngày không có bài thì chỉ có ⭐ của từng nhiệm vụ).
         Cả nhà dùng chung một danh sách; sửa chỉ ảnh hưởng những ngày sau, ⭐ đã cộng không bị rút.
       </p>
 

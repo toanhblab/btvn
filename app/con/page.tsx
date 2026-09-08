@@ -153,7 +153,8 @@ export default async function ChonCon() {
             </h2>
             {chuaAiCoDiem ? (
               <p className="text-k-body text-on-surface-variant text-center">
-                Làm xong hết bài và nhiệm vụ một ngày là được {DIEM_NGAY_XONG} ⭐, mỗi nhiệm vụ xong còn được thêm ⭐ nữa!
+                Mỗi nhiệm vụ xong là được ⭐ ngay. Ngày nào có bài tập mà làm xong hết cả bài
+                lẫn nhiệm vụ thì được thêm {DIEM_NGAY_XONG} ⭐ nữa!
               </p>
             ) : (
               <ol className="flex flex-row flex-wrap justify-center gap-x-10 gap-y-3">

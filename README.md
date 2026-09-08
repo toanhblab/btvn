@@ -289,7 +289,8 @@ màn tổng quan và tiến độ bài tập ở hai màn của bố mẹ **khô
 vụ là bài tập thật, nút **"Xoá tất cả bài tập và việc nhà"** xoá luôn cả lịch sử.
 
 **Điểm thưởng.** Xong hết một ngày (cả bài tập **lẫn** nhiệm vụ của ngày đó) được
-**+10 điểm**, cộng một lần cho mỗi con mỗi ngày; mỗi bài xong sớm hơn thời lượng
+**+10 điểm**, cộng một lần cho mỗi con mỗi ngày — ngày đó phải **có ít nhất một
+bài tập**, nên cuối tuần chỉ có nhiệm vụ thì con chỉ được ⭐ của từng nhiệm vụ; mỗi bài xong sớm hơn thời lượng
 dự kiến của chính bài đó được **+1**; mỗi **nhiệm vụ hàng ngày** tick xong được
 thêm **đúng số ⭐ của nó** (cộng thêm, không thay +10; cộng một lần cho mỗi dòng —
 bỏ tick không rút, tick lại không cộng lại; dòng việc nhà cũ tạo trước khi có sao

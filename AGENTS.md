@@ -104,14 +104,16 @@ ba tệp test PGlite đều import từ đó (tệp không import gì lúc chạ
 `node --test` và `node scripts/seed.mjs` đều nạp được); chỉ còn ba hằng số
 `subject`/`source`/`duration` là seed/test truyền tay.
 
-**Hàng rào "+10 của ngày mai" nằm ở HAI lời gọi**: `saveSubmission` (bố mẹ nhập
-bài cho ngày mai) và `xuLySauKhiDoiHanChot` (bố mẹ đổi hạn chót sang ngày mai).
-`congDiemNgayNeuXong` không kiểm "ngày đó đã tới chưa", nên dòng nhiệm vụ `'todo'`
-tạo sẵn của ngày đó là thứ duy nhất chặn +10 cộng sớm một ngày — đọc chú thích ở
-cả hai nơi trước khi định bỏ. `xuLySauKhiDoiHanChot` chỉ tạo cho ngày **từ hôm nay
-trở đi** (ngày đã qua thì không còn gì phải gác, mà thêm dòng không ai tick được
-là khoá luôn +10 của ngày đó). Cả hai đều best-effort (nuốt lỗi để không 500 một
-lần ghi đã thành công); test ghim ở `lib/tinh-diem.test.ts`.
+**Hàng rào "+10 của ngày mai" nằm ở MỘT hàm**: `taoNhiemVuNgayNeuChuaQua` — hai
+đường mà bố mẹ tự chọn ngày (`saveSubmission` khi nhập bài, `xuLySauKhiDoiHanChot`
+khi đổi hạn chót) đều gọi nó, đừng gọi `taoNhiemVuNgay` trực tiếp từ đó nữa. Hàm
+đó giữ cả hai chiều của cùng một luật, đọc chú thích ở đó trước khi định sửa:
+`congDiemNgayNeuXong` không kiểm "ngày đó đã tới chưa", nên (a) ngày **từ hôm nay
+trở đi** PHẢI có dòng nhiệm vụ `'todo'` — nó là thứ duy nhất chặn +10 cộng sớm một
+ngày; (b) ngày **đã qua** thì KHÔNG được tạo — không còn gì phải gác, mà thêm một
+dòng không ai tick được (màn của con liệt kê từ hôm nay) là khoá luôn +10 của ngày
+đó. Best-effort (nuốt lỗi để không 500 một lần ghi đã thành công); ba nhánh đều có
+test ở `lib/tinh-diem.test.ts`.
 
 `stars`/`icon`/`content` CHÉP vào dòng lúc tạo (sửa cấu hình chỉ ảnh hưởng dòng
 tạo sau, và **tắt công tắc chỉ ngăn dòng tạo SAU** — dòng của hôm nay đã tạo vẫn
