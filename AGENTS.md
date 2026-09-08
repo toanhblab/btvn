@@ -100,6 +100,11 @@ trẻ em, phân tích xong phải xoá ngay. File Safari: `tfhd` flags `0x2001a`
 là `default-base-is-moof` (offset tương đối), một `moof`, không `mfra`, AAC; file
 Chrome có nhiều `moof`, `mfra>tfra` (offset tuyệt đối), Opus, `mvhd`/`tkhd` version 1.
 
+Tài liệu có hai người đọc khác nhau: `README.md` cho người phát triển, còn
+`HUONG-DAN-BO-ME.md` (kèm ảnh trong `huong-dan-anh/`) cho bố mẹ dùng app thật —
+viết không thuật ngữ, chỉ gọi tên thứ hiện trên màn hình. Đổi luồng hay đổi chữ
+trên màn của bố mẹ/con thì sửa cả tệp đó, đừng chỉ sửa README.
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.

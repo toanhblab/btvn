@@ -1,5 +1,9 @@
 # BTVN — Bài tập về nhà
 
+> **Bạn là bố mẹ muốn dùng app?** Đọc [HUONG-DAN-BO-ME.md](HUONG-DAN-BO-ME.md)
+> — hướng dẫn từng bước bằng tiếng Việt, không có thuật ngữ kỹ thuật.
+> Phần dưới đây dành cho người phát triển.
+
 Một chỗ duy nhất để bố mẹ đưa bài tập vào, và các con tự xem — tự tick hoàn thành.
 Xem [PRD.md](PRD.md) để biết bối cảnh và phạm vi.
 
