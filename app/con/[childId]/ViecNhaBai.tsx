@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Assignment, DiemVuaCong } from '@/lib/types';
+import { useTickHomNay } from './TickHomNay';
 
 /**
  * Danh sach nhiem vu hang ngay trong hai nhom cuoi trang bai hom nay (issue
@@ -19,57 +20,38 @@ import type { Assignment, DiemVuaCong } from '@/lib/types';
  * migration 016 thi khong co, khong hien chip). Tick xong ma may chu VUA cong sao
  * (diem.nhiemVu > 0) thi hien chip "+N ⭐" ngay tren dong do — bo tick khong
  * rut, tick lai khong cong lai (unique index o DB), nen chip chi hien dung mot
- * lan; +10 cua ca ngay do man /xong bao (khong bao hai lan).
+ * lan; +10 cua ca ngay do man /xong bao (khong bao hai lan). Bo tick thi xoa
+ * chip "+N ⭐" di, tra dong ve chip gia "⭐ N".
  *
  * Bam la ghi ngay (lac quan) roi hoan lai neu API loi: tre bam xong ma the
- * doi mau sau nua giay thi be tuong may hong, bam lai lien tuc.
+ * doi mau sau nua giay thi be tuong may hong, bam lai lien tuc. Tick lac quan
+ * KHONG nam trong component nay ma o <TickHomNay> boc ngoai: hai nhom phai dung
+ * CHUNG mot so dem, khong thi tick het nhom nay roi nhom kia lien tuc se khong
+ * ai thay "het viec hom nay" (xem lib/tickHomNay.ts).
  *
  * @param laHomNay      nhom nay la nhom cua HOM NAY (chi hom nay moi dan sang
  *                      man khen — xong bai ngay mai thi chua "het viec hom nay").
- * @param todoHomNay    so dong con 'todo' cua HOM NAY theo du lieu may chu (ca
- *                      bai that lan nhiem vu), do trang cha dem san. Tick den khi
- *                      con lai 0 thi day sang /xong, dung co che `stillTodo <= 1`
- *                      cua app/con/[childId]/bai/[id]/page.tsx.
  */
 export default function ViecNhaBai({
   items,
   childId,
   laHomNay,
-  todoHomNay,
 }: {
   items: Assignment[];
   childId: string;
   laHomNay: boolean;
-  todoHomNay: number;
 }) {
   const router = useRouter();
-  const [xong, setXong] = useState<string[]>(() =>
-    items.filter((a) => a.status === 'done').map((a) => a.id)
-  );
+  const { daTick, datTick, conLai } = useTickHomNay();
   /** id dong -> so sao VUA duoc cong o lan tick nay (chip "+N ⭐"). */
   const [saoVuaCong, setSaoVuaCong] = useState<Record<string, number>>({});
 
-  /**
-   * Con bao nhieu dong 'todo' cua hom nay neu danh sach da tick tai cho la `daTick`.
-   *
-   * Lay so cua may chu roi cong tru phan nguoi dung vua doi ma may chu chua thay:
-   * `items` va `todoHomNay` cung den tu MOT lan dung trang, nen du router.refresh()
-   * chay xong giua chung (moc moi cho ca hai) hay chua kip (moc cu cho ca hai) thi
-   * phep tru nay van ra dung so.
-   */
-  function conLai(daTick: string[]): number {
-    let n = todoHomNay;
-    for (const a of items) {
-      if (a.status !== 'done' && daTick.includes(a.id)) n -= 1;
-      if (a.status === 'done' && !daTick.includes(a.id)) n += 1;
-    }
-    return n;
-  }
+  /** Trang thai dang hien cua mot dong: tick tai cho neu co, khong thi theo may chu. */
+  const daXong = (a: Assignment) => daTick[a.id] ?? a.status === 'done';
 
   async function tick(a: Assignment) {
-    const done = !xong.includes(a.id);
-    const daTick = done ? [...xong, a.id] : xong.filter((x) => x !== a.id);
-    setXong(daTick);
+    const done = !daXong(a);
+    datTick(a.id, done);
     try {
       const res = await fetch(`/api/assignments/${a.id}`, {
         method: 'PATCH',
@@ -79,12 +61,18 @@ export default function ViecNhaBai({
       if (!res.ok) throw new Error();
       const data = (await res.json().catch(() => ({}))) as { diem?: DiemVuaCong };
       const sao = data.diem?.nhiemVu ?? 0;
-      if (sao > 0) setSaoVuaCong((m) => ({ ...m, [a.id]: sao }));
+      setSaoVuaCong((m) => {
+        if (sao > 0) return { ...m, [a.id]: sao };
+        if (!(a.id in m)) return m;
+        const con = { ...m };
+        delete con[a.id];
+        return con;
+      });
 
       // Tick not viec cuoi cung cua hom nay -> man khen, giong het duong di khi
       // con lam xong bai that cuoi cung (ChiTietBai.tsx). Vua duoc sao thi cho
       // con nhin thay chip "+N ⭐" mot nhip roi moi chuyen man.
-      if (done && laHomNay && conLai(daTick) <= 0) {
+      if (done && laHomNay && conLai() <= 0) {
         setTimeout(() => router.push(`/con/${childId}/xong`), sao > 0 ? 900 : 0);
         return;
       }
@@ -93,14 +81,14 @@ export default function ViecNhaBai({
       // khong lam moi thi con tick het ma man hinh van bao chua xong.
       router.refresh();
     } catch {
-      setXong((ds) => (done ? ds.filter((x) => x !== a.id) : [...ds, a.id]));
+      datTick(a.id, !done);
     }
   }
 
   return (
     <ul className="flex flex-col gap-3">
       {items.map((a) => {
-        const done = xong.includes(a.id);
+        const done = daXong(a);
         const vuaCong = saoVuaCong[a.id];
         return (
           <li key={a.id}>

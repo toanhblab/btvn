@@ -4,6 +4,7 @@ import { viewingFamilyId } from '@/lib/auth';
 import { getChild, listAssignments, soDiem, taoNhiemVuNgay, todayISO } from '@/lib/store';
 import type { Assignment, HwSource, NhomNhiemVu } from '@/lib/types';
 import { HW_SOURCES, NHOM_NHIEM_VU } from '@/lib/types';
+import TickHomNay from './TickHomNay';
 import ViecNhaBai from './ViecNhaBai';
 
 export const dynamic = 'force-dynamic';
@@ -72,11 +73,14 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   );
   const todayItems = items.filter((a) => a.dueDate === today);
   const done = todayItems.filter((a) => a.status === 'done').length;
-  // Con bao nhieu thu cua hom nay chua xong (bai that + viec nha). ViecNhaBai
-  // can so nay de biet luc nao tick not viec cuoi cung thi day sang man khen —
-  // cung mot y voi `stillTodo` o bai/[id]/page.tsx, dem o day de khong phai
-  // them mot luot goi listAssignments nua.
+  // Con bao nhieu thu cua hom nay chua xong (bai that + viec nha). Cac nhom
+  // nhiem vu can so nay de biet luc nao tick not viec cuoi cung thi day sang man
+  // khen — cung mot y voi `stillTodo` o bai/[id]/page.tsx, dem o day de khong
+  // phai them mot luot goi listAssignments nua. Kem theo trang thai tung dong
+  // CUA HOM NAY: <TickHomNay> lay do lam moc de cong tru phan con vua tick ma may
+  // chu chua thay, cho CA HAI nhom cung mot so dem (xem lib/tickHomNay.ts).
   const todoHomNay = todayItems.length - done;
+  const mocHomNay = Object.fromEntries(todayItems.map((a) => [a.id, a.status === 'done']));
 
   /** listAssignments da sap xep theo due_date tang dan nen chi can gom lien tiep. */
   function gomTheoNgay(mine: Assignment[]): { date: string; items: Assignment[] }[] {
@@ -231,6 +235,9 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
         </section>
       )}
 
+      {/* TickHomNay chi giu state tick dung chung cho cac nhom nhiem vu ben trong,
+          khong dung ra DOM nao — bo cuc cua <main> khong doi. */}
+      <TickHomNay todoHomNay={todoHomNay} mocHomNay={mocHomNay}>
       {sourceGroups.map((sg) => (
         <section key={sg.key} className="mb-k-stack last:mb-0">
           {/* Dau moi nhom: noi giao + tien do RIENG cua nhom do, de con lam het
@@ -268,7 +275,6 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                   items={g.items}
                   childId={child.id}
                   laHomNay={g.date === today}
-                  todoHomNay={todoHomNay}
                 />
               ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-k-gutter">
@@ -381,6 +387,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
           ))}
         </section>
       ))}
+      </TickHomNay>
     </main>
   );
 }

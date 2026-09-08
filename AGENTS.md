@@ -97,8 +97,9 @@ Nhiệm vụ hàng ngày (`daily_chores` + dòng `assignments` có `chore_id`, h
 `category`, sao/icon/`child_ids`): dòng của ngày được tạo LƯỜI bằng
 `taoNhiemVuNgay` trong `lib/store.ts` — gọi ở đầu màn của con, `progressUpcoming`,
 chi tiết con của bố mẹ và `saveSubmission`; không có cron. Câu `INSERT … SELECT`
-đó được NHÂN BẢN ở `scripts/seed.mjs` và `lib/nhiem-vu-hang-ngay.test.ts` (node
-không import được TS) — đổi một chỗ là đổi cả ba. `stars`/`icon`/`content` CHÉP vào
+đó được NHÂN BẢN ở `scripts/seed.mjs`, `lib/nhiem-vu-hang-ngay.test.ts` và
+`lib/nhiem-vu-mac-dinh-hoan-thanh.test.ts` (node không import được TS) — đổi một
+chỗ là đổi cả bốn. `stars`/`icon`/`content` CHÉP vào
 dòng lúc tạo (sửa cấu hình chỉ ảnh hưởng dòng tạo sau), riêng nhóm đọc LIVE qua
 `LEFT JOIN daily_chores` trong `ASSIGNMENT_SELECT` — giống `sort_order`. Xoá nhiệm
 vụ là `archived_at`, không DELETE (migration 014 giải thích vì sao).
