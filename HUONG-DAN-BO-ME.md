@@ -157,10 +157,14 @@ Vài điều cần biết:
 
 - **Không bao giờ trừ xuống dưới 0.** Gõ nhiều hơn số con đang có thì app báo
   *"Con chỉ có 5 ⭐"* và cái nút đổi luôn thành **"Trừ hết 5 ⭐"** — bấm một cái là
-  xong, không phải gõ lại cho đúng. Nếu con vừa kiếm thêm sao, vừa đổi thưởng, hay
-  máy của bố/mẹ kia vừa trừ nên số trên màn đã cũ, app báo *"An chỉ còn 3 ⭐, không
-  trừ được 4 ⭐"* rồi đưa ra đúng cái nút đó với số mới: **"Trừ hết 3 ⭐"**. Số trừ
-  luôn được tính lại vào lúc bấm, nên bấm là trừ đúng số con còn lúc đó.
+  xong, không phải gõ lại cho đúng.
+- **Cũng không bao giờ trừ nhiều hơn số bố mẹ gõ.** Số trên màn có thể đã cũ (con
+  vừa làm xong bài nên vừa được thêm sao, hoặc máy của bố/mẹ kia vừa trừ). App luôn
+  gửi đúng con số bố mẹ gõ, rồi trừ **số nhỏ hơn** giữa con số đó và số con thật sự
+  còn:
+  - gõ 8 mà con chỉ còn 5 → trừ 5, con về 0;
+  - gõ 8 mà con vừa kiếm thêm thành 20 → trừ **đúng 8**, con còn 12.
+  Xong việc app báo đã trừ mấy sao và con còn lại mấy — đọc dòng đó là biết chính xác.
 - Con hết sao (0 ⭐) thì nút khoá và app báo *"Con không còn ⭐ nào để trừ"*.
 - **Chỉ trừ được, không cộng tay được.** Sao chỉ có từ việc con làm (xem mục 5).
 - Trừ sao **không xoá** bài hay nhiệm vụ nào của con; con vẫn làm tiếp và vẫn được

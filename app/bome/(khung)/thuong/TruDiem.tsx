@@ -22,16 +22,17 @@ export interface ConDeTru {
  * moi), ghi ly do KHONG bat buoc, co hang nut goi y mot cham. Ly do la thu CON
  * DOC o cua hang, nen cac goi y viet bang loi noi duoc voi con (LY_DO_TRU_GOI_Y).
  *
- * Khong am, hai tang, nhung CHI MOT nut:
- *   - Go qua so dang hien: `trangThaiTruDiem` (lib/types.ts) doi nut thanh
+ * Khong am, hai tang, nhung CHI MOT nut va CHI MOT duong gui:
+ *   - Go qua so dang hien: `trangThaiTruDiem` (lib/types.ts) doi MAT nut thanh
  *     "Tru het N ⭐" ngay tai day, kem dong "Con chi co N ⭐" — bo me van xong
  *     viec bang mot cham, khong phai go lai cho dung.
+ *   - Bam nut nao thi cung gui DUNG so trong o (`{ points: soTru }`), khong co
+ *     the "tru sach so du": may chu tru `LEAST(so go, so du that)`. Nho vay so
+ *     tren man cu (con vua kiem them ⭐ o iPad, may khac vua tru) khong bao gio
+ *     lam con mat nhieu hon so bo me go — chi co the mat it hon.
  *   - May chu la chot cuoi (truDiem trong lib/store.ts, transaction co khoa theo
- *     con): con vua kiem them / mot may khac vua tru thi so tren man nay da cu.
- *     Bi tu choi thi may chu tra `conLai`, ghi vao lop phu `vuaDoi` duoi day —
- *     va vi the di qua DUNG mot nut "Tru het N ⭐" o tren, voi N moi.
- *   Nut "Tru het" gui `truHet: true`, KHONG gui N: may chu tinh lai N tai luc
- *   bam, dung so that.
+ *     con) va chi tu choi khi con khong con ⭐ nao; luc do `conLai` cua no ghi
+ *     vao lop phu `vuaDoi` duoi day nen nut khoa lai ngay.
  *
  * `vuaDoi` la lop phu NGAN HAN cua so ⭐ tung con: may chu vua tra `conLai` thi
  * vien doi ngay, khong doi tai lai. Nhung props `initial` moi (bo me duyet mot
@@ -61,7 +62,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
   const soDu = (c: ConDeTru) => vuaDoi[c.id] ?? c.diem;
   const con = initial.find((c) => c.id === chon) ?? null;
   const dangCo = con ? soDu(con) : 0;
-  const { lenh, soTru, quaSo, canhBao } = trangThaiTruDiem(dangCo, so);
+  const { nut, soTru, quaSo, canhBao } = trangThaiTruDiem(dangCo, so);
 
   function moCon(id: string) {
     setChon((c) => (c === id ? null : id));
@@ -72,27 +73,23 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
   }
 
   async function gui() {
-    if (!con || lenh === null) return;
+    if (!con || nut === null) return;
     setBusy(true);
     setError('');
     try {
       const res = await fetch('/api/tru-diem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(
-          lenh === 'truHet'
-            ? { childId: con.id, truHet: true, reason: lyDo }
-            : { childId: con.id, points: soTru, reason: lyDo }
-        ),
+        body: JSON.stringify({ childId: con.id, points: soTru, reason: lyDo }),
       });
       const data = await res.json().catch(() => ({}));
       if (typeof data.conLai === 'number') setVuaDoi((d) => ({ ...d, [con.id]: data.conLai }));
+      router.refresh();
       if (!res.ok) throw new Error(data.error ?? 'Không lưu được');
       setVuaTru({ ten: con.name, so: data.penalty.points, conLai: data.conLai });
       setChon(null);
       setSo('');
       setLyDo('');
-      router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Không lưu được. Thử lại nhé.');
     } finally {
@@ -104,7 +101,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
     'rounded-lg border border-outline-variant min-h-p-tap px-3 text-p-body bg-surface-container-lowest';
 
   const nhanNut =
-    lenh === 'truHet'
+    nut === 'truHet'
       ? `Trừ hết ${dangCo} ⭐`
       : soTru !== null && con
         ? `Trừ ${soTru} ⭐ của ${con.name}`
@@ -210,7 +207,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
             <button
               type="button"
               onClick={gui}
-              disabled={busy || lenh === null}
+              disabled={busy || nut === null}
               className="flex-1 rounded-card min-h-p-tap bg-error text-white text-p-body-sm font-bold
                          disabled:opacity-40"
             >

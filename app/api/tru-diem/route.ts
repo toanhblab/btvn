@@ -15,16 +15,18 @@ export async function GET(req: Request) {
 }
 
 /**
- * POST /api/tru-diem { childId, points | truHet: true, reason? } — BO ME tru ⭐
- * cua con (issue #43). CAN PIN. Chi tru, khong co duong cong tay.
+ * POST /api/tru-diem { childId, points, reason? } — BO ME tru ⭐ cua con
+ * (issue #43). CAN PIN. Chi tru, khong co duong cong tay.
  *
- *   points   so ⭐ bo me GO (nguyen duong) — lich su luu dung so nay.
- *   truHet   thay cho points: tru DUNG so du tai luc may chu chay cau — la nut
- *            "Tru het N" hien sau khi bi tu choi; N khong gui len, may chu tu tinh.
+ *   points   so ⭐ bo me GO (nguyen duong) — MOT duong duy nhat, ke ca khi nut
+ *            tren man doc "Tru het N" (N chi la nhan). Day la TRAN TREN cua lan
+ *            tru: may chu ghi LEAST(points, so du that luc chay cau), nen so tren
+ *            man da cu khong lam con mat nhieu hon so bo me go.
  *   reason   khong bat buoc, cat theo MAX_CHU_LY_DO_TRU; con se doc dong nay.
  *
- * So du KHONG BAO GIO am: go qua so con dang co -> 400 kem `conLai` de man bo me
- * moi "Tru het N". Kiem va ghi trong mot transaction co khoa theo con (truDiem).
+ * So du KHONG BAO GIO am; ly do tu choi DUY NHAT la con khong con ⭐ nao -> 400
+ * kem `conLai` de man bo me khoa nut. Kiem va ghi trong mot transaction co khoa
+ * theo con (truDiem).
  */
 export async function POST(req: Request) {
   const familyId = await parentFamilyId();
@@ -34,12 +36,9 @@ export async function POST(req: Request) {
   const childId = String(body?.childId ?? '');
   if (!childId) return NextResponse.json({ error: 'Dữ liệu không đọc được.' }, { status: 400 });
 
-  let points: number | null = null;
-  if (body?.truHet !== true) {
-    points = lamSachDiemTru(body?.points);
-    if (points === null) {
-      return NextResponse.json({ error: 'Số ⭐ trừ phải là một số lớn hơn 0.' }, { status: 400 });
-    }
+  const points = lamSachDiemTru(body?.points);
+  if (points === null) {
+    return NextResponse.json({ error: 'Số ⭐ trừ phải là một số lớn hơn 0.' }, { status: 400 });
   }
 
   const kq = await truDiem(familyId, childId, points, lamSachLyDoTru(body?.reason));

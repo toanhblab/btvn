@@ -368,8 +368,9 @@ export function lamSachGia(v: unknown): number | null {
  *
  * Luoc do + ly do o migrations/017_tru_diem.sql; SQL o lib/sqlDiem.ts. Captain
  * chot: bo me GO SO ⭐ MUON TRU (moi dong la mot delta duong, khong luu tong sau
- * khi tru), KHONG cho so du am (may chu tu choi, man bo me moi "Tru het N"), ly
- * do KHONG bat buoc, CON NHIN THAY dong tru kem ly do o cua hang, KHONG cong tay.
+ * khi tru), KHONG cho so du am (may chu kep lan tru vao so du con lai, chi tu
+ * choi khi con khong con ⭐ nao), ly do KHONG bat buoc, CON NHIN THAY dong tru
+ * kem ly do o cua hang, KHONG cong tay.
  */
 
 /** Mot lan bo me tru ⭐ cua con. `points` la so DA TRU lan do (duong). */
@@ -421,23 +422,26 @@ export function lamSachLyDoTru(v: unknown): string {
 /**
  * MOT cho duy nhat quyet dinh o "tru ⭐" tren man bo me lam gi (issue #43).
  *
- * Hai duong "go qua so con dang co" — chan ngay o giao dien, va may chu tu choi
- * (400 kem `conLai`, man cap nhat so dang tin roi tinh lai) — phai ra CUNG mot
- * ket qua: moi bo me bam "Tru het N" mot cham, khong bao gio la nut khoa cut
- * duong bat bo me go lai cho dung.
+ * CHI CO MOT DUONG GUI: `soTru` — dung so bo me go trong o — luon la thu gui len
+ * may chu, ke ca khi nut doc "Tru het N". Man hinh khong tu quyet dinh tru bao
+ * nhieu: may chu tru `LEAST(soTru, so du that luc bam)` (SQL_TRU_DIEM), nen so
+ * tren man co cu den may cung khong tru qua so bo me da go.
  *
- * `lenh` la thu goi len may chu:
- *   'tru'    -> { points: soTru }
- *   'truHet' -> { truHet: true } — KHONG gui N: may chu tinh lai so du tai luc
- *               bam (con co the vua kiem them ⭐), N o nhan nut chi de bo me doc.
- *   null     -> nut khoa: chua go so, hoac con khong con ⭐ nao de tru.
+ * `nut` chi la MAT NUT, khong phai giao thuc:
+ *   'tru'    -> "Trừ N ⭐ của …" (go trong so con dang co)
+ *   'truHet' -> "Trừ hết N ⭐": go qua so man dang tin, N = `dangCo`. Bam la tru
+ *               het cho con co — tru phi con vua kiem them, luc do may chu chi
+ *               tru dung so da go. Duong nay thay cho nut khoa cut duong bat bo
+ *               me go lai cho dung.
+ *   null     -> nut khoa: chua go so, hoac con khong con ⭐ nao de tru (may chu
+ *               cung tu choi dung truong hop nay).
  *
  *   dangCo  so ⭐ man dang tin la con co (props may chu, hoac `conLai` may chu vua tra)
  *   soGo    chu trong o nhap
  */
 export interface TrangThaiTruDiem {
-  lenh: 'tru' | 'truHet' | null;
-  /** So bo me go, da lam sach nhu may chu (lamSachDiemTru); null = chua go so hop le. */
+  nut: 'tru' | 'truHet' | null;
+  /** So bo me go, da lam sach nhu may chu (lamSachDiemTru) — so GUI len may chu. */
   soTru: number | null;
   quaSo: boolean;
   /** Dong do duoi o nhap; '' = khong hien gi. */
@@ -447,9 +451,9 @@ export interface TrangThaiTruDiem {
 export function trangThaiTruDiem(dangCo: number, soGo: string): TrangThaiTruDiem {
   const soTru = lamSachDiemTru(soGo);
   const quaSo = soTru !== null && soTru > dangCo;
-  const lenh = soTru === null ? null : !quaSo ? 'tru' : dangCo > 0 ? 'truHet' : null;
+  const nut = soTru === null || dangCo <= 0 ? null : quaSo ? 'truHet' : 'tru';
   return {
-    lenh,
+    nut,
     soTru,
     quaSo,
     canhBao: !quaSo ? '' : dangCo > 0 ? `Con chỉ có ${dangCo} ⭐` : 'Con không còn ⭐ nào để trừ',

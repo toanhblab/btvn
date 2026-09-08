@@ -30,32 +30,37 @@ export const SQL_SO_DU_CON = `(
 export const SQL_KHOA_TRU_DIEM = `SELECT pg_advisory_xact_lock(hashtext($1::text))`;
 
 /**
- * Ghi MOT dong phat, CHI KHI so du (tinh tai cho, cung cong thuc SQL_SO_DU_CON)
- * du de tru — day la tang du lieu cua luat "khong am". Ghi duoc thi RETURNING
- * dong vua ghi; khong du thi 0 dong, khong ghi gi. So du sau do doc bang
+ * Ghi MOT dong phat — MOT duong duy nhat cho moi lan bo me bam, va la tang du
+ * lieu cua luat "khong am".
+ *
+ * `$3` la so bo me GO (man hinh luon gui so nay, ke ca khi nut doc "Tru het N":
+ * N tren nut chi la nhan, tinh tu so du man dang tin). So thuc su tru la
+ * `LEAST($3, so du tai luc cau nay chay)`, nen:
+ *   - go 8 khi con that su co 5  -> tru 5 (ve 0, khong am);
+ *   - go 8 khi con vua kiem them thanh 20 -> tru DUNG 8, KHONG phai 20. Man hinh
+ *     co the dang hien so cu, nhung khong bao gio tru qua so bo me da go.
+ * Tu choi CHI khi so du = 0 (`b.so_du > 0`): khong con gi de tru thi 0 dong,
+ * khong ghi dong 0 diem (CHECK cua bang chan). So du sau do doc bang
  * SQL_SO_DU_MOT_CON ngay trong cung transaction.
  *
  *   $1 id          newId('pen')
  *   $2 childId
- *   $3 points      so bo me go (nguyen duong), HOAC NULL = "Tru het": tru dung
- *                  so du tai luc cau nay chay (captain: N tinh tai thoi diem bam,
- *                  khong dung so cu da hien). Tru het khi so du = 0 thi khong
- *                  ghi (COALESCE($3, 1): can it nhat 1 ⭐).
+ *   $3 points      so bo me go (nguyen duong) — tran tren cua lan tru nay
  *   $4 reason      chu bo me go, da trim/cat; '' = khong ghi ly do
  *   $5 familyId    con phai thuoc nha nay — bang khong co family_id
  */
 export const SQL_TRU_DIEM = `INSERT INTO score_penalties (id, child_id, points, reason)
-   SELECT $1, c.id, COALESCE($3::int, b.so_du), $4
+   SELECT $1, c.id, LEAST($3::int, b.so_du), $4
      FROM children c
      CROSS JOIN LATERAL (SELECT ${SQL_SO_DU_CON} AS so_du) b
     WHERE c.id = $2 AND c.family_id = $5
-      AND b.so_du >= COALESCE($3::int, 1)
+      AND b.so_du > 0
    RETURNING id, child_id, points, reason, created_at`;
 
 /**
  * So du hien tai cua MOT con — cau CUOI cua transaction tru diem, de tra ve
- * "con lai" (ghi duoc) hoac "con chi con N" (bi tu choi) ma khong can vong goi
- * thu hai. Cung dung duoc rieng.
+ * "con lai" cho man bo me (ke ca khi bi tu choi) ma khong can vong goi thu hai.
+ * Cung dung duoc rieng.
  *   $1 childId   $2 familyId
  */
 export const SQL_SO_DU_MOT_CON = `SELECT ${SQL_SO_DU_CON} AS so_du
@@ -73,9 +78,7 @@ export const SQL_SO_DU_MOT_CON = `SELECT ${SQL_SO_DU_CON} AS so_du
  * Dieu kien so du >= r.cost tinh TAI CHO (dong nay con 'pending' nen chua nam
  * trong SQL_SO_DU_CON) — day la tang du lieu cua luat "khong am" cho duong duyet,
  * cung khuon voi SQL_TRU_DIEM. Duyet duoc thi RETURNING dong vua doi; khong du
- * diem (hoac dong da bi xu ly) thi 0 dong, khong doi gi. Doc so du sau do bang
- * SQL_SO_DU_MOT_CON ngay trong cung transaction de biet la vi thieu diem hay vi
- * dong da xu ly, va de bao dung "chi con N diem".
+ * diem (hoac dong da bi xu ly) thi 0 dong, khong doi gi.
  *   $1 id (reward_redemptions)   $2 familyId
  */
 export const SQL_DUYET_DOI_THUONG = `UPDATE reward_redemptions r
@@ -85,3 +88,19 @@ export const SQL_DUYET_DOI_THUONG = `UPDATE reward_redemptions r
                    WHERE c.id = r.child_id AND c.family_id = $2
                      AND ${SQL_SO_DU_CON} >= r.cost)
    RETURNING r.*`;
+
+/**
+ * Trang thai cua yeu cau doi thuong — cau THU BA cua transaction duyet, de doc
+ * VI SAO SQL_DUYET_DOI_THUONG khong doi dong nao.
+ *
+ * So du KHONG phan biet duoc hai ly do: bo/me kia vua duyet xong thi gia da bi
+ * tru, nen so du con lai gan nhu luon nho hon gia — doc so du khong thoi la bao
+ * "chua du diem" (moi bo me tu choi) cho mot yeu cau DA DUOC DUYET. Trang thai
+ * moi phan biet duoc: khong con 'pending' = da xu ly (409); van 'pending' = cau
+ * UPDATE bi hang rao so du chan (400).
+ *   $1 id (reward_redemptions)   $2 familyId
+ */
+export const SQL_TRANG_THAI_DOI_THUONG = `SELECT r.status
+     FROM reward_redemptions r
+     JOIN children c ON c.id = r.child_id
+    WHERE r.id = $1 AND c.family_id = $2`;

@@ -152,7 +152,7 @@ Nguyên tắc: **không có tài khoản, không email, không mật khẩu.**
 - **DailyChore** (nhiệm vụ hàng ngày, cấu hình chung cả nhà): id, family_id, tên, icon, số ⭐ (1–10), nhóm (`after_study` "Sau khi học xong" | `housework` "Việc nhà hàng ngày"), `child_ids` (null = cả nhà), thứ tự, bật/tắt, `archived_at`
   → mỗi ngày, mỗi con được giao sinh **một Assignment** cho từng nhiệm vụ đang bật (tạo lười khi mở màn); con tick là được ⭐ của nhiệm vụ, cộng một lần.
 - **Penalty** (`score_penalties`, một lần bố mẹ trừ ⭐ — issue #43): id, child_id, `points` (số **đã trừ** lần đó, dương), `reason` (không bắt buộc, con đọc được), thời điểm
-  → số ⭐ con đang có = tổng điểm cộng − đổi thưởng đã duyệt − các lần trừ; không bao giờ âm (máy chủ từ chối, bố mẹ chọn "Trừ hết N"); chỉ trừ, không cộng tay.
+  → số ⭐ con đang có = tổng điểm cộng − đổi thưởng đã duyệt − các lần trừ; không bao giờ âm (máy chủ trừ nhiều nhất là số dư còn lại, và không bao giờ nhiều hơn số bố mẹ gõ); chỉ trừ, không cộng tay.
 
 ## 8. Kỹ thuật & triển khai
 

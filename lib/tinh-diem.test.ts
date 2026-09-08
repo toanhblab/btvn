@@ -28,14 +28,16 @@
  *      tick roi tick lai, hai request cung luc); bo tick khong rut; dong viec
  *      nha cu (stars NULL) khong bao gio duoc; xoa dong khong mat sao da cong.
  *   9. Bo me TRU diem (issue #43, migration 017): moi lan tru la mot dong
- *      score_penalties voi DUNG so da tru + ly do; so du KHONG BAO GIO am — tru
- *      qua so dang co thi khong ghi gi, hai request cung luc chi mot ben ghi;
- *      "Tru het" tinh so du tai luc cau chay; ba luat cong khong doi; xoa con
- *      keo theo; nha khac khong tru duoc.
+ *      score_penalties voi DUNG so DA TRU lan do + ly do; so du KHONG BAO GIO am
+ *      va lan tru KHONG BAO GIO qua so bo me go — go qua so du thi kep vao so du
+ *      (LEAST), so du TANG giua luc mo man va luc bam thi van chi tru so da go,
+ *      hai request cung luc thi ben sau chi tru phan con lai, het ⭐ moi tu choi;
+ *      ba luat cong khong doi; xoa con keo theo; nha khac khong tru duoc.
  *  10. HAI duong tru ⭐ (bo me tru, va duyet doi thuong) xep hang o CUNG mot
- *      khoa theo con: duyet + "Tru het" cung luc chi mot ben di qua, so du
- *      khong xuong duoi 0. Kem nut cua o tru ⭐ (trangThaiTruDiem): go qua so du
- *      la moi "Tru het N", khong phai nut khoa.
+ *      khoa theo con: duyet + tru cung luc chi mot ben di qua, so du khong xuong
+ *      duoi 0; bo va me cung bam Duyet thi ben sau bao "da xu ly roi" (409) chu
+ *      khong bao "chua du diem". Kem nut cua o tru ⭐ (trangThaiTruDiem): go qua
+ *      so du la moi "Tru het N", khong phai nut khoa.
  */
 
 import { test, before, after } from 'node:test';
@@ -47,7 +49,8 @@ import {
 } from './diem.ts';
 import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu.ts';
 import {
-  SQL_DUYET_DOI_THUONG, SQL_KHOA_TRU_DIEM, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON, SQL_TRU_DIEM,
+  SQL_DUYET_DOI_THUONG, SQL_KHOA_TRU_DIEM, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON,
+  SQL_TRANG_THAI_DOI_THUONG, SQL_TRU_DIEM,
 } from './sqlDiem.ts';
 import { trangThaiTruDiem } from './types.ts';
 
@@ -967,16 +970,18 @@ const TEP_017 = '017_tru_diem.sql';
 
 /**
  * Mo phong truDiem (lib/store.ts): CUNG ba cau SQL tu lib/sqlDiem.ts, trong MOT
- * transaction — khoa theo con, INSERT co kiem so du, doc so du sau. `points`
- * null = "Tru het". Tra ve { ghi, conLai } nhu ket qua route.
+ * transaction — khoa theo con, INSERT kep LEAST(so go, so du), doc so du sau.
+ * `points` la so bo me GO (khong con duong nao khac). Tra ve { ghi, conLai } nhu
+ * ket qua route.
  *
  * PGlite la mot ket noi: db.transaction() tu xep hang cac transaction dong thoi,
  * nen hai lan goi qua Promise.all chay noi tiep — ben sau doc so du DA gom lan
  * tru cua ben truoc. Tren Neon that thi hai request la hai ket noi, va
  * pg_advisory_xact_lock lam dung viec xep hang do. Ca hai truong hop deu di
- * qua cung SQL_TRU_DIEM, cau chi ghi khi so du tinh tai cho >= so tru.
+ * qua cung SQL_TRU_DIEM, cau chi ghi khi so du > 0 va khong bao gio ghi qua
+ * so du.
  */
-async function tru(childId: string, points: number | null, reason = '', familyId = 'fam_cu') {
+async function tru(childId: string, points: number, reason = '', familyId = 'fam_cu') {
   return db.transaction(async (tx) => {
     await tx.query(SQL_KHOA_TRU_DIEM, [childId]);
     const ghi = (await tx.query(SQL_TRU_DIEM, [id('pen'), childId, points, reason, familyId])).rows;
@@ -1043,62 +1048,76 @@ test('tru diem: moi lan MOT dong voi DUNG so da tru + ly do + thoi diem; so du b
   assert.deepEqual(lichSu.map((r) => [Number(r.points), r.reason]), [[3, 'Không nghe lời'], [4, '']]);
 });
 
-test('khong cho am: tru qua so dang co -> KHONG ghi dong nao, so du giu nguyen, tra ve so con lai de moi "Tru het N"', async () => {
+test('khong cho am: go qua so con dang co -> tru DUNG so du (ve 0), khong am; het ⭐ moi tu choi', async () => {
   await conMoiCoDiem('con_p2', 5);
 
+  // Man bo me hien 5 va nut doc "Tru het 5 ⭐", nhung so gui len van la 6 da go
   const kq = await tru('con_p2', 6, 'Cãi bố mẹ');
-  assert.equal(kq.ghi.length, 0, 'tu choi');
-  assert.equal(kq.conLai, 5, 'con lai la so that de man bo me hien "Tru het 5"');
-  assert.equal(await soDu('con_p2'), 5);
-  assert.equal(await soDongPhat('con_p2'), 0, 'khong co dong phat nao, khong co dong "tru mot phan"');
-
-  // Bang dung 5 thi duoc, ve 0
-  const vua = await tru('con_p2', 5);
-  assert.equal(Number(vua.ghi[0].points), 5);
-  assert.equal(await soDu('con_p2'), 0);
-
-  // Ve 0 roi: tru 1 nua cung khong duoc
-  const them = await tru('con_p2', 1);
-  assert.equal(them.ghi.length, 0);
+  assert.equal(kq.ghi.length, 1, 'khong tu choi: kep vao so du con lai');
+  assert.equal(Number(kq.ghi[0].points), 5, 'luu dung so DA TRU (5), khong luu so da go (6)');
+  assert.equal(kq.ghi[0].reason, 'Cãi bố mẹ');
+  assert.equal(kq.conLai, 0);
   assert.equal(await soDu('con_p2'), 0, 'khong bao gio am');
+  assert.equal(await soDongPhat('con_p2'), 1);
+
+  // Ve 0 roi: day la ly do tu choi DUY NHAT
+  const them = await tru('con_p2', 1);
+  assert.equal(them.ghi.length, 0, 'khong con ⭐ nao de tru');
+  assert.equal(them.conLai, 0);
+  assert.equal(await soDongPhat('con_p2'), 1, 'khong ghi dong 0 diem nao');
+
+  // Go dung bang so dang co thi tru het, khong kep gi
+  await conMoiCoDiem('con_p2b', 5);
+  const vua = await tru('con_p2b', 5);
+  assert.equal(Number(vua.ghi[0].points), 5);
+  assert.equal(await soDu('con_p2b'), 0);
 });
 
-test('"Tru het": tru DUNG so du tai luc cau chay (con vua kiem them thi tru ca phan moi), ve 0; so du 0 thi khong ghi', async () => {
-  await conMoiCoDiem('con_p3', 7);
-  // Man bo me dang hien 7; con vua tick mot nhiem vu 2 ⭐ ngay truoc khi bo me bam
+test('so du TANG giua luc mo man va luc bam: go 8 khi man hien 5 ma con that su co 20 -> tru DUNG 8', async () => {
+  await conMoiCoDiem('con_p3', 5);
+  // Man bo me mo luc con co 5 ⭐ va nut doc "Tru het 5 ⭐"; trong luc do con lam
+  // xong bai o iPad: +10 ngay xong, +1 xong som, +4 nhiem vu = 20 ⭐
   await db.query(
-    `INSERT INTO score_events (id, child_id, kind, points, event_date) VALUES ($1, 'con_p3', 'task_done', 2, '2026-10-02')`,
+    `INSERT INTO score_events (id, child_id, kind, points, event_date) VALUES ($1, 'con_p3', 'task_done', 15, '2026-10-02')`,
     [id('sce')]
   );
-  const kq = await tru('con_p3', null, 'Không dọn đồ');
-  assert.equal(Number(kq.ghi[0].points), 9, 'N tinh tren may chu = 9, khong phai 7 dang hien');
-  assert.equal(kq.conLai, 0);
-  assert.equal(await soDu('con_p3'), 0);
+  assert.equal(await soDu('con_p3'), 20);
 
-  const rong = await tru('con_p3', null);
-  assert.equal(rong.ghi.length, 0, 'tru het khi 0 ⭐: khong ghi dong 0 diem (CHECK) va khong ghi gi');
-  assert.equal(await soDu('con_p3'), 0);
+  // Man hinh van dang tin la 5 nen nut doc "Tru het 5 ⭐" — nhung so NO GUI len
+  // may chu la so trong o (8), khong phai mot lenh "tru sach so du".
+  const nut = trangThaiTruDiem(5, '8');
+  assert.equal(nut.nut, 'truHet');
+  const kq = await tru('con_p3', nut.soTru!, 'Không dọn đồ');
+  assert.equal(Number(kq.ghi[0].points), 8, 'tru dung so bo me go, KHONG tru sach 20 ⭐');
+  assert.equal(kq.conLai, 12);
+  assert.equal(await soDu('con_p3'), 12);
+  assert.equal(await soDongPhat('con_p3'), 1);
 });
 
-test('hai request cung luc: chi MOT ben ghi khi tong hai lan vuot so du; so du khong am', async () => {
+test('hai request cung luc, moi ben go 7 khi con co 10: ben sau chi tru duoc 3; tong dung 10, khong am', async () => {
   await conMoiCoDiem('con_p4', 10);
   const [a, b] = await Promise.all([tru('con_p4', 7, 'Chơi quá giờ'), tru('con_p4', 7, 'Chơi quá giờ')]);
-  assert.deepEqual([a.ghi.length, b.ghi.length].sort(), [0, 1], 'dung mot trong hai ben ghi');
-  assert.equal(await soDu('con_p4'), 3);
-  assert.equal(await soDongPhat('con_p4'), 1);
-
-  // Hai may cung bam "Tru het" cung luc: ben sau thay 0 -> khong ghi
-  const [c, d] = await Promise.all([tru('con_p4', null), tru('con_p4', null)]);
-  assert.deepEqual([c.ghi.length, d.ghi.length].sort(), [0, 1]);
+  assert.deepEqual(
+    [Number(a.ghi[0]?.points ?? 0), Number(b.ghi[0]?.points ?? 0)].sort((x, y) => x - y),
+    [3, 7],
+    'ben sau bi kep vao phan con lai'
+  );
   assert.equal(await soDu('con_p4'), 0, 'khong am');
+  assert.equal(await soDongPhat('con_p4'), 2, 'moi lan bam la mot dong, luu dung so da tru lan do');
   const tong = await rows(`SELECT SUM(points) AS s FROM score_penalties WHERE child_id = 'con_p4'`);
   assert.equal(Number(tong[0].s), 10, 'tong da tru dung bang so da co');
+
+  // Ve 0 roi: hai ben cung bam tiep thi ca hai bi tu choi
+  const [c, d] = await Promise.all([tru('con_p4', 5), tru('con_p4', 5)]);
+  assert.deepEqual([c.ghi.length, d.ghi.length], [0, 0]);
+  assert.equal(await soDongPhat('con_p4'), 2);
+  assert.equal(await soDu('con_p4'), 0);
 });
 
 test('tru diem KHONG dong vao ba luat cong: sau khi bi tru het, +10 / +1 / +sao van cong dung va van mot lan', async () => {
   const NGAY = '2026-10-05';
   await conMoiCoDiem('con_p5', 4);
-  await tru('con_p5', null, 'Nói dối');
+  await tru('con_p5', 4, 'Nói dối');
   assert.equal(await soDu('con_p5'), 0);
 
   const bai = await themBai('con_p5', NGAY, { phut: 5 });
@@ -1137,17 +1156,25 @@ test('nha khac khong tru duoc con nha minh; xoa con keo theo hinh phat (CASCADE)
 });
 
 /**
- * Mo phong nhanh DUYET cua duyetDoiThuong (lib/store.ts): CUNG ba cau SQL tu
+ * Mo phong nhanh DUYET cua duyetDoiThuong (lib/store.ts): CUNG bon cau SQL tu
  * lib/sqlDiem.ts trong MOT transaction — khoa theo con (cung khoa voi `tru` o
- * tren), UPDATE co kiem so du, doc so du sau. Duyet la duong tru ⭐ thu hai nen
- * hai duong phai xep hang cung cho, khong thi so du xuong duoi 0.
+ * tren), UPDATE co kiem so du, doc trang thai, doc so du. Duyet la duong tru ⭐
+ * thu hai nen hai duong phai xep hang cung cho, khong thi so du xuong duoi 0.
+ *
+ * `ketQua` mo phong lai dung nhanh tra ve cua store: 'ok' | 409 (dong khong con
+ * 'pending' — bo/me kia vua xu ly) | 400 (con 'pending' nhung hang rao so du
+ * chan). Phan biet bang TRANG THAI, khong bang so du.
  */
 async function duyet(rdmId: string, childId: string, familyId = 'fam_cu') {
   return db.transaction(async (tx) => {
     await tx.query(SQL_KHOA_TRU_DIEM, [childId]);
     const daDuyet = (await tx.query(SQL_DUYET_DOI_THUONG, [rdmId, familyId])).rows;
+    const [tt] = (await tx.query(SQL_TRANG_THAI_DOI_THUONG, [rdmId, familyId])).rows as
+      { status?: string }[];
     const [sd] = (await tx.query(SQL_SO_DU_MOT_CON, [childId, familyId])).rows as { so_du: unknown }[];
-    return { daDuyet: daDuyet as Record<string, unknown>[], conLai: Number(sd?.so_du ?? 0) };
+    const conLai = Number(sd?.so_du ?? 0);
+    const ketQua = daDuyet.length > 0 ? 'ok' : tt?.status !== 'pending' ? 409 : 400;
+    return { daDuyet: daDuyet as Record<string, unknown>[], conLai, ketQua };
   });
 }
 
@@ -1169,6 +1196,7 @@ test('duyet doi thuong: du diem thi tru dung gia; thieu diem thi KHONG doi gi (c
   await xinDoi('rdm_p7', 'con_p7', 4);
 
   const kq = await duyet('rdm_p7', 'con_p7');
+  assert.equal(kq.ketQua, 'ok');
   assert.equal(kq.daDuyet.length, 1);
   assert.equal(kq.conLai, 6, 'so du bot dung gia phan thuong, khong ghi dong nao');
   assert.equal(await soDu('con_p7'), 6);
@@ -1179,6 +1207,7 @@ test('duyet doi thuong: du diem thi tru dung gia; thieu diem thi KHONG doi gi (c
   await tru('con_p7', 4, 'Chưa làm bài');
   const thieu = await duyet('rdm_p7b', 'con_p7');
   assert.equal(thieu.daDuyet.length, 0, 'khong du 5 ⭐ thi khong duyet');
+  assert.equal(thieu.ketQua, 400, 'van pending -> bao thieu diem, moi bo me tu choi');
   assert.equal(thieu.conLai, 2, 'so du that de bao "chi con 2 diem"');
   assert.equal(await trangThai('rdm_p7b'), 'pending', 'van cho, bo me tu choi duoc');
   assert.equal(await soDu('con_p7'), 2);
@@ -1188,11 +1217,36 @@ test('duyet doi thuong: du diem thi tru dung gia; thieu diem thi KHONG doi gi (c
   assert.equal(await trangThai('rdm_p7b'), 'pending');
 });
 
-test('duyet va "Tru het" cung luc: chi MOT ben tru duoc, so du KHONG xuong duoi 0', async () => {
+test('bo va me cung bam Duyet: ben sau bao "da xu ly roi" (409), KHONG bao "chua du diem"', async () => {
+  await conMoiCoDiem('con_p9', 10);
+  await xinDoi('rdm_p9', 'con_p9', 10);
+
+  const [x, y] = await Promise.all([duyet('rdm_p9', 'con_p9'), duyet('rdm_p9', 'con_p9')]);
+  const [truoc, sau] = x.daDuyet.length === 1 ? [x, y] : [y, x];
+  assert.equal(truoc.ketQua, 'ok', 'mot ben duyet duoc');
+  assert.equal(
+    sau.ketQua,
+    409,
+    'ben sau: dong da het pending. So du luc nay la 0 < 10 nen doc so du khong thoi la ' +
+    'bao "chi con 0 diem, chua du 10" — moi bo me di tu choi mot thu da cho roi'
+  );
+  assert.ok(
+    sau.conLai < 10,
+    'chinh la cai bay: so du luc nay (0) nho hon gia (10), nen doc so du khong thoi ' +
+    'thi ben sau se bao "chua du diem" cho mot yeu cau vua duoc duyet'
+  );
+  assert.equal(await trangThai('rdm_p9'), 'approved');
+  assert.equal(await soDu('con_p9'), 0, 'chi tru MOT lan');
+
+  // Bam lan thu ba (khong dong thoi) cung phai la 409
+  assert.equal((await duyet('rdm_p9', 'con_p9')).ketQua, 409);
+});
+
+test('duyet va tru ⭐ cung luc: chi MOT ben tru duoc, so du KHONG xuong duoi 0', async () => {
   await conMoiCoDiem('con_p8', 10);
   await xinDoi('rdm_p8', 'con_p8', 10);
 
-  const [d, t] = await Promise.all([duyet('rdm_p8', 'con_p8'), tru('con_p8', null, 'Cãi bố mẹ')]);
+  const [d, t] = await Promise.all([duyet('rdm_p8', 'con_p8'), tru('con_p8', 10, 'Cãi bố mẹ')]);
   assert.deepEqual(
     [d.daDuyet.length, t.ghi.length].sort(),
     [0, 1],
@@ -1215,30 +1269,31 @@ test('duyet va "Tru het" cung luc: chi MOT ben tru duoc, so du KHONG xuong duoi 
 });
 
 /**
- * Nut chinh cua o "tru ⭐" tren man bo me (trangThaiTruDiem trong lib/types.ts) —
- * mot cho duy nhat cho ca hai duong "go qua so du": chan o giao dien, va may chu
- * tu choi roi tra `conLai` (man cap nhat `dangCo` bang so do rot tinh lai).
+ * Nut chinh cua o "tru ⭐" tren man bo me (trangThaiTruDiem trong lib/types.ts).
+ * `nut` chi la MAT nut; so gui len may chu luon la `soTru` — dung so bo me go —
+ * nen man hien so cu khong the tru qua so do (may chu kep LEAST, xem test tren).
  */
-test('o tru ⭐: go qua so du thi nut thanh "Tru het N" chu khong khoa; go vua thi tru dung so go', async () => {
-  assert.deepEqual(trangThaiTruDiem(5, '3'), { lenh: 'tru', soTru: 3, quaSo: false, canhBao: '' });
-  assert.deepEqual(trangThaiTruDiem(5, '5'), { lenh: 'tru', soTru: 5, quaSo: false, canhBao: '' });
+test('o tru ⭐: go qua so du thi nut thanh "Tru het N" chu khong khoa, va van gui dung so da go', async () => {
+  assert.deepEqual(trangThaiTruDiem(5, '3'), { nut: 'tru', soTru: 3, quaSo: false, canhBao: '' });
+  assert.deepEqual(trangThaiTruDiem(5, '5'), { nut: 'tru', soTru: 5, quaSo: false, canhBao: '' });
 
-  // Go 8 khi con co 5: moi "Tru het" mot cham, KHONG phai nut khoa
+  // Go 8 khi man hien 5: moi "Tru het 5 ⭐" mot cham, KHONG phai nut khoa
   const qua = trangThaiTruDiem(5, '8');
-  assert.equal(qua.lenh, 'truHet', 'nut bam duoc va gui truHet — may chu tinh lai N');
+  assert.equal(qua.nut, 'truHet', 'nut bam duoc');
+  assert.equal(qua.soTru, 8, 'van gui so da go — may chu kep vao so du that, khong tru sach');
   assert.equal(qua.canhBao, 'Con chỉ có 5 ⭐', 'van noi ro con co bao nhieu');
 
-  // Cung duong do khi may chu vua tu choi va tra conLai = 3
-  assert.equal(trangThaiTruDiem(3, '8').lenh, 'truHet');
+  // Cung mat nut do khi may chu vua tra conLai = 3
+  assert.equal(trangThaiTruDiem(3, '8').nut, 'truHet');
   assert.equal(trangThaiTruDiem(3, '8').canhBao, 'Con chỉ có 3 ⭐');
 
-  // Het sao thi khong con gi de tru: nut khoa
+  // Het sao thi khong con gi de tru: nut khoa (may chu cung tu choi dung ca nay)
   const het = trangThaiTruDiem(0, '2');
-  assert.equal(het.lenh, null);
+  assert.equal(het.nut, null);
   assert.equal(het.canhBao, 'Con không còn ⭐ nào để trừ');
 
   // Chua go / go rac: nut khoa, khong canh bao gi
   for (const s of ['', '0', 'abc']) {
-    assert.deepEqual(trangThaiTruDiem(5, s), { lenh: null, soTru: null, quaSo: false, canhBao: '' }, s);
+    assert.deepEqual(trangThaiTruDiem(5, s), { nut: null, soTru: null, quaSo: false, canhBao: '' }, s);
   }
 });

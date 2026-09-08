@@ -3,9 +3,11 @@
 --   1. Bo me GO SO DIEM MUON TRU (khong go "tong moi" de may tu tinh hieu).
 --      He qua: moi dong duoi day luu DUNG so da tru mot lan — mot delta duong —
 --      khong bao gio luu tong sau khi tru.
---   2. KHONG CHO SO DU AM. Go qua so con dang co thi may chu TU CHOI va man bo
---      me moi bam "Tru het N" — N tinh lai TAI LUC BAM tren may chu, khong dung
---      so cu da hien (con co the vua kiem them sao).
+--   2. KHONG CHO SO DU AM. Go qua so con dang co thi man bo me doi nut thanh
+--      "Tru het N" (N = so man dang tin), va lan tru duoc KEP vao so du that
+--      luc bam: LEAST(so go, so du). Nen so tren man co cu den may cung khong
+--      lam con mat nhieu hon so bo me go — con vua kiem them sao thi chi tru
+--      dung so da go, con vua bi may khac tru thi chi tru phan con lai.
 --   3. Ly do: CO, KHONG bat buoc, kem vai nut goi y mot cham.
 --   4. CON NHIN THAY minh bi tru va vi sao: cua hang cua con hien tung dong tru
 --      kem ly do. Vi the ly do la thu CON DOC — nut goi y viet bang loi noi
@@ -26,8 +28,9 @@
 --             - SUM(score_penalties)   — them dung MOT so hang, xem lib/sqlDiem.ts.
 --
 -- Nam cot, het:
---   points   so bi tru, DUONG nhu `cost` — dung so bo me go (hoac so du luc bam
---            "Tru het"). Khong co cot "tong sau khi tru": voi cach (1) no khong
+--   points   so bi tru, DUONG nhu `cost` — dung so DA TRU lan do, tuc
+--            LEAST(so bo me go, so du luc bam). Khong co cot "tong sau khi tru":
+--            voi cach (1) no khong
 --            can cho nghia cua dong ("−3" tu doc duoc), va them cot chi de
 --            phong xa la trai luat dung cua captain.
 --   reason   NOT NULL DEFAULT '' — de trong duoc (dieu 3). Man cua con thay
@@ -48,16 +51,21 @@
 --
 -- "Khong am" chan o DAU? KHONG kep bang GREATEST(0, …) trong SUM — so du se khong
 -- con bang so sach, thanh hai su that. Chan LUC GHI, hai tang:
---   - Giao dien: nut "Tru N" khoa khi N > so dang hien, va khi may chu tu choi
---     thi hien "Con chi con N ⭐" + nut "Tru het N".
---   - Du lieu: mot INSERT … SELECT chi ghi khi so du (tinh tai cho, cung cong
---     thuc voi soDiemTheoCon) >= so tru; chay TRONG MOT TRANSACTION sau
---     pg_advisory_xact_lock(hashtext(child_id)) de hai request cung luc (hai bo
---     me cung bam, hay "tru het" tren hai may) khong cung doc mot so du roi cung
---     ghi. lib/db.ts truoc day chay moi cau mot request khong transaction;
---     queryTx (them o day) goi ca goi trong mot transaction — Neon HTTP co
---     sql.transaction() khong tuong tac, PGlite co db.transaction(). Xem
---     SQL_TRU_DIEM trong lib/sqlDiem.ts va test lib/tinh-diem.test.ts.
+--   - Giao dien: go qua so dang hien thi nut doi mat thanh "Tru het N ⭐" kem
+--     dong "Con chi co N ⭐"; nut chi KHOA khi con khong con ⭐ nao. Mat nut chi
+--     la chu: moi lan bam deu gui DUNG so trong o, khong co lenh "tru sach so
+--     du" (mot ham thuan trangThaiTruDiem, lib/types.ts).
+--   - Du lieu: mot INSERT … SELECT ghi LEAST(so go, so du tinh tai cho — cung
+--     cong thuc voi soDiemTheoCon) va chi ghi khi so du > 0; chay TRONG MOT
+--     TRANSACTION sau pg_advisory_xact_lock(hashtext(child_id)) de hai request
+--     cung luc (hai bo me cung bam, hay bam tru trong khi ben kia duyet doi
+--     thuong) khong cung doc mot so du roi cung ghi. DUYET DOI THUONG cung la
+--     mot duong tru (dong thanh 'approved') nen di qua CHINH khoa nay va cung co
+--     dieu kien so du >= gia — xem SQL_DUYET_DOI_THUONG. lib/db.ts truoc day
+--     chay moi cau mot request khong transaction; queryTx (them o day) goi ca goi
+--     trong mot transaction — Neon HTTP co sql.transaction() khong tuong tac,
+--     PGlite co db.transaction(). Xem SQL_TRU_DIEM trong lib/sqlDiem.ts va test
+--     lib/tinh-diem.test.ts.
 --
 -- Chay lai nhieu lan duoc (IF NOT EXISTS). Khong dong vao bang nao co san.
 
