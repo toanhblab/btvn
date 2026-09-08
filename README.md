@@ -260,8 +260,9 @@ ON CONFLICT DO NOTHING`, gọi ở màn của con, màn chọn-con, chi tiết c
 lúc bố mẹ giao bài), không cần cron. Trên màn của con chúng xếp thành **hai nhóm
 riêng cuối cùng**, mỗi dòng có icon + chip "⭐ N"; con bấm là tick ngay tại chỗ
 (không mở màn chi tiết bài), tick xong hiện chip "+N ⭐". Xong hết cả bài lẫn nhiệm
-vụ mới sang màn khen "Giỏi quá!". Badge ở màn chọn-con nói "N bài" khi còn nợ bài
-thật, "N việc" khi chỉ còn nhiệm vụ, "Chưa có bài" chỉ khi không có gì cả.
+vụ mới sang màn khen "Giỏi quá!". Badge ở màn chọn-con nói **"N việc"** — đếm gộp
+bài tập và nhiệm vụ còn lại, không tách hai loại — "Xong hết 🎉" khi hết việc, và
+"Chưa có bài" chỉ khi không có gì cả.
 
 **Một danh sách chung cả nhà**, bố mẹ sửa ở trang riêng **Cài đặt → "Nhiệm vụ hàng
 ngày"** (cũng vào được từ dòng dẫn trên màn Thưởng): đổi chữ / icon / sao / nhóm /

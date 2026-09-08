@@ -99,10 +99,20 @@ Nhiệm vụ hàng ngày (`daily_chores` + dòng `assignments` có `chore_id`, h
 chi tiết con của bố mẹ và `saveSubmission`; không có cron. Câu `INSERT … SELECT`
 đó được NHÂN BẢN ở `scripts/seed.mjs`, `lib/nhiem-vu-hang-ngay.test.ts` và
 `lib/nhiem-vu-mac-dinh-hoan-thanh.test.ts` (node không import được TS) — đổi một
-chỗ là đổi cả bốn. `stars`/`icon`/`content` CHÉP vào
-dòng lúc tạo (sửa cấu hình chỉ ảnh hưởng dòng tạo sau), riêng nhóm đọc LIVE qua
-`LEFT JOIN daily_chores` trong `ASSIGNMENT_SELECT` — giống `sort_order`. Xoá nhiệm
-vụ là `archived_at`, không DELETE (migration 014 giải thích vì sao).
+chỗ là đổi cả bốn. `stars`/`icon`/`content` CHÉP vào dòng lúc tạo (sửa cấu hình
+chỉ ảnh hưởng dòng tạo sau), riêng nhóm đọc LIVE qua `LEFT JOIN daily_chores`
+trong `ASSIGNMENT_SELECT` — giống `sort_order`. Xoá nhiệm vụ là `archived_at`,
+không DELETE (migration 014 giải thích vì sao).
+
+**Mọi con số TÓM TẮT đếm GỘP bài tập và nhiệm vụ hàng ngày, không tách hai
+loại** — huy hiệu "N việc" ở màn chọn con, hai ô "Hoàn thành"/"Đang chờ" ở tổng
+quan của bố mẹ (`total`/`done` của `progressUpcoming`), "x/y xong hôm nay" ở màn
+của con. Đừng thêm lại trường kiểu `homeworkTotal`/`homeworkTodo`: tách ra thì
+con số nào cũng sai một nửa (đếm riêng bài thật thì ngày không có bài huy hiệu
+lại nói "1 bài" vì một bài của NGÀY MAI, còn nhiệm vụ hôm nay không ai đếm). Hai
+chỗ tách là CÓ Ý, đừng gộp: badge "Quá hạn" (nhiệm vụ hôm qua không phải bài quá
+hạn) và màn chi tiết con của bố mẹ (tiến độ bài tập và hộp "Nhiệm vụ hàng ngày"
+là hai khối riêng, hộp nhiệm vụ chỉ tính HÔM NAY).
 
 Máy này đã bật Safari > Develop > Allow Remote Automation: `safaridriver -p <cổng
 riêng>` + WebDriver W3C lái được Safari thật để đo `video.duration` (phục vụ tệp

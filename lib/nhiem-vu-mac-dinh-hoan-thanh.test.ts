@@ -40,9 +40,9 @@ const rows = async (sql: string) => (await db.query(sql)).rows as Record<string,
 
 /**
  * Mo phong CHINH XAC dieu kien WHERE cua progressUpcoming (lib/store.ts) cho
- * MOT con: mot cau duy nhat tren assignments (chore_id de tach homeworkTotal),
- * MOI la khac voi ban truoc #36 — khong con cau rieng tren daily_chore_checks
- * nua, vi dong viec nha da nam san trong assignments.
+ * MOT con: mot cau duy nhat tren assignments, MOI la khac voi ban truoc #36 —
+ * khong con cau rieng tren daily_chore_checks nua, vi dong viec nha da nam san
+ * trong assignments.
  *
  * Nhanh "bai con no" chi nhan bai THAT (chore_id IS NULL): tu #42 moi ngay sinh
  * mot dong nhiem vu cho moi con nen dong nhiem vu cu chua tick nam lai 'todo'
@@ -69,14 +69,21 @@ async function quaHan(childId: string) {
   ).length;
 }
 
-/** Mo phong total / done / homeworkTotal cua progressUpcoming cho MOT con. */
+/**
+ * Mo phong total / done cua progressUpcoming cho MOT con — hai so nay dem GOP
+ * bai tap va nhiem vu, khong tach hai loai (luat chung o AGENTS.md).
+ *
+ * `baiThat` KHONG phai truong tra ve cua progressUpcoming (khong con truong nao
+ * tach rieng bai that nua): no chi de ghim kich ban cua tung bai test duoi day —
+ * "con nay co may bai THAT tu hom nay tro di".
+ */
 async function tienDo(childId: string) {
   const bai = await dongDuocKeo(childId);
   const upcoming = bai.filter((r) => String(r.due_date) >= HOM_NAY);
   return {
     total: upcoming.length,
     done: upcoming.filter((r) => r.status === 'done').length,
-    homeworkTotal: upcoming.filter((r) => r.chore_id === null).length,
+    baiThat: upcoming.filter((r) => r.chore_id === null).length,
   };
 }
 
@@ -154,8 +161,8 @@ test('lam het bai tap hom nay nhung CHUA tick viec nha: ngay chua duoc tinh hoan
     );
   }
 
-  const { total, done, homeworkTotal } = await tienDo('con_x');
-  assert.equal(homeworkTotal, 1, 'co dung 1 bai tap that hom nay (viec nha khong tinh vao day)');
+  const { total, done, baiThat } = await tienDo('con_x');
+  assert.equal(baiThat, 1, 'co dung 1 bai tap that hom nay (viec nha khong tinh vao day)');
   assert.equal(total, 4, 'total = 1 bai that + 3 dong viec nha da duoc tao');
   assert.ok(
     done < total,
@@ -182,8 +189,8 @@ test('con khong duoc giao bai nao: chua chay tao luoi thi chua co dong nhiem vu 
   // cong thang vao tien do (progressUpcoming truoc day cong CHUNG so viec nha
   // dang bat cua ca nha, bat ke con co bai hay khong) — no chi duoc tinh khi co
   // DONG THAT trong assignments.
-  const { total, done, homeworkTotal } = await tienDo('con_y');
-  assert.equal(homeworkTotal, 0, 'khong co bai tap that nao cho con nay');
+  const { total, done, baiThat } = await tienDo('con_y');
+  assert.equal(baiThat, 0, 'khong co bai tap that nao cho con nay');
   assert.equal(total, 0, 'chua co dong nao trong assignments thi chua co gi de dem');
   assert.equal(done, 0, 'khong co gi de tinh xong');
 });
@@ -200,8 +207,8 @@ test('con khong duoc giao bai nao: sau buoc tao luoi cua #42 van co du nhiem vu 
 
   await taoNhiemVuNgay('fam_x', HOM_NAY, null);
 
-  const { total, done, homeworkTotal } = await tienDo('con_y');
-  assert.equal(homeworkTotal, 0, 'van khong co bai tap that nao cho con nay');
+  const { total, done, baiThat } = await tienDo('con_y');
+  assert.equal(baiThat, 0, 'van khong co bai tap that nao cho con nay');
   assert.equal(total, 3, 'ba nhiem vu dang bat -> ba dong cua hom nay (issue #42 Q2)');
   assert.equal(done, 0, 'con chua tick nhiem vu nao');
 
@@ -236,10 +243,10 @@ test('dong nhiem vu cu chua tick KHONG bi keo ve nua; bai THAT con no thi van ke
   );
 
   // Ket qua tra ve khong doi mot chut nao so voi truoc khi loc.
-  const { total, done, homeworkTotal } = await tienDo('con_cu');
+  const { total, done, baiThat } = await tienDo('con_cu');
   assert.equal(total, 0, 'con nay khong co gi tu hom nay tro di');
   assert.equal(done, 0);
-  assert.equal(homeworkTotal, 0);
+  assert.equal(baiThat, 0);
   assert.equal(await quaHan('con_cu'), 1, 'dung mot bai THAT qua han vao badge "Qua han"');
 });
 

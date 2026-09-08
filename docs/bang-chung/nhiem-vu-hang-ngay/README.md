@@ -7,7 +7,7 @@ mẹ ở 390×844 (điện thoại) và 1440×900 (Macbook). Bố mẹ đăng nh
 
 | Ảnh | Nội dung |
 | --- | --- |
-| `01-chon-con-badge-viec-ipad.png` | Màn chọn con sau khi `progressUpcoming` tạo lười dòng hôm nay; câu nhắc luật ở bảng xếp hạng nói cả nhiệm vụ. |
+| `01-chon-con-badge-viec-ipad.png` | Màn chọn con sau khi `progressUpcoming` tạo lười dòng hôm nay. Huy hiệu đếm GỘP bài tập và nhiệm vụ: cả ba con "9 việc" — Minh/An 4 bài hôm nay + 5 nhiệm vụ, Bé Na 4 nhiệm vụ hôm nay + (1 bài + 4 nhiệm vụ) của ngày mai. Câu nhắc luật ở bảng xếp hạng nói cả nhiệm vụ. |
 | `02-con-minh-hai-nhom-nhiem-vu-ipad.png` | Cuối trang của Minh: hai nhóm riêng "🎒 Sau khi học xong" (3 việc mặc định, 1 ⭐) và "🏠 Việc nhà hàng ngày" (Đánh răng 2 ⭐, Đọc sách 3 ⭐), mỗi dòng có icon + chip ⭐. |
 | `03-con-minh-tick-nhiem-vu-chip-cong-2-sao-ipad.png` | Tick "Đánh răng buổi tối" → chip "+2 ⭐" trên dòng, tiến độ nhóm 1/2. |
 | `04-con-bena-khong-co-bai-chi-co-nhiem-vu-ipad.png` | Bé Na hôm nay không có bài (chỉ có bài ngày mai) nhưng vẫn có nhiệm vụ hôm nay; Bé Na không được giao "Đọc sách" nên không thấy. |

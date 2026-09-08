@@ -617,20 +617,14 @@ export async function deleteAllAssignments(familyId: string): Promise<number> {
 
 export interface ChildProgress {
   child: Child;
+  /**
+   * total / done dem GOP bai tap va nhiem vu hang ngay, khong tach hai loai —
+   * luat chung cho moi con so tom tat, xem AGENTS.md. Rieng `overdue` loai dong
+   * nhiem vu ra (mot nhiem vu cua hom qua khong phai "bai qua han").
+   */
   total: number;
   done: number;
   overdue: number;
-  // Rieng so bai tap THAT (chore_id la null) — man con dung cai nay de phan
-  // biet "hom nay khong duoc giao gi" voi "co bai nhung chua tinh xong (con
-  // viec nha)". Viec nha KHONG duoc tinh vao day, giong ly do cu (#25): tinh
-  // ca viec nha thi badge "Chua co bai" kho bien mat dung luc can hien nhat.
-  homeworkTotal: number;
-  /**
-   * So bai tap THAT con 'todo' tu hom nay tro di. Badge o man chon-con dung no
-   * de noi "N bài" khi con no bai that, va "N việc" khi chi con nhiem vu (issue
-   * #42: ngay khong co bai van co nhiem vu, badge khong duoc noi "Chưa có bài").
-   */
-  homeworkTodo: number;
   /** So diem con DANG CO (da tru phan thuong bo me duyet) — xem soDiemTheoCon. */
   points: number;
 }
@@ -655,9 +649,8 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
   await taoNhiemVuNgay(familyId, today, null);
   // Ba cau chay SONG SONG (Neon la HTTP, moi cau mot vong goi). Bai da xong cua
   // nhung ngay truoc khong con y nghia -> chi lay bai sap toi va bai con no.
-  // chore_id de tach rieng homeworkTotal (bai THAT) khoi total (bai THAT + viec
-  // nha) ben duoi. Diem lay kem o day vi ca hai man goi ham nay (chon-con cua
-  // con, tong quan cua bo me) deu hien diem canh tien do.
+  // chore_id lay ve de loc `overdue` ben duoi. Diem lay kem o day vi ca hai man
+  // goi ham nay (chon-con cua con, tong quan cua bo me) deu hien diem canh tien do.
   //
   // "Bai con no" chi tinh bai THAT (chore_id IS NULL): tu issue #42 moi ngay
   // sinh mot dong nhiem vu cho moi con, ngay nao con khong tick het thi dong do
@@ -684,11 +677,10 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
       total: upcoming.length,
       done: upcoming.filter((r) => r.status === 'done').length,
       // Qua han = han truoc hom nay ma van chua xong. Loai viec nha (chore_id
-      // khong null) giong het nguyen tac homeworkTotal ben duoi va listAssignments
-      // — man bo me khong duoc thay viec nha lam phinh badge nay.
+      // khong null) giong het nguyen tac cua listAssignments — mot nhiem vu cua
+      // hom qua khong phai "bai qua han", va man bo me khong duoc thay no lam
+      // phinh badge nay.
       overdue: mine.filter((r) => dateStr(r.due_date) < today && r.status === 'todo' && r.chore_id === null).length,
-      homeworkTotal: upcoming.filter((r) => r.chore_id === null).length,
-      homeworkTodo: upcoming.filter((r) => r.chore_id === null && r.status === 'todo').length,
       points: diem.get(child.id) ?? 0,
     };
   });

@@ -71,7 +71,7 @@ export default async function ChonCon() {
         )}
 
         <div className="flex flex-row flex-wrap justify-center items-start gap-12 xl:gap-14 w-full">
-        {rows.map(({ child, total, done, homeworkTodo, points }) => {
+        {rows.map(({ child, total, done, points }) => {
           const left = total - done;
           return (
             <Link
@@ -90,12 +90,15 @@ export default async function ChonCon() {
                 </div>
 
                 {/* Badge dem con bao nhieu thu chua xong. Ban Stitch hardcode "Xong het"
-                    cho ca 3 con. Bon trang thai, theo thu tu uu tien:
+                    cho ca 3 con. Ba trang thai, theo thu tu uu tien:
                       - khong co gi (khong bai, khong nhiem vu)    -> "Chưa có bài"
-                      - xong het (co viec va da lam xong)           -> "Xong hết 🎉"
-                      - con no BAI THAT                             -> "N bài" (N = bai that
-                        con todo — khong dem nhiem vu vao day de so khop voi chu "bài")
-                      - het bai that, chi con nhiem vu              -> "N việc"
+                      - xong het (co viec va da lam xong)          -> "Xong hết 🎉"
+                      - con viec                                   -> "N việc"
+                    "N việc" dem GOP bai tap va nhiem vu (total - done), khong tach hai
+                    loai: tre 4-6 tuoi chi can biet "con bao nhieu viec phai lam", ma tach
+                    ra thi mot con so nao cung sai — dem rieng bai that thi ngay khong co
+                    bai badge noi "1 bài" vi mot bai cua NGAY MAI, con nhiem vu hom nay thi
+                    khong ai dem. Luat chung nay ghi o AGENTS.md.
                     Tu issue #42 nhiem vu hien MOI NGAY (progressUpcoming tao dong hom
                     nay truoc khi dem), nen ngay khong ai giao bai thi badge noi "3 việc"
                     chu KHONG noi "Chưa có bài" nua — con van co duong vao man cua minh
@@ -115,9 +118,7 @@ export default async function ChonCon() {
                     ? 'Chưa có bài'
                     : left === 0
                       ? 'Xong hết 🎉'
-                      : homeworkTodo > 0
-                        ? `${homeworkTodo} bài`
-                        : `${left} việc`}
+                      : `${left} việc`}
                 </span>
               </div>
 
