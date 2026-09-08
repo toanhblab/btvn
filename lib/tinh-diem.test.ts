@@ -29,10 +29,12 @@
  *      nha cu (stars NULL) khong bao gio duoc; xoa dong khong mat sao da cong.
  *   9. Bo me TRU diem (issue #43, migration 017): moi lan tru la mot dong
  *      score_penalties voi DUNG so DA TRU lan do + ly do; so du KHONG BAO GIO am
- *      va lan tru KHONG BAO GIO qua so bo me go — go qua so du thi kep vao so du
- *      (LEAST), so du TANG giua luc mo man va luc bam thi van chi tru so da go,
- *      hai request cung luc thi ben sau chi tru phan con lai, het ⭐ moi tu choi;
- *      ba luat cong khong doi; xoa con keo theo; nha khac khong tru duoc.
+ *      va lan tru KHONG BAO GIO qua so tren NHAN NUT — nhan ghi "Tru het 5 ⭐" thi
+ *      tru 5 du trong o go 8 va du con vua kiem them thanh 20; may chu kep them
+ *      lan nua vao so du that (LEAST) nen hai request cung luc thi ben sau chi
+ *      tru phan con lai, va het ⭐ la ly do tu choi duy nhat (man hinh khong tu
+ *      choi, ke ca khi no dang tin con co 0 ⭐); ba luat cong khong doi; xoa con
+ *      keo theo; nha khac khong tru duoc.
  *  10. HAI duong tru ⭐ (bo me tru, va duyet doi thuong) xep hang o CUNG mot
  *      khoa theo con: duyet + tru cung luc chi mot ben di qua, so du khong xuong
  *      duoi 0; bo va me cung bam Duyet thi ben sau bao "da xu ly roi" (409) chu
@@ -1073,25 +1075,47 @@ test('khong cho am: go qua so con dang co -> tru DUNG so du (ve 0), khong am; he
   assert.equal(await soDu('con_p2b'), 0);
 });
 
-test('so du TANG giua luc mo man va luc bam: go 8 khi man hien 5 ma con that su co 20 -> tru DUNG 8', async () => {
+test('so du TANG giua luc mo man va luc bam: nut doc "Tru het 5 ⭐" thi tru DUNG 5, khong phai 8 da go va khong phai 20 dang co', async () => {
   await conMoiCoDiem('con_p3', 5);
-  // Man bo me mo luc con co 5 ⭐ va nut doc "Tru het 5 ⭐"; trong luc do con lam
-  // xong bai o iPad: +10 ngay xong, +1 xong som, +4 nhiem vu = 20 ⭐
+  // Man bo me mo luc con co 5 ⭐, bo me go 8 nen nut doc "Tru het 5 ⭐"; trong luc
+  // do con lam xong bai o iPad: +10 ngay xong, +1 xong som, +4 nhiem vu = 20 ⭐
   await db.query(
     `INSERT INTO score_events (id, child_id, kind, points, event_date) VALUES ($1, 'con_p3', 'task_done', 15, '2026-10-02')`,
     [id('sce')]
   );
   assert.equal(await soDu('con_p3'), 20);
 
-  // Man hinh van dang tin la 5 nen nut doc "Tru het 5 ⭐" — nhung so NO GUI len
-  // may chu la so trong o (8), khong phai mot lenh "tru sach so du".
+  // Nut lam DUNG nhung gi nhan cua no ghi: nhan ghi 5 thi gui 5.
   const nut = trangThaiTruDiem(5, '8');
-  assert.equal(nut.nut, 'truHet');
-  const kq = await tru('con_p3', nut.soTru!, 'Không dọn đồ');
-  assert.equal(Number(kq.ghi[0].points), 8, 'tru dung so bo me go, KHONG tru sach 20 ⭐');
-  assert.equal(kq.conLai, 12);
-  assert.equal(await soDu('con_p3'), 12);
+  assert.deepEqual([nut.nut, nut.soGui], ['truHet', 5]);
+  const kq = await tru('con_p3', nut.soGui!, 'Không dọn đồ');
+  assert.equal(Number(kq.ghi[0].points), 5, 'tru dung so tren nhan nut');
+  assert.equal(kq.conLai, 15);
+  assert.equal(await soDu('con_p3'), 15);
   assert.equal(await soDongPhat('con_p3'), 1);
+});
+
+test('man dang tin con co 0 ⭐ nhung con vua kiem them: van bam duoc, tru dung so da go; con that su het thi may chu tu choi', async () => {
+  await conMoiCoDiem('con_p3b', 0);
+
+  // Man mo luc con 0 ⭐; bo me go 3. Man KHONG tu choi — no khong biet so du that.
+  const nut = trangThaiTruDiem(0, '3');
+  assert.deepEqual([nut.nut, nut.soGui, nut.canhBao], ['tru', 3, ''], 'khong khoa nut, khong bao sai');
+
+  // Con vua lam xong bai o iPad: 15 ⭐ -> lan bam do tru dung 3
+  await db.query(
+    `INSERT INTO score_events (id, child_id, kind, points, event_date) VALUES ($1, 'con_p3b', 'task_done', 15, '2026-10-03')`,
+    [id('sce')]
+  );
+  const kq = await tru('con_p3b', nut.soGui!, 'Nói dối');
+  assert.equal(Number(kq.ghi[0].points), 3);
+  assert.equal(await soDu('con_p3b'), 12);
+
+  // Con that su het ⭐ thi chinh may chu tu choi, kem so du de man sua lai vien ⭐
+  await tru('con_p3b', 12);
+  const het = await tru('con_p3b', 3);
+  assert.equal(het.ghi.length, 0);
+  assert.equal(het.conLai, 0);
 });
 
 test('hai request cung luc, moi ben go 7 khi con co 10: ben sau chi tru duoc 3; tong dung 10, khong am', async () => {
@@ -1269,31 +1293,33 @@ test('duyet va tru ⭐ cung luc: chi MOT ben tru duoc, so du KHONG xuong duoi 0'
 });
 
 /**
- * Nut chinh cua o "tru ⭐" tren man bo me (trangThaiTruDiem trong lib/types.ts).
- * `nut` chi la MAT nut; so gui len may chu luon la `soTru` — dung so bo me go —
- * nen man hien so cu khong the tru qua so do (may chu kep LEAST, xem test tren).
+ * Nut chinh cua o "tru ⭐" tren man bo me (trangThaiTruDiem trong lib/types.ts):
+ * `soGui` la con so tren NHAN nut va la con so gui len may chu, con man nay
+ * khong bao gio tu choi — chi may chu tu choi.
  */
-test('o tru ⭐: go qua so du thi nut thanh "Tru het N" chu khong khoa, va van gui dung so da go', async () => {
-  assert.deepEqual(trangThaiTruDiem(5, '3'), { nut: 'tru', soTru: 3, quaSo: false, canhBao: '' });
-  assert.deepEqual(trangThaiTruDiem(5, '5'), { nut: 'tru', soTru: 5, quaSo: false, canhBao: '' });
+test('o tru ⭐: nhan nut va so gui luon khop nhau; man khong tu choi, ke ca khi no dang tin con co 0 ⭐', async () => {
+  assert.deepEqual(trangThaiTruDiem(5, '3'), { nut: 'tru', soGui: 3, canhBao: '' });
+  assert.deepEqual(trangThaiTruDiem(5, '5'), { nut: 'tru', soGui: 5, canhBao: '' });
 
-  // Go 8 khi man hien 5: moi "Tru het 5 ⭐" mot cham, KHONG phai nut khoa
-  const qua = trangThaiTruDiem(5, '8');
-  assert.equal(qua.nut, 'truHet', 'nut bam duoc');
-  assert.equal(qua.soTru, 8, 'van gui so da go — may chu kep vao so du that, khong tru sach');
-  assert.equal(qua.canhBao, 'Con chỉ có 5 ⭐', 'van noi ro con co bao nhieu');
+  // Go 8 khi man hien 5: moi "Tru het 5 ⭐" mot cham (khong phai nut khoa), va
+  // nhan ghi 5 thi gui 5 — khong gui 8
+  assert.deepEqual(
+    trangThaiTruDiem(5, '8'),
+    { nut: 'truHet', soGui: 5, canhBao: 'Con chỉ có 5 ⭐' }
+  );
+  // Cung mat nut do voi so moi khi may chu vua tra conLai = 3
+  assert.deepEqual(
+    trangThaiTruDiem(3, '8'),
+    { nut: 'truHet', soGui: 3, canhBao: 'Con chỉ có 3 ⭐' }
+  );
 
-  // Cung mat nut do khi may chu vua tra conLai = 3
-  assert.equal(trangThaiTruDiem(3, '8').nut, 'truHet');
-  assert.equal(trangThaiTruDiem(3, '8').canhBao, 'Con chỉ có 3 ⭐');
+  // Man dang tin con co 0 ⭐: KHONG khoa nut va KHONG bao "het ⭐" (so 0 do co
+  // the da cu — con vua kiem them thi lan bam nay tru dung so da go). May chu
+  // moi la cho tu choi.
+  assert.deepEqual(trangThaiTruDiem(0, '2'), { nut: 'tru', soGui: 2, canhBao: '' });
 
-  // Het sao thi khong con gi de tru: nut khoa (may chu cung tu choi dung ca nay)
-  const het = trangThaiTruDiem(0, '2');
-  assert.equal(het.nut, null);
-  assert.equal(het.canhBao, 'Con không còn ⭐ nào để trừ');
-
-  // Chua go / go rac: nut khoa, khong canh bao gi
+  // Chua go / go rac: chua co gi de gui
   for (const s of ['', '0', 'abc']) {
-    assert.deepEqual(trangThaiTruDiem(5, s), { nut: null, soTru: null, quaSo: false, canhBao: '' }, s);
+    assert.deepEqual(trangThaiTruDiem(5, s), { nut: null, soGui: null, canhBao: '' }, s);
   }
 });

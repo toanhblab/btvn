@@ -22,17 +22,15 @@ export interface ConDeTru {
  * moi), ghi ly do KHONG bat buoc, co hang nut goi y mot cham. Ly do la thu CON
  * DOC o cua hang, nen cac goi y viet bang loi noi duoc voi con (LY_DO_TRU_GOI_Y).
  *
- * Khong am, hai tang, nhung CHI MOT nut va CHI MOT duong gui:
- *   - Go qua so dang hien: `trangThaiTruDiem` (lib/types.ts) doi MAT nut thanh
- *     "Tru het N ⭐" ngay tai day, kem dong "Con chi co N ⭐" — bo me van xong
- *     viec bang mot cham, khong phai go lai cho dung.
- *   - Bam nut nao thi cung gui DUNG so trong o (`{ points: soTru }`), khong co
- *     the "tru sach so du": may chu tru `LEAST(so go, so du that)`. Nho vay so
- *     tren man cu (con vua kiem them ⭐ o iPad, may khac vua tru) khong bao gio
- *     lam con mat nhieu hon so bo me go — chi co the mat it hon.
- *   - May chu la chot cuoi (truDiem trong lib/store.ts, transaction co khoa theo
- *     con) va chi tu choi khi con khong con ⭐ nao; luc do `conLai` cua no ghi
- *     vao lop phu `vuaDoi` duoi day nen nut khoa lai ngay.
+ * Khong am, nhung CHI MOT nut va CHI MOT duong gui — hai luat o
+ * `trangThaiTruDiem` (lib/types.ts, doc chu thich o do):
+ *   - Nut gui DUNG con so tren nhan cua no (`soGui`), khong phai mot so khac:
+ *     "Trừ hết 5 ⭐" tru dung 5 du trong o dang go 8 va du con vua kiem them ⭐.
+ *   - Man nay KHONG tu choi (so ⭐ no dang giu co the da cu, ke ca so 0): go so
+ *     hop le la bam duoc. May chu la chot cuoi (truDiem trong lib/store.ts,
+ *     transaction co khoa theo con) — no tru `LEAST(so nhan duoc, so du that)`
+ *     va chi tu choi khi con khong con ⭐ nao, kem `conLai` de man sua lai vien
+ *     ⭐ ngay.
  *
  * `vuaDoi` la lop phu NGAN HAN cua so ⭐ tung con: may chu vua tra `conLai` thi
  * vien doi ngay, khong doi tai lai. Nhung props `initial` moi (bo me duyet mot
@@ -62,7 +60,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
   const soDu = (c: ConDeTru) => vuaDoi[c.id] ?? c.diem;
   const con = initial.find((c) => c.id === chon) ?? null;
   const dangCo = con ? soDu(con) : 0;
-  const { nut, soTru, quaSo, canhBao } = trangThaiTruDiem(dangCo, so);
+  const { nut, soGui, canhBao } = trangThaiTruDiem(dangCo, so);
 
   function moCon(id: string) {
     setChon((c) => (c === id ? null : id));
@@ -80,7 +78,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
       const res = await fetch('/api/tru-diem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ childId: con.id, points: soTru, reason: lyDo }),
+        body: JSON.stringify({ childId: con.id, points: soGui, reason: lyDo }),
       });
       const data = await res.json().catch(() => ({}));
       if (typeof data.conLai === 'number') setVuaDoi((d) => ({ ...d, [con.id]: data.conLai }));
@@ -102,9 +100,9 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
 
   const nhanNut =
     nut === 'truHet'
-      ? `Trừ hết ${dangCo} ⭐`
-      : soTru !== null && con
-        ? `Trừ ${soTru} ⭐ của ${con.name}`
+      ? `Trừ hết ${soGui} ⭐`
+      : nut === 'tru' && con
+        ? `Trừ ${soGui} ⭐ của ${con.name}`
         : 'Trừ ⭐';
 
   return (
@@ -164,7 +162,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
               autoFocus
               placeholder="số ⭐"
               aria-label="Số ⭐ muốn trừ"
-              className={`${oNhap} w-24 text-right ${quaSo ? 'border-error text-error' : ''}`}
+              className={`${oNhap} w-24 text-right ${canhBao ? 'border-error text-error' : ''}`}
             />
             <span className="text-p-body">⭐</span>
             {canhBao && <span className="text-p-body-sm text-error">{canhBao}</span>}

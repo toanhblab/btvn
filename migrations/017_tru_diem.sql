@@ -4,10 +4,11 @@
 --      He qua: moi dong duoi day luu DUNG so da tru mot lan — mot delta duong —
 --      khong bao gio luu tong sau khi tru.
 --   2. KHONG CHO SO DU AM. Go qua so con dang co thi man bo me doi nut thanh
---      "Tru het N" (N = so man dang tin), va lan tru duoc KEP vao so du that
---      luc bam: LEAST(so go, so du). Nen so tren man co cu den may cung khong
---      lam con mat nhieu hon so bo me go — con vua kiem them sao thi chi tru
---      dung so da go, con vua bi may khac tru thi chi tru phan con lai.
+--      "Tru het N" (N = so man dang tin) va bam la tru DUNG N — nut lam dung
+--      nhung gi nhan cua no ghi. May chu kep them lan nua vao so du that luc
+--      bam: LEAST(so nhan duoc, so du). Nen so tren man co cu den may cung
+--      khong lam con mat nhieu hon con so bo me vua doc tren nut; con vua bi
+--      may khac tru thi chi tru phan con lai.
 --   3. Ly do: CO, KHONG bat buoc, kem vai nut goi y mot cham.
 --   4. CON NHIN THAY minh bi tru va vi sao: cua hang cua con hien tung dong tru
 --      kem ly do. Vi the ly do la thu CON DOC — nut goi y viet bang loi noi
@@ -52,9 +53,10 @@
 -- "Khong am" chan o DAU? KHONG kep bang GREATEST(0, …) trong SUM — so du se khong
 -- con bang so sach, thanh hai su that. Chan LUC GHI, hai tang:
 --   - Giao dien: go qua so dang hien thi nut doi mat thanh "Tru het N ⭐" kem
---     dong "Con chi co N ⭐"; nut chi KHOA khi con khong con ⭐ nao. Mat nut chi
---     la chu: moi lan bam deu gui DUNG so trong o, khong co lenh "tru sach so
---     du" (mot ham thuan trangThaiTruDiem, lib/types.ts).
+--     dong "Con chi co N ⭐", va gui DUNG N do — mat nut chi la chu, ca hai mat
+--     gui cung mot dang than, khong co lenh "tru sach so du" (mot ham thuan
+--     trangThaiTruDiem, lib/types.ts). Man hinh KHONG tu choi: so ⭐ no dang giu
+--     co the da cu (ke ca so 0), nen go so hop le la bam duoc.
 --   - Du lieu: mot INSERT … SELECT ghi LEAST(so go, so du tinh tai cho — cung
 --     cong thuc voi soDiemTheoCon) va chi ghi khi so du > 0; chay TRONG MOT
 --     TRANSACTION sau pg_advisory_xact_lock(hashtext(child_id)) de hai request

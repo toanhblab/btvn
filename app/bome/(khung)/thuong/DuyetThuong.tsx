@@ -22,6 +22,11 @@ export interface YeuCauChoDuyet {
  * sach ngay va router.refresh() de "Da xu ly gan day" + so ⭐ tung con o trang
  * cha doc lai.
  *
+ * router.refresh() chay ca khi may chu TU CHOI, truoc khi nem loi: cai lam duyet
+ * that bai la so du that da khac so man nay dang hien ("Con chi con 2 diem, chua
+ * du 5 diem" trong khi vien ⭐ va dong nay van ghi 10). Khong doc lai thi mot man
+ * hien hai con so cho cung mot so du — cung bat bien voi TruDiem.tsx.
+ *
  * `list` bo dong da xu ly NGAY (lac quan) nhung phai dong bo lai voi props
  * `initial` moi khi trang cha render lai: giua luc bo me mo trang, con o iPad
  * co the xin them — khong dong bo thi tieu de "Cho duyet (N)" cua trang cha
@@ -64,11 +69,11 @@ export default function DuyetThuong({ initial }: { initial: YeuCauChoDuyet[] }) 
         body: JSON.stringify({ decision }),
       });
       const data = await res.json().catch(() => ({}));
+      router.refresh();
       if (!res.ok) throw new Error(data.error ?? 'Không lưu được');
       daQuyetDinh.current.add(id);
       setList((ds) => ds.filter((y) => y.redemption.id !== id));
       setHoi(null);
-      router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Không lưu được. Thử lại nhé.');
     } finally {

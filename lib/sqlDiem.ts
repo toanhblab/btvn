@@ -33,19 +33,19 @@ export const SQL_KHOA_TRU_DIEM = `SELECT pg_advisory_xact_lock(hashtext($1::text
  * Ghi MOT dong phat — MOT duong duy nhat cho moi lan bo me bam, va la tang du
  * lieu cua luat "khong am".
  *
- * `$3` la so bo me GO (man hinh luon gui so nay, ke ca khi nut doc "Tru het N":
- * N tren nut chi la nhan, tinh tu so du man dang tin). So thuc su tru la
- * `LEAST($3, so du tai luc cau nay chay)`, nen:
- *   - go 8 khi con that su co 5  -> tru 5 (ve 0, khong am);
- *   - go 8 khi con vua kiem them thanh 20 -> tru DUNG 8, KHONG phai 20. Man hinh
- *     co the dang hien so cu, nhung khong bao gio tru qua so bo me da go.
+ * `$3` la con so tren NHAN cua nut bo me vua bam (xem trangThaiTruDiem trong
+ * lib/types.ts: nhan "Trừ hết 5 ⭐" gui 5, nhan "Trừ 3 ⭐ của …" gui 3). So thuc
+ * su tru la `LEAST($3, so du tai luc cau nay chay)`, nen:
+ *   - nhan ghi 8 ma con that su chi co 5 -> tru 5 (ve 0, khong am);
+ *   - nhan ghi 5 ma con vua kiem them thanh 20 -> tru DUNG 5. Cau nay khong bao
+ *     gio tru qua so nhan duoc, va man hinh khong bao gio gui so khac so tren nhan.
  * Tu choi CHI khi so du = 0 (`b.so_du > 0`): khong con gi de tru thi 0 dong,
  * khong ghi dong 0 diem (CHECK cua bang chan). So du sau do doc bang
  * SQL_SO_DU_MOT_CON ngay trong cung transaction.
  *
  *   $1 id          newId('pen')
  *   $2 childId
- *   $3 points      so bo me go (nguyen duong) — tran tren cua lan tru nay
+ *   $3 points      so tren nhan nut (nguyen duong) — tran tren cua lan tru nay
  *   $4 reason      chu bo me go, da trim/cat; '' = khong ghi ly do
  *   $5 familyId    con phai thuoc nha nay — bang khong co family_id
  */

@@ -318,14 +318,21 @@ con bỏ tick hay bố mẹ xoá bài cũng không làm con mất điểm đã k
 bấm viên ⭐ của con, **gõ số ⭐ muốn trừ** (không gõ "tổng mới"), ghi lý do — không
 bắt buộc, có chip gợi ý viết bằng lời nói được với con vì **con sẽ đọc dòng đó** ở
 cửa hàng ("Bố mẹ đã trừ ⭐": −3 ⭐ · Cãi bố mẹ; để trống thì con thấy "Con hỏi bố mẹ
-vì sao nhé"). Chỉ trừ, **không có đường cộng tay**. **Số dư không bao giờ âm, và lần
-trừ không bao giờ nhiều hơn số bố mẹ gõ**: gõ quá số đang có thì chính cái nút đó đổi
-mặt thành **"Trừ hết N ⭐"** (một hàm thuần `trangThaiTruDiem` trong `lib/types.ts` —
-không có hai bản luật), nhưng **chỉ có một đường gửi**: mọi lần bấm đều gửi
-`{ points: <số trong ô> }` và máy chủ ghi `LEAST(số đó, số dư lúc chạy câu)`. Nhờ vậy
-màn hình hiện số cũ không thể trừ quá tay: con có 5 mà gõ 8 thì trừ 5 (về 0), còn con
-vừa kiếm thêm thành 20 thì trừ **đúng 8** chứ không trừ sạch. Máy chủ chỉ từ chối khi
-con **không còn ⭐ nào** (400 kèm `conLai` để màn khoá nút). Mỗi lần trừ là **một dòng `score_penalties`** lưu đúng số đã trừ + lý
+vì sao nhé"). Chỉ trừ, **không có đường cộng tay**. Số dư không bao giờ âm, dựa trên
+hai luật ở **một hàm thuần** `trangThaiTruDiem` (`lib/types.ts`) + `SQL_TRU_DIEM`:
+
+1. **Nút làm đúng những gì nhãn của nó ghi.** `soGui` vừa là con số in trên nhãn vừa
+   là con số gửi lên (`{ points: soGui }` — một dạng thân duy nhất cho cả hai mặt
+   nút). Gõ quá số đang hiện thì nút đổi mặt thành **"Trừ hết N ⭐"** với N = số đang
+   hiện, và bấm là trừ **đúng N** — ô còn gõ 8 mà nhãn ghi 5 thì trừ 5, kể cả khi con
+   vừa kiếm thêm thành 20.
+2. **Màn hình không bao giờ tự từ chối, máy chủ mới từ chối.** Số ⭐ màn đang giữ có
+   thể đã cũ theo cả hai chiều, kể cả số 0, nên gõ được số hợp lệ là bấm được. Máy
+   chủ ghi `LEAST(số nhận được, số dư lúc chạy câu)` — con còn ít hơn nhãn thì trừ hết
+   chỗ còn — và chỉ từ chối khi con **không còn ⭐ nào** (400 kèm `conLai` để màn sửa
+   lại viên ⭐ ngay).
+
+Mỗi lần trừ là **một dòng `score_penalties`** lưu đúng số đã trừ + lý
 do + thời điểm (bảng riêng, không phải dòng âm trong `score_events`, không phải đổi
 thưởng giả — lý do ở [migrations/017_tru_diem.sql](migrations/017_tru_diem.sql));
 kiểm-và-ghi chạy trong **một transaction có khoá theo con** (`queryTx` trong
