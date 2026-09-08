@@ -39,6 +39,9 @@ Mã PIN 4 số vừa là **mật khẩu** vừa là **tên gọi riêng của nh
   của con **không** mở phần của bố mẹ, nên vẫn an toàn.
 - Nhiều nhà cùng dùng chung một app, nên **hai nhà không được trùng mã PIN**.
   Nếu mã đã có nhà khác dùng, app sẽ báo để chọn mã khác.
+- Ba mã **1111**, **2222**, **3333** là của ba nhà mẫu (app hiện tiếng Nhật, tiếng
+  Hàn, tiếng Anh, dùng để giới thiệu app cho người khác) — không chọn được ba mã
+  này, app sẽ báo *"dành riêng cho bản demo"*.
 
 > Ở màn nhập PIN của bố mẹ có ô **"Nhớ trên thiết bị này"** — mặc định không tick.
 > **Đừng tick nếu đó là máy của các con.**
@@ -292,6 +295,12 @@ và ⭐ đã cộng đều giữ nguyên.
 **Con nhìn thấy mã PIN rồi, sợ con tự vào phần bố mẹ?**
 Vào **Cài đặt → Đổi mã PIN** (cần mã hiện tại). Đổi xong máy của các con vẫn dùng
 bình thường, không phải cài lại gì.
+
+**App hiện tiếng nước ngoài, không phải tiếng Việt?**
+Máy đang mở nhà mẫu (mã 1111 tiếng Nhật, 2222 tiếng Hàn, 3333 tiếng Anh). Chữ của
+app đi theo **nhà** chứ không theo máy: ở màn của bố mẹ vào **Cài đặt → "Quên PIN
+trên thiết bị này"** rồi nhập lại mã PIN của nhà mình là về tiếng Việt; ở máy của
+con thì mở lại link `/nha/<mã nhà>` của nhà mình (bố mẹ copy ở Cài đặt).
 
 **Xoá hết bài cũ đi được không?**
 Được. Vào **Nhiệm vụ → "Xoá tất cả bài tập và việc nhà"** — app hỏi lại hai nhịp

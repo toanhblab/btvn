@@ -187,6 +187,23 @@ trẻ em, phân tích xong phải xoá ngay. File Safari: `tfhd` flags `0x2001a`
 là `default-base-is-moof` (offset tương đối), một `moof`, không `mfra`, AAC; file
 Chrome có nhiều `moof`, `mfra>tfra` (offset tuyệt đối), Opus, `mvhd`/`tkhd` version 1.
 
+Đa ngôn ngữ (issue #46): chữ của app hiện theo **ngôn ngữ của nhà**
+(`families.ui_locale`, migration 018, mặc định `vi`; KHÔNG phải `assignments.lang`
+— cột đó là ngôn ngữ ĐỀ BÀI). Lớp dịch ở `lib/i18n/` — đọc chú thích đầu
+`lib/i18n/chu.ts`: khoá là CHÍNH CÂU TIẾNG VIỆT trong mã (`T('Hôm nay')`), `en.ts`
+là danh sách khoá, `ja.ts`/`ko.ts` là `Record<Key, string>`; server dùng
+`await chu()`, client dùng `useT()`, hàm thuần nhận `T`. **Mọi chữ mới trên màn
+hình phải qua `T(...)`** và thêm vào cả ba từ điển — `lib/i18n.test.ts` quét mọi
+tệp giao diện, còn một câu tiếng Việt nằm ngoài `T(...)` là test đỏ (danh sách
+miễn trừ trong test, mỗi mục một lý do). Chữ bố mẹ tự gõ (đề bài, tên nhiệm vụ,
+phần thưởng) KHÔNG dịch. Tiếng Nhật/Hàn/Anh chỉ để captain demo bằng ba nhà riêng
+PIN 1111/2222/3333 (`PIN_DEMO`, giữ chỗ vĩnh viễn) — `scripts/seed-demo.mjs` nạp
+lại được trên DB đang chạy (chạy trong `npm run build`), chỉ đụng `family_id` của
+nhà demo; `lib/nha-demo.test.ts` chụp nhà thật trước/sau và gọi mọi hàm đọc của
+store để khẳng định nhà demo không nhìn sang nhà khác. Test PGlite giờ import
+thẳng `lib/store.ts` được nhờ `scripts/test-hook.mjs` (resolve import không đuôi,
+`npm test` nạp qua `--import`) + `BTVN_PGLITE_DIR=memory://`.
+
 Tài liệu có hai người đọc khác nhau: `README.md` cho người phát triển, còn
 `HUONG-DAN-BO-ME.md` (kèm ảnh trong `huong-dan-anh/`) cho bố mẹ dùng app thật —
 viết không thuật ngữ, chỉ gọi tên thứ hiện trên màn hình. Đổi luồng hay đổi chữ

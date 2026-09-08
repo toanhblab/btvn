@@ -113,6 +113,13 @@ Nguyên tắc: **không có tài khoản, không email, không mật khẩu.**
 
 Đánh đổi đã chấp nhận: ai có link `/nha/<mã nhà>` đều mở được màn hình bài tập của các con nhà đó. Mã nhà là chuỗi ngẫu nhiên, không đoán được. Đổi PIN được ở Cài đặt, nhưng **không** đăng xuất các thiết bị khác.
 
+### 4.6 Đa ngôn ngữ (issue #46)
+
+- Chữ của app hiện theo **ngôn ngữ của nhà** (tiếng Việt / Anh / Nhật / Hàn), không theo máy: nhập PIN nhà nào thì thấy chữ của nhà đó. Mặc định tiếng Việt; **không có nút đổi ngôn ngữ**.
+- Chỉ dịch **chữ của app**. Chữ bố mẹ tự gõ (đề bài, tên nhiệm vụ, tên phần thưởng) giữ nguyên, **không dịch bằng AI**.
+- Người dùng thật là gia đình dùng tiếng Việt. Tiếng Nhật và Hàn (và Anh) phục vụ **demo cho khách hàng**: ba nhà demo với dữ liệu mẫu đầy đủ, mã PIN **1111** (Nhật), **2222** (Hàn), **3333** (Anh) — giữ chỗ vĩnh viễn, không ai tạo nhà trùng được. Nhà demo chỉ chứa dữ liệu mẫu và không nhìn sang nhà khác được (có kiểm thử).
+- Mức hoàn thiện: mọi chữ trên màn hình đều được dịch, đủ tin để demo; không cần định dạng ngày giờ / số nhiều theo bản địa, không cần người bản ngữ duyệt.
+
 ## 5. Ngoài phạm vi MVP (để sau)
 
 - Nhắc nhở tự động (thông báo/push, "8h tối rồi, còn 2 bài chưa xong").
@@ -143,7 +150,7 @@ Nguyên tắc: **không có tài khoản, không email, không mật khẩu.**
 
 ## 7. Mô hình dữ liệu (sơ bộ)
 
-- **Family**: id, tên, `parent_pin` (lưu dạng hash)
+- **Family**: id, tên, `parent_pin` (lưu dạng hash), `ui_locale` (ngôn ngữ giao diện `vi` | `en` | `ja` | `ko`, mặc định `vi` — khác với `lang` của Assignment)
 - **Child**: id, family_id, tên, **ảnh (bắt buộc — dùng để con tự nhận ra mình)**, **màu riêng**, lớp, thứ tự hiển thị
 - **Submission** (lần nhập của phụ huynh): id, family_id, nội dung text gốc, danh sách ảnh, ngày nhập
   → một Submission có thể sinh ra bài tập cho **nhiều con** (trường hợp hai bé sinh đôi).
@@ -204,6 +211,7 @@ Nguyên tắc: **không có tài khoản, không email, không mật khẩu.**
 - **Đăng nhập:** con không cần đăng nhập; phụ huynh dùng một mã PIN dùng chung.
 - **Chia sẻ cho bạn bè:** mỗi nhà tự tạo và tự chọn PIN, PIN không được trùng nhau; iPad của con gắn vào nhà bằng link riêng của nhà đó.
 - **Bé 4 tuổi có bài tập thật** — học thêm tiếng Anh → cả 3 con đều là người dùng thật, đề bài có cả tiếng Việt và tiếng Anh, phải đọc thành tiếng đúng giọng.
+- **Đa ngôn ngữ (#46):** ngôn ngữ là thuộc tính của nhà; tiếng Nhật/Hàn/Anh chỉ để demo bằng ba nhà riêng PIN 1111/2222/3333 có dữ liệu mẫu; không dựng nút đổi ngôn ngữ; không dịch chữ bố mẹ gõ.
 
 ## 12. Còn cần chốt
 

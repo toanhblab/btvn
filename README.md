@@ -23,6 +23,7 @@ tính của nhà: nhập PIN ra đúng một nhà, nên hai nhà không được
 ```bash
 npm install
 npm run db:seed      # tạo bảng + 1 nhà + 3 con + bài tập mẫu + 5 nhiệm vụ hàng ngày + 4 phần thưởng mẫu, PIN mặc định 1234
+npm run db:seed:demo # (tuỳ chọn) thêm 3 nhà demo tiếng Nhật / Hàn / Anh — PIN 1111 / 2222 / 3333
 npm run dev
 ```
 
@@ -57,6 +58,47 @@ Cách phân biệt nhà:
 Không có link thì trên iPad mở web → "Đây là máy của nhà nào?" → nhập PIN một
 lần. Đường này **chỉ** gắn máy vào nhà, không mở phần bố mẹ, nên nhập PIN ở đây
 trên iPad của các con vẫn an toàn.
+
+## Đa ngôn ngữ (issue #46)
+
+Chữ của app (nút, tiêu đề, thông báo) hiện theo **ngôn ngữ của nhà** — cột
+`families.ui_locale` (`vi` | `en` | `ja` | `ko`, migration 018), mặc định tiếng Việt
+cho mọi nhà đang có. Máy nhập PIN nhà nào thì thấy chữ của nhà đó; **không có nút
+đổi ngôn ngữ**, và **không dịch chữ bố mẹ tự gõ** (đề bài, tên nhiệm vụ, tên phần
+thưởng). Đừng nhầm với `assignments.lang`: cột đó là ngôn ngữ của *đề bài* (chọn
+giọng đọc), có từ migration 001.
+
+Tiếng Nhật, Hàn, Anh tồn tại để **demo cho khách hàng**: ba nhà demo với dữ liệu
+mẫu đầy đủ (con, bài hôm qua/hôm nay/mai, nhiệm vụ cả hai nhóm, phần thưởng,
+lịch sử ⭐, một yêu cầu chờ duyệt, một lần bị trừ ⭐):
+
+| PIN | Ngôn ngữ | Link iPad |
+| --- | --- | --- |
+| `1111` | 日本語 | `/nha/demo-ja` |
+| `2222` | 한국어 | `/nha/demo-ko` |
+| `3333` | English | `/nha/demo-en` |
+
+Ba mã PIN này **giữ chỗ vĩnh viễn** (`PIN_DEMO` trong `lib/i18n/ngonNgu.ts`):
+tạo nhà / đổi PIN trùng bị từ chối ngay. Nhà demo dùng PIN dễ đoán nên chỉ chứa
+dữ liệu mẫu, và `lib/nha-demo.test.ts` khẳng định không có đường nào từ nhà demo
+nhìn sang nhà khác.
+
+`npm run db:seed:demo` (`scripts/seed-demo.mjs`) nạp / nạp lại ba nhà này — chạy
+được trên DB thật đang có nhà, chạy lại bao nhiêu lần cũng không sinh bản trùng
+(id cố định, bên trong nhà demo xoá-nạp lại trong một transaction, chỉ lọc theo
+`family_id` của nhà demo). Nó nằm trong `npm run build` sau migrate nên mỗi lần
+deploy bản demo lại mới theo ngày hôm đó; lỗi ở bước này không làm hỏng build.
+Nếu PIN demo đang là của một nhà thật (đăng ký trước khi giữ chỗ) thì nhà demo đó
+bị bỏ qua và in cảnh báo.
+
+Lớp dịch ở `lib/i18n/`: khoá là **chính câu tiếng Việt** trong mã nguồn —
+`T('Hôm nay con là ai?')` — nên không phải đặt tên khoá; `en.ts` là danh sách khoá
+(TypeScript báo lỗi khi gọi câu chưa có), `ja.ts`/`ko.ts` là `Record<Key, string>`
+(thiếu câu nào cũng báo lỗi). Server component / route: `const T = await chu()`
+(`lib/i18n/server.ts`); client component: `const T = useT()` (`lib/i18n/client.tsx`);
+hàm thuần nhận `T` làm tham số. Tham số dạng `{n}`. `lib/i18n.test.ts` quét mọi tệp
+giao diện để không còn câu tiếng Việt nào nằm ngoài `T(...)`, và kiểm ba từ điển
+đủ khoá, không rỗng, giữ đúng tham số.
 
 Mọi truy vấn trong `lib/store.ts` đều nhận `familyId` và tự lọc theo nó — kể cả
 đường con tick bài xong (việc nhà cũng đi đúng đường này), con nộp video và con
@@ -125,6 +167,7 @@ bằng AI là chưa hoạt động. Đặt vào `.env.local`:
 | `NOUS_API_KEY` | Tách bài tạm theo dòng, có cảnh báo rõ cho bố mẹ | portal.nousresearch.com |
 | `NOUS_MODEL` | Dùng `qwen/qwen3-vl-32b-instruct` — **phải là model có vision** | Danh sách ở `/v1/models` |
 | `PIN_SECRET` | Dùng chuỗi mặc định — **phải đổi trước khi deploy** | Tự đặt |
+| `BTVN_PGLITE_DIR` | PGlite ở `.data/pg` | Chỉ để test / thử trên DB tạm (`memory://` = trong RAM) |
 
 `PIN_SECRET` là gốc của cả hash PIN lẫn chữ ký cookie: **đặt một lần rồi không
 đổi nữa**. Đổi nó là PIN của mọi nhà thành vô hiệu (hash trong DB không khớp
@@ -154,6 +197,8 @@ app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 PIN; bố mẹ duyệt — cần PIN), tep (đọc tệp đã ghi ở
                 .data/uploads khi dev)
 app/_components/ BanPhimPin — bàn phím số dùng chung cho 4 chỗ nhập PIN
+lib/i18n/       lớp dịch: ngonNgu (bộ ngôn ngữ + PIN demo), chu (T), en/ja/ko (từ
+                điển, khoá = câu tiếng Việt), server (chu()), client (useT)
 lib/            db (Neon|PGlite), store (truy vấn theo familyId), auth (PIN +
                 cookie có chữ ký), pin (PIN_LEN dùng cả hai phía), diem (luật
                 tính điểm, hàm thuần), nhomNhiemVu (dòng nào nằm trên màn của
@@ -165,7 +210,9 @@ lib/            db (Neon|PGlite), store (truy vấn theo familyId), auth (PIN +
 proxy.ts        chặn /bome/* khi chưa nhập PIN
 migrations/     từng bước thay đổi lược đồ, chạy theo thứ tự tên tệp (bám PRD mục 7)
 scripts/        db.mjs (kết nối + bộ chạy migration), migrate.mjs (CLI, chạy khi
-                build), seed.mjs (dữ liệu mẫu để dev — xoá sạch trước khi nạp)
+                build), seed.mjs (dữ liệu mẫu để dev — xoá sạch trước khi nạp),
+                seed-demo.mjs + demo-data.mjs (ba nhà demo, chạy khi build),
+                test-hook.mjs (node --test resolve import không đuôi)
 stitch/         bản Stitch gốc của phần trẻ (đối chiếu)
 stitch-parent/  bản Stitch gốc của phần bố mẹ + design system
 legacy-static/  bản HTML/JS thuần đầu tiên của phần trẻ, giữ để tham chiếu

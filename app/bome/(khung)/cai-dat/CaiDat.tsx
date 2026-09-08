@@ -59,6 +59,18 @@ export default function CaiDat({
   const [newPin, setNewPin] = useState('');
   const [newPin2, setNewPin2] = useState('');
   const [savingPin, setSavingPin] = useState(false);
+  const [dangQuen, setDangQuen] = useState(false);
+
+  async function quenPin() {
+    setDangQuen(true);
+    try {
+      await fetch('/api/pin', { method: 'DELETE' });
+      router.push('/bome/pin');
+      router.refresh();
+    } finally {
+      setDangQuen(false);
+    }
+  }
 
   async function doiPin() {
     setMsg('');
@@ -204,6 +216,23 @@ export default function CaiDat({
           </div>
         </div>
       )}
+
+      {/* Quen PIN tren may nay (DELETE /api/pin): dong phan bo me, giu "may nay la
+          cua nha nao" (lib/auth.ts signOut). Can cho hai viec: bo me trot tick
+          "Nho" tren iPad cua con, va captain demo doi nha bang cach NHAP PIN KHAC
+          (issue #46) — khong co nut nay thi phai dong trinh duyet. */}
+      <button
+        onClick={quenPin}
+        disabled={dangQuen}
+        className="w-full mt-2 min-h-p-tap rounded-card border border-outline-variant text-on-surface-variant
+                   text-p-body-sm font-bold flex items-center justify-center gap-2 disabled:opacity-60"
+      >
+        <span className="material-symbols-outlined text-xl">logout</span>
+        {dangQuen ? T('Đang đóng…') : T('Quên PIN trên thiết bị này')}
+      </button>
+      <p className="text-p-body-sm text-outline mt-1">
+        {T('Đóng phần bố mẹ trên máy này; màn của con vẫn mở như cũ. Lần sau nhập PIN lại — nhập PIN nhà khác thì sang nhà đó.')}
+      </p>
 
       </section>
 
