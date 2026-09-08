@@ -11,7 +11,7 @@ import { veTrenManCuaCon } from './nhomNhiemVu';
 import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu';
 import {
   SQL_DUYET_DOI_THUONG, SQL_KHOA_TRU_DIEM, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON,
-  SQL_TRANG_THAI_DOI_THUONG, SQL_TRU_DIEM,
+  SQL_TRANG_THAI_DOI_THUONG, SQL_TRU_DIEM, nhanhDuyet,
 } from './sqlDiem';
 
 /** Ngay hom nay theo gio dia phuong, YYYY-MM-DD (toISOString la UTC nen lech mui gio). */
@@ -1415,7 +1415,8 @@ export async function xinDoiThuong(
  * khong: bo/me kia vua duyet xong thi gia da bi tru, nen so du con lai gan nhu
  * luon nho hon gia — bao "chua du diem" cho mot yeu cau da duyet la moi bo me di
  * tu choi mot thu da cho roi). Het 'pending' -> 409; con 'pending' -> hang rao so
- * du chan -> 400 kem so du that.
+ * du chan -> 400 kem so du that. Chinh phep chon nhanh do (trang thai TRUOC so
+ * du) nam o `nhanhDuyet` trong lib/sqlDiem.ts de test chay dung ham nay.
  */
 export async function duyetDoiThuong(
   familyId: string,
@@ -1436,17 +1437,16 @@ export async function duyetDoiThuong(
       { sql: SQL_TRANG_THAI_DOI_THUONG, params: [id, familyId] },
       { sql: SQL_SO_DU_MOT_CON, params: [r.childId, familyId] },
     ]);
-    if (daDuyet.length === 0) {
-      if (trangThai[0]?.status !== 'pending') {
-        return { ok: false, status: 409, error: 'Yêu cầu này đã được xử lý rồi.' };
-      }
-      const diem = Number(soDu[0]?.so_du ?? 0);
-      return {
-        ok: false, status: 400,
-        error: `Con chỉ còn ${diem} điểm, chưa đủ ${r.cost} điểm. Bố mẹ có thể từ chối để con chọn lại.`,
-      };
+    const nhanh = nhanhDuyet(daDuyet.length, trangThai[0]?.status);
+    if (nhanh === 'duyetDuoc') return { ok: true, redemption: toRedemption(daDuyet[0]) };
+    if (nhanh === 'daXuLy') {
+      return { ok: false, status: 409, error: 'Yêu cầu này đã được xử lý rồi.' };
     }
-    return { ok: true, redemption: toRedemption(daDuyet[0]) };
+    const diem = Number(soDu[0]?.so_du ?? 0);
+    return {
+      ok: false, status: 400,
+      error: `Con chỉ còn ${diem} điểm, chưa đủ ${r.cost} điểm. Bố mẹ có thể từ chối để con chọn lại.`,
+    };
   }
   const rows = await query<RedemptionRow>(
     `UPDATE reward_redemptions r SET status = 'rejected', decided_at = now()
@@ -1502,13 +1502,15 @@ export type KetQuaTruDiem =
   | { ok: false; status: number; error: string; conLai: number };
 
 /**
- * Bo me tru ⭐ cua con (CAN PIN o route). `points` la so bo me GO — MOT duong
- * duy nhat cho moi lan bam, ke ca khi nut doc "Tru het N" (N tren nut chi la
- * nhan tinh tu so du man dang tin; so gui len van la so trong o).
+ * Bo me tru ⭐ cua con (CAN PIN o route). `points` la con so TREN NHAN cua nut bo
+ * me vua bam — MOT duong duy nhat cho moi lan bam, ke ca khi nut doc "Tru het N":
+ * man hinh gui dung so no in ra, khong bao gio mot so khac (trangThaiTruDiem
+ * trong lib/types.ts).
  *
  * So tru thuc su = `LEAST(points, so du tai luc cau chay)`, nen man hinh hien so
- * cu KHONG bao gio lam con mat nhieu hon bo me go: go 8 luc con that su co 20 la
- * tru dung 8; go 8 luc con chi co 5 la tru 5 (ve 0).
+ * cu KHONG bao gio lam con mat nhieu hon so tren nhan: nhan "Tru het 5 ⭐" la tru
+ * dung 5 du con vua kiem them thanh 20; nhan "Tru 8 ⭐" luc con chi con 5 la tru
+ * 5 (ve 0).
  *
  * "Khong am" chan o tang du lieu ngay tai day: MOT transaction gom
  *   1. khoa theo con (pg_advisory_xact_lock) — hai request cung con xep hang;
@@ -1516,10 +1518,11 @@ export type KetQuaTruDiem =
  *   3. doc so du sau do — de tra "con lai" ma khong them vong goi.
  * Hai request dong thoi moi ben go 7 khi con co 10: ben sau lay duoc khoa moi
  * chay INSERT, luc do so du la 3 -> tru 3, tong dung 10, ve 0. Het ⭐ thi 400
- * "khong con ⭐ nao de tru" — day la ly do tu choi DUY NHAT. Khong co
- * GREATEST(0, …) o dau ca: so du luon bang so sach.
+ * "khong con ⭐ nao de tru" — day la ly do tu choi DUY NHAT, va may chu la cho
+ * DUY NHAT tu choi (man hinh khong tu choi, ke ca khi no dang tin con co 0 ⭐).
+ * Khong co GREATEST(0, …) o dau ca: so du luon bang so sach.
  *
- * `conLai` luon co, ke ca khi tu choi, de man bo me cap nhat vien ⭐ ngay.
+ * `conLai` luon co, ke ca khi tu choi, de man bo me sua lai vien ⭐ ngay.
  */
 export async function truDiem(
   familyId: string,

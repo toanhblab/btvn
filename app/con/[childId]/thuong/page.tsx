@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { viewingFamilyId } from '@/lib/auth';
+import { ngayNha } from '@/lib/ngay';
 import { getChild, listPenalties, listRedemptions, listRewards, soDiem } from '@/lib/store';
 import { LY_DO_TRU_TRONG } from '@/lib/types';
 import DoiThuong from './DoiThuong';
@@ -125,7 +126,7 @@ export default async function CuaHangPhanThuong({ params }: { params: Promise<{ 
                   {p.reason || LY_DO_TRU_TRONG}
                 </span>
                 <span className="text-k-label text-on-surface-variant whitespace-nowrap">
-                  {new Date(p.createdAt).toLocaleDateString('vi-VN')}
+                  {ngayNha(p.createdAt)}
                 </span>
               </li>
             ))}

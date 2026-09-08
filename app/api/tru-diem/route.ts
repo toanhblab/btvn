@@ -18,14 +18,16 @@ export async function GET(req: Request) {
  * POST /api/tru-diem { childId, points, reason? } — BO ME tru ⭐ cua con
  * (issue #43). CAN PIN. Chi tru, khong co duong cong tay.
  *
- *   points   so ⭐ bo me GO (nguyen duong) — MOT duong duy nhat, ke ca khi nut
- *            tren man doc "Tru het N" (N chi la nhan). Day la TRAN TREN cua lan
- *            tru: may chu ghi LEAST(points, so du that luc chay cau), nen so tren
- *            man da cu khong lam con mat nhieu hon so bo me go.
+ *   points   con so TREN NHAN cua nut bo me vua bam (nguyen duong) — MOT duong
+ *            duy nhat, ke ca khi nut doc "Tru het N": man hinh gui dung so no in
+ *            ra. Day la TRAN TREN cua lan tru: may chu ghi LEAST(points, so du
+ *            that luc chay cau), nen so tren man da cu khong lam con mat nhieu
+ *            hon so tren nhan.
  *   reason   khong bat buoc, cat theo MAX_CHU_LY_DO_TRU; con se doc dong nay.
  *
  * So du KHONG BAO GIO am; ly do tu choi DUY NHAT la con khong con ⭐ nao -> 400
- * kem `conLai` de man bo me khoa nut. Kiem va ghi trong mot transaction co khoa
+ * kem `conLai` de man bo me sua lai vien ⭐ ngay (man khong tu khoa nut theo so
+ * do — day la cho DUY NHAT tu choi). Kiem va ghi trong mot transaction co khoa
  * theo con (truDiem).
  */
 export async function POST(req: Request) {

@@ -53,3 +53,32 @@ export function ngayGanNhatCoBai(dueDates: string[], mocNgay: string, limit = 3)
   for (const d of dueDates) if (d <= mocNgay) daXem.add(d);
   return [...daXem].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0)).slice(0, limit);
 }
+
+/**
+ * Mui gio nha — MOT ban duy nhat cho moi cho in moc thoi gian lay tu DB
+ * (score_penalties.created_at, reward_redemptions.decided_at, gio nop video...).
+ *
+ * Cac man do la force-dynamic nen chuoi duoc dung o HAM Vercel (TZ=UTC) roi
+ * hydrate lai o may bo me / iPad (+07). Khong chot mui gio thi lan tru luc 06:30
+ * sang 9/9 gio nha (23:30Z ngay 8/9) hien ra "8/9/2026": con doc thanh bi tru tu
+ * hom qua, va moi lan tru trong khoang 00:00-07:00 deu lech mot ngay. Khong lo
+ * ra o may dev vi may o day chay dung +07.
+ */
+export const MUI_GIO_NHA = 'Asia/Ho_Chi_Minh';
+
+/**
+ * Chi lay TUNG SO roi tu ghep theo khuon cua minh: toLocaleDateString('vi-VN')
+ * con lay thu tu va dau phan cach tu ban CLDR cua chinh may chay nen may chu va
+ * iPad ra hai chuoi khac nhau cho cung mot moc (chu thich day du o
+ * app/bome/(khung)/bai/[id]/SuaBai.tsx, cho hien GIO nop video).
+ */
+const SO_NGAY_NHA = new Intl.DateTimeFormat('en-US', {
+  timeZone: MUI_GIO_NHA, year: 'numeric', month: '2-digit', day: '2-digit',
+});
+
+/** Moc ISO tu DB -> "9/9/2026" theo mui gio nha (khong so 0 dan dau, nhu vi-VN). */
+export function ngayNha(iso: string): string {
+  const p: Record<string, string> = {};
+  for (const { type, value } of SO_NGAY_NHA.formatToParts(new Date(iso))) p[type] = value;
+  return `${Number(p.day)}/${Number(p.month)}/${p.year}`;
+}

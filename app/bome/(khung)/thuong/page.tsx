@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
 import { DIEM_NGAY_XONG, DIEM_XONG_SOM } from '@/lib/diem';
+import { ngayNha } from '@/lib/ngay';
 import { listChildren, listPenalties, listRedemptions, listRewards, soDiemTheoCon } from '@/lib/store';
 import DuyetThuong from './DuyetThuong';
 import PhanThuong from './PhanThuong';
@@ -101,7 +102,7 @@ export default async function Page() {
                     </span>
                     <span className="block text-p-body-sm text-on-surface-variant">
                       {p.reason ? '' : 'Không ghi lý do · '}
-                      {new Date(p.createdAt).toLocaleDateString('vi-VN')}
+                      {ngayNha(p.createdAt)}
                     </span>
                   </span>
                 </li>
@@ -132,7 +133,7 @@ export default async function Page() {
                       <b>{c?.name ?? '?'}</b> · {r.rewardName}
                     </span>
                     <span className="block text-p-body-sm text-on-surface-variant">
-                      {r.cost} ⭐ · {r.decidedAt ? new Date(r.decidedAt).toLocaleDateString('vi-VN') : ''}
+                      {r.cost} ⭐ · {r.decidedAt ? ngayNha(r.decidedAt) : ''}
                     </span>
                   </span>
                   <span

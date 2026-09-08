@@ -104,3 +104,25 @@ export const SQL_TRANG_THAI_DOI_THUONG = `SELECT r.status
      FROM reward_redemptions r
      JOIN children c ON c.id = r.child_id
     WHERE r.id = $1 AND c.family_id = $2`;
+
+/**
+ * VI SAO SQL_DUYET_DOI_THUONG khong doi dong nao — nhanh tra ve cua
+ * `duyetDoiThuong` (lib/store.ts), tach ra thanh ham thuan de test PGlite
+ * (lib/tinh-diem.test.ts) khang dinh dung nhanh nay chu khong tu suy lai mot ban
+ * thu hai roi de hai ban lech nhau.
+ *
+ * THU TU la ca noi dung cua ham: TRANG THAI xet TRUOC so du. Xet so du truoc thi
+ * bo/me kia vua duyet xong -> gia da bi tru -> so du con lai gan nhu luon nho hon
+ * gia, va ben sau doc phai "chua du diem" cho mot yeu cau DA DUOC DUYET (moi bo
+ * me di tu choi mot thu da cho roi).
+ *
+ *   soDongDoi   so dong SQL_DUYET_DOI_THUONG doi duoc (0 hoac 1)
+ *   trangThai   status doc lai bang SQL_TRANG_THAI_DOI_THUONG (undefined = khong
+ *               con dong nao / khong thuoc nha nay)
+ */
+export type NhanhDuyet = 'duyetDuoc' | 'daXuLy' | 'thieuDiem';
+
+export function nhanhDuyet(soDongDoi: number, trangThai: string | undefined): NhanhDuyet {
+  if (soDongDoi > 0) return 'duyetDuoc';
+  return trangThai !== 'pending' ? 'daXuLy' : 'thieuDiem';
+}

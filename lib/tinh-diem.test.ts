@@ -52,7 +52,7 @@ import {
 import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu.ts';
 import {
   SQL_DUYET_DOI_THUONG, SQL_KHOA_TRU_DIEM, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON,
-  SQL_TRANG_THAI_DOI_THUONG, SQL_TRU_DIEM,
+  SQL_TRANG_THAI_DOI_THUONG, SQL_TRU_DIEM, nhanhDuyet,
 } from './sqlDiem.ts';
 import { trangThaiTruDiem } from './types.ts';
 
@@ -1185,9 +1185,10 @@ test('nha khac khong tru duoc con nha minh; xoa con keo theo hinh phat (CASCADE)
  * tren), UPDATE co kiem so du, doc trang thai, doc so du. Duyet la duong tru ⭐
  * thu hai nen hai duong phai xep hang cung cho, khong thi so du xuong duoi 0.
  *
- * `ketQua` mo phong lai dung nhanh tra ve cua store: 'ok' | 409 (dong khong con
- * 'pending' — bo/me kia vua xu ly) | 400 (con 'pending' nhung hang rao so du
- * chan). Phan biet bang TRANG THAI, khong bang so du.
+ * `ketQua` KHONG suy lai nhanh tra ve: no goi chinh `nhanhDuyet` (lib/sqlDiem.ts)
+ * ma store dung, voi ket qua SQL that — 'duyetDuoc' | 'daXuLy' (dong khong con
+ * 'pending', bo/me kia vua xu ly -> 409) | 'thieuDiem' (con 'pending' nhung hang
+ * rao so du chan -> 400). Nhu vay dao thu tu hai nhanh do trong ham la test do.
  */
 async function duyet(rdmId: string, childId: string, familyId = 'fam_cu') {
   return db.transaction(async (tx) => {
@@ -1197,7 +1198,7 @@ async function duyet(rdmId: string, childId: string, familyId = 'fam_cu') {
       { status?: string }[];
     const [sd] = (await tx.query(SQL_SO_DU_MOT_CON, [childId, familyId])).rows as { so_du: unknown }[];
     const conLai = Number(sd?.so_du ?? 0);
-    const ketQua = daDuyet.length > 0 ? 'ok' : tt?.status !== 'pending' ? 409 : 400;
+    const ketQua = nhanhDuyet(daDuyet.length, tt?.status);
     return { daDuyet: daDuyet as Record<string, unknown>[], conLai, ketQua };
   });
 }
@@ -1220,7 +1221,7 @@ test('duyet doi thuong: du diem thi tru dung gia; thieu diem thi KHONG doi gi (c
   await xinDoi('rdm_p7', 'con_p7', 4);
 
   const kq = await duyet('rdm_p7', 'con_p7');
-  assert.equal(kq.ketQua, 'ok');
+  assert.equal(kq.ketQua, 'duyetDuoc');
   assert.equal(kq.daDuyet.length, 1);
   assert.equal(kq.conLai, 6, 'so du bot dung gia phan thuong, khong ghi dong nao');
   assert.equal(await soDu('con_p7'), 6);
@@ -1231,7 +1232,7 @@ test('duyet doi thuong: du diem thi tru dung gia; thieu diem thi KHONG doi gi (c
   await tru('con_p7', 4, 'Chưa làm bài');
   const thieu = await duyet('rdm_p7b', 'con_p7');
   assert.equal(thieu.daDuyet.length, 0, 'khong du 5 ⭐ thi khong duyet');
-  assert.equal(thieu.ketQua, 400, 'van pending -> bao thieu diem, moi bo me tu choi');
+  assert.equal(thieu.ketQua, 'thieuDiem', 'van pending -> bao thieu diem (400), moi bo me tu choi');
   assert.equal(thieu.conLai, 2, 'so du that de bao "chi con 2 diem"');
   assert.equal(await trangThai('rdm_p7b'), 'pending', 'van cho, bo me tu choi duoc');
   assert.equal(await soDu('con_p7'), 2);
@@ -1247,11 +1248,11 @@ test('bo va me cung bam Duyet: ben sau bao "da xu ly roi" (409), KHONG bao "chua
 
   const [x, y] = await Promise.all([duyet('rdm_p9', 'con_p9'), duyet('rdm_p9', 'con_p9')]);
   const [truoc, sau] = x.daDuyet.length === 1 ? [x, y] : [y, x];
-  assert.equal(truoc.ketQua, 'ok', 'mot ben duyet duoc');
+  assert.equal(truoc.ketQua, 'duyetDuoc', 'mot ben duyet duoc');
   assert.equal(
     sau.ketQua,
-    409,
-    'ben sau: dong da het pending. So du luc nay la 0 < 10 nen doc so du khong thoi la ' +
+    'daXuLy',
+    'ben sau: dong da het pending -> 409. So du luc nay la 0 < 10 nen doc so du khong thoi la ' +
     'bao "chi con 0 diem, chua du 10" — moi bo me di tu choi mot thu da cho roi'
   );
   assert.ok(
@@ -1263,7 +1264,7 @@ test('bo va me cung bam Duyet: ben sau bao "da xu ly roi" (409), KHONG bao "chua
   assert.equal(await soDu('con_p9'), 0, 'chi tru MOT lan');
 
   // Bam lan thu ba (khong dong thoi) cung phai la 409
-  assert.equal((await duyet('rdm_p9', 'con_p9')).ketQua, 409);
+  assert.equal((await duyet('rdm_p9', 'con_p9')).ketQua, 'daXuLy');
 });
 
 test('duyet va tru ⭐ cung luc: chi MOT ben tru duoc, so du KHONG xuong duoi 0', async () => {
