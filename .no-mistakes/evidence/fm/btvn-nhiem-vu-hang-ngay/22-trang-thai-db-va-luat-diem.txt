@@ -1,0 +1,50 @@
+### Trang thai DB THAT sau khi lam het cac buoc tren trinh duyet (PGlite .data/pg)
+
+--- score_events (so diem that trong DB) ---
+bena   task_done      1 Tue Sep 08 2026 07:00:00 GMT+0700 (Indochina Time)  Cất sách vở vào ba lô
+bena   task_done      1 Tue Sep 08 2026 07:00:00 GMT+0700 (Indochina Time)  Tắt đèn học
+bena   task_done      2 Tue Sep 08 2026 07:00:00 GMT+0700 (Indochina Time)  Đánh răng buổi tối
+bena   task_done      1 Tue Sep 08 2026 07:00:00 GMT+0700 (Indochina Time)  Soạn sách vở cho ngày mai
+minh   day_complete  10 Tue Sep 08 2026 07:00:00 GMT+0700 (Indochina Time)  
+minh   task_done      1 Tue Sep 08 2026 07:00:00 GMT+0700 (Indochina Time)  Cất sách vở vào ba lô
+minh   task_done      1 Tue Sep 08 2026 07:00:00 GMT+0700 (Indochina Time)  Tắt đèn học
+minh   task_done      2 Tue Sep 08 2026 07:00:00 GMT+0700 (Indochina Time)  Đánh răng buổi tối
+minh   task_done      3 Tue Sep 08 2026 07:00:00 GMT+0700 (Indochina Time)  Đọc sách 15 phút
+minh   task_done      1 Tue Sep 08 2026 07:00:00 GMT+0700 (Indochina Time)  Soạn sách vở cho ngày mai
+--- tong theo con ---
+bena   tong=5 (4 dong)
+minh   tong=18 (6 dong)
+--- dong diem am (phai la 0) ---
+[{"n":0}]
+--- daily_chores (cau hinh) ---
+🧹 Cất sách vở vào ba lô        1⭐ after_study  giao=ca nha bat=true
+🧹 Tắt đèn học                  1⭐ after_study  giao=ca nha bat=true
+🧹 Soạn sách vở cho ngày mai    1⭐ after_study  giao=ca nha bat=true
+🪥 Đánh răng buổi tối           2⭐ after_study  giao=ca nha bat=true
+📚 Đọc sách 15 phút             3⭐ housework    giao=["minh","an"] bat=false
+--- dong nhiem vu theo ngay (assignments co chore_id) ---
+Tue Sep 08 2026 07:00:00 GMT+0700 (Indochina Time) an     5 dong, 0 xong
+Tue Sep 08 2026 07:00:00 GMT+0700 (Indochina Time) bena   4 dong, 4 xong
+Tue Sep 08 2026 07:00:00 GMT+0700 (Indochina Time) minh   5 dong, 5 xong
+Wed Sep 09 2026 07:00:00 GMT+0700 (Indochina Time) bena   4 dong, 0 xong
+Wed Sep 09 2026 07:00:00 GMT+0700 (Indochina Time) minh   5 dong, 0 xong
+Thu Sep 10 2026 07:00:00 GMT+0700 (Indochina Time) minh   4 dong, 0 xong
+
+### Tat cong tac mot nhiem vu: dong DA tao con nguyen, ngay CHUA tao thi thoi tao
+
+Cau hinh: "Đọc sách 15 phút" dang TAT (enabled=false), cac nhiem vu khac dang bat.
+
+Dong cua NGAY MAI (2026-09-09) — da tao TRUOC khi bo me tat cong tac:
+  - Cất sách vở vào ba lô (todo)
+  - Soạn sách vở cho ngày mai (todo)
+  - Tắt đèn học (todo)
+  - Đánh răng buổi tối (todo)
+  - Đọc sách 15 phút (todo)
+
+Bay gio tao dong cho NGAY MOT (2026-09-10) — chay chinh SQL_TAO_NHIEM_VU_NGAY ma san pham dung:
+  - Cất sách vở vào ba lô (todo)
+  - Soạn sách vở cho ngày mai (todo)
+  - Tắt đèn học (todo)
+  - Đánh răng buổi tối (todo)
+
+=> Nhiem vu da tat KHONG con sinh dong moi, nhung dong da tao van nguyen.
