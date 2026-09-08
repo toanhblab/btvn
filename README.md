@@ -142,24 +142,26 @@ app/con/        5 màn của trẻ: chọn con → bài hôm nay → chi tiết 
                 và cửa hàng phần thưởng (thuong/)
 app/bome/       màn của bố mẹ: PIN, tạo nhà, tổng quan, thêm bài, kiểm tra lại,
                 nhập tay, sửa bài, thêm con, chi tiết theo con, danh sách,
-                thưởng (duyệt đổi thưởng + danh sách phần thưởng), cài đặt,
-                nhiệm vụ hàng ngày (trang riêng: giao cho con nào, mấy ⭐, nhóm)
+                thưởng (duyệt đổi thưởng + danh sách phần thưởng + trừ ⭐ của
+                con), cài đặt, nhiệm vụ hàng ngày (trang riêng: giao cho con
+                nào, mấy ⭐, nhóm)
 app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 nha (gắn máy), extract (Nous Portal), upload (ảnh đề bài),
                 upload-media (tệp bố mẹ đính kèm), nop-video (video con nộp),
                 viec-nha (cấu hình nhiệm vụ hàng ngày của bố mẹ, cần PIN),
                 phan-thuong (bố mẹ đặt phần thưởng, cần PIN), tru-diem (bố mẹ
-                trừ ⭐ của con, cần PIN), doi-thuong (con
-                xin đổi — không cần PIN; bố mẹ duyệt — cần PIN),
-                tep (đọc tệp đã ghi ở .data/uploads khi dev)
+                trừ ⭐ của con, cần PIN), doi-thuong (con xin đổi — không cần
+                PIN; bố mẹ duyệt — cần PIN), tep (đọc tệp đã ghi ở
+                .data/uploads khi dev)
 app/_components/ BanPhimPin — bàn phím số dùng chung cho 4 chỗ nhập PIN
 lib/            db (Neon|PGlite), store (truy vấn theo familyId), auth (PIN +
                 cookie có chữ ký), pin (PIN_LEN dùng cả hai phía), diem (luật
                 tính điểm, hàm thuần), nhomNhiemVu (dòng nào nằm trên màn của
                 con + hai nhóm nhiệm vụ), sqlNhiemVu (câu SQL tạo dòng nhiệm vụ
-                của ngày, dùng chung với seed và test), media + upload-route
-                (giới hạn tệp, tên/URL tệp, thân chung hai route tải lên),
-                avatar, ai, types
+                của ngày, dùng chung với seed và test), sqlDiem (câu SQL số dư ⭐
+                + trừ điểm + duyệt đổi thưởng, dùng chung với test), ngay (mốc
+                ngày + múi giờ nhà), media + upload-route (giới hạn tệp, tên/URL
+                tệp, thân chung hai route tải lên), avatar, ai, types
 proxy.ts        chặn /bome/* khi chưa nhập PIN
 migrations/     từng bước thay đổi lược đồ, chạy theo thứ tự tên tệp (bám PRD mục 7)
 scripts/        db.mjs (kết nối + bộ chạy migration), migrate.mjs (CLI, chạy khi

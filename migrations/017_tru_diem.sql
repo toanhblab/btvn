@@ -30,10 +30,10 @@
 --
 -- Nam cot, het:
 --   points   so bi tru, DUONG nhu `cost` — dung so DA TRU lan do, tuc
---            LEAST(so bo me go, so du luc bam). Khong co cot "tong sau khi tru":
---            voi cach (1) no khong
---            can cho nghia cua dong ("−3" tu doc duoc), va them cot chi de
---            phong xa la trai luat dung cua captain.
+--            LEAST(so tren nhan nut bo me bam, so du luc bam). Khong co cot
+--            "tong sau khi tru": voi cach (1) no khong can cho nghia cua dong
+--            ("−3" tu doc duoc), va them cot chi de phong xa la trai luat dung
+--            cua captain.
 --   reason   NOT NULL DEFAULT '' — de trong duoc (dieu 3). Man cua con thay
 --            trong thi hien cau LY_DO_TRU_TRONG (lib/types.ts), khong de trong hoac.
 --   KHONG co event_date / assignment_id / status / family_id:
@@ -57,8 +57,8 @@
 --     gui cung mot dang than, khong co lenh "tru sach so du" (mot ham thuan
 --     trangThaiTruDiem, lib/types.ts). Man hinh KHONG tu choi: so ⭐ no dang giu
 --     co the da cu (ke ca so 0), nen go so hop le la bam duoc.
---   - Du lieu: mot INSERT … SELECT ghi LEAST(so go, so du tinh tai cho — cung
---     cong thuc voi soDiemTheoCon) va chi ghi khi so du > 0; chay TRONG MOT
+--   - Du lieu: mot INSERT … SELECT ghi LEAST(so nhan duoc, so du tinh tai cho —
+--     cung cong thuc voi soDiemTheoCon) va chi ghi khi so du > 0; chay TRONG MOT
 --     TRANSACTION sau pg_advisory_xact_lock(hashtext(child_id)) de hai request
 --     cung luc (hai bo me cung bam, hay bam tru trong khi ben kia duyet doi
 --     thuong) khong cung doc mot so du roi cung ghi. DUYET DOI THUONG cung la
