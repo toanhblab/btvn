@@ -6,17 +6,16 @@ import Link from 'next/link';
 import type { Assignment, AttachedMedia, HwSource } from '@/lib/types';
 import { DURATION_DEFAULT, HW_SOURCES, SUBJECTS, iconFor } from '@/lib/types';
 import { MEDIA_ACCEPT, MEDIA_ICON, driveFileIdTu, drivePreviewUrl, uploadMediaFile } from '@/lib/media';
+import { MUI_GIO_NHA } from '@/lib/ngay';
 
 /**
  * Gio nop video hien ra o day duoc SSR (trang la force-dynamic) roi hydrate lai
  * o may bo me. Ham Vercel chay TZ=UTC, iPad cua bo me la +07 — khong chot mui
  * gio thi hai ben ra hai chuoi khac nhau: React bao hydration mismatch va bo me
  * doc phai gio lech 7 tieng o lan ve dau. Chot theo mui gio nha, dung gia dinh
- * "gio may chu la gio nha" ma todayISO() (lib/store.ts) da dung.
- */
-const MUI_GIO_NHA = 'Asia/Ho_Chi_Minh';
-
-/**
+ * "gio may chu la gio nha" ma todayISO() (lib/store.ts) da dung — MUI_GIO_NHA
+ * nam o lib/ngay.ts vi cac man in NGAY (dong tru ⭐, doi thuong) dung chung no.
+ *
  * Chot mui gio moi la nua chuyen. toLocaleString('vi-VN') con lay THU TU va dau
  * phan cach tu ban CLDR cua chinh may chay: Node moi tra "01:00:51 28/8/2026"
  * (CLDR 42 doi tieng Viet sang gio-truoc) con Safari iPad cu tra "28/8/2026,

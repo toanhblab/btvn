@@ -1,14 +1,18 @@
-import { query, queryOne } from './db';
+import { query, queryOne, queryTx } from './db';
 import {
   DIEM_NGAY_XONG, DIEM_XONG_SOM, ngayDuocTinhDiem, ngayHoanThanh, xongSom,
 } from './diem';
 import type {
   Assignment, AttachedMedia, Child, ChildColor, DailyChore, DiemVuaCong, DraftAssignment, HwSource,
-  Lang, MediaKind, NhomNhiemVu, Redemption, RedemptionStatus, Reward,
+  Lang, MediaKind, NhomNhiemVu, Penalty, Redemption, RedemptionStatus, Reward,
 } from './types';
 import { DURATION_DEFAULT, HW_SOURCE_DEFAULT, hwSourceOf, nhomNhiemVuOf } from './types';
 import { veTrenManCuaCon } from './nhomNhiemVu';
 import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu';
+import {
+  SQL_DUYET_DOI_THUONG, SQL_KHOA_TRU_DIEM, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON,
+  SQL_TRANG_THAI_DOI_THUONG, SQL_TRU_DIEM, nhanhDuyet,
+} from './sqlDiem';
 
 /** Ngay hom nay theo gio dia phuong, YYYY-MM-DD (toISOString la UTC nen lech mui gio). */
 export function todayISO(offsetDays = 0): string {
@@ -1044,20 +1048,23 @@ export async function moveChore(familyId: string, id: string, huong: -1 | 1): Pr
  * Tom tat: +10 mot ngay xong het (mot lan cho moi (con, ngay)), +1 moi bai xong
  * som hon thoi luong du kien, +stars moi dong nhiem vu tick xong (mot lan cho
  * moi dong), khong hoi to truoc families.score_since. So du = tong score_events
- * - tong reward_redemptions da duyet.
+ * - tong reward_redemptions da duyet - tong score_penalties (bo me tru, issue #43,
+ * migrations/017) — cong thuc SQL nam MOT cho: SQL_SO_DU_CON (lib/sqlDiem.ts).
  *
- * score_events va reward_redemptions khong co family_id: thuoc nha nao la qua
- * child_id -> children.family_id (nhu assignments), nen moi cau deu join/loc
- * qua children.
+ * score_events, reward_redemptions va score_penalties khong co family_id: thuoc
+ * nha nao la qua child_id -> children.family_id (nhu assignments), nen moi cau
+ * deu join/loc qua children.
  */
 
-/** So diem DANG CO cua tung con trong nha: kiem duoc tru di da doi (bo me duyet). */
+/**
+ * So diem DANG CO cua tung con trong nha: kiem duoc, tru da doi (bo me duyet),
+ * tru bo me da phat. Day la con so DUY NHAT moi man hien (chon con, xep hang,
+ * cua hang, tong quan, man Thuong) — tru diem chi doi con so nay, khong dong
+ * vao ba luat cong.
+ */
 export async function soDiemTheoCon(familyId: string): Promise<Map<string, number>> {
   const rows = await query<{ id: string; points: number | string }>(
-    `SELECT c.id,
-            COALESCE((SELECT SUM(e.points) FROM score_events e WHERE e.child_id = c.id), 0)
-          - COALESCE((SELECT SUM(r.cost) FROM reward_redemptions r
-                       WHERE r.child_id = c.id AND r.status = 'approved'), 0) AS points
+    `SELECT c.id, ${SQL_SO_DU_CON} AS points
        FROM children c
       WHERE c.family_id = $1`,
     [familyId]
@@ -1395,9 +1402,21 @@ export async function xinDoiThuong(
 
 /**
  * Bo me duyet / tu choi. Duyet thi diem bi tru NGAY: so du doc tu status =
- * 'approved' (soDiemTheoCon), khong ghi them dong nao — mot cau UPDATE duy nhat,
- * khong co buoc thu hai de lech nhau. Kiem du diem lai luc duyet (khong chi luc
- * con xin) lam chot cuoi cho so du am, vi re va vi luat co the doi sau nay.
+ * 'approved' (soDiemTheoCon), khong ghi them dong nao.
+ *
+ * DUYET la mot duong tru ⭐, y nhu truDiem (issue #43), nen no chay trong CUNG
+ * khuon: MOT transaction, cau dau la SQL_KHOA_TRU_DIEM theo con, roi UPDATE co
+ * DIEU KIEN so du >= gia (SQL_DUYET_DOI_THUONG), roi doc so du. Kiem du diem
+ * bang mot cau doc rieng truoc UPDATE thi hai duong tru dan xen nhau duoc: bo me
+ * A bam Duyet (doc thay du) trong khi bo me B bam Tru ⭐ -> so du xuong duoi 0.
+ * Khong am la luat cua so du, khong cua rieng mot duong nao.
+ *
+ * 0 dong doi co hai ly do, va phai doc TRANG THAI moi phan biet duoc (so du thi
+ * khong: bo/me kia vua duyet xong thi gia da bi tru, nen so du con lai gan nhu
+ * luon nho hon gia — bao "chua du diem" cho mot yeu cau da duyet la moi bo me di
+ * tu choi mot thu da cho roi). Het 'pending' -> 409; con 'pending' -> hang rao so
+ * du chan -> 400 kem so du that. Chinh phep chon nhanh do (trang thai TRUOC so
+ * du) nam o `nhanhDuyet` trong lib/sqlDiem.ts de test chay dung ham nay.
  */
 export async function duyetDoiThuong(
   familyId: string,
@@ -1410,20 +1429,119 @@ export async function duyetDoiThuong(
     return { ok: false, status: 409, error: 'Yêu cầu này đã được xử lý rồi.' };
   }
   if (approve) {
-    const diem = await soDiem(familyId, r.childId);
-    if (diem < r.cost) {
-      return {
-        ok: false, status: 400,
-        error: `Con chỉ còn ${diem} điểm, chưa đủ ${r.cost} điểm. Bố mẹ có thể từ chối để con chọn lại.`,
-      };
+    const [, daDuyet, trangThai, soDu] = await queryTx<
+      RedemptionRow & { so_du: number | string }
+    >([
+      { sql: SQL_KHOA_TRU_DIEM, params: [r.childId] },
+      { sql: SQL_DUYET_DOI_THUONG, params: [id, familyId] },
+      { sql: SQL_TRANG_THAI_DOI_THUONG, params: [id, familyId] },
+      { sql: SQL_SO_DU_MOT_CON, params: [r.childId, familyId] },
+    ]);
+    const nhanh = nhanhDuyet(daDuyet.length, trangThai[0]?.status);
+    if (nhanh === 'duyetDuoc') return { ok: true, redemption: toRedemption(daDuyet[0]) };
+    if (nhanh === 'daXuLy') {
+      return { ok: false, status: 409, error: 'Yêu cầu này đã được xử lý rồi.' };
     }
+    const diem = Number(soDu[0]?.so_du ?? 0);
+    return {
+      ok: false, status: 400,
+      error: `Con chỉ còn ${diem} điểm, chưa đủ ${r.cost} điểm. Bố mẹ có thể từ chối để con chọn lại.`,
+    };
   }
   const rows = await query<RedemptionRow>(
-    `UPDATE reward_redemptions r SET status = $3, decided_at = now()
+    `UPDATE reward_redemptions r SET status = 'rejected', decided_at = now()
       WHERE r.id = $1 AND r.status = 'pending' AND ${REDEMPTION_OF_FAMILY}
       RETURNING r.*`,
-    [id, familyId, approve ? 'approved' : 'rejected']
+    [id, familyId]
   );
   if (rows.length === 0) return { ok: false, status: 409, error: 'Yêu cầu này đã được xử lý rồi.' };
   return { ok: true, redemption: toRedemption(rows[0]) };
+}
+
+/* ---- Tru diem (bo me phat con, issue #43) ----
+ *
+ * Luoc do + ly do o migrations/017_tru_diem.sql, SQL o lib/sqlDiem.ts. Chi TRU,
+ * khong cong tay (captain chot). Moi lan tru la MOT dong score_penalties voi dung
+ * so da tru; so du (soDiemTheoCon) tu bot di. Khong dong vao ba luat cong.
+ */
+
+interface PenaltyRow {
+  id: string; child_id: string; points: number | string; reason: string; created_at: string | Date;
+}
+
+const toPenalty = (r: PenaltyRow): Penalty => ({
+  id: r.id,
+  childId: r.child_id,
+  points: Number(r.points),
+  reason: r.reason,
+  createdAt: new Date(r.created_at).toISOString(),
+});
+
+/** Moi nhat truoc. */
+export async function listPenalties(
+  familyId: string,
+  opts: { childId?: string; limit?: number } = {}
+): Promise<Penalty[]> {
+  const where: string[] = ['c.family_id = $1'];
+  const params: unknown[] = [familyId];
+  if (opts.childId) { params.push(opts.childId); where.push(`p.child_id = $${params.length}`); }
+  params.push(opts.limit ?? 50);
+  const rows = await query<PenaltyRow>(
+    `SELECT p.* FROM score_penalties p
+       JOIN children c ON c.id = p.child_id
+      WHERE ${where.join(' AND ')}
+      ORDER BY p.created_at DESC, p.id DESC
+      LIMIT $${params.length}`,
+    params
+  );
+  return rows.map(toPenalty);
+}
+
+export type KetQuaTruDiem =
+  | { ok: true; penalty: Penalty; conLai: number }
+  | { ok: false; status: number; error: string; conLai: number };
+
+/**
+ * Bo me tru ⭐ cua con (CAN PIN o route). `points` la con so TREN NHAN cua nut bo
+ * me vua bam — MOT duong duy nhat cho moi lan bam, ke ca khi nut doc "Tru het N":
+ * man hinh gui dung so no in ra, khong bao gio mot so khac (trangThaiTruDiem
+ * trong lib/types.ts).
+ *
+ * So tru thuc su = `LEAST(points, so du tai luc cau chay)`, nen man hinh hien so
+ * cu KHONG bao gio lam con mat nhieu hon so tren nhan: nhan "Tru het 5 ⭐" la tru
+ * dung 5 du con vua kiem them thanh 20; nhan "Tru 8 ⭐" luc con chi con 5 la tru
+ * 5 (ve 0).
+ *
+ * "Khong am" chan o tang du lieu ngay tai day: MOT transaction gom
+ *   1. khoa theo con (pg_advisory_xact_lock) — hai request cung con xep hang;
+ *   2. INSERT … SELECT kep LEAST va chi ghi khi so du > 0 (SQL_TRU_DIEM);
+ *   3. doc so du sau do — de tra "con lai" ma khong them vong goi.
+ * Hai request dong thoi moi ben go 7 khi con co 10: ben sau lay duoc khoa moi
+ * chay INSERT, luc do so du la 3 -> tru 3, tong dung 10, ve 0. Het ⭐ thi 400
+ * "khong con ⭐ nao de tru" — day la ly do tu choi DUY NHAT, va may chu la cho
+ * DUY NHAT tu choi (man hinh khong tu choi, ke ca khi no dang tin con co 0 ⭐).
+ * Khong co GREATEST(0, …) o dau ca: so du luon bang so sach.
+ *
+ * `conLai` luon co, ke ca khi tu choi, de man bo me sua lai vien ⭐ ngay.
+ */
+export async function truDiem(
+  familyId: string,
+  childId: string,
+  points: number,
+  reason: string
+): Promise<KetQuaTruDiem> {
+  const child = await getChild(familyId, childId);
+  if (!child) return { ok: false, status: 404, error: 'Không tìm thấy con này.', conLai: 0 };
+
+  const id = newId('pen');
+  const [, ghi, soDu] = await queryTx<PenaltyRow & { so_du: number | string }>([
+    { sql: SQL_KHOA_TRU_DIEM, params: [childId] },
+    { sql: SQL_TRU_DIEM, params: [id, childId, points, reason, familyId] },
+    { sql: SQL_SO_DU_MOT_CON, params: [childId, familyId] },
+  ]);
+  const conLai = Number(soDu[0]?.so_du ?? 0);
+  if (ghi.length === 0) {
+    return { ok: false, status: 400, error: `${child.name} không còn ⭐ nào để trừ.`, conLai };
+  }
+  return { ok: true, penalty: toPenalty(ghi[0]), conLai };
 }

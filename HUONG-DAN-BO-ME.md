@@ -137,6 +137,43 @@ Vào **Thưởng** (thanh dưới).
   **"Từ chối"**. **Chỉ khi bố mẹ duyệt thì sao của con mới bị trừ** — từ chối thì
   con giữ nguyên sao và xin lại được.
 
+### Trừ sao khi con chưa nghe lời
+
+Cũng ở màn **Thưởng**, ngay dưới câu giới thiệu là hàng **tên các con kèm số ⭐**.
+Bấm vào tên con là mở ô trừ sao:
+
+![Ô trừ sao của bố mẹ: gõ số, chọn lý do, bấm Trừ](huong-dan-anh/bome-tru-sao.png)
+
+1. **Gõ số ⭐ muốn trừ** (ví dụ 3). Không phải gõ "còn lại bao nhiêu" — gõ đúng số
+   muốn trừ.
+2. **Ghi lý do** — không bắt buộc, nhưng nên ghi vì **con sẽ đọc dòng này** ở cửa
+   hàng phần thưởng. Có sẵn mấy nút bấm một cái là xong: *Không nghe lời*, *Cãi bố
+   mẹ*, *Không dọn đồ*, *Chơi quá giờ*, *Chưa làm bài*, *Nói dối*. Bấm rồi vẫn sửa
+   được chữ trong ô. Để trống thì con thấy dòng *"Con hỏi bố mẹ vì sao nhé"*.
+3. Bấm **"Trừ 3 ⭐ của Minh"**. Số ⭐ của con đổi ngay, và bên dưới có mục **"Đã
+   trừ gần đây"** ghi từng lần: trừ mấy sao, vì sao, ngày nào.
+
+Vài điều cần biết:
+
+- **Không bao giờ trừ xuống dưới 0.** Gõ nhiều hơn số con đang có thì app báo
+  *"Con chỉ có 5 ⭐"* và cái nút đổi luôn thành **"Trừ hết 5 ⭐"** — bấm một cái là
+  xong, không phải gõ lại cho đúng.
+- **Cái nút trừ đúng con số ghi trên nó.** Nút ghi *"Trừ hết 5 ⭐"* thì trừ 5, nút
+  ghi *"Trừ 3 ⭐ của Minh"* thì trừ 3 — kể cả khi số trên màn đã cũ vài phút (con
+  vừa làm xong bài nên vừa được thêm sao, hoặc máy của bố/mẹ kia vừa trừ). Trong
+  ô còn gõ 8 mà nút ghi "Trừ hết 5 ⭐" thì bấm là trừ 5, không phải 8.
+- Nếu đúng lúc đó con **ít sao hơn** con số trên nút thì app trừ hết chỗ con còn
+  chứ không để âm. Xong việc app báo đã trừ mấy sao và con còn lại mấy — đọc dòng
+  đó là biết chính xác.
+- Con hết sao thật thì app báo *"Con không còn ⭐ nào để trừ"* khi bố mẹ bấm. Nút
+  không tự khoá theo con số đang hiện, vì con số đó có thể đã cũ — cứ bấm, app
+  kiểm lại rồi cập nhật số sao ngay tại chỗ.
+- **Chỉ trừ được, không cộng tay được.** Sao chỉ có từ việc con làm (xem mục 5).
+- Trừ sao **không xoá** bài hay nhiệm vụ nào của con; con vẫn làm tiếp và vẫn được
+  cộng sao như thường.
+- Con mở **🎁 Đổi thưởng** sẽ thấy mục **"Bố mẹ đã trừ ⭐"** với từng dòng
+  *"−3 ⭐ Cãi bố mẹ"* — con biết mình bị trừ vì gì, không phải thấy sao tự tụt.
+
 ---
 
 ## 4. Việc hằng ngày của con
@@ -198,8 +235,10 @@ Vài điều nên biết để khỏi thắc mắc:
 - Con bấm nhầm **"Bắt đầu làm"**? Ngay dưới đồng hồ, trên chính máy của con, có
   nút nhỏ **"Bố mẹ đặt lại giờ"** — bố mẹ nhập mã PIN là bài quay về như chưa bấm.
 
-**Số ⭐ con đang có = tổng sao kiếm được − những lần đổi thưởng bố mẹ đã duyệt.**
-Không có chuyện bị trừ sao vì làm sai hay bỏ tick.
+**Số ⭐ con đang có = tổng sao kiếm được − những lần đổi thưởng bố mẹ đã duyệt −
+những lần bố mẹ trừ sao (mục "Trừ sao khi con chưa nghe lời").** App không bao giờ
+tự trừ sao vì con làm sai hay bỏ tick — chỉ bố mẹ chủ động trừ, và không bao giờ
+xuống dưới 0.
 
 Con vào **🎁 Đổi thưởng** để xem mình còn thiếu bao nhiêu sao:
 
@@ -228,6 +267,10 @@ con mới hiện trong ô "Giao cho con nào".
 **Hai bé sinh đôi học cùng lớp thì phải nhập bài hai lần à?**
 Không. Nhập một lần, tick cả hai bé — mỗi bé nhận một bản riêng, tự tick, xoá bài
 của bé này không ảnh hưởng bé kia.
+
+**Trừ sao nhầm thì sao?**
+Hiện chưa có nút hoàn lại. Bố mẹ chờ con làm việc tiếp để kiếm lại, hoặc nói với
+người làm app. Vì thế trước khi bấm, nhìn lại số trên nút *"Trừ 3 ⭐ của Minh"*.
 
 **Con tick nhầm "Đã làm xong" thì sao?**
 Con mở lại bài đó, bấm **"Chưa làm xong"** là bài quay về chưa xong. Sao con đã

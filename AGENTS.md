@@ -87,11 +87,33 @@ ngày của bố mẹ gọi hàm sau), lược đồ + lý do ở `migrations/01
 và `016_nhiem_vu_hang_ngay_thuong_sao.sql`. Ba điều dễ vấp: (1) "cộng một lần"
 KHÔNG nằm trong code mà nằm ở BA unique index partial của `score_events` +
 `ON CONFLICT ... RETURNING` — đổi luật thì sửa index trước; (2) số dư = tổng
-`score_events` TRỪ `reward_redemptions` đã duyệt, không có dòng điểm âm nào, đừng
-thêm; (3) CHECK của `score_events.kind` được 016 DROP rồi ADD lại đủ ba giá trị —
-migration nào thêm `kind` nữa phải liệt kê lại ĐỦ, không chỉ thêm giá trị của mình.
-Test PGlite trong `lib/tinh-diem.test.ts` mô phỏng lại đúng SQL của store — sửa
-một bên là phải sửa bên kia.
+`score_events` TRỪ `reward_redemptions` đã duyệt TRỪ `score_penalties` (bố mẹ trừ,
+#43, `017_tru_diem.sql`) — DẤU là thuộc tính của BẢNG, mọi dòng đều dương, không có
+dòng điểm âm nào, đừng thêm; công thức nằm MỘT chỗ: `SQL_SO_DU_CON` trong
+`lib/sqlDiem.ts`, store và test cùng import; (3) CHECK của `score_events.kind` được
+016 DROP rồi ADD lại đủ ba giá trị — migration nào thêm `kind` nữa phải liệt kê lại
+ĐỦ, không chỉ thêm giá trị của mình. Test PGlite trong `lib/tinh-diem.test.ts` mô
+phỏng lại đúng SQL của store — sửa một bên là phải sửa bên kia.
+
+Trừ điểm (`truDiem` trong `lib/store.ts`): CHỈ trừ, không cộng tay (captain chốt);
+lưu đúng số đã trừ mỗi lần, không lưu tổng. "Không âm" chặn hai tầng, tầng dữ liệu
+là MỘT transaction `queryTx` (`lib/db.ts` — cách duy nhất trong repo chạy nhiều
+câu trong một transaction; Neon HTTP không tương tác nên gói phải là danh sách cố
+định): khoá `pg_advisory_xact_lock` theo con → `INSERT … SELECT` ghi
+`LEAST(số nhận được, số dư tính tại chỗ)` và chỉ ghi khi số dư > 0 → đọc số dư.
+Đừng kẹp `GREATEST(0, …)` trong SUM. **"Không âm" là luật của SỐ DƯ, không của
+riêng một đường**: `duyetDoiThuong` cũng là một đường trừ
+(dòng thành `'approved'`) nên chạy trong CÙNG khuôn đó — cùng khoá theo con, rồi
+UPDATE có điều kiện số dư ≥ giá (`SQL_DUYET_DOI_THUONG`); thêm đường trừ thứ ba thì
+lặp lại đúng khuôn này, đừng đọc số dư ở một câu rồi ghi ở câu sau. Phía màn hình
+có **hai luật, một hàm thuần** (`trangThaiTruDiem` trong `lib/types.ts`): (1) **nút
+làm đúng những gì nhãn của nó ghi** — `soGui` vừa là số in trên nhãn vừa là số gửi
+lên, nên nhãn "Trừ hết 5 ⭐" trừ đúng 5 dù trong ô gõ 8 và dù con vừa kiếm thêm
+thành 20 (gõ quá số đang hiện chỉ ĐỔI MẶT nút, không đổi giao thức); (2) **màn hình
+không bao giờ tự từ chối** — số ⭐ nó đang giữ có thể cũ theo cả hai chiều, KỂ CẢ số
+0, nên đừng khoá nút theo số đó; máy chủ mới kẹp `LEAST` và từ chối, và lý do từ
+chối duy nhất là con không còn ⭐ nào. Lý do là thứ CON ĐỌC ở cửa hàng
+(`LY_DO_TRU_GOI_Y`, `LY_DO_TRU_TRONG` trong `lib/types.ts`).
 
 Nhiệm vụ hàng ngày (`daily_chores` + dòng `assignments` có `chore_id`, hai nhóm
 `category`, sao/icon/`child_ids`): dòng của ngày được tạo LƯỜI bằng

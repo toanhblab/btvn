@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { viewingFamilyId } from '@/lib/auth';
-import { getChild, listRedemptions, listRewards, soDiem } from '@/lib/store';
+import { ngayNha } from '@/lib/ngay';
+import { getChild, listPenalties, listRedemptions, listRewards, soDiem } from '@/lib/store';
+import { LY_DO_TRU_TRONG } from '@/lib/types';
 import DoiThuong from './DoiThuong';
 
 export const dynamic = 'force-dynamic';
@@ -18,17 +20,24 @@ export const dynamic = 'force-dynamic';
  *
  * Khong can PIN (con khong dang nhap, PRD 4.5): getChild loc theo nha cua
  * cookie thiet bi, con nha khac coi nhu khong ton tai.
+ *
+ * Bi tru ⭐ (issue #43, captain chot phuong an B): con NHIN THAY tung lan bo me
+ * tru kem ly do o muc "Bố mẹ đã trừ ⭐" — khong de so ⭐ lang le tut xuong. Bo me
+ * de trong ly do thi hien LY_DO_TRU_TRONG, mot cau moi con hoi lai bo me, khong
+ * de trong hoac. Mau trung tinh (khong do bao dong): day la thong bao, khong phai
+ * loi cua man hinh.
  */
 export default async function CuaHangPhanThuong({ params }: { params: Promise<{ childId: string }> }) {
   const { childId } = await params;
   const familyId = await viewingFamilyId();
   if (!familyId) redirect('/vao');
 
-  const [child, rewards, diem, lichSu] = await Promise.all([
+  const [child, rewards, diem, lichSu, biTru] = await Promise.all([
     getChild(familyId, childId),
     listRewards(familyId, { enabledOnly: true }),
     soDiem(familyId, childId),
     listRedemptions(familyId, { childId, limit: 6 }),
+    listPenalties(familyId, { childId, limit: 5 }),
   ]);
   if (!child) notFound();
 
@@ -93,6 +102,31 @@ export default async function CuaHangPhanThuong({ params }: { params: Promise<{ 
                   }`}
                 >
                   {r.status === 'approved' ? '✅ Bố mẹ đồng ý' : '❌ Chưa được'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Nhung lan bo me tru ⭐ — con thay minh bi tru bao nhieu va vi sao */}
+      {biTru.length > 0 && (
+        <section className="mt-k-stack">
+          <h2 className="text-k-headline text-on-surface-variant mb-4">Bố mẹ đã trừ ⭐</h2>
+          <ul className="flex flex-col gap-3">
+            {biTru.map((p) => (
+              <li
+                key={p.id}
+                className="flex items-center gap-4 rounded-kid px-6 py-4 soft-shadow bg-surface-container-low"
+              >
+                <span className="text-k-headline font-bold text-error whitespace-nowrap shrink-0">
+                  −{p.points} ⭐
+                </span>
+                <span className="flex-1 min-w-0 text-k-body font-bold text-on-surface truncate">
+                  {p.reason || LY_DO_TRU_TRONG}
+                </span>
+                <span className="text-k-label text-on-surface-variant whitespace-nowrap">
+                  {ngayNha(p.createdAt)}
                 </span>
               </li>
             ))}

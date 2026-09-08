@@ -142,23 +142,26 @@ app/con/        5 màn của trẻ: chọn con → bài hôm nay → chi tiết 
                 và cửa hàng phần thưởng (thuong/)
 app/bome/       màn của bố mẹ: PIN, tạo nhà, tổng quan, thêm bài, kiểm tra lại,
                 nhập tay, sửa bài, thêm con, chi tiết theo con, danh sách,
-                thưởng (duyệt đổi thưởng + danh sách phần thưởng), cài đặt,
-                nhiệm vụ hàng ngày (trang riêng: giao cho con nào, mấy ⭐, nhóm)
+                thưởng (duyệt đổi thưởng + danh sách phần thưởng + trừ ⭐ của
+                con), cài đặt, nhiệm vụ hàng ngày (trang riêng: giao cho con
+                nào, mấy ⭐, nhóm)
 app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 nha (gắn máy), extract (Nous Portal), upload (ảnh đề bài),
                 upload-media (tệp bố mẹ đính kèm), nop-video (video con nộp),
                 viec-nha (cấu hình nhiệm vụ hàng ngày của bố mẹ, cần PIN),
-                phan-thuong (bố mẹ đặt phần thưởng, cần PIN), doi-thuong (con
-                xin đổi — không cần PIN; bố mẹ duyệt — cần PIN),
-                tep (đọc tệp đã ghi ở .data/uploads khi dev)
+                phan-thuong (bố mẹ đặt phần thưởng, cần PIN), tru-diem (bố mẹ
+                trừ ⭐ của con, cần PIN), doi-thuong (con xin đổi — không cần
+                PIN; bố mẹ duyệt — cần PIN), tep (đọc tệp đã ghi ở
+                .data/uploads khi dev)
 app/_components/ BanPhimPin — bàn phím số dùng chung cho 4 chỗ nhập PIN
 lib/            db (Neon|PGlite), store (truy vấn theo familyId), auth (PIN +
                 cookie có chữ ký), pin (PIN_LEN dùng cả hai phía), diem (luật
                 tính điểm, hàm thuần), nhomNhiemVu (dòng nào nằm trên màn của
                 con + hai nhóm nhiệm vụ), sqlNhiemVu (câu SQL tạo dòng nhiệm vụ
-                của ngày, dùng chung với seed và test), media + upload-route
-                (giới hạn tệp, tên/URL tệp, thân chung hai route tải lên),
-                avatar, ai, types
+                của ngày, dùng chung với seed và test), sqlDiem (câu SQL số dư ⭐
+                + trừ điểm + duyệt đổi thưởng, dùng chung với test), ngay (mốc
+                ngày + múi giờ nhà), media + upload-route (giới hạn tệp, tên/URL
+                tệp, thân chung hai route tải lên), avatar, ai, types
 proxy.ts        chặn /bome/* khi chưa nhập PIN
 migrations/     từng bước thay đổi lược đồ, chạy theo thứ tự tên tệp (bám PRD mục 7)
 scripts/        db.mjs (kết nối + bộ chạy migration), migrate.mjs (CLI, chạy khi
@@ -310,8 +313,41 @@ mẹ đặt tên, icon và giá ⭐ ở màn **Thưởng**, bật/tắt hoặc x
 danh sách đó ở 🎁 **"Đổi thưởng"**, bấm rồi hỏi lại một lần trước khi gửi. **Bố
 mẹ duyệt thì điểm mới bị trừ** — từ chối thì con giữ nguyên điểm và xin lại được,
 mỗi con chỉ có **một** yêu cầu chờ cùng lúc. Số dư = tổng điểm cộng **trừ** các
-lần đổi đã duyệt; không có dòng điểm âm nào, và con bỏ tick hay bố mẹ xoá bài
-cũng không làm con mất điểm đã kiếm.
+lần đổi đã duyệt **trừ** các lần bố mẹ trừ (dưới); không có dòng điểm âm nào, và
+con bỏ tick hay bố mẹ xoá bài cũng không làm con mất điểm đã kiếm.
+
+**Trừ điểm (issue #43).** Con chưa nghe lời thì bố mẹ trừ ⭐ ngay ở màn **Thưởng**:
+bấm viên ⭐ của con, **gõ số ⭐ muốn trừ** (không gõ "tổng mới"), ghi lý do — không
+bắt buộc, có chip gợi ý viết bằng lời nói được với con vì **con sẽ đọc dòng đó** ở
+cửa hàng ("Bố mẹ đã trừ ⭐": −3 ⭐ · Cãi bố mẹ; để trống thì con thấy "Con hỏi bố mẹ
+vì sao nhé"). Chỉ trừ, **không có đường cộng tay**. Số dư không bao giờ âm, dựa trên
+hai luật ở **một hàm thuần** `trangThaiTruDiem` (`lib/types.ts`) + `SQL_TRU_DIEM`:
+
+1. **Nút làm đúng những gì nhãn của nó ghi.** `soGui` vừa là con số in trên nhãn vừa
+   là con số gửi lên (`{ points: soGui }` — một dạng thân duy nhất cho cả hai mặt
+   nút). Gõ quá số đang hiện thì nút đổi mặt thành **"Trừ hết N ⭐"** với N = số đang
+   hiện, và bấm là trừ **đúng N** — ô còn gõ 8 mà nhãn ghi 5 thì trừ 5, kể cả khi con
+   vừa kiếm thêm thành 20.
+2. **Màn hình không bao giờ tự từ chối, máy chủ mới từ chối.** Số ⭐ màn đang giữ có
+   thể đã cũ theo cả hai chiều, kể cả số 0, nên gõ được số hợp lệ là bấm được. Máy
+   chủ ghi `LEAST(số nhận được, số dư lúc chạy câu)` — con còn ít hơn nhãn thì trừ hết
+   chỗ còn — và chỉ từ chối khi con **không còn ⭐ nào** (400 kèm `conLai` để màn sửa
+   lại viên ⭐ ngay).
+
+Mỗi lần trừ là **một dòng `score_penalties`** lưu đúng số đã trừ + lý
+do + thời điểm (bảng riêng, không phải dòng âm trong `score_events`, không phải đổi
+thưởng giả — lý do ở [migrations/017_tru_diem.sql](migrations/017_tru_diem.sql));
+kiểm-và-ghi chạy trong **một transaction có khoá theo con** (`queryTx` trong
+`lib/db.ts`, SQL ở `lib/sqlDiem.ts`) nên hai request cùng lúc không đẩy số dư xuống
+âm. **Cả hai đường trừ ⭐ xếp hàng ở cùng một khoá đó**: `duyetDoiThuong` cũng chạy
+trong transaction ấy với `SQL_DUYET_DOI_THUONG` (UPDATE có điều kiện số dư ≥ giá),
+vì "không âm" là luật của số dư chứ không của riêng một đường — đọc số dư ở một câu
+rồi UPDATE ở câu sau là đúng chỗ để bố mẹ A bấm Duyệt và bố mẹ B bấm Trừ ⭐ đan vào
+nhau. Cũng vì hai bố mẹ có thể bấm Duyệt cùng lúc, nhánh duyệt đọc **trạng thái**
+dòng (`SQL_TRANG_THAI_DOI_THUONG`) để phân biệt "đã xử lý rồi" (409) với "chưa đủ
+điểm" (400): sau khi bên kia duyệt xong thì giá đã bị trừ, nên số dư gần như luôn nhỏ
+hơn giá và nếu chỉ đọc số dư thì app sẽ mời bố mẹ đi từ chối một thứ đã cho rồi. Trừ
+điểm không đụng vào ba luật cộng.
 
 **Không bao giờ để bố mẹ bị kẹt.** AI hỏng, hết quota hay chưa có key thì vẫn
 tách tạm theo dòng kèm cảnh báo, và luôn có đường "Nhập tay từng bài".

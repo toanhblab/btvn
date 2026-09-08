@@ -117,7 +117,7 @@ Nguyên tắc: **không có tài khoản, không email, không mật khẩu.**
 
 - Nhắc nhở tự động (thông báo/push, "8h tối rồi, còn 2 bài chưa xong").
 - Upload **ảnh** bài con đã làm để bố mẹ kiểm tra (riêng **video** nộp bài thì đã làm — xem mục 4.2 và 4.3).
-- Thống kê dài hạn, streak, huy hiệu (riêng **điểm thưởng + đổi thưởng có bố mẹ duyệt** và **nhiệm vụ hàng ngày có thưởng sao** thì đã làm — xem README mục "Nhiệm vụ hàng ngày" và "Điểm thưởng").
+- Thống kê dài hạn, streak, huy hiệu (riêng **điểm thưởng + đổi thưởng có bố mẹ duyệt**, **nhiệm vụ hàng ngày có thưởng sao** và **bố mẹ trừ điểm khi con chưa nghe lời** thì đã làm — xem README mục "Nhiệm vụ hàng ngày", "Điểm thưởng" và "Trừ điểm").
 - Chia sẻ với giáo viên, lớp học.
 - Tài khoản thật (email/Google), lấy lại PIN khi quên, phân quyền trong nhà.
 - Chặn dò PIN ở mức hạ tầng (hiện chỉ đếm số lần sai trong RAM của từng instance).
@@ -151,6 +151,8 @@ Nguyên tắc: **không có tài khoản, không email, không mật khẩu.**
   → mỗi con có **Assignment riêng** dù đề giống nhau, để tick độc lập.
 - **DailyChore** (nhiệm vụ hàng ngày, cấu hình chung cả nhà): id, family_id, tên, icon, số ⭐ (1–10), nhóm (`after_study` "Sau khi học xong" | `housework` "Việc nhà hàng ngày"), `child_ids` (null = cả nhà), thứ tự, bật/tắt, `archived_at`
   → mỗi ngày, mỗi con được giao sinh **một Assignment** cho từng nhiệm vụ đang bật (tạo lười khi mở màn); con tick là được ⭐ của nhiệm vụ, cộng một lần.
+- **Penalty** (`score_penalties`, một lần bố mẹ trừ ⭐ — issue #43): id, child_id, `points` (số **đã trừ** lần đó, dương), `reason` (không bắt buộc, con đọc được), thời điểm
+  → số ⭐ con đang có = tổng điểm cộng − đổi thưởng đã duyệt − các lần trừ; không bao giờ âm (máy chủ trừ nhiều nhất là số dư còn lại, và không bao giờ nhiều hơn con số ghi trên nút bố mẹ vừa bấm); chỉ trừ, không cộng tay.
 
 ## 8. Kỹ thuật & triển khai
 
