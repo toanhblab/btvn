@@ -91,7 +91,13 @@ còn đường nào đổi nhà trong app. Gắn **lại chính nhà đang ở**
 Luật nằm trong `lib/auth.ts`, không ở từng route, vì có hai đường gắn máy:
 `setDeviceFamily` (POST `/api/nha`, màn "Đây là máy của nhà nào?") và
 `attachFamilyLink` (link `/nha/<slug>` — cần bản riêng vì đặt cookie trên một
-response redirect đã tạo sẵn). Hồi quy cho cả hai ở `lib/nha-link.test.ts`.
+response redirect đã tạo sẵn). `signIn` cũng đi qua `setDeviceFamily`, không tự đặt
+cookie thiết bị. Hồi quy cho cả hai ở `lib/nha-link.test.ts`.
+
+Riêng **PIN demo thì chỉ mở phiên bố mẹ, không gắn máy**: gắn máy kéo dài một năm,
+mà ba mã 1111/2222/3333 ai cũng biết và hay được nhập ngay trên máy nhà thật — hết
+phiên là `viewingFamilyId` rơi về cookie thiết bị và màn của con sẽ hiện nhà demo.
+PIN thật giữ nguyên hành vi cũ (mở phiên và gắn máy).
 
 Ba mã PIN này **giữ chỗ vĩnh viễn** (`PIN_DEMO` trong `lib/i18n/ngonNgu.ts`):
 tạo nhà / đổi PIN trùng bị từ chối ngay. Nhà demo dùng PIN dễ đoán nên chỉ chứa

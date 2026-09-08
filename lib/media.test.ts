@@ -138,6 +138,15 @@ test('tenTepNop: loai ky tu pha ten tep va ky tu dieu khien, gop khoang trang', 
     tenTepNop('Na\u0000Bi', 'Toán', '2026-09-02', 'https://x/v.mp4'),
     'NaBi-Toan-2026-09-02.mp4'
   );
+  // Ky tu bi loai nam GIUA hai tu: khong duoc de lai hai dau cach
+  assert.equal(
+    tenTepNop('Bé Na / Bi', 'Toán', '2026-09-02', 'https://x/v.mp4'),
+    'Be Na Bi-Toan-2026-09-02.mp4'
+  );
+  assert.equal(
+    tenTepNop('Na : Bi', 'Toán  |  Hai', '2026-09-02', 'https://x/v.mp4'),
+    'Na Bi-Toan Hai-2026-09-02.mp4'
+  );
 });
 
 test('tenTepNop: phan rong thi bo han, khong de lai dau gach thua', () => {

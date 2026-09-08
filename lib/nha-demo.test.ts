@@ -238,7 +238,11 @@ test('moi nha demo co du thu de xem, khong man nao trong', async () => {
     const DAU = /[ăâđêôơưàáảãạằắẳẵặầấẩẫậèéẻẽẹềếểễệìíỉĩịòóỏõọồốổỗộờớởỡợùúủũụừứửữựỳýỷỹỵ]/i;
     for (const c of con) assert.ok(!DAU.test(c.name), `${lang}: ten con ${c.name}`);
     for (const a of await store.listAssignments(fam, { from: '2000-01-01', to: '2100-01-01', includeChores: true })) {
-      assert.ok(!DAU.test(`${a.subject} ${a.content} ${a.note ?? ''}`), `${lang}: bai ${a.content}`);
+      // `subject` cua dong NHIEM VU la VIEC_NHA_SUBJECT — khoa phan loai, khong
+      // man nao ve ra (man cua con ve nhanh isChores, danh sach cua bo me loc
+      // chore ra). Chi dong BAI TAP moi hien ten mon.
+      const hien = a.choreId === null ? `${a.subject} ${a.content} ${a.note ?? ''}` : `${a.content} ${a.note ?? ''}`;
+      assert.ok(!DAU.test(hien), `${lang}: bai ${a.content}`);
     }
     for (const r of await store.listRewards(fam)) assert.ok(!DAU.test(r.name), `${lang}: thuong ${r.name}`);
   }

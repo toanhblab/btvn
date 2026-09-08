@@ -140,7 +140,11 @@ dòng không ai tick được (màn của con liệt kê từ hôm nay) là kho�
 đó. Best-effort (nuốt lỗi để không 500 một lần ghi đã thành công); ba nhánh đều có
 test ở `lib/tinh-diem.test.ts`.
 
-`stars`/`icon`/`content` CHÉP vào dòng lúc tạo (sửa cấu hình chỉ ảnh hưởng dòng
+`subject` của dòng nhiệm vụ là `VIEC_NHA_SUBJECT` — **khoá phân loại, không phải
+chữ hiện lên màn**, nên giữ nguyên tiếng Việt ở MỌI nhà kể cả nhà demo (cần dịch
+thì dịch LÚC HIỆN THỊ, đừng dịch lúc ghi: ghi bản dịch vào đó thì một nhà có hai
+giá trị cho cùng một thứ — seed ghi bản dịch, `taoNhiemVuNgay` của hôm sau ghi hằng
+số). `stars`/`icon`/`content` CHÉP vào dòng lúc tạo (sửa cấu hình chỉ ảnh hưởng dòng
 tạo sau, và **tắt công tắc chỉ ngăn dòng tạo SAU** — dòng của hôm nay đã tạo vẫn
 hiện, vẫn tick được, vẫn ăn ⭐), riêng nhóm đọc LIVE qua `LEFT JOIN daily_chores`
 trong `ASSIGNMENT_SELECT` — giống `sort_order`. Xoá nhiệm vụ là `archived_at`,
@@ -229,7 +233,14 @@ chứ không ở từng route, vì có HAI đường gắn máy: `setDeviceFamil
 nguyên ngõ cụt: `viewingFamilyId` ưu tiên `btvn_parent`, mà màn nhập PIN tự chuyển
 hướng đi khi đã có phiên và nút "Quên PIN trên thiết bị này" đã bỏ (#17). Gắn lại
 chính nhà đang ở thì GIỮ phiên. Thêm đường gắn máy thứ ba thì đi qua cùng hai hàm
-đó, đừng tự `cookies().set` (`lib/nha-link.test.ts` kiểm cả hai đường).
+đó, đừng tự `cookies().set` — `signIn` từng là đường thứ ba đó và nay đã đi qua
+`setDeviceFamily`.
+
+**Nhập PIN demo thì KHÔNG gắn máy** (`signIn` bỏ qua bước gắn khi `pinDanhRieng`):
+gắn máy là gắn một năm, mà ba mã demo ai cũng biết và captain nhập ngay trên máy
+mình — hết phiên bố mẹ là `viewingFamilyId` rơi về cookie thiết bị và màn của con
+hiện nhà Nhật ngay trên máy nhà mình. PIN thật giữ nguyên: mở phiên VÀ gắn máy.
+(`lib/nha-link.test.ts` kiểm cả hai đường gắn máy lẫn hai loại PIN.)
 
 Tài liệu có hai người đọc khác nhau: `README.md` cho người phát triển, còn
 `HUONG-DAN-BO-ME.md` (kèm ảnh trong `huong-dan-anh/`) cho bố mẹ dùng app thật —

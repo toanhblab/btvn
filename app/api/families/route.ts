@@ -24,10 +24,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: T('Tên nhà dài quá, để ngắn thôi.') }, { status: 400 });
   }
 
-  const created = await createFamily(name, String(body?.pin ?? ''));
+  const pin = String(body?.pin ?? '');
+  const created = await createFamily(name, pin);
   if (!created.ok) return NextResponse.json({ error: T(created.error, created.tham) }, { status: 409 });
 
-  await signIn(created.family.id, body?.remember === true);
+  await signIn(created.family.id, body?.remember === true, pin);
   return NextResponse.json({ family: created.family });
 }
 

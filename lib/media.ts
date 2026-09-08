@@ -57,7 +57,7 @@ export const TEN_TEP_RE = /^([0-9a-f]{32})(\.[a-z0-9]{1,5})$/;
  * ky tu PHA ten tep va ky tu dieu khien, con lai giu nguyen.
  */
 const KY_TU_PHA_TEN_TEP = /[/\\?%*:|"<>]/g;
-const KY_TU_DIEU_KHIEN = /[\u0000-\u001f\u007f]/g;
+const KY_TU_DIEU_KHIEN = /[\u0000-\u0008\u000e-\u001f\u007f]/g;
 
 /**
  * "Bé Na" -> "Be Na"; "さくら" -> "さくら"; "민준" -> "민준".
@@ -65,7 +65,7 @@ const KY_TU_DIEU_KHIEN = /[\u0000-\u001f\u007f]/g;
  * Ghep lai NFC o cuoi: NFD tach mot chu Han (Hangul) thanh cac jamo roi, nhin thi
  * y het nhung la chuoi khac — ten tep dang tach roi la thu hay lam hong cho nhan.
  */
-export function boDau(s: string): string {
+function boDau(s: string): string {
   return s
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -74,13 +74,19 @@ export function boDau(s: string): string {
     .normalize('NFC');
 }
 
-/** Gop khoang trang TRUOC: tab/xuong dong vua la ky tu dieu khien vua la khoang
-    trang, xoa han thi "Na\tHai" dinh lien thanh "NaHai". */
+/**
+ * Loai ky tu TRUOC roi moi gop khoang trang: xoa mot ky tu nam GIUA hai tu
+ * ("Be Na / Bi") de lai hai dau cach, gop sau moi don duoc.
+ *
+ * Doi lai, KY_TU_DIEU_KHIEN co y chua tab/xuong dong (\u0009-\u000d): chung vua
+ * la ky tu dieu khien vua la khoang trang, xoa han thi "Na\tHai" dinh lien thanh
+ * "NaHai" — de `\s+` o buoc sau doi chung thanh mot dau cach.
+ */
 function phanTen(s: string): string {
   return boDau(s)
-    .replace(/\s+/g, ' ')
     .replace(KY_TU_DIEU_KHIEN, '')
     .replace(KY_TU_PHA_TEN_TEP, '')
+    .replace(/\s+/g, ' ')
     .replace(/^[\s.]+|[\s.]+$/g, '');
 }
 

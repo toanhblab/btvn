@@ -146,7 +146,11 @@ export async function goiLenhNhaDemo(lang, pinHash) {
   // 6. Dong nhiem vu hang ngay — CHINH cau SQL cua app (lib/sqlNhiemVu.ts):
   //    hom nay ca nha (nhu mo man chon con), mai cho nhung con co bai (nhu saveSubmission),
   //    hom qua cho hai be lon roi danh dau xong het (lich su). 10 = DURATION_DEFAULT.
-  const taoNhiemVu = (ngay, childIds) => q(SQL_TAO_NHIEM_VU_NGAY, [fam, ngay, d.vietNhaSubject, 'primary_school', 10, childIds]);
+  // $3 la VIEC_NHA_SUBJECT (lib/store.ts) — KHOA PHAN LOAI, khong phai chu hien
+  // len man, nen giu nguyen tieng Viet o moi nha. Dich luc HIEN THI, khong luc ghi:
+  // ghi ban dich vao day thi nha demo co hai gia tri cho cung mot thu (seed ghi
+  // ban dich, `taoNhiemVuNgay` cua ngay hom sau ghi hang so).
+  const taoNhiemVu = (ngay, childIds) => q(SQL_TAO_NHIEM_VU_NGAY, [fam, ngay, 'Việc nhà', 'primary_school', 10, childIds]);
   taoNhiemVu(homNay, null);
   taoNhiemVu(mai, [conA, conB, conNho]);
   taoNhiemVu(homQua, [conA, conB]);

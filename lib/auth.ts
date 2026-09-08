@@ -93,18 +93,27 @@ const DEVICE_MAX_AGE = 60 * 60 * 24 * 365;
  * @param remember  Bo me tu chon "Nho tren thiet bi nay".
  *   Mac dinh FALSE — PRD 4.5 noi khong duoc nho PIN tren iPad cua con vi day la
  *   may dung chung; nho o do thi PIN mat tac dung. Chi nho khi bo me chu dong tick.
+ * @param pin  Chinh ma vua nhap — chi de biet co phai PIN demo khong.
  *
- * Dat luon cookie thiet bi: bo me vua nhap PIN thi may nay ro rang la cua nha do,
- * nho vay bam "Man hinh cua con" la xem duoc ngay.
+ * Gan luon may vao nha: bo me vua nhap PIN thi may nay ro rang la cua nha do, nho
+ * vay bam "Man hinh cua con" la xem duoc ngay. Di qua `setDeviceFamily` nhu moi
+ * duong gan may khac, khong tu `jar.set` — o day nha cua phien va nha gan may la
+ * MOT nen no khong go phien vua dat.
+ *
+ * TRU PIN DEMO: ba ma 1111/2222/3333 ai cung biet va captain nhap chung ngay tren
+ * may cua minh de demo. Gan may la gan MOT NAM, nen het phien bo me (dong trinh
+ * duyet, khong tick "nho") thi `viewingFamilyId` roi ve cookie thiet bi va man cua
+ * con hien nha demo tieng Nhat — dung ngay tren may nha minh. Nhap PIN demo chi mo
+ * PHIEN bo me; het phien la may tro lai nha cu.
  */
-export async function signIn(familyId: string, remember: boolean): Promise<void> {
+export async function signIn(familyId: string, remember: boolean, pin: string): Promise<void> {
   const jar = await cookies();
-  const value = await seal(familyId);
-  jar.set(PARENT_COOKIE, value, {
+  jar.set(PARENT_COOKIE, await seal(familyId), {
     ...baseOpts,
     maxAge: remember ? 60 * 60 * 24 * 30 : undefined, // undefined = het khi dong trinh duyet
   });
-  jar.set(DEVICE_COOKIE, value, { ...baseOpts, maxAge: DEVICE_MAX_AGE });
+  if (pinDanhRieng(pin)) return;
+  await setDeviceFamily(familyId);
 }
 
 /**

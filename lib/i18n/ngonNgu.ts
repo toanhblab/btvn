@@ -40,10 +40,3 @@ export const PIN_DEMO: Readonly<Record<string, NgonNgu>> = {
 
 export const pinDanhRieng = (pin: string): boolean => pin in PIN_DEMO;
 
-/** Thuoc tinh lang cua <html>, va ten hien thi (chi dung o tai lieu / log). */
-export const TEN_NGON_NGU: Record<NgonNgu, string> = {
-  vi: 'Tiếng Việt',
-  en: 'English',
-  ja: '日本語',
-  ko: '한국어',
-};

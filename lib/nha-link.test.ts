@@ -38,7 +38,7 @@ mock.module('next/headers', {
 
 const { chayMigrations } = await import('../scripts/db.mjs');
 const { query, queryTx } = await import('./db.ts');
-const { signIn, hashPin } = await import('./auth.ts');
+const { signIn, hashPin, viewingFamilyId } = await import('./auth.ts');
 const { insertFamily } = await import('./store.ts');
 const { GET } = await import('../app/nha/[slug]/route.ts');
 const { POST } = await import('../app/api/nha/route.ts');
@@ -48,6 +48,7 @@ const PIN_B = '5678';
 
 let nhaA: { id: string; slug: string };
 let nhaB: { id: string; slug: string };
+let nhaDemo: { id: string; slug: string };
 
 before(async () => {
   await chayMigrations({
@@ -57,6 +58,7 @@ before(async () => {
   });
   nhaA = await insertFamily('Nha A', await hashPin(PIN_A));
   nhaB = await insertFamily('Nha B', await hashPin(PIN_B));
+  nhaDemo = await insertFamily('Nha demo ja', await hashPin('1111'));
 });
 
 beforeEach(() => hu.clear());
@@ -72,7 +74,7 @@ async function moLink(slug: string) {
 }
 
 test('mo link cua NHA KHAC: may sang nha moi va phien bo me cu bi go', async () => {
-  await signIn(nhaA.id, true);
+  await signIn(nhaA.id, true, PIN_A);
   const phienA = hu.get('btvn_parent')!;
   assert.ok(phienA, 'da co phien bo me nha A');
 
@@ -89,7 +91,7 @@ test('mo link cua NHA KHAC: may sang nha moi va phien bo me cu bi go', async () 
 });
 
 test('mo lai link CHINH NHA MINH: giu nguyen phien bo me', async () => {
-  await signIn(nhaA.id, true);
+  await signIn(nhaA.id, true, PIN_A);
   const phienA = hu.get('btvn_parent')!;
 
   const { dat } = await moLink(nhaA.slug);
@@ -104,7 +106,7 @@ test('chua nhap PIN: chi gan may vao nha, khong dat cookie bo me', async () => {
 });
 
 test('slug khong co nha nao: ve man chon nha, khong dung cookie', async () => {
-  await signIn(nhaA.id, true);
+  await signIn(nhaA.id, true, PIN_A);
   const { res, dat } = await moLink('khong-co-that');
   assert.equal(res.headers.get('location'), 'http://localhost/vao?loi=link');
   assert.equal(dat.size, 0);
@@ -121,7 +123,7 @@ async function nhapPinGanMay(pin: string) {
 }
 
 test('POST /api/nha voi PIN cua NHA KHAC: may sang nha moi va phien bo me cu bi go', async () => {
-  await signIn(nhaA.id, true);
+  await signIn(nhaA.id, true, PIN_A);
   assert.ok(hu.get('btvn_parent'), 'da co phien bo me nha A');
 
   const { res } = await nhapPinGanMay(PIN_B);
@@ -131,7 +133,7 @@ test('POST /api/nha voi PIN cua NHA KHAC: may sang nha moi va phien bo me cu bi 
 });
 
 test('POST /api/nha voi PIN CHINH NHA MINH: giu nguyen phien bo me', async () => {
-  await signIn(nhaA.id, true);
+  await signIn(nhaA.id, true, PIN_A);
   const phienA = hu.get('btvn_parent')!;
 
   await nhapPinGanMay(PIN_A);
@@ -143,4 +145,33 @@ test('POST /api/nha khi chua nhap PIN bo me: chi gan may, khong tao phien', asyn
   await nhapPinGanMay(PIN_B);
   assert.equal(hu.get('btvn_parent'), undefined);
   assert.ok(hu.get('btvn_nha')!.startsWith(`${nhaB.id}.`));
+});
+
+/**
+ * PIN demo (1111/2222/3333) ai cung biet, va captain nhap chung ngay tren may cua
+ * minh de demo cho khach. Gan may la gan MOT NAM, nen neu nhap PIN demo cung gan
+ * may thi het phien bo me la man cua con hien nha demo tieng Nhat — tren may nha
+ * minh. Nhap PIN demo chi duoc mo PHIEN.
+ */
+test('PIN demo: chi mo phien bo me, KHONG gan may vao nha demo', async () => {
+  await signIn(nhaA.id, false, PIN_A);
+  const mayCuaNhaA = hu.get('btvn_nha')!;
+  assert.ok(mayCuaNhaA.startsWith(`${nhaA.id}.`), 'may dang gan vao nha that A');
+
+  await signIn(nhaDemo.id, false, '1111');
+  assert.ok(hu.get('btvn_parent')!.startsWith(`${nhaDemo.id}.`), 'phien bo me la nha demo');
+  assert.equal(hu.get('btvn_nha'), mayCuaNhaA, 'may KHONG duoc gan sang nha demo');
+
+  // Dong trinh duyet: cookie phien het, cookie may con nguyen mot nam
+  hu.delete('btvn_parent');
+  assert.equal(await viewingFamilyId(), nhaA.id, 'het phien thi ve lai nha that');
+});
+
+test('PIN that: van gan may vao nha do nhu cu', async () => {
+  await signIn(nhaA.id, false, PIN_A);
+  assert.ok(hu.get('btvn_nha')!.startsWith(`${nhaA.id}.`));
+
+  await signIn(nhaB.id, false, PIN_B);
+  assert.ok(hu.get('btvn_nha')!.startsWith(`${nhaB.id}.`), 'PIN that doi ca may sang nha B');
+  assert.ok(hu.get('btvn_parent')!.startsWith(`${nhaB.id}.`), 'phien khong bi chinh no go');
 });

@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   }
 
   // remember mac dinh false — PRD 4.5: KHONG nho PIN tren iPad dung chung cua cac con.
-  await signIn(tried.family.id, body?.remember === true);
+  await signIn(tried.family.id, body?.remember === true, pin);
   return NextResponse.json({ ok: true, family: tried.family });
 }
 

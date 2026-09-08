@@ -22,7 +22,6 @@ export const NHA_DEMO = {
   ja: {
     pin: '1111',
     ten: '山田家',
-    vietNhaSubject: JA['Việc nhà'],
     con: [
       { id: 'sakura', ten: 'さくら', lop: '1年生', mau: 'primary', anh: '/img/avatar-an.jpg' },
       { id: 'haruto', ten: 'はると', lop: '1年生', mau: 'secondary', anh: '/img/avatar-minh.jpg' },
@@ -59,7 +58,6 @@ export const NHA_DEMO = {
   ko: {
     pin: '2222',
     ten: '김씨 가족',
-    vietNhaSubject: KO['Việc nhà'],
     con: [
       { id: 'jiwoo',  ten: '지우', lop: '1학년', mau: 'primary', anh: '/img/avatar-an.jpg' },
       { id: 'minjun', ten: '민준', lop: '1학년', mau: 'secondary', anh: '/img/avatar-minh.jpg' },
@@ -95,7 +93,6 @@ export const NHA_DEMO = {
   en: {
     pin: '3333',
     ten: 'The Smith family',
-    vietNhaSubject: EN['Việc nhà'],
     con: [
       { id: 'emma', ten: 'Emma', lop: 'Grade 1', mau: 'primary', anh: '/img/avatar-an.jpg' },
       { id: 'liam', ten: 'Liam', lop: 'Grade 1', mau: 'secondary', anh: '/img/avatar-minh.jpg' },
