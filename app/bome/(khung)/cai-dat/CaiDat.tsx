@@ -3,9 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PIN_LEN } from '@/lib/pin';
+import Link from 'next/link';
 import type { Family } from '@/lib/store';
-import type { DailyChore } from '@/lib/types';
-import ViecNha from './ViecNha';
 
 /** Khung the trang o co Macbook — duoi 1280px khong doi gi so voi ban cu. */
 const THE =
@@ -13,12 +12,13 @@ const THE =
 
 export default function CaiDat({
   family,
-  chores,
+  soNhiemVu,
   hasAI,
   hasBlob,
 }: {
   family: Family;
-  chores: DailyChore[];
+  /** So nhiem vu hang ngay dang co (ca dang tat) — hien o the dan sang trang rieng. */
+  soNhiemVu: number;
   hasAI: boolean;
   hasBlob: boolean;
 }) {
@@ -207,10 +207,27 @@ export default function CaiDat({
 
       </section>
 
-      {/* ---- Nhiem vu moi ngay ---- */}
+      {/* ---- Nhiem vu hang ngay: tu issue #42 la TRANG RIENG (them sao, nhom,
+          giao cho tung con nen the o day se dai gap doi) — the nay chi con la
+          dong dan, cung khuon voi "Doi ma PIN" o tren. ---- */}
       <section className={THE}>
-      <h2 className="text-p-label uppercase text-on-surface-variant mb-2">Nhiệm vụ mỗi ngày</h2>
-      <ViecNha initial={chores} />
+      <h2 className="text-p-label uppercase text-on-surface-variant mb-2">Nhiệm vụ hàng ngày</h2>
+      <Link
+        href="/bome/nhiem-vu-hang-ngay"
+        className="w-full bg-surface-container-lowest rounded-card card-shadow p-3 flex items-center gap-3
+                   min-h-p-tap text-left mb-4 xl:shadow-none xl:p-0 xl:mb-0"
+      >
+        <span className="w-9 h-9 rounded-lg bg-primary-fixed flex items-center justify-center shrink-0">
+          <span className="material-symbols-outlined text-primary">checklist</span>
+        </span>
+        <span className="flex-1">
+          <span className="block text-p-body text-on-surface font-bold">Cài nhiệm vụ hàng ngày</span>
+          <span className="block text-p-body-sm text-on-surface-variant">
+            {soNhiemVu > 0 ? `${soNhiemVu} nhiệm vụ` : 'Chưa có nhiệm vụ nào'} · giao cho con nào, mấy ⭐, thuộc nhóm nào
+          </span>
+        </span>
+        <span className="material-symbols-outlined text-outline">chevron_right</span>
+      </Link>
       </section>
 
       {/* Khoi "Vung nguy hiem" (nut "Quen PIN tren thiet bi nay") da bo han theo

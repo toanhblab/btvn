@@ -78,17 +78,30 @@ kết quả vá tại chỗ. Test `lib/videoDuration.test.ts` có bộ dựng mp
 giả, bộ duyệt cây kiểm từng offset, và hàm mô phỏng phép tính của Safari.
 
 Điểm thưởng (+10 một ngày xong hết, +1 mỗi bài xong sớm hơn `duration_minutes`,
-đổi thưởng có bố mẹ duyệt): luật là hàm thuần trong `lib/diem.ts` (đọc chú thích
-đầu file trước — nó giải thích vì sao "xong sớm" đo bằng mốc con bấm "Bắt đầu
-làm" của đồng hồ sẵn có và giới hạn của cách đó), SQL cộng điểm ở
-`ghiDiemSauKhiXong` + `congDiemNgayNeuXong` trong `lib/store.ts` (đường con tick
-KHÔNG phải chỗ duy nhất gọi: route xoá bài / đổi ngày của bố mẹ gọi hàm sau),
-lược đồ + lý do ở `migrations/015_tinh_diem_doi_thuong.sql`. Hai điều dễ vấp:
-(1) "cộng một lần" KHÔNG nằm trong code mà nằm ở hai unique index partial của
-`score_events` + `ON CONFLICT ... RETURNING` — đổi luật thì sửa index trước;
-(2) số dư = tổng `score_events` TRỪ `reward_redemptions` đã duyệt, không có dòng
-điểm âm nào, đừng thêm. Test PGlite trong `lib/tinh-diem.test.ts` mô phỏng lại đúng SQL của
-store — sửa một bên là phải sửa bên kia.
++`stars` mỗi dòng nhiệm vụ hàng ngày tick xong, đổi thưởng có bố mẹ duyệt): luật
+là hàm thuần trong `lib/diem.ts` (đọc chú thích đầu file trước — nó giải thích vì
+sao "xong sớm" đo bằng mốc con bấm "Bắt đầu làm" của đồng hồ sẵn có và giới hạn
+của cách đó), SQL cộng điểm ở `ghiDiemSauKhiXong` + `congDiemNgayNeuXong` trong
+`lib/store.ts` (đường con tick KHÔNG phải chỗ duy nhất gọi: route xoá bài / đổi
+ngày của bố mẹ gọi hàm sau), lược đồ + lý do ở `migrations/015_tinh_diem_doi_thuong.sql`
+và `016_nhiem_vu_hang_ngay_thuong_sao.sql`. Ba điều dễ vấp: (1) "cộng một lần"
+KHÔNG nằm trong code mà nằm ở BA unique index partial của `score_events` +
+`ON CONFLICT ... RETURNING` — đổi luật thì sửa index trước; (2) số dư = tổng
+`score_events` TRỪ `reward_redemptions` đã duyệt, không có dòng điểm âm nào, đừng
+thêm; (3) CHECK của `score_events.kind` được 016 DROP rồi ADD lại đủ ba giá trị —
+migration nào thêm `kind` nữa phải liệt kê lại ĐỦ, không chỉ thêm giá trị của mình.
+Test PGlite trong `lib/tinh-diem.test.ts` mô phỏng lại đúng SQL của store — sửa
+một bên là phải sửa bên kia.
+
+Nhiệm vụ hàng ngày (`daily_chores` + dòng `assignments` có `chore_id`, hai nhóm
+`category`, sao/icon/`child_ids`): dòng của ngày được tạo LƯỜI bằng
+`taoNhiemVuNgay` trong `lib/store.ts` — gọi ở đầu màn của con, `progressUpcoming`,
+chi tiết con của bố mẹ và `saveSubmission`; không có cron. Câu `INSERT … SELECT`
+đó được NHÂN BẢN ở `scripts/seed.mjs` và `lib/nhiem-vu-hang-ngay.test.ts` (node
+không import được TS) — đổi một chỗ là đổi cả ba. `stars`/`icon`/`content` CHÉP vào
+dòng lúc tạo (sửa cấu hình chỉ ảnh hưởng dòng tạo sau), riêng nhóm đọc LIVE qua
+`LEFT JOIN daily_chores` trong `ASSIGNMENT_SELECT` — giống `sort_order`. Xoá nhiệm
+vụ là `archived_at`, không DELETE (migration 014 giải thích vì sao).
 
 Máy này đã bật Safari > Develop > Allow Remote Automation: `safaridriver -p <cổng
 riêng>` + WebDriver W3C lái được Safari thật để đo `video.duration` (phục vụ tệp

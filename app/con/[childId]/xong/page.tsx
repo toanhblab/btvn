@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { viewingFamilyId } from '@/lib/auth';
 import { DIEM_NGAY_XONG } from '@/lib/diem';
-import { daCongDiemNgay, getChild, soDiem, todayISO } from '@/lib/store';
+import { daCongDiemNgay, getChild, listAssignments, soDiem, todayISO } from '@/lib/store';
 import Confetti from './Confetti';
 
 export const dynamic = 'force-dynamic';
@@ -26,13 +26,20 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
   // Con chi toi man nay khi vua xong bai CUOI cua HOM NAY, nen ngay duoc cong
   // 10 diem (neu co) chinh la hom nay. Doc lai tu DB thay vi tin may con: mo lai
   // man nay ngay hom sau thi khong bao 10 diem cua ngay nua ma van hien tong.
+  //
+  // homNay: de cau khen noi dung thu con vua lam xong (issue #42 Q2): ngay khong
+  // co bai tap ma chi co nhiem vu thi khong duoc noi "lam het bai".
   const today = todayISO();
-  const [child, diem, coDiemNgay] = await Promise.all([
+  const [child, diem, coDiemNgay, homNay] = await Promise.all([
     getChild(familyId, childId),
     soDiem(familyId, childId),
     daCongDiemNgay(familyId, childId, today),
+    listAssignments(familyId, { childId, date: today, includeChores: true }),
   ]);
   if (!child) notFound();
+  const coBai = homNay.some((a) => a.choreId === null);
+  const coNhiemVu = homNay.some((a) => a.choreId !== null);
+  const vuaXong = coBai && coNhiemVu ? 'hết bài và nhiệm vụ' : coNhiemVu ? 'hết nhiệm vụ' : 'hết bài';
 
   return (
     <main className="kid-scope min-h-screen flex flex-col items-center justify-center relative overflow-hidden text-center px-k-edge">
@@ -60,7 +67,7 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
         />
         <h1 className="text-k-hero text-primary mb-4">Giỏi quá {child.name}!</h1>
         <p className="text-k-body text-on-surface-variant mb-6">
-          Con làm hết bài hôm nay rồi. Đi chơi thôi!
+          Con làm {vuaXong} hôm nay rồi. Đi chơi thôi!
         </p>
 
         {/* Diem cua ngay chi hien khi HOM NAY da co dong day_complete (ngay truoc

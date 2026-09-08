@@ -1,21 +1,29 @@
 import { NextResponse } from 'next/server';
 import { parentFamilyId } from '@/lib/auth';
-import { deleteChore, getChore, listChores, moveChore, updateChore } from '@/lib/store';
-import { MAX_CHU_VIEC_NHA } from '@/lib/types';
+import {
+  deleteChore, getChore, listChores, locChildIdsGiaoCho, moveChore, updateChore,
+} from '@/lib/store';
+import {
+  ICON_NHIEM_VU_MAC_DINH, MAX_CHU_VIEC_NHA, lamSachIcon, lamSachSao, nhomNhiemVuOf,
+} from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
 type Ctx = { params: Promise<{ id: string }> };
 
 /**
- * PATCH /api/viec-nha/:id — sua mot viec nha. CAN PIN.
+ * PATCH /api/viec-nha/:id — sua mot nhiem vu hang ngay. CAN PIN.
  *
  *   { content }        doi chu
- *   { enabled }        bat / tat (tat thi con khong thay nua, tick cu van con)
- *   { move: 'len' | 'xuong' }  doi cho voi viec ngay tren / ngay duoi
+ *   { icon }           doi icon (mot emoji)
+ *   { stars }          doi so sao (1..10)
+ *   { nhom }           'after_study' | 'housework'
+ *   { childIds }       null = ca nha; mang id con (khong rong, thuoc nha nay)
+ *   { enabled }        bat / tat (tat thi ngung tao dong moi, tick cu van con)
+ *   { move: 'len' | 'xuong' }  doi cho voi nhiem vu ngay tren / ngay duoi
  *
- * getChore loc theo nha nen viec cua nha khac tra 404 — biet id cung khong sua
- * duoc danh sach nha nguoi ta.
+ * Moi thay doi CHI anh huong dong tao SAU do (tru nhom — doc live, xem
+ * lib/store.ts). getChore loc theo nha nen nhiem vu cua nha khac tra 404.
  */
 export async function PATCH(req: Request, { params }: Ctx) {
   const familyId = await parentFamilyId();
@@ -47,19 +55,30 @@ export async function PATCH(req: Request, { params }: Ctx) {
     }
     patch.content = content;
   }
-
+  if (body.icon !== undefined) patch.icon = lamSachIcon(body.icon, ICON_NHIEM_VU_MAC_DINH);
+  if (body.stars !== undefined) {
+    const stars = lamSachSao(body.stars);
+    if (stars === null) return NextResponse.json({ error: 'Số sao phải từ 1 đến 10.' }, { status: 400 });
+    patch.stars = stars;
+  }
+  if (body.nhom !== undefined) patch.nhom = nhomNhiemVuOf(body.nhom);
+  if ('childIds' in body) {
+    const giaoCho = await locChildIdsGiaoCho(familyId, body.childIds);
+    if ('error' in giaoCho) return NextResponse.json({ error: giaoCho.error }, { status: 400 });
+    patch.childIds = giaoCho.childIds;
+  }
   if (body.enabled !== undefined) patch.enabled = body.enabled === true;
 
   return NextResponse.json({ chore: await updateChore(familyId, id, patch) });
 }
 
 /**
- * DELETE /api/viec-nha/:id — BO han mot viec. CAN PIN.
+ * DELETE /api/viec-nha/:id — BO han mot nhiem vu. CAN PIN.
  *
- * Danh dau da bo chu khong xoa dong that (deleteChore): viec bien mat khoi man
- * Cai dat, khong khoi phuc duoc, va khong duoc them vao nhung ngay sau nua —
- * nhung nhung ngay DA TAO thi giu nguyen, ke ca nhung lan con da tick. Khong
- * khoi phuc duoc nen giao dien van phai hoi lai truoc khi goi.
+ * Danh dau da bo chu khong xoa dong that (deleteChore): nhiem vu bien mat khoi
+ * man cai dat, khong khoi phuc duoc, va khong duoc tao cho nhung ngay sau nua —
+ * nhung nhung ngay DA TAO thi giu nguyen, ke ca nhung lan con da tick va sao da
+ * cong. Khong khoi phuc duoc nen giao dien van phai hoi lai truoc khi goi.
  */
 export async function DELETE(_req: Request, { params }: Ctx) {
   const familyId = await parentFamilyId();

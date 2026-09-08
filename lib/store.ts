@@ -4,9 +4,9 @@ import {
 } from './diem';
 import type {
   Assignment, AttachedMedia, Child, ChildColor, DailyChore, DiemVuaCong, DraftAssignment, HwSource,
-  Lang, MediaKind, Redemption, RedemptionStatus, Reward,
+  Lang, MediaKind, NhomNhiemVu, Redemption, RedemptionStatus, Reward,
 } from './types';
-import { DURATION_DEFAULT, HW_SOURCE_DEFAULT, hwSourceOf } from './types';
+import { DURATION_DEFAULT, HW_SOURCE_DEFAULT, hwSourceOf, nhomNhiemVuOf } from './types';
 
 /** Ngay hom nay theo gio dia phuong, YYYY-MM-DD (toISOString la UTC nen lech mui gio). */
 export function todayISO(offsetDays = 0): string {
@@ -230,6 +230,9 @@ interface AssignmentRow {
   submitted_video_at: string | Date | null;
   chore_id: string | null;
   started_at: string | Date | null;
+  stars: number | string | null;
+  /** Tu LEFT JOIN daily_chores (xem ASSIGNMENT_SELECT) — null neu khong phai viec nha. */
+  chore_category: string | null;
 }
 
 /** Neon tra due_date dang string, PGlite tra Date — chuan hoa ve YYYY-MM-DD. */
@@ -262,7 +265,21 @@ const toAssignment = (r: AssignmentRow, media: AttachedMedia[]): Assignment => (
   submittedVideoAt: r.submitted_video_at ? new Date(r.submitted_video_at).toISOString() : null,
   choreId: r.chore_id,
   startedAt: r.started_at ? new Date(r.started_at).toISOString() : null,
+  stars: r.stars === null || r.stars === undefined ? null : Number(r.stars),
+  choreNhom: r.chore_id === null || r.chore_category === null ? null : nhomNhiemVuOf(r.chore_category),
 });
+
+/**
+ * Cot doc cho moi cau tra ve Assignment: a.* + NHOM cua viec nha, doc LIVE tu
+ * daily_chores (issue #42) nhu sort_order o ORDER BY ben duoi — nhom la chuyen
+ * "hien o dau", giong thu tu, khong phai "duoc gi" nhu stars (stars thi CHEP vao
+ * dong luc tao, xem taoNhiemVuNgay). Bo me doi nhom cua mot nhiem vu thi dong
+ * hom nay doi cho theo ngay; doi sao thi dong hom nay giu sao cu.
+ */
+const ASSIGNMENT_SELECT = `a.*, dc.category AS chore_category`;
+const ASSIGNMENT_FROM = `assignments a
+     JOIN children c ON c.id = a.child_id
+     LEFT JOIN daily_chores dc ON dc.id = a.chore_id`;
 
 /**
  * Tep dinh kem (video, ghi am, anh) cua mot loat bai, tra ve map
@@ -325,9 +342,7 @@ export async function listAssignments(
   // sap lai o tung man. Bai tap that co sort_order NULL nen NULLS FIRST giu
   // chung dung truoc neu bo me tinh co go ten mon trung voi "Việc nhà".
   const rows = await query<AssignmentRow>(
-    `SELECT a.* FROM assignments a
-     JOIN children c ON c.id = a.child_id
-     LEFT JOIN daily_chores dc ON dc.id = a.chore_id
+    `SELECT ${ASSIGNMENT_SELECT} FROM ${ASSIGNMENT_FROM}
      WHERE ${where.join(' AND ')}
      ORDER BY a.due_date ASC, a.subject ASC, dc.sort_order ASC NULLS FIRST, a.id ASC`,
     params
@@ -338,8 +353,7 @@ export async function listAssignments(
 
 export async function getAssignment(familyId: string, id: string): Promise<Assignment | null> {
   const r = await queryOne<AssignmentRow>(
-    `SELECT a.* FROM assignments a
-     JOIN children c ON c.id = a.child_id
+    `SELECT ${ASSIGNMENT_SELECT} FROM ${ASSIGNMENT_FROM}
      WHERE a.id = $1 AND c.family_id = $2`,
     [id, familyId]
   );
@@ -410,68 +424,21 @@ export async function saveSubmission(input: {
     }
   }
 
-  // Viec nha (issue #36): moi khi co bai moi cho mot (con, ngay), tao them mot
-  // dong assignments cho MOI viec nha dang bat, cho MOI con trong childIds —
-  // nhung CHI khi con do CHUA co dong viec nha nao cho dung ngay nay. Ngay
-  // khong ai duoc giao bai thi viec nha KHONG tu xuat hien nua — dung sat
-  // nghia den cua issue #36 ("tao khi tao nhiem vu cua ngay hom do"), khac
-  // hanh vi cu (viec nha luon hien o man /xong bat ke co bai hay khong).
+  // Nhiem vu hang ngay (issue #36, #42): dot bai nay cho (con, ngay) thi cac
+  // dong nhiem vu cua (con, ngay) do cung duoc tao ngay — ke ca ngay mai — de
+  // con thay chung duoi nhom "Ngay mai" cung luc voi bai. Tu #42 day KHONG con
+  // la noi duy nhat tao dong: ngay khong co bai thi taoNhiemVuNgay chay luc mo
+  // man cua con / man chon-con (progressUpcoming). Idempotent nen goi thua
+  // khong sao.
   //
-  // Kiem tra "da co chua" theo TUNG CON, khong theo ngay chung chung: hai con
-  // co the duoc giao bai cho cung mot ngay o hai lan goi saveSubmission khac
-  // nhau (vd lop chinh nhap truoc, lop tieng Anh nhap sau), con thu hai van
-  // phai duoc tao viec nha du con thu nhat da co roi.
-  //
-  // Ca khoi bi nuot loi, y het seedDefaultChores o insertFamily: cac dong bai
-  // tap that o tren da ghi xong va khong chung transaction voi khoi nay, nen nem
-  // loi len se tra 500 cho mot dot nhap DA THANH CONG — bo me nhap lai la sinh
-  // ban sao ca dot bai. Bai tap la bat buoc, viec nha chi la "co thi tot".
-  //
-  // scripts/seed.mjs nhan ban khoi nay cho DB mau (script node khong import
-  // duoc TypeScript) — doi cach tao dong viec nha o day thi doi ca ben do.
+  // Nuot loi, y het seedDefaultChores o insertFamily: cac dong bai tap that o
+  // tren da ghi xong va khong chung transaction voi khoi nay, nen nem loi len se
+  // tra 500 cho mot dot nhap DA THANH CONG — bo me nhap lai la sinh ban sao ca
+  // dot bai. Bai tap la bat buoc, nhiem vu chi la "co thi tot".
   try {
-    const chores = await listChores(input.familyId, { enabledOnly: true });
-    if (chores.length > 0) {
-      const daCoRows = await query<{ child_id: string }>(
-        `SELECT DISTINCT child_id FROM assignments
-          WHERE due_date = $1 AND chore_id IS NOT NULL AND child_id = ANY($2)`,
-        [input.dueDate, childIds]
-      );
-      const daCoViecNha = new Set(daCoRows.map((r) => r.child_id));
-
-      // MOT lenh INSERT nhieu dong cho toan bo (con x viec): Neon la HTTP nen
-      // moi cau la mot vong goi rieng, 3 con x 3 viec ma chay tung cau la chin
-      // vong thua trong moi lan bo me luu bai.
-      const params: unknown[] = [];
-      const values: string[] = [];
-      for (const childId of childIds) {
-        if (daCoViecNha.has(childId)) continue;
-        for (const c of chores) {
-          const dong = [
-            newId('asg'), subId, childId, VIEC_NHA_SUBJECT, VIEC_NHA_ICON, c.content, null, 'vi',
-            input.dueDate, HW_SOURCE_DEFAULT, null, DURATION_DEFAULT, false, c.id,
-          ];
-          values.push(`(${dong.map((_, i) => `$${params.length + i + 1}`).join(',')})`);
-          params.push(...dong);
-        }
-      }
-
-      if (values.length > 0) {
-        // ON CONFLICT tren unique index (child_id, due_date, chore_id) — chan
-        // tao trung khi hai request nop bai dong thoi cung luot qua buoc SELECT
-        // o tren truoc khi ben nao kip ghi (xem migrations/013_...).
-        await query(
-          `INSERT INTO assignments
-             (id, submission_id, child_id, subject, icon, content, note, lang, due_date, source,
-              image_url, duration_minutes, requires_video, chore_id)
-           VALUES ${values.join(',')}
-           ON CONFLICT (child_id, due_date, chore_id) WHERE chore_id IS NOT NULL DO NOTHING`,
-          params
-        );
-      }
-    }
+    await taoNhiemVuNgay(input.familyId, input.dueDate, childIds);
   } catch (e) {
-    console.error('Khong tao duoc dong viec nha cho ngay', input.dueDate, e);
+    console.error('Khong tao duoc dong nhiem vu cho ngay', input.dueDate, e);
   }
 
   return created;
@@ -658,6 +625,12 @@ export interface ChildProgress {
   // viec nha)". Viec nha KHONG duoc tinh vao day, giong ly do cu (#25): tinh
   // ca viec nha thi badge "Chua co bai" kho bien mat dung luc can hien nhat.
   homeworkTotal: number;
+  /**
+   * So bai tap THAT con 'todo' tu hom nay tro di. Badge o man chon-con dung no
+   * de noi "N bài" khi con no bai that, va "N việc" khi chi con nhiem vu (issue
+   * #42: ngay khong co bai van co nhiem vu, badge khong duoc noi "Chưa có bài").
+   */
+  homeworkTodo: number;
   /** So diem con DANG CO (da tru phan thuong bo me duyet) — xem soDiemTheoCon. */
   points: number;
 }
@@ -676,6 +649,10 @@ export interface ChildProgress {
  */
 export async function progressUpcoming(familyId: string): Promise<ChildProgress[]> {
   const today = todayISO();
+  // Tao dong nhiem vu HOM NAY cho ca nha truoc khi dem (issue #42): man chon-con
+  // hien badge "Còn N việc" nen so phai dung ke ca ngay khong ai giao bai. Phai
+  // cho xong roi moi dem — khong chay song song voi ba cau duoi.
+  await taoNhiemVuNgay(familyId, today, null);
   // Ba cau chay SONG SONG (Neon la HTTP, moi cau mot vong goi). Bai da xong cua
   // nhung ngay truoc khong con y nghia -> chi lay bai sap toi va bai con no.
   // chore_id de tach rieng homeworkTotal (bai THAT) khoi total (bai THAT + viec
@@ -704,18 +681,20 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
       // — man bo me khong duoc thay viec nha lam phinh badge nay.
       overdue: mine.filter((r) => dateStr(r.due_date) < today && r.status === 'todo' && r.chore_id === null).length,
       homeworkTotal: upcoming.filter((r) => r.chore_id === null).length,
+      homeworkTodo: upcoming.filter((r) => r.chore_id === null && r.status === 'todo').length,
       points: diem.get(child.id) ?? 0,
     };
   });
 }
 
-/* ---------------- Nhiem vu moi ngay ("viec nha") ----------------
+/* ---------------- Nhiem vu hang ngay ("viec nha") ----------------
  *
- * MOT danh sach CAU HINH chung ca nha: bo me sua o man Cai dat
- * (migrations/012_nhiem_vu_moi_ngay.sql). Tu issue #36 day chi con la khuon: moi
- * viec dang bat sinh ra mot DONG assignments that cho moi (con, ngay co bai duoc
- * giao) trong saveSubmission, va con tick chinh dong do — bang daily_chore_checks
- * khong con ai ghi vao nua.
+ * MOT danh sach CAU HINH chung ca nha: bo me sua o man /bome/nhiem-vu-hang-ngay
+ * (migrations/012, 016). Tu issue #36 day chi con la khuon: moi nhiem vu dang
+ * bat sinh ra mot DONG assignments that cho moi (con duoc giao, ngay), va con
+ * tick chinh dong do — bang daily_chore_checks khong con ai ghi vao nua. Tu
+ * issue #42 dong do duoc tao LUOI moi ngay (taoNhiemVuNgay), moi nhiem vu co
+ * sao / icon / nhom / danh sach con duoc giao.
  *
  * Ba trang thai, dung nham la mat du lieu: dang bat / tat (enabled = false, van
  * hien o Cai dat, bat lai duoc) / da bo (archived_at, an han, khong khoi phuc —
@@ -740,13 +719,96 @@ export const VIEC_NHA_MAC_DINH = [
  * cho hai cot NOT NULL cua assignments.
  */
 export const VIEC_NHA_SUBJECT = 'Việc nhà';
-export const VIEC_NHA_ICON = '🧹';
 
-interface ChoreRow { id: string; content: string; sort_order: number; enabled: boolean }
+/**
+ * Tao dong assignments cho MOI nhiem vu dang bat x MOI con duoc giao, cho MOT
+ * ngay — chi nhung dong chua co (issue #42, Q2: nhiem vu hien moi ngay, ke ca
+ * cuoi tuan va ngay khong co bai, KHONG can cron).
+ *
+ * MOT cau INSERT ... SELECT ... ON CONFLICT DO NOTHING tren unique index
+ * (child_id, due_date, chore_id) cua migrations/013: goi bao nhieu lan cung chi
+ * tao moi dong mot lan, hai request mo man cung luc cung khong tao trung, va
+ * khong can buoc SELECT-kiem-truoc nao. Khong co gi de chen thi la no-op re.
+ *
+ * Goi tu: man cua con (hom nay, con do), progressUpcoming (hom nay, ca nha —
+ * man chon-con va tong quan bo me), man chi tiet con cua bo me, va
+ * saveSubmission (ngay cua dot bai, cac con duoc giao — ke ca ngay mai). Ngay
+ * khong ai mo man thi khong co dong cho ngay do — chap nhan: khong ai tick thi
+ * cung khong co gi de ghi.
+ *
+ * CHEP stars/icon/content vao dong luc tao (tien le: content o 013, gia phan
+ * thuong o 015): bo me sua cau hinh sau do chi anh huong dong tao SAU. Nhom thi
+ * doc live (xem ASSIGNMENT_SELECT). Dong khong co submission_id (khong thuoc dot
+ * nhap nao), source/duration lay mac dinh cho hai cot NOT NULL.
+ *
+ * Nhiem vu them giua ngay se xuat hien o lan mo man tiep theo (khong cho ngay
+ * mai): dong moi la dong TAO MOI, khong sua dong da co, nen khong trai luat
+ * "sua chi anh huong dong tao sau".
+ *
+ * scripts/seed.mjs nhan ban cau nay cho DB mau (script node khong import duoc
+ * TypeScript) — doi o day thi doi ca ben do.
+ *
+ * @param childIds  null = moi con trong nha; hoac chi cac con nay (da loc theo
+ *   nha o noi goi — cau SQL van JOIN children theo family_id nen id nha khac
+ *   khong tao ra gi).
+ */
+export async function taoNhiemVuNgay(
+  familyId: string,
+  date: string,
+  childIds: string[] | null
+): Promise<void> {
+  // id sinh trong SQL (md5 ngau nhien) vi so dong chi biet sau khi SELECT;
+  // tien to 'asg_' + 16 hex de cung hinh dang voi newId('asg').
+  await query(
+    `INSERT INTO assignments
+       (id, child_id, subject, icon, content, lang, due_date, source, duration_minutes,
+        requires_video, chore_id, stars)
+     SELECT 'asg_' || substr(md5(random()::text || c.id || dc.id || $2::text), 1, 16),
+            c.id, $3, dc.icon, dc.content, 'vi', $2::date, $4, $5, false, dc.id, dc.stars
+       FROM daily_chores dc
+       JOIN children c ON c.family_id = dc.family_id
+      WHERE dc.family_id = $1 AND dc.enabled AND dc.archived_at IS NULL
+        AND (dc.child_ids IS NULL OR c.id = ANY(dc.child_ids))
+        AND ($6::text[] IS NULL OR c.id = ANY($6::text[]))
+     ON CONFLICT (child_id, due_date, chore_id) WHERE chore_id IS NOT NULL DO NOTHING`,
+    [familyId, date, VIEC_NHA_SUBJECT, HW_SOURCE_DEFAULT, DURATION_DEFAULT, childIds]
+  );
+}
+
+/**
+ * Loc "giao cho" tu body API: undefined/null -> null (CA NHA); mang -> chi giu id
+ * con CUA NHA NAY, bo trung. Tra ve chuoi loi neu mang rong hoac co id la — bo
+ * me phai giao cho it nhat mot con, va id con nha khac khong duoc lot vao cau
+ * hinh (dung o POST va PATCH /api/viec-nha; dat o day vi route file cua Next
+ * khong duoc export ham ngoai cac method HTTP).
+ */
+export async function locChildIdsGiaoCho(
+  familyId: string,
+  v: unknown
+): Promise<{ childIds: string[] | null } | { error: string }> {
+  if (v === undefined || v === null) return { childIds: null };
+  if (!Array.isArray(v)) return { error: 'Danh sách con không hợp lệ.' };
+  const mine = new Set((await listChildren(familyId)).map((c) => c.id));
+  const ids = [...new Set(v.map(String))];
+  if (ids.length === 0) return { error: 'Chưa giao cho ai — chọn "Cả nhà" hoặc ít nhất một con.' };
+  if (ids.some((id) => !mine.has(id))) return { error: 'Có con không thuộc nhà mình.' };
+  return { childIds: ids };
+}
+
+interface ChoreRow {
+  id: string; content: string; icon: string; stars: number | string; category: string;
+  child_ids: string[] | null; sort_order: number; enabled: boolean;
+}
+
+const CHORE_COLS = 'id, content, icon, stars, category, child_ids, sort_order, enabled';
 
 const toChore = (r: ChoreRow): DailyChore => ({
   id: r.id,
   content: r.content,
+  icon: r.icon,
+  stars: Number(r.stars),
+  nhom: nhomNhiemVuOf(r.category),
+  childIds: r.child_ids === null ? null : [...r.child_ids],
   sortOrder: Number(r.sort_order),
   enabled: Boolean(r.enabled),
 });
@@ -762,7 +824,7 @@ export async function listChores(
   opts: { enabledOnly?: boolean } = {}
 ): Promise<DailyChore[]> {
   const rows = await query<ChoreRow>(
-    `SELECT id, content, sort_order, enabled FROM daily_chores
+    `SELECT ${CHORE_COLS} FROM daily_chores
       WHERE family_id = $1 AND archived_at IS NULL ${opts.enabledOnly ? 'AND enabled' : ''}
       ORDER BY sort_order ASC, created_at ASC, id ASC`,
     [familyId]
@@ -770,7 +832,11 @@ export async function listChores(
   return rows.map(toChore);
 }
 
-/** Nap ba viec mac dinh cho mot nha vua tao. */
+/**
+ * Nap ba viec mac dinh cho mot nha vua tao. Sao / icon / nhom / giao cho lay
+ * DEFAULT cua DB (1 ⭐, 🧹, "Sau khi hoc xong", ca nha — migrations/016), giong
+ * het ba dong cua nha da co tu truoc.
+ */
 export async function seedDefaultChores(familyId: string): Promise<void> {
   for (const [i, content] of VIEC_NHA_MAC_DINH.entries()) {
     await query(
@@ -780,22 +846,26 @@ export async function seedDefaultChores(familyId: string): Promise<void> {
   }
 }
 
-export async function createChore(familyId: string, content: string): Promise<DailyChore> {
+/**
+ * Them mot nhiem vu vao cuoi danh sach. childIds da phai duoc noi goi loc theo
+ * nha (API kiem: mang rong -> 400, id la -> 400); null = ca nha.
+ */
+export async function createChore(
+  familyId: string,
+  input: { content: string; icon: string; stars: number; nhom: NhomNhiemVu; childIds: string[] | null }
+): Promise<DailyChore> {
   const row = await queryOne<{ n: number | string | null }>(
     `SELECT MAX(sort_order) AS n FROM daily_chores WHERE family_id = $1`,
     [familyId]
   );
-  const chore: DailyChore = {
-    id: newId('chr'),
-    content,
-    sortOrder: Number(row?.n ?? 0) + 1,
-    enabled: true,
-  };
+  const id = newId('chr');
   await query(
-    `INSERT INTO daily_chores (id, family_id, content, sort_order) VALUES ($1,$2,$3,$4)`,
-    [chore.id, familyId, chore.content, chore.sortOrder]
+    `INSERT INTO daily_chores (id, family_id, content, icon, stars, category, child_ids, sort_order)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+    [id, familyId, input.content, input.icon, input.stars, input.nhom, input.childIds,
+     Number(row?.n ?? 0) + 1]
   );
-  return chore;
+  return (await getChore(familyId, id))!;
 }
 
 /**
@@ -807,22 +877,38 @@ export async function createChore(familyId: string, content: string): Promise<Da
  */
 export async function getChore(familyId: string, id: string): Promise<DailyChore | null> {
   const r = await queryOne<ChoreRow>(
-    `SELECT id, content, sort_order, enabled FROM daily_chores
+    `SELECT ${CHORE_COLS} FROM daily_chores
       WHERE id = $1 AND family_id = $2 AND archived_at IS NULL`,
     [id, familyId]
   );
   return r ? toChore(r) : null;
 }
 
+/**
+ * Sua cau hinh mot nhiem vu. CHI anh huong dong tao SAU do: dong cua hom nay da
+ * tao giu content/icon/stars cu (da chep luc tao), diem da ghi giu nguyen. Rieng
+ * nhom doc live nen dong hom nay doi nhom theo (xem ASSIGNMENT_SELECT).
+ * childIds: null = ca nha; mang -> chi cac con do (API da kiem thuoc nha).
+ */
 export async function updateChore(
   familyId: string,
   id: string,
-  patch: { content?: string; enabled?: boolean }
+  patch: {
+    content?: string; icon?: string; stars?: number; nhom?: NhomNhiemVu;
+    childIds?: string[] | null; enabled?: boolean;
+  }
 ): Promise<DailyChore | null> {
   const sets: string[] = [];
   const params: unknown[] = [id, familyId];
 
   if (patch.content !== undefined) { params.push(patch.content); sets.push(`content = $${params.length}`); }
+  if (patch.icon !== undefined)    { params.push(patch.icon);    sets.push(`icon = $${params.length}`); }
+  if (patch.stars !== undefined)   { params.push(patch.stars);   sets.push(`stars = $${params.length}`); }
+  if (patch.nhom !== undefined)    { params.push(patch.nhom);    sets.push(`category = $${params.length}`); }
+  if (patch.childIds !== undefined) {
+    params.push(patch.childIds);
+    sets.push(`child_ids = $${params.length}::text[]`);
+  }
   if (patch.enabled !== undefined) { params.push(patch.enabled); sets.push(`enabled = $${params.length}`); }
 
   if (sets.length) {
@@ -876,10 +962,11 @@ export async function moveChore(familyId: string, id: string, huong: -1 | 1): Pr
 
 /* ---------------- Diem thuong & doi thuong ----------------
  *
- * Luat o lib/diem.ts, luoc do o migrations/015_tinh_diem_doi_thuong.sql. Tom tat:
- * +10 mot ngay xong het (mot lan cho moi (con, ngay)), +1 moi bai xong som hon
- * thoi luong du kien, khong hoi to truoc families.score_since. So du = tong
- * score_events - tong reward_redemptions da duyet.
+ * Luat o lib/diem.ts, luoc do o migrations/015_tinh_diem_doi_thuong.sql va 016.
+ * Tom tat: +10 mot ngay xong het (mot lan cho moi (con, ngay)), +1 moi bai xong
+ * som hon thoi luong du kien, +stars moi dong nhiem vu tick xong (mot lan cho
+ * moi dong), khong hoi to truoc families.score_since. So du = tong score_events
+ * - tong reward_redemptions da duyet.
  *
  * score_events va reward_redemptions khong co family_id: thuoc nha nao la qua
  * child_id -> children.family_id (nhu assignments), nen moi cau deu join/loc
@@ -988,7 +1075,7 @@ export async function congDiemNgayNeuXong(
  * khong lam mat diem (khong co gi tru).
  */
 export async function ghiDiemSauKhiXong(familyId: string, a: Assignment): Promise<DiemVuaCong> {
-  const ketQua: DiemVuaCong = { xongSom: 0, ngayXong: 0 };
+  const ketQua: DiemVuaCong = { xongSom: 0, ngayXong: 0, nhiemVu: 0 };
   if (a.status !== 'done') return ketQua;
 
   // 1. Ngay xong — ca bai tap lan viec nha cua (con, ngay) deu done. Tra ve kem
@@ -1013,10 +1100,27 @@ export async function ghiDiemSauKhiXong(familyId: string, a: Assignment): Promis
     if (ins.length > 0) ketQua.xongSom = DIEM_XONG_SOM;
   }
 
+  // 3. Sao cua NHIEM VU (issue #42): dong viec nha CO sao (a.stars, chep luc
+  //    tao) tick xong duoc dung so sao do, cong THEM vao +10/+1 o tren. Dong
+  //    viec nha cu (stars null — tao truoc migration 016) khong bao gio duoc:
+  //    khong hoi to. "Cong mot lan" la unique index score_events_task_once_idx
+  //    (assignment_id, kind = 'task_done') — tick lai, bo tick roi tick lai,
+  //    hai request cung luc deu chi mot dong. Bo tick khong rut (Q6).
+  if (ngay.ngayTinhDiem && a.choreId !== null && a.stars !== null && a.stars > 0) {
+    const ins = await query<{ id: string }>(
+      `INSERT INTO score_events (id, child_id, kind, points, event_date, assignment_id)
+       VALUES ($1, $2, 'task_done', $3, $4, $5)
+       ON CONFLICT (assignment_id) WHERE kind = 'task_done' DO NOTHING
+       RETURNING id`,
+      [newId('sce'), a.childId, a.stars, a.dueDate, a.id]
+    );
+    if (ins.length > 0) ketQua.nhiemVu = a.stars;
+  }
+
   // So du chi doc khi lan nay CO cong diem: man cua con chi hien "Con dang co N
-  // ⭐" cung voi chip +1, khong cong gi thi khong ai doc so do (bo mot vong thua
-  // Neon cho moi cu tick viec nha / tick khong som).
-  if (ketQua.xongSom > 0 || ketQua.ngayXong > 0) {
+  // ⭐" cung voi chip +1 / +N sao, khong cong gi thi khong ai doc so do (bo mot
+  // vong thua Neon cho moi cu tick khong duoc gi).
+  if (ketQua.xongSom > 0 || ketQua.ngayXong > 0 || ketQua.nhiemVu > 0) {
     ketQua.tong = await soDiem(familyId, a.childId);
   }
   return ketQua;

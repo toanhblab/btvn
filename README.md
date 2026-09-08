@@ -22,7 +22,7 @@ tính của nhà: nhập PIN ra đúng một nhà, nên hai nhà không được
 
 ```bash
 npm install
-npm run db:seed      # tạo bảng + 1 nhà + 3 con + bài tập mẫu + 3 việc nhà + 4 phần thưởng mẫu, PIN mặc định 1234
+npm run db:seed      # tạo bảng + 1 nhà + 3 con + bài tập mẫu + 5 nhiệm vụ hàng ngày + 4 phần thưởng mẫu, PIN mặc định 1234
 npm run dev
 ```
 
@@ -142,11 +142,12 @@ app/con/        5 màn của trẻ: chọn con → bài hôm nay → chi tiết 
                 và cửa hàng phần thưởng (thuong/)
 app/bome/       màn của bố mẹ: PIN, tạo nhà, tổng quan, thêm bài, kiểm tra lại,
                 nhập tay, sửa bài, thêm con, chi tiết theo con, danh sách,
-                thưởng (duyệt đổi thưởng + danh sách phần thưởng), cài đặt
+                thưởng (duyệt đổi thưởng + danh sách phần thưởng), cài đặt,
+                nhiệm vụ hàng ngày (trang riêng: giao cho con nào, mấy ⭐, nhóm)
 app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 nha (gắn máy), extract (Nous Portal), upload (ảnh đề bài),
                 upload-media (tệp bố mẹ đính kèm), nop-video (video con nộp),
-                viec-nha (cấu hình nhiệm vụ mỗi ngày của bố mẹ, cần PIN),
+                viec-nha (cấu hình nhiệm vụ hàng ngày của bố mẹ, cần PIN),
                 phan-thuong (bố mẹ đặt phần thưởng, cần PIN), doi-thuong (con
                 xin đổi — không cần PIN; bố mẹ duyệt — cần PIN),
                 tep (đọc tệp đã ghi ở .data/uploads khi dev)
@@ -246,39 +247,50 @@ khi luồng `getUserMedia` mới về sau lúc đã đóng (để luồng chạy
 tốn pin và đèn máy ảnh sáng mãi). Không mở được máy ảnh thì có đường lui **chụp
 ảnh mã** (`capture="environment"`) rồi đọc trên ảnh.
 
-**Nhiệm vụ mỗi ngày.** Việc nhà (cất sách vở vào ba lô / tắt đèn học / soạn sách
-vở cho ngày mai — ba việc mặc định nạp sẵn cho mọi nhà) là **dòng bài tập thật**
-trong bảng `assignments`, cột `chore_id` là dấu hiệu duy nhất nhận ra chúng. Bố
-mẹ giao bài cho một ngày là việc nhà của ngày đó được tạo cùng lúc, xếp thành
-nhóm **"Việc nhà" cuối cùng** trong danh sách bài hôm nay của con; con bấm là
-tick ngay tại chỗ (không mở màn chi tiết bài, vì đọc to + đồng hồ đếm ngược
-không hợp cho "tắt đèn học"). Hôm nào không ai giao bài thì hôm đó **không có**
-việc nhà. Xong hết cả bài lẫn việc nhà mới sang màn khen "Giỏi quá!" — màn đó
-thuần ăn mừng, không còn checklist.
+**Nhiệm vụ hàng ngày.** Mỗi nhiệm vụ là **dòng bài tập thật** trong bảng
+`assignments`, cột `chore_id` là dấu hiệu duy nhất nhận ra chúng; cấu hình nằm ở
+`daily_chores`. Có **hai nhóm** (cột `category`): **"Sau khi học xong"** — dọn dẹp,
+chuẩn bị đồ dùng (ba việc mặc định nạp sẵn cho mọi nhà: cất sách vở vào ba lô /
+tắt đèn học / soạn sách vở cho ngày mai, mỗi việc 1 ⭐) — và **"Việc nhà hàng
+ngày"** — việc nhà của con. Mỗi nhiệm vụ có tên, icon một emoji, **số ⭐ (1–10)**,
+nhóm và **"giao cho"** (mặc định cả nhà, hoặc chọn từng con — `child_ids`, NULL =
+cả nhà). Nhiệm vụ hiện **mỗi ngày, kể cả cuối tuần và ngày không có bài**: dòng của
+ngày được **tạo lười khi mở màn** (`taoNhiemVuNgay` — một câu `INSERT … SELECT …
+ON CONFLICT DO NOTHING`, gọi ở màn của con, màn chọn-con, chi tiết con của bố mẹ và
+lúc bố mẹ giao bài), không cần cron. Trên màn của con chúng xếp thành **hai nhóm
+riêng cuối cùng**, mỗi dòng có icon + chip "⭐ N"; con bấm là tick ngay tại chỗ
+(không mở màn chi tiết bài), tick xong hiện chip "+N ⭐". Xong hết cả bài lẫn nhiệm
+vụ mới sang màn khen "Giỏi quá!". Badge ở màn chọn-con nói "N bài" khi còn nợ bài
+thật, "N việc" khi chỉ còn nhiệm vụ, "Chưa có bài" chỉ khi không có gì cả.
 
-**Một danh sách chung cả nhà**, bố mẹ sửa một lần ở Cài đặt → "Nhiệm vụ mỗi
-ngày": đổi chữ, đổi thứ tự bằng hai nút mũi tên, bật/tắt, xoá. Mọi thay đổi chỉ
-ảnh hưởng những ngày **tạo sau đó** — nội dung đã chép sang dòng bài lúc tạo.
-Xoá là **đánh dấu bỏ** (không khôi phục được): việc biến mất khỏi Cài đặt và
-không thêm vào ngày nào nữa, nhưng những ngày đã tạo giữ nguyên, kể cả các lần
-con đã tick. Bố mẹ xem "Việc nhà hôm nay — 2/3 xong" ở màn chi tiết theo con;
-ô "Quá hạn" ở màn tổng quan và tiến độ bài tập ở hai màn của bố mẹ **không** đếm
-việc nhà (`listAssignments` mặc định loại chúng), còn Hoàn thành / Đang chờ thì
-có — chưa tick hết việc nhà của hôm nay thì chưa được coi là xong. Vì việc nhà
-là bài tập thật, nút **"Xoá tất cả bài tập và việc nhà"** xoá luôn cả lịch sử
-việc nhà.
+**Một danh sách chung cả nhà**, bố mẹ sửa ở trang riêng **Cài đặt → "Nhiệm vụ hàng
+ngày"** (cũng vào được từ dòng dẫn trên màn Thưởng): đổi chữ / icon / sao / nhóm /
+giao cho, đổi thứ tự bằng hai nút mũi tên, bật/tắt, xoá. Mọi thay đổi chỉ ảnh
+hưởng những dòng **tạo sau đó** — tên/icon/sao đã chép sang dòng bài lúc tạo (riêng
+nhóm đọc live nên đổi nhóm là dòng hôm nay đổi chỗ theo). Xoá là **đánh dấu bỏ**
+(không khôi phục được): nhiệm vụ biến mất khỏi cài đặt và không tạo cho ngày nào
+nữa, nhưng những ngày đã tạo giữ nguyên, kể cả các lần con đã tick và ⭐ đã cộng.
+Bố mẹ xem "Nhiệm vụ hàng ngày — 2/5 xong" ở màn chi tiết theo con; ô "Quá hạn" ở
+màn tổng quan và tiến độ bài tập ở hai màn của bố mẹ **không** đếm nhiệm vụ
+(`listAssignments` mặc định loại chúng), còn Hoàn thành / Đang chờ thì có. Vì nhiệm
+vụ là bài tập thật, nút **"Xoá tất cả bài tập và việc nhà"** xoá luôn cả lịch sử.
 
-**Điểm thưởng.** Xong hết một ngày (cả bài tập **lẫn** việc nhà của ngày đó) được
+**Điểm thưởng.** Xong hết một ngày (cả bài tập **lẫn** nhiệm vụ của ngày đó) được
 **+10 điểm**, cộng một lần cho mỗi con mỗi ngày; mỗi bài xong sớm hơn thời lượng
-dự kiến của chính bài đó được **+1**. Luật đầy đủ — "sớm" đo bằng mốc con bấm
+dự kiến của chính bài đó được **+1**; mỗi **nhiệm vụ hàng ngày** tick xong được
+thêm **đúng số ⭐ của nó** (cộng thêm, không thay +10; cộng một lần cho mỗi dòng —
+bỏ tick không rút, tick lại không cộng lại; dòng việc nhà cũ tạo trước khi có sao
+thì mãi không có sao, không hồi tố). Luật đầy đủ — "sớm" đo bằng mốc con bấm
 "Bắt đầu làm", và ngày trước `families.score_since` **không** được tính (không
-hồi tố) — ở chú thích đầu `lib/diem.ts` và
-[migrations/015_tinh_diem_doi_thuong.sql](migrations/015_tinh_diem_doi_thuong.sql).
+hồi tố) — ở chú thích đầu `lib/diem.ts`,
+[migrations/015_tinh_diem_doi_thuong.sql](migrations/015_tinh_diem_doi_thuong.sql) và
+[migrations/016_nhiem_vu_hang_ngay_thuong_sao.sql](migrations/016_nhiem_vu_hang_ngay_thuong_sao.sql).
 Con thấy số ⭐ của **mình và của anh chị em** ngay ở màn chọn con, kèm **bảng xếp
 hạng** cả nhà (bố mẹ chốt để cả nhà cùng thấy); +1 hiện ở tấm "Giỏi quá!" của
-từng bài, +10 hiện ở màn khen cuối ngày. Bố mẹ thấy điểm từng con ở màn tổng quan.
+từng bài, "+N ⭐" hiện ngay trên dòng nhiệm vụ vừa tick, +10 hiện ở màn khen cuối
+ngày. Bố mẹ thấy điểm từng con ở màn tổng quan.
 
-**Đổi thưởng.** Phần thưởng là **một danh sách chung cả nhà** (như việc nhà): bố
+**Đổi thưởng.** Phần thưởng là **một danh sách chung cả nhà** (như nhiệm vụ): bố
 mẹ đặt tên, icon và giá ⭐ ở màn **Thưởng**, bật/tắt hoặc xoá được; con thấy đúng
 danh sách đó ở 🎁 **"Đổi thưởng"**, bấm rồi hỏi lại một lần trước khi gửi. **Bố
 mẹ duyệt thì điểm mới bị trừ** — từ chối thì con giữ nguyên điểm và xin lại được,

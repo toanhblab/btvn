@@ -1,17 +1,20 @@
 import { NextResponse } from 'next/server';
 import { parentFamilyId } from '@/lib/auth';
-import { createChore, listChores } from '@/lib/store';
-import { MAX_CHU_VIEC_NHA } from '@/lib/types';
+import { createChore, listChores, locChildIdsGiaoCho } from '@/lib/store';
+import {
+  ICON_NHIEM_VU_MAC_DINH, MAX_CHU_VIEC_NHA, SAO_NHIEM_VU_MAC_DINH, lamSachIcon, lamSachSao,
+  nhomNhiemVuOf,
+} from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/viec-nha — danh sach viec nha CUA NHA NAY (ca viec dang tat). CAN PIN.
+ * GET /api/viec-nha — danh sach nhiem vu hang ngay CUA NHA NAY (ca nhiem vu dang
+ * tat). CAN PIN.
  *
  * Man cua con khong goi duong nay nen khong can mot duong doc khong PIN o day:
  * tu issue #36 no khong doc daily_chores nua ma doc CAC DONG assignments da tao
- * cho tung ngay (listAssignments, includeChores: true) — man /xong gio thuan an
- * mung, khong con checklist viec nha.
+ * cho tung ngay (listAssignments, includeChores: true).
  */
 export async function GET() {
   const familyId = await parentFamilyId();
@@ -20,7 +23,15 @@ export async function GET() {
   return NextResponse.json({ chores: await listChores(familyId) });
 }
 
-/** POST /api/viec-nha { content } — them mot viec vao cuoi danh sach. CAN PIN. */
+/**
+ * POST /api/viec-nha { content, icon?, stars?, nhom?, childIds? } — them mot
+ * nhiem vu vao cuoi danh sach. CAN PIN.
+ *
+ *   icon      mot emoji, thieu -> 🧹
+ *   stars     1..MAX_SAO_NHIEM_VU, thieu -> 1
+ *   nhom      'after_study' | 'housework', thieu/la -> 'after_study'
+ *   childIds  null/thieu = ca nha; mang id con (khong rong, thuoc nha nay)
+ */
 export async function POST(req: Request) {
   const familyId = await parentFamilyId();
   if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
@@ -32,5 +43,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Việc dài quá, để ngắn thôi cho con đọc được.' }, { status: 400 });
   }
 
-  return NextResponse.json({ chore: await createChore(familyId, content) });
+  const stars = body?.stars === undefined ? SAO_NHIEM_VU_MAC_DINH : lamSachSao(body.stars);
+  if (stars === null) {
+    return NextResponse.json({ error: 'Số sao phải từ 1 đến 10.' }, { status: 400 });
+  }
+
+  const giaoCho = await locChildIdsGiaoCho(familyId, body?.childIds);
+  if ('error' in giaoCho) return NextResponse.json({ error: giaoCho.error }, { status: 400 });
+
+  return NextResponse.json({
+    chore: await createChore(familyId, {
+      content,
+      icon: lamSachIcon(body?.icon, ICON_NHIEM_VU_MAC_DINH),
+      stars,
+      nhom: nhomNhiemVuOf(body?.nhom),
+      childIds: giaoCho.childIds,
+    }),
+  });
 }

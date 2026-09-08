@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { viewingFamilyId } from '@/lib/auth';
-import { getChild, listAssignments, soDiem, todayISO, VIEC_NHA_ICON, VIEC_NHA_SUBJECT } from '@/lib/store';
-import type { Assignment, HwSource } from '@/lib/types';
-import { HW_SOURCES } from '@/lib/types';
+import { getChild, listAssignments, soDiem, taoNhiemVuNgay, todayISO } from '@/lib/store';
+import type { Assignment, HwSource, NhomNhiemVu } from '@/lib/types';
+import { HW_SOURCES, NHOM_NHIEM_VU } from '@/lib/types';
 import ViecNhaBai from './ViecNhaBai';
 
 export const dynamic = 'force-dynamic';
@@ -46,6 +46,11 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   //
   // soDiem: diem dang co cua con, hien o goc tren canh nut "Doi thuong" — cau
   // thu ba chay song song cung ly do tren.
+  //
+  // taoNhiemVuNgay TRUOC ba cau do (issue #42, Q2): dong nhiem vu cua HOM NAY
+  // cho con nay duoc tao luoi ngay luc mo man, ke ca ngay khong co bai — phai
+  // xong roi listAssignments moi thay chung. Khong co gi de chen thi no-op re.
+  await taoNhiemVuNgay(familyId, today, [childId]);
   const [child, items, diem] = await Promise.all([
     getChild(familyId, childId),
     listAssignments(familyId, { childId, from: today, includeChores: true }),
@@ -86,11 +91,12 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
 
   // Gom theo NOI GIAO truoc (moi ma trong HW_SOURCES mot nhom), trong moi noi
   // moi gom theo ngay. Con lam xong het bai mot noi roi moi sang noi kia, nen
-  // moi noi can mot khoi rieng voi tien do rieng. Viec nha (a.choreId khong
-  // null) bi LOAI khoi day du "source" cua no la gi — chore_id moi la dau hieu
-  // that, xem lib/types.ts — roi duoc gom thanh MOT nhom rieng, noi CUOI mang
-  // (issue #36 muc 7), khong dung HW_SOURCES cho nhom do de khong phai them
-  // 'viec nha' vao hang so day (xem chu thich o lib/store.ts saveSubmission).
+  // moi noi can mot khoi rieng voi tien do rieng. Nhiem vu hang ngay (a.choreId
+  // khong null) bi LOAI khoi day du "source" cua no la gi — chore_id moi la dau
+  // hieu that, xem lib/types.ts — roi duoc gom thanh HAI nhom rieng theo
+  // a.choreNhom ("Sau khi hoc xong", "Viec nha hang ngay" — issue #42 Q1, khong
+  // tron chung mot danh sach), noi CUOI mang (issue #36 muc 7), khong dung
+  // HW_SOURCES cho hai nhom do de khong phai them 'viec nha' vao hang so day.
   const sourceGroups: { key: string; icon: string; label: string; isChores: boolean;
     byDate: { date: string; items: Assignment[] }[]; total: number; done: number }[] =
     (Object.keys(HW_SOURCES) as HwSource[])
@@ -108,12 +114,17 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
       })
       .filter((g) => g.total > 0);
 
-  const choreItems = items.filter((a) => a.choreId != null);
-  if (choreItems.length > 0) {
+  for (const nhom of Object.keys(NHOM_NHIEM_VU) as NhomNhiemVu[]) {
+    // Dong viec nha cu ma daily_chores khong con (choreNhom null) roi vao nhom
+    // dau — khong bo rơi dong nao dang 'todo' cua hom nay.
+    const choreItems = items.filter((a) =>
+      a.choreId != null && (a.choreNhom ?? Object.keys(NHOM_NHIEM_VU)[0]) === nhom
+    );
+    if (choreItems.length === 0) continue;
     sourceGroups.push({
-      key: 'viec-nha',
-      icon: VIEC_NHA_ICON,
-      label: VIEC_NHA_SUBJECT,
+      key: `nhiem-vu-${nhom}`,
+      icon: NHOM_NHIEM_VU[nhom].icon,
+      label: NHOM_NHIEM_VU[nhom].label,
       isChores: true,
       byDate: gomTheoNgay(choreItems),
       total: choreItems.length,
@@ -121,7 +132,10 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
     });
   }
 
-  /* ---- Khong con bai nao sap toi: man khen thay vi man trong (PRD 4.3) ---- */
+  /* ---- Khong con bai nao sap toi VA khong co nhiem vu nao: man khen thay vi man
+     trong (PRD 4.3). Tu issue #42 nhiem vu hien moi ngay nen man nay hau nhu chi
+     con hien khi con khong duoc giao nhiem vu nao (bo me tat het / khong giao
+     cho con nay). ---- */
   if (items.length === 0) {
     return (
       <main className="kid-scope h-screen flex flex-col items-center justify-center text-center px-k-edge relative overflow-hidden">
@@ -138,7 +152,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
         {/* max-w-3xl (bo Macbook 06): o 1440px thi tieu de 56px chay het mot dong
             dai ngoang; gioi han khung lai de no xuong hai dong nhu ban thiet ke. */}
         <div className="flex flex-col items-center max-w-3xl">
-          <h1 className="text-k-hero text-on-background mb-3">Hôm nay không có bài tập 🎉</h1>
+          <h1 className="text-k-hero text-on-background mb-3">Hôm nay không có bài tập hay nhiệm vụ 🎉</h1>
           <p className="text-k-headline text-on-surface-variant mb-8">{child.name} đi chơi thôi!</p>
 
           <div className="flex flex-wrap items-center justify-center gap-6">
@@ -221,7 +235,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
         <section key={sg.key} className="mb-k-stack last:mb-0">
           {/* Dau moi nhom: noi giao + tien do RIENG cua nhom do, de con lam het
               mot loai bai (vd het bai cua mot ma trong HW_SOURCES) roi moi sang loai kia.
-              Nhom "Viec nha" luon xep cuoi mang sourceGroups (issue #36 muc 7). */}
+              Hai nhom nhiem vu luon xep cuoi mang sourceGroups (issue #36 muc 7, #42). */}
           <div
             className={`flex items-center gap-4 rounded-2xl p-4 mb-4 soft-shadow ${
               sg.done === sg.total ? 'bg-success-container' : 'bg-surface-container-low'
@@ -247,7 +261,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
               </h3>
 
               {sg.isChores ? (
-                // Viec nha: the tick nhe tai cho, KHONG dan sang /bai/[id] — man
+                // Nhiem vu: the tick nhe tai cho, KHONG dan sang /bai/[id] — man
                 // do co doc to + dong ho dem nguoc + co the quay video, khong hop
                 // voi mot viec don gian nhu "tat den hoc" (xem ViecNhaBai.tsx).
                 <ViecNhaBai

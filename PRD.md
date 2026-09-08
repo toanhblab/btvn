@@ -117,7 +117,7 @@ Nguyên tắc: **không có tài khoản, không email, không mật khẩu.**
 
 - Nhắc nhở tự động (thông báo/push, "8h tối rồi, còn 2 bài chưa xong").
 - Upload **ảnh** bài con đã làm để bố mẹ kiểm tra (riêng **video** nộp bài thì đã làm — xem mục 4.2 và 4.3).
-- Thống kê dài hạn, streak, huy hiệu (riêng **điểm thưởng + đổi thưởng có bố mẹ duyệt** thì đã làm — xem README mục "Điểm thưởng").
+- Thống kê dài hạn, streak, huy hiệu (riêng **điểm thưởng + đổi thưởng có bố mẹ duyệt** và **nhiệm vụ hàng ngày có thưởng sao** thì đã làm — xem README mục "Nhiệm vụ hàng ngày" và "Điểm thưởng").
 - Chia sẻ với giáo viên, lớp học.
 - Tài khoản thật (email/Google), lấy lại PIN khi quên, phân quyền trong nhà.
 - Chặn dò PIN ở mức hạ tầng (hiện chỉ đếm số lần sai trong RAM của từng instance).
@@ -147,8 +147,10 @@ Nguyên tắc: **không có tài khoản, không email, không mật khẩu.**
 - **Child**: id, family_id, tên, **ảnh (bắt buộc — dùng để con tự nhận ra mình)**, **màu riêng**, lớp, thứ tự hiển thị
 - **Submission** (lần nhập của phụ huynh): id, family_id, nội dung text gốc, danh sách ảnh, ngày nhập
   → một Submission có thể sinh ra bài tập cho **nhiều con** (trường hợp hai bé sinh đôi).
-- **Assignment** (bài tập): id, submission_id, child_id, môn học, nội dung, ghi chú, **ngôn ngữ (`vi` | `en`)**, hạn hoàn thành, trạng thái (todo | done), thời điểm hoàn thành
+- **Assignment** (bài tập): id, submission_id, child_id, môn học, nội dung, ghi chú, **ngôn ngữ (`vi` | `en`)**, hạn hoàn thành, trạng thái (todo | done), thời điểm hoàn thành, `chore_id` + `stars` (khác null khi dòng này là một **nhiệm vụ hàng ngày** của ngày đó)
   → mỗi con có **Assignment riêng** dù đề giống nhau, để tick độc lập.
+- **DailyChore** (nhiệm vụ hàng ngày, cấu hình chung cả nhà): id, family_id, tên, icon, số ⭐ (1–10), nhóm (`after_study` "Sau khi học xong" | `housework` "Việc nhà hàng ngày"), `child_ids` (null = cả nhà), thứ tự, bật/tắt, `archived_at`
+  → mỗi ngày, mỗi con được giao sinh **một Assignment** cho từng nhiệm vụ đang bật (tạo lười khi mở màn); con tick là được ⭐ của nhiệm vụ, cộng một lần.
 
 ## 8. Kỹ thuật & triển khai
 
