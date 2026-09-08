@@ -363,3 +363,57 @@ export function lamSachGia(v: unknown): number | null {
   if (!Number.isFinite(n) || n <= 0) return null;
   return Math.min(n, MAX_GIA_PHAN_THUONG);
 }
+
+/* ---------------- Tru diem (bo me phat, issue #43) ----------------
+ *
+ * Luoc do + ly do o migrations/017_tru_diem.sql; SQL o lib/sqlDiem.ts. Captain
+ * chot: bo me GO SO ⭐ MUON TRU (moi dong la mot delta duong, khong luu tong sau
+ * khi tru), KHONG cho so du am (may chu tu choi, man bo me moi "Tru het N"), ly
+ * do KHONG bat buoc, CON NHIN THAY dong tru kem ly do o cua hang, KHONG cong tay.
+ */
+
+/** Mot lan bo me tru ⭐ cua con. `points` la so DA TRU lan do (duong). */
+export interface Penalty {
+  id: string;
+  childId: string;
+  points: number;
+  /** '' = bo me khong ghi ly do — man cua con hien LY_DO_TRU_TRONG thay vao. */
+  reason: string;
+  createdAt: string;
+}
+
+/**
+ * Ly do la thu CON DOC (captain, quyet dinh 4), nen cac goi y mot cham viet
+ * bang loi NOI DUOC VOI CON — khong phai ghi chu bo me noi voi nhau. Ba cau
+ * dau la vi du captain neu. Danh sach co dinh, khong can bang cau hinh.
+ */
+export const LY_DO_TRU_GOI_Y = [
+  'Không nghe lời',
+  'Cãi bố mẹ',
+  'Không dọn đồ',
+  'Chơi quá giờ',
+  'Chưa làm bài',
+  'Nói dối',
+];
+
+/**
+ * Cau hien o man cua con khi bo me de trong ly do — khong de trong hoac, va
+ * phai tu te voi con: khong buoc toi, chi moi con hoi lai bo me.
+ */
+export const LY_DO_TRU_TRONG = 'Con hỏi bố mẹ vì sao nhé';
+
+/** Ly do dai hon thi tran mot dong lich su (cung tran voi ten viec nha). */
+export const MAX_CHU_LY_DO_TRU = MAX_CHU_VIEC_NHA;
+
+/**
+ * So ⭐ bo me go de tru: so nguyen duong, kep tran MAX_GIA_PHAN_THUONG (cung tran
+ * voi gia phan thuong — chan go nham); hong -> null. Cung khuon lamSachGia.
+ */
+export function lamSachDiemTru(v: unknown): number | null {
+  return lamSachGia(v);
+}
+
+/** Ly do bo me go: trim, cat theo MAX_CHU_LY_DO_TRU; trong -> ''. */
+export function lamSachLyDoTru(v: unknown): string {
+  return String(v ?? '').trim().slice(0, MAX_CHU_LY_DO_TRU);
+}

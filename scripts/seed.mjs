@@ -47,7 +47,7 @@ console.log('✓ Da tao bang');
 
 // 2. Xoa du lieu cu
 for (const t of [
-  'reward_redemptions', 'score_events', 'rewards',
+  'score_penalties', 'reward_redemptions', 'score_events', 'rewards',
   'daily_chore_checks', 'daily_chores',
   'assignments', 'submission_images', 'submissions', 'children', 'families',
 ]) {

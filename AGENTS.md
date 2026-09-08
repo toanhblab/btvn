@@ -87,11 +87,22 @@ ngày của bố mẹ gọi hàm sau), lược đồ + lý do ở `migrations/01
 và `016_nhiem_vu_hang_ngay_thuong_sao.sql`. Ba điều dễ vấp: (1) "cộng một lần"
 KHÔNG nằm trong code mà nằm ở BA unique index partial của `score_events` +
 `ON CONFLICT ... RETURNING` — đổi luật thì sửa index trước; (2) số dư = tổng
-`score_events` TRỪ `reward_redemptions` đã duyệt, không có dòng điểm âm nào, đừng
-thêm; (3) CHECK của `score_events.kind` được 016 DROP rồi ADD lại đủ ba giá trị —
-migration nào thêm `kind` nữa phải liệt kê lại ĐỦ, không chỉ thêm giá trị của mình.
-Test PGlite trong `lib/tinh-diem.test.ts` mô phỏng lại đúng SQL của store — sửa
-một bên là phải sửa bên kia.
+`score_events` TRỪ `reward_redemptions` đã duyệt TRỪ `score_penalties` (bố mẹ trừ,
+#43, `017_tru_diem.sql`) — DẤU là thuộc tính của BẢNG, mọi dòng đều dương, không có
+dòng điểm âm nào, đừng thêm; công thức nằm MỘT chỗ: `SQL_SO_DU_CON` trong
+`lib/sqlDiem.ts`, store và test cùng import; (3) CHECK của `score_events.kind` được
+016 DROP rồi ADD lại đủ ba giá trị — migration nào thêm `kind` nữa phải liệt kê lại
+ĐỦ, không chỉ thêm giá trị của mình. Test PGlite trong `lib/tinh-diem.test.ts` mô
+phỏng lại đúng SQL của store — sửa một bên là phải sửa bên kia.
+
+Trừ điểm (`truDiem` trong `lib/store.ts`): CHỈ trừ, không cộng tay (captain chốt);
+lưu đúng số đã trừ mỗi lần, không lưu tổng. "Không âm" chặn hai tầng, tầng dữ liệu
+là MỘT transaction `queryTx` (`lib/db.ts` — cách duy nhất trong repo chạy nhiều
+câu trong một transaction; Neon HTTP không tương tác nên gói phải là danh sách cố
+định): khoá `pg_advisory_xact_lock` theo con → `INSERT … SELECT` chỉ ghi khi số dư
+tính tại chỗ đủ → đọc số dư. Đừng kẹp `GREATEST(0, …)` trong SUM. "Trừ hết N" gửi
+`truHet: true`, máy chủ tự tính N — không gửi số đang hiện. Lý do là thứ CON ĐỌC ở
+cửa hàng (`LY_DO_TRU_GOI_Y`, `LY_DO_TRU_TRONG` trong `lib/types.ts`).
 
 Nhiệm vụ hàng ngày (`daily_chores` + dòng `assignments` có `chore_id`, hai nhóm
 `category`, sao/icon/`child_ids`): dòng của ngày được tạo LƯỜI bằng

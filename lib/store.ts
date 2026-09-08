@@ -1,14 +1,15 @@
-import { query, queryOne } from './db';
+import { query, queryOne, queryTx } from './db';
 import {
   DIEM_NGAY_XONG, DIEM_XONG_SOM, ngayDuocTinhDiem, ngayHoanThanh, xongSom,
 } from './diem';
 import type {
   Assignment, AttachedMedia, Child, ChildColor, DailyChore, DiemVuaCong, DraftAssignment, HwSource,
-  Lang, MediaKind, NhomNhiemVu, Redemption, RedemptionStatus, Reward,
+  Lang, MediaKind, NhomNhiemVu, Penalty, Redemption, RedemptionStatus, Reward,
 } from './types';
 import { DURATION_DEFAULT, HW_SOURCE_DEFAULT, hwSourceOf, nhomNhiemVuOf } from './types';
 import { veTrenManCuaCon } from './nhomNhiemVu';
 import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu';
+import { SQL_KHOA_TRU_DIEM, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON, SQL_TRU_DIEM } from './sqlDiem';
 
 /** Ngay hom nay theo gio dia phuong, YYYY-MM-DD (toISOString la UTC nen lech mui gio). */
 export function todayISO(offsetDays = 0): string {
@@ -1044,20 +1045,23 @@ export async function moveChore(familyId: string, id: string, huong: -1 | 1): Pr
  * Tom tat: +10 mot ngay xong het (mot lan cho moi (con, ngay)), +1 moi bai xong
  * som hon thoi luong du kien, +stars moi dong nhiem vu tick xong (mot lan cho
  * moi dong), khong hoi to truoc families.score_since. So du = tong score_events
- * - tong reward_redemptions da duyet.
+ * - tong reward_redemptions da duyet - tong score_penalties (bo me tru, issue #43,
+ * migrations/017) — cong thuc SQL nam MOT cho: SQL_SO_DU_CON (lib/sqlDiem.ts).
  *
- * score_events va reward_redemptions khong co family_id: thuoc nha nao la qua
- * child_id -> children.family_id (nhu assignments), nen moi cau deu join/loc
- * qua children.
+ * score_events, reward_redemptions va score_penalties khong co family_id: thuoc
+ * nha nao la qua child_id -> children.family_id (nhu assignments), nen moi cau
+ * deu join/loc qua children.
  */
 
-/** So diem DANG CO cua tung con trong nha: kiem duoc tru di da doi (bo me duyet). */
+/**
+ * So diem DANG CO cua tung con trong nha: kiem duoc, tru da doi (bo me duyet),
+ * tru bo me da phat. Day la con so DUY NHAT moi man hien (chon con, xep hang,
+ * cua hang, tong quan, man Thuong) — tru diem chi doi con so nay, khong dong
+ * vao ba luat cong.
+ */
 export async function soDiemTheoCon(familyId: string): Promise<Map<string, number>> {
   const rows = await query<{ id: string; points: number | string }>(
-    `SELECT c.id,
-            COALESCE((SELECT SUM(e.points) FROM score_events e WHERE e.child_id = c.id), 0)
-          - COALESCE((SELECT SUM(r.cost) FROM reward_redemptions r
-                       WHERE r.child_id = c.id AND r.status = 'approved'), 0) AS points
+    `SELECT c.id, ${SQL_SO_DU_CON} AS points
        FROM children c
       WHERE c.family_id = $1`,
     [familyId]
@@ -1426,4 +1430,88 @@ export async function duyetDoiThuong(
   );
   if (rows.length === 0) return { ok: false, status: 409, error: 'Yêu cầu này đã được xử lý rồi.' };
   return { ok: true, redemption: toRedemption(rows[0]) };
+}
+
+/* ---- Tru diem (bo me phat con, issue #43) ----
+ *
+ * Luoc do + ly do o migrations/017_tru_diem.sql, SQL o lib/sqlDiem.ts. Chi TRU,
+ * khong cong tay (captain chot). Moi lan tru la MOT dong score_penalties voi dung
+ * so da tru; so du (soDiemTheoCon) tu bot di. Khong dong vao ba luat cong.
+ */
+
+interface PenaltyRow {
+  id: string; child_id: string; points: number | string; reason: string; created_at: string | Date;
+}
+
+const toPenalty = (r: PenaltyRow): Penalty => ({
+  id: r.id,
+  childId: r.child_id,
+  points: Number(r.points),
+  reason: r.reason,
+  createdAt: new Date(r.created_at).toISOString(),
+});
+
+/** Moi nhat truoc. */
+export async function listPenalties(
+  familyId: string,
+  opts: { childId?: string; limit?: number } = {}
+): Promise<Penalty[]> {
+  const where: string[] = ['c.family_id = $1'];
+  const params: unknown[] = [familyId];
+  if (opts.childId) { params.push(opts.childId); where.push(`p.child_id = $${params.length}`); }
+  params.push(opts.limit ?? 50);
+  const rows = await query<PenaltyRow>(
+    `SELECT p.* FROM score_penalties p
+       JOIN children c ON c.id = p.child_id
+      WHERE ${where.join(' AND ')}
+      ORDER BY p.created_at DESC, p.id DESC
+      LIMIT $${params.length}`,
+    params
+  );
+  return rows.map(toPenalty);
+}
+
+export type KetQuaTruDiem =
+  | { ok: true; penalty: Penalty; conLai: number }
+  | { ok: false; status: number; error: string; conLai: number };
+
+/**
+ * Bo me tru ⭐ cua con (CAN PIN o route). `points` la so bo me go; `null` =
+ * "Tru het" — tru dung so du TAI LUC CAU CHAY tren may chu (captain: N tinh tai
+ * thoi diem bam, khong dung so cu da hien; con co the vua kiem them sao).
+ *
+ * "Khong am" chan o tang du lieu ngay tai day: MOT transaction gom
+ *   1. khoa theo con (pg_advisory_xact_lock) — hai request cung con xep hang;
+ *   2. INSERT … SELECT chi ghi khi so du tinh tai cho >= so tru (SQL_TRU_DIEM);
+ *   3. doc so du sau do — de tra "con lai" hoac "con chi con N" ma khong them
+ *      vong goi.
+ * Hai request dong thoi "Tru het 10": ben sau lay duoc khoa moi chay INSERT, luc
+ * do so du da la 0 -> khong ghi -> tra 400 "Con khong con ⭐ nao". Khong co
+ * GREATEST(0, …) o dau ca: so du luon bang so sach.
+ *
+ * `conLai` luon co, ke ca khi tu choi, de man bo me ve nut "Tru het N" voi N moi.
+ */
+export async function truDiem(
+  familyId: string,
+  childId: string,
+  points: number | null,
+  reason: string
+): Promise<KetQuaTruDiem> {
+  const child = await getChild(familyId, childId);
+  if (!child) return { ok: false, status: 404, error: 'Không tìm thấy con này.', conLai: 0 };
+
+  const id = newId('pen');
+  const [, ghi, soDu] = await queryTx<PenaltyRow & { so_du: number | string }>([
+    { sql: SQL_KHOA_TRU_DIEM, params: [childId] },
+    { sql: SQL_TRU_DIEM, params: [id, childId, points, reason, familyId] },
+    { sql: SQL_SO_DU_MOT_CON, params: [childId, familyId] },
+  ]);
+  const conLai = Number(soDu[0]?.so_du ?? 0);
+  if (ghi.length === 0) {
+    const error = conLai <= 0
+      ? `${child.name} không còn ⭐ nào để trừ.`
+      : `${child.name} chỉ còn ${conLai} ⭐, không trừ được ${points} ⭐.`;
+    return { ok: false, status: 400, error, conLai };
+  }
+  return { ok: true, penalty: toPenalty(ghi[0]), conLai };
 }

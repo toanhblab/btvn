@@ -42,7 +42,13 @@ if (process.env.VERCEL && !CONN) {
 }
 
 type Row = Record<string, unknown>;
-type Pg = { query: (t: string, p?: unknown[]) => Promise<{ rows: Row[] }> };
+type Pg = {
+  query: (t: string, p?: unknown[]) => Promise<{ rows: Row[] }>;
+  transaction: <T>(fn: (tx: { query: Pg['query'] }) => Promise<T>) => Promise<T>;
+};
+
+/** Mot cau trong goi transaction cua queryTx. */
+export interface CauSQL { sql: string; params?: unknown[] }
 
 /**
  * PGlite phai la MOT instance duy nhat cho ca process.
@@ -76,6 +82,32 @@ export async function query<T = Row>(text: string, params: unknown[] = []): Prom
   const db = await getPglite();
   const res = await db.query(text, params);
   return res.rows as T[];
+}
+
+/**
+ * Chay ca goi cau lenh trong MOT transaction, theo thu tu, tra ve ket qua tung cau.
+ *
+ * Moi cau qua `query` la mot request rieng, tu commit — du cho hau het app vi
+ * tung cau da duoc viet de tu no dung (ON CONFLICT, UPDATE co dieu kien...).
+ * Tru diem (issue #43) thi khong: phai KHOA theo con roi moi INSERT co kiem so du,
+ * va khoa chi co nghia khi hai cau nam trong cung mot transaction (xem
+ * lib/sqlDiem.ts). Neon HTTP co sql.transaction() gui ca goi trong mot luot
+ * (khong tuong tac — khong doc ket qua cau truoc de quyet cau sau duoc, nen goi
+ * phai la danh sach co dinh); PGlite co db.transaction() tu xep hang cac
+ * transaction dong thoi. Cung mot khuon voi chayGoi trong scripts/db.mjs.
+ */
+export async function queryTx<T = Row>(cauLenh: CauSQL[]): Promise<T[][]> {
+  if (hasNeon) {
+    const sql = neon(CONN);
+    const ketQua = await sql.transaction(cauLenh.map((c) => sql.query(c.sql, c.params ?? [])));
+    return ketQua as unknown as T[][];
+  }
+  const db = await getPglite();
+  return db.transaction(async (tx) => {
+    const ketQua: T[][] = [];
+    for (const c of cauLenh) ketQua.push((await tx.query(c.sql, c.params ?? [])).rows as T[]);
+    return ketQua;
+  });
 }
 
 /** Tien ich cho cau chi tra ve mot dong (hoac khong dong nao). */

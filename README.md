@@ -148,7 +148,8 @@ app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 nha (gắn máy), extract (Nous Portal), upload (ảnh đề bài),
                 upload-media (tệp bố mẹ đính kèm), nop-video (video con nộp),
                 viec-nha (cấu hình nhiệm vụ hàng ngày của bố mẹ, cần PIN),
-                phan-thuong (bố mẹ đặt phần thưởng, cần PIN), doi-thuong (con
+                phan-thuong (bố mẹ đặt phần thưởng, cần PIN), tru-diem (bố mẹ
+                trừ ⭐ của con, cần PIN), doi-thuong (con
                 xin đổi — không cần PIN; bố mẹ duyệt — cần PIN),
                 tep (đọc tệp đã ghi ở .data/uploads khi dev)
 app/_components/ BanPhimPin — bàn phím số dùng chung cho 4 chỗ nhập PIN
@@ -310,8 +311,22 @@ mẹ đặt tên, icon và giá ⭐ ở màn **Thưởng**, bật/tắt hoặc x
 danh sách đó ở 🎁 **"Đổi thưởng"**, bấm rồi hỏi lại một lần trước khi gửi. **Bố
 mẹ duyệt thì điểm mới bị trừ** — từ chối thì con giữ nguyên điểm và xin lại được,
 mỗi con chỉ có **một** yêu cầu chờ cùng lúc. Số dư = tổng điểm cộng **trừ** các
-lần đổi đã duyệt; không có dòng điểm âm nào, và con bỏ tick hay bố mẹ xoá bài
-cũng không làm con mất điểm đã kiếm.
+lần đổi đã duyệt **trừ** các lần bố mẹ trừ (dưới); không có dòng điểm âm nào, và
+con bỏ tick hay bố mẹ xoá bài cũng không làm con mất điểm đã kiếm.
+
+**Trừ điểm (issue #43).** Con chưa nghe lời thì bố mẹ trừ ⭐ ngay ở màn **Thưởng**:
+bấm viên ⭐ của con, **gõ số ⭐ muốn trừ** (không gõ "tổng mới"), ghi lý do — không
+bắt buộc, có chip gợi ý viết bằng lời nói được với con vì **con sẽ đọc dòng đó** ở
+cửa hàng ("Bố mẹ đã trừ ⭐": −3 ⭐ · Cãi bố mẹ; để trống thì con thấy "Con hỏi bố mẹ
+vì sao nhé"). Chỉ trừ, **không có đường cộng tay**. **Số dư không bao giờ âm**: gõ quá
+số đang có thì nút khoá; máy chủ là chốt cuối (con vừa kiếm thêm, máy khác vừa trừ)
+— bị từ chối thì hiện "chỉ còn N ⭐" và nút **"Trừ hết N ⭐"**, N do máy chủ tính lại
+tại lúc bấm. Mỗi lần trừ là **một dòng `score_penalties`** lưu đúng số đã trừ + lý
+do + thời điểm (bảng riêng, không phải dòng âm trong `score_events`, không phải đổi
+thưởng giả — lý do ở [migrations/017_tru_diem.sql](migrations/017_tru_diem.sql));
+kiểm-và-ghi chạy trong **một transaction có khoá theo con** (`queryTx` trong
+`lib/db.ts`, SQL ở `lib/sqlDiem.ts`) nên hai request cùng lúc không đẩy số dư xuống
+âm. Trừ điểm không đụng vào ba luật cộng.
 
 **Không bao giờ để bố mẹ bị kẹt.** AI hỏng, hết quota hay chưa có key thì vẫn
 tách tạm theo dòng kèm cảnh báo, và luôn có đường "Nhập tay từng bài".

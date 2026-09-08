@@ -27,6 +27,11 @@
  *      xong duoc +stars, cong THEM vao +10; mot lan cho moi dong (tick lai, bo
  *      tick roi tick lai, hai request cung luc); bo tick khong rut; dong viec
  *      nha cu (stars NULL) khong bao gio duoc; xoa dong khong mat sao da cong.
+ *   9. Bo me TRU diem (issue #43, migration 017): moi lan tru la mot dong
+ *      score_penalties voi DUNG so da tru + ly do; so du KHONG BAO GIO am — tru
+ *      qua so dang co thi khong ghi gi, hai request cung luc chi mot ben ghi;
+ *      "Tru het" tinh so du tai luc cau chay; ba luat cong khong doi; xoa con
+ *      keo theo; nha khac khong tru duoc.
  */
 
 import { test, before, after } from 'node:test';
@@ -37,6 +42,7 @@ import {
   DIEM_NGAY_XONG, DIEM_XONG_SOM, ngayDuocTinhDiem, ngayHoanThanh, xongSom,
 } from './diem.ts';
 import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu.ts';
+import { SQL_KHOA_TRU_DIEM, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON, SQL_TRU_DIEM } from './sqlDiem.ts';
 
 const TEP_015 = '015_tinh_diem_doi_thuong.sql';
 const PHUT = 60_000;
@@ -64,12 +70,10 @@ const ngayTuHomNay = async (lech: number): Promise<string> => {
 let dem = 0;
 const id = (p: string) => `${p}_${++dem}`;
 
-/** So du dung cong thuc cua soDiemTheoCon (lib/store.ts). */
+/** So du — CUNG cau SQL_SO_DU_CON voi soDiemTheoCon (lib/store.ts), qua lib/sqlDiem.ts. */
 async function soDu(childId: string): Promise<number> {
   const [r] = await rows(
-    `SELECT COALESCE((SELECT SUM(e.points) FROM score_events e WHERE e.child_id = $1), 0)
-          - COALESCE((SELECT SUM(r.cost) FROM reward_redemptions r
-                       WHERE r.child_id = $1 AND r.status = 'approved'), 0) AS points`,
+    `SELECT ${SQL_SO_DU_CON} AS points FROM children c WHERE c.id = $1`,
     [childId]
   );
   return Number(r.points);
@@ -948,4 +952,179 @@ test('score_events chan diem am va kind la (CHECK)', async () => {
   // 016 doi CHECK: 'task_done' hop le, ba gia tri cu van hop le
   await db.exec(`INSERT INTO score_events (id, child_id, kind, points, event_date) VALUES ('x3', 'con_b', 'task_done', 1, '2026-09-12')`);
   await db.exec(`DELETE FROM score_events WHERE id = 'x3'`);
+});
+
+/* ---------------- Bo me tru diem (issue #43, migration 017) ---------------- */
+
+const TEP_017 = '017_tru_diem.sql';
+
+/**
+ * Mo phong truDiem (lib/store.ts): CUNG ba cau SQL tu lib/sqlDiem.ts, trong MOT
+ * transaction — khoa theo con, INSERT co kiem so du, doc so du sau. `points`
+ * null = "Tru het". Tra ve { ghi, conLai } nhu ket qua route.
+ *
+ * PGlite la mot ket noi: db.transaction() tu xep hang cac transaction dong thoi,
+ * nen hai lan goi qua Promise.all chay noi tiep — ben sau doc so du DA gom lan
+ * tru cua ben truoc. Tren Neon that thi hai request la hai ket noi, va
+ * pg_advisory_xact_lock lam dung viec xep hang do. Ca hai truong hop deu di
+ * qua cung SQL_TRU_DIEM, cau chi ghi khi so du tinh tai cho >= so tru.
+ */
+async function tru(childId: string, points: number | null, reason = '', familyId = 'fam_cu') {
+  return db.transaction(async (tx) => {
+    await tx.query(SQL_KHOA_TRU_DIEM, [childId]);
+    const ghi = (await tx.query(SQL_TRU_DIEM, [id('pen'), childId, points, reason, familyId])).rows;
+    const [sd] = (await tx.query(SQL_SO_DU_MOT_CON, [childId, familyId])).rows as { so_du: unknown }[];
+    return { ghi: ghi as Record<string, unknown>[], conLai: Number(sd?.so_du ?? 0) };
+  });
+}
+
+async function soDongPhat(childId: string): Promise<number> {
+  const [{ n }] = await rows(`SELECT COUNT(*) AS n FROM score_penalties WHERE child_id = $1`, [childId]);
+  return Number(n);
+}
+
+/** Con moi, chua co diem, roi cong `diem` ⭐ bang mot dong task_done (khong dong vao unique cua bai). */
+async function conMoiCoDiem(childId: string, diem: number, familyId = 'fam_cu') {
+  await db.query(
+    `INSERT INTO children (id, family_id, name, grade, color, avatar_url) VALUES ($1, $2, 'Tí', 'Lớp 1', 'primary', '/t.png')`,
+    [childId, familyId]
+  );
+  if (diem > 0) {
+    await db.query(
+      `INSERT INTO score_events (id, child_id, kind, points, event_date) VALUES ($1, $2, 'task_done', $3, '2026-10-01')`,
+      [id('sce'), childId, diem]
+    );
+  }
+  assert.equal(await soDu(childId), diem);
+}
+
+test('017 chay lai duoc; score_penalties chan points <= 0 (chi tru, khong cong tay)', async () => {
+  await db.exec(`DELETE FROM _migrations WHERE name = '${TEP_017}'`);
+  await chayMigrations(boChay);
+  const [{ n }] = await rows(`SELECT COUNT(*) AS n FROM _migrations WHERE name = '${TEP_017}'`);
+  assert.equal(Number(n), 1);
+
+  await assert.rejects(
+    db.exec(`INSERT INTO score_penalties (id, child_id, points) VALUES ('p0', 'con_b', 0)`), /check/i
+  );
+  await assert.rejects(
+    db.exec(`INSERT INTO score_penalties (id, child_id, points) VALUES ('p0', 'con_b', -2)`), /check/i
+  );
+});
+
+test('tru diem: moi lan MOT dong voi DUNG so da tru + ly do + thoi diem; so du bot dung bay nhieu; tru nhieu lan mot ngay deu ghi', async () => {
+  await conMoiCoDiem('con_p1', 12);
+
+  const l1 = await tru('con_p1', 3, 'Không nghe lời');
+  assert.equal(l1.ghi.length, 1);
+  assert.equal(Number(l1.ghi[0].points), 3, 'luu dung so bo me go, khong luu tong sau khi tru (9)');
+  assert.equal(l1.ghi[0].reason, 'Không nghe lời');
+  assert.ok(l1.ghi[0].created_at, 'co thoi diem');
+  assert.equal(l1.conLai, 9);
+  assert.equal(await soDu('con_p1'), 9);
+
+  // Lan hai cung ngay, khong ly do: van ghi (khong co unique index nao)
+  const l2 = await tru('con_p1', 4);
+  assert.equal(Number(l2.ghi[0].points), 4);
+  assert.equal(l2.ghi[0].reason, '', 'ly do khong bat buoc');
+  assert.equal(l2.conLai, 5);
+  assert.equal(await soDu('con_p1'), 5);
+
+  const lichSu = await rows(
+    `SELECT points, reason FROM score_penalties WHERE child_id = 'con_p1' ORDER BY created_at, id`
+  );
+  assert.deepEqual(lichSu.map((r) => [Number(r.points), r.reason]), [[3, 'Không nghe lời'], [4, '']]);
+});
+
+test('khong cho am: tru qua so dang co -> KHONG ghi dong nao, so du giu nguyen, tra ve so con lai de moi "Tru het N"', async () => {
+  await conMoiCoDiem('con_p2', 5);
+
+  const kq = await tru('con_p2', 6, 'Cãi bố mẹ');
+  assert.equal(kq.ghi.length, 0, 'tu choi');
+  assert.equal(kq.conLai, 5, 'con lai la so that de man bo me hien "Tru het 5"');
+  assert.equal(await soDu('con_p2'), 5);
+  assert.equal(await soDongPhat('con_p2'), 0, 'khong co dong phat nao, khong co dong "tru mot phan"');
+
+  // Bang dung 5 thi duoc, ve 0
+  const vua = await tru('con_p2', 5);
+  assert.equal(Number(vua.ghi[0].points), 5);
+  assert.equal(await soDu('con_p2'), 0);
+
+  // Ve 0 roi: tru 1 nua cung khong duoc
+  const them = await tru('con_p2', 1);
+  assert.equal(them.ghi.length, 0);
+  assert.equal(await soDu('con_p2'), 0, 'khong bao gio am');
+});
+
+test('"Tru het": tru DUNG so du tai luc cau chay (con vua kiem them thi tru ca phan moi), ve 0; so du 0 thi khong ghi', async () => {
+  await conMoiCoDiem('con_p3', 7);
+  // Man bo me dang hien 7; con vua tick mot nhiem vu 2 ⭐ ngay truoc khi bo me bam
+  await db.query(
+    `INSERT INTO score_events (id, child_id, kind, points, event_date) VALUES ($1, 'con_p3', 'task_done', 2, '2026-10-02')`,
+    [id('sce')]
+  );
+  const kq = await tru('con_p3', null, 'Không dọn đồ');
+  assert.equal(Number(kq.ghi[0].points), 9, 'N tinh tren may chu = 9, khong phai 7 dang hien');
+  assert.equal(kq.conLai, 0);
+  assert.equal(await soDu('con_p3'), 0);
+
+  const rong = await tru('con_p3', null);
+  assert.equal(rong.ghi.length, 0, 'tru het khi 0 ⭐: khong ghi dong 0 diem (CHECK) va khong ghi gi');
+  assert.equal(await soDu('con_p3'), 0);
+});
+
+test('hai request cung luc: chi MOT ben ghi khi tong hai lan vuot so du; so du khong am', async () => {
+  await conMoiCoDiem('con_p4', 10);
+  const [a, b] = await Promise.all([tru('con_p4', 7, 'Chơi quá giờ'), tru('con_p4', 7, 'Chơi quá giờ')]);
+  assert.deepEqual([a.ghi.length, b.ghi.length].sort(), [0, 1], 'dung mot trong hai ben ghi');
+  assert.equal(await soDu('con_p4'), 3);
+  assert.equal(await soDongPhat('con_p4'), 1);
+
+  // Hai may cung bam "Tru het" cung luc: ben sau thay 0 -> khong ghi
+  const [c, d] = await Promise.all([tru('con_p4', null), tru('con_p4', null)]);
+  assert.deepEqual([c.ghi.length, d.ghi.length].sort(), [0, 1]);
+  assert.equal(await soDu('con_p4'), 0, 'khong am');
+  const tong = await rows(`SELECT SUM(points) AS s FROM score_penalties WHERE child_id = 'con_p4'`);
+  assert.equal(Number(tong[0].s), 10, 'tong da tru dung bang so da co');
+});
+
+test('tru diem KHONG dong vao ba luat cong: sau khi bi tru het, +10 / +1 / +sao van cong dung va van mot lan', async () => {
+  const NGAY = '2026-10-05';
+  await conMoiCoDiem('con_p5', 4);
+  await tru('con_p5', null, 'Nói dối');
+  assert.equal(await soDu('con_p5'), 0);
+
+  const bai = await themBai('con_p5', NGAY, { phut: 5 });
+  const viec = await themBai('con_p5', NGAY, { chore: 'chr_1', sao: 2 });
+  const T0 = Date.parse('2026-10-05T10:00:00Z');
+
+  assert.deepEqual(await tickXong(viec, null, T0), { xongSom: 0, ngayXong: 0, nhiemVu: 2 });
+  assert.deepEqual(await tickXong(bai, T0, T0 + 3 * PHUT),
+    { xongSom: DIEM_XONG_SOM, ngayXong: DIEM_NGAY_XONG, nhiemVu: 0 });
+  assert.equal(await soDu('con_p5'), 2 + DIEM_XONG_SOM + DIEM_NGAY_XONG, 'ba luat cong y nguyen');
+
+  // Cong mot lan van la unique index, khong lien quan bang phat
+  assert.deepEqual(await ghiDiem(bai), { xongSom: 0, ngayXong: 0, nhiemVu: 0 });
+  assert.deepEqual(await ghiDiem(viec), { xongSom: 0, ngayXong: 0, nhiemVu: 0 });
+
+  // Tru xong lai tick tiep ngay khac: van cong; hinh phat cu van nguyen trong lich su
+  await tru('con_p5', 1, 'Không nghe lời');
+  assert.equal(await soDu('con_p5'), 2 + DIEM_XONG_SOM + DIEM_NGAY_XONG - 1);
+  assert.equal(await soDongPhat('con_p5'), 2);
+  const soCong = await rows(`SELECT COUNT(*) AS n FROM score_events WHERE child_id = 'con_p5' AND points > 0`);
+  assert.equal(Number(soCong[0].n), 4, 'score_events chi co dong cong: 1 mo dau + sao + som + ngay');
+});
+
+test('nha khac khong tru duoc con nha minh; xoa con keo theo hinh phat (CASCADE)', async () => {
+  await db.exec(`INSERT INTO families (id, name, slug, parent_pin_hash) VALUES ('fam_la', 'Nhà lạ', 'nha-la', 'h_tru_diem_la')`);
+  await conMoiCoDiem('con_p6', 6);
+  const kq = await tru('con_p6', 1, '', 'fam_la');
+  assert.equal(kq.ghi.length, 0);
+  assert.equal(kq.conLai, 0, 'nha la khong doc duoc ca so du');
+  assert.equal(await soDu('con_p6'), 6);
+
+  await tru('con_p6', 2);
+  assert.equal(await soDongPhat('con_p6'), 1);
+  await db.exec(`DELETE FROM children WHERE id = 'con_p6'`);
+  assert.equal(await soDongPhat('con_p6'), 0);
 });
