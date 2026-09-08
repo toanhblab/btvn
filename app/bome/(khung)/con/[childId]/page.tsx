@@ -34,9 +34,14 @@ export default async function ChiTietCon({
 
   // Nhiem vu hang ngay lay rieng va CHI CHO HOM NAY, ke ca khi dang xem tab "Tuan nay":
   // no la viec cua buoi toi hom nay, khong phai bai tap co han. Cung vi the no
-  // khong duoc cong vao tien do bai tap ngay duoi hay vao ba o o man tong quan
-  // — captain dung ba con so do de theo bai tap (khong doi bang co nay: xem
-  // listAssignments, includeChores mac dinh false).
+  // khong duoc cong vao tien do bai tap ngay duoi (co nay: listAssignments voi
+  // includeChores mac dinh false).
+  //
+  // O man tong quan thi KHAC, va la co y: hai o "Hoàn thành" / "Đang chờ" dem
+  // ca dong nhiem vu (total/done cua progressUpcoming khong loc chore_id), chi
+  // o "Quá hạn" moi loai chung ra. Tu issue #42 dong nhiem vu sinh moi ngay nen
+  // hai o do khong bao gio ve 0 nua — captain da chot giu nguyen cach dem nay,
+  // dung "sua" bang cach them bo loc chore_id vao progressUpcoming.
   //
   // Doc theo CAC DONG THAT da tao cho hom nay (issue #36), KHONG theo cau hinh
   // dang bat (listChores): hai ben lech nhau ngay khi bo me sua danh sach giua
