@@ -5,6 +5,7 @@ import {
   ICON_PHAN_THUONG_GOI_Y, ICON_PHAN_THUONG_MAC_DINH, MAX_CHU_PHAN_THUONG, MAX_GIA_PHAN_THUONG,
   type Reward,
 } from '@/lib/types';
+import { useT } from '@/lib/i18n/client';
 
 /**
  * Danh sach phan thuong o man Thuong cua bo me — cung khuon voi
@@ -17,6 +18,7 @@ import {
  * cua hang cua con sap theo gia tang dan (listRewards), thu re truoc.
  */
 export default function PhanThuong({ initial }: { initial: Reward[] }) {
+  const T = useT();
   const [rewards, setRewards] = useState(initial);
   const [themTen, setThemTen] = useState('');
   const [themGia, setThemGia] = useState('');
@@ -32,10 +34,10 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
     try {
       const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...init });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? 'Không lưu được');
+      if (!res.ok) throw new Error(data.error ?? T('Không lưu được'));
       return data;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không lưu được. Thử lại nhé.');
+      setError(e instanceof Error ? e.message : T('Không lưu được. Thử lại nhé.'));
       return null;
     } finally {
       setBusy(false);
@@ -80,8 +82,7 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
   return (
     <>
       <p className="text-p-body-sm text-on-surface-variant mb-2">
-        Cả nhà dùng chung một danh sách. Con đủ ⭐ thì xin đổi, bố mẹ duyệt ở trên. Sửa giá
-        không đổi những yêu cầu đang chờ.
+        {T('Cả nhà dùng chung một danh sách. Con đủ ⭐ thì xin đổi, bố mẹ duyệt ở trên. Sửa giá không đổi những yêu cầu đang chờ.')}
       </p>
 
       <div className="flex flex-col gap-p-tight mb-3">
@@ -89,11 +90,10 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
           hoiXoa === r.id ? (
             <div key={r.id} className="bg-error-container rounded-card p-3">
               <p className="text-p-body text-on-error-container font-bold mb-0.5">
-                Xoá “{r.icon} {r.name}”?
+                {T('Xoá “{name}”?', { name: `${r.icon} ${r.name}` })}
               </p>
               <p className="text-p-body-sm text-on-error-container mb-3">
-                Con không thấy nó ở cửa hàng nữa. Yêu cầu đang chờ và lịch sử đã đổi vẫn giữ
-                nguyên. Chỉ muốn tạm ẩn thì tắt công tắc là được.
+                {T('Con không thấy nó ở cửa hàng nữa. Yêu cầu đang chờ và lịch sử đã đổi vẫn giữ nguyên. Chỉ muốn tạm ẩn thì tắt công tắc là được.')}
               </p>
               <div className="flex gap-2">
                 <button
@@ -102,7 +102,7 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
                   className="flex-1 rounded-card min-h-p-tap bg-surface-container-lowest text-on-surface
                              text-p-body-sm font-bold disabled:opacity-60"
                 >
-                  Thôi, giữ lại
+                  {T('Thôi, giữ lại')}
                 </button>
                 <button
                   onClick={() => xoa(r)}
@@ -110,7 +110,7 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
                   className="flex-1 rounded-card min-h-p-tap bg-error text-white text-p-body-sm font-bold
                              disabled:opacity-60"
                 >
-                  Xoá
+                  {T('Xoá')}
                 </button>
               </div>
             </div>
@@ -135,7 +135,7 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
                   defaultValue={r.name}
                   key={`${r.id}:name:${r.name}`}
                   maxLength={MAX_CHU_PHAN_THUONG}
-                  aria-label="Tên phần thưởng"
+                  aria-label={T('Tên phần thưởng')}
                   onBlur={(e) => {
                     // Xoa trang roi bam ra ngoai thi tra lai chu cu ngay tren the
                     // input (key khong doi nen React giu the, defaultValue bi bo qua)
@@ -153,7 +153,7 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
                     inputMode="numeric"
                     min={1}
                     max={MAX_GIA_PHAN_THUONG}
-                    aria-label="Giá (điểm)"
+                    aria-label={T('Giá (điểm)')}
                     onBlur={(e) => {
                       const moi = Number(e.target.value);
                       if (!(moi > 0) || moi === r.cost) { e.target.value = String(r.cost); return; }
@@ -173,7 +173,7 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
                   className="flex-1 min-h-p-tap flex items-center justify-end gap-2 px-2 disabled:opacity-60"
                 >
                   <span className="text-p-body-sm text-on-surface-variant">
-                    {r.enabled ? 'Đang bật' : 'Đang tắt'}
+                    {r.enabled ? T('Đang bật') : T('Đang tắt')}
                   </span>
                   <span
                     className={`w-11 h-6 rounded-full flex items-center shrink-0 transition-colors
@@ -188,7 +188,7 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
                 <button
                   onClick={() => { setHoiXoa(r.id); setError(''); }}
                   disabled={busy}
-                  aria-label={`Xoá "${r.name}"`}
+                  aria-label={T('Xoá "{name}"', { name: r.name })}
                   className={`${oNut} hover:text-error`}
                 >
                   <span className="material-symbols-outlined">delete</span>
@@ -200,8 +200,7 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
 
         {rewards.length === 0 && (
           <p className="text-p-body-sm text-on-surface-variant py-2">
-            Chưa có phần thưởng nào. Thêm vài cái các con thích — ví dụ “Ăn kem” 30 ⭐, “Xem
-            phim tối thứ Bảy” 50 ⭐ — thì cửa hàng của con mới có gì để đổi.
+            {T('Chưa có phần thưởng nào. Thêm vài cái các con thích — ví dụ “Ăn kem” 30 ⭐, “Xem phim tối thứ Bảy” 50 ⭐ — thì cửa hàng của con mới có gì để đổi.')}
           </p>
         )}
       </div>
@@ -214,7 +213,7 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
               key={ic}
               type="button"
               onClick={() => setThemIcon(ic)}
-              aria-label={`Chọn icon ${ic}`}
+              aria-label={T('Chọn icon {icon}', { icon: ic })}
               aria-pressed={themIcon === ic}
               className={`w-10 h-10 rounded-lg text-xl flex items-center justify-center
                           ${themIcon === ic ? 'bg-primary-fixed ring-2 ring-primary' : 'bg-surface-container-lowest'}`}
@@ -227,7 +226,7 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
           <input
             value={themIcon}
             onChange={(e) => setThemIcon(e.target.value)}
-            aria-label="Icon phần thưởng mới"
+            aria-label={T('Icon phần thưởng mới')}
             className={`${oNhap} w-14 text-center text-2xl px-0 shrink-0`}
           />
           <input
@@ -235,7 +234,7 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
             onChange={(e) => setThemTen(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') them(); }}
             maxLength={MAX_CHU_PHAN_THUONG}
-            placeholder="Tên phần thưởng…"
+            placeholder={T('Tên phần thưởng…')}
             className={`${oNhap} flex-1 min-w-0`}
           />
           <input
@@ -244,7 +243,7 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
             onKeyDown={(e) => { if (e.key === 'Enter') them(); }}
             inputMode="numeric"
             placeholder="⭐"
-            aria-label="Giá (điểm)"
+            aria-label={T('Giá (điểm)')}
             className={`${oNhap} w-20 text-right`}
           />
         </div>
@@ -254,7 +253,7 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
           className="rounded-card min-h-p-tap px-4 bg-primary text-on-primary text-p-body font-bold
                      disabled:opacity-40"
         >
-          Thêm phần thưởng
+          {T('Thêm phần thưởng')}
         </button>
       </div>
 

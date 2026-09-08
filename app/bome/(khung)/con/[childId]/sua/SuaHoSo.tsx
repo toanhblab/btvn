@@ -4,8 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Child, ChildColor } from '@/lib/types';
+import { useT } from '@/lib/i18n/client';
+import type { Key } from '@/lib/i18n/chu';
 
-const MAU: { value: ChildColor; ten: string; swatch: string }[] = [
+const MAU: { value: ChildColor; ten: Key; swatch: string }[] = [
   { value: 'primary',   ten: 'Xanh', swatch: 'bg-primary' },
   { value: 'secondary', ten: 'Cam',  swatch: 'bg-secondary-container' },
   { value: 'tertiary',  ten: 'Vàng', swatch: 'bg-tertiary-fixed-dim' },
@@ -28,6 +30,7 @@ export default function SuaHoSo({
   soBai: number;
   laConCuoi: boolean;
 }) {
+  const T = useT();
   const router = useRouter();
   const [hoiXoa, setHoiXoa] = useState(false);
 
@@ -46,25 +49,25 @@ export default function SuaHoSo({
   /** Dung chung /api/upload voi luong nhap bai; chua bat Blob thi tra data URL. */
   async function doiAnh(file: File | undefined) {
     if (!file) return;
-    setBusy('Đang tải ảnh lên…');
+    setBusy(T('Đang tải ảnh lên…'));
     setError('');
     try {
       const fd = new FormData();
       fd.append('file', file);
       const res = await fetch('/api/upload', { method: 'POST', body: fd });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Tải ảnh lỗi');
+      if (!res.ok) throw new Error(data.error ?? T('Tải ảnh lỗi'));
       setAvatarUrl(data.url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không tải được ảnh.');
+      setError(e instanceof Error ? e.message : T('Không tải được ảnh.'));
     } finally {
       setBusy(null);
     }
   }
 
   async function luu() {
-    if (!name.trim()) return setError('Nhập tên của con đã.');
-    setBusy('Đang lưu…');
+    if (!name.trim()) return setError(T('Nhập tên của con đã.'));
+    setBusy(T('Đang lưu…'));
     setError('');
     try {
       const res = await fetch(`/api/children/${child.id}`, {
@@ -73,27 +76,27 @@ export default function SuaHoSo({
         body: JSON.stringify({ name: name.trim(), grade, color, avatarUrl }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Lưu không được');
+      if (!res.ok) throw new Error(data.error ?? T('Lưu không được'));
       router.push(`/bome/con/${child.id}`);
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không lưu được.');
+      setError(e instanceof Error ? e.message : T('Không lưu được.'));
       setBusy(null);
     }
   }
 
   /** Xoa con nay. Hoi lai ngay tai cho chu khong dung confirm(): khong lay lai duoc. */
   async function xoa() {
-    setBusy('Đang xoá…');
+    setBusy(T('Đang xoá…'));
     setError('');
     try {
       const res = await fetch(`/api/children/${child.id}`, { method: 'DELETE' });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Xoá không được');
+      if (!res.ok) throw new Error(data.error ?? T('Xoá không được'));
       router.push('/bome/cai-dat');
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không xoá được.');
+      setError(e instanceof Error ? e.message : T('Không xoá được.'));
       setBusy(null);
     }
   }
@@ -109,7 +112,7 @@ export default function SuaHoSo({
         >
           <span className="material-symbols-outlined text-3xl">arrow_back</span>
         </Link>
-        <h1 className="text-p-headline-md text-on-background">Sửa hồ sơ</h1>
+        <h1 className="text-p-headline-md text-on-background">{T('Sửa hồ sơ')}</h1>
       </header>
 
       <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4 flex flex-col gap-3">
@@ -122,13 +125,13 @@ export default function SuaHoSo({
             className="w-20 h-20 rounded-full object-cover bg-surface-container-high shrink-0"
           />
           <div className="flex-1">
-            <label className="text-p-label uppercase text-on-surface-variant block mb-1">Ảnh của con</label>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Ảnh của con')}</label>
             <label
               className="inline-flex items-center gap-1.5 rounded-full px-4 min-h-p-tap border-2
                          border-primary text-primary text-p-body-sm font-bold cursor-pointer"
             >
               <span className="material-symbols-outlined text-xl">photo_camera</span>
-              Đổi ảnh
+              {T('Đổi ảnh')}
               <input
                 type="file"
                 accept="image/*"
@@ -141,7 +144,7 @@ export default function SuaHoSo({
 
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="text-p-label uppercase text-on-surface-variant block mb-1">Tên</label>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Tên')}</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -151,11 +154,11 @@ export default function SuaHoSo({
             />
           </div>
           <div className="flex-1">
-            <label className="text-p-label uppercase text-on-surface-variant block mb-1">Lớp</label>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Lớp')}</label>
             <input
               value={grade}
               onChange={(e) => setGrade(e.target.value)}
-              placeholder="Lớp 1"
+              placeholder={T('Lớp 1')}
               className="w-full rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
                          placeholder:text-outline bg-surface-container-lowest"
             />
@@ -163,7 +166,7 @@ export default function SuaHoSo({
         </div>
 
         <div>
-          <label className="text-p-label uppercase text-on-surface-variant block mb-1">Màu riêng</label>
+          <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Màu riêng')}</label>
           <div className="flex gap-2">
             {MAU.map((m) => {
               const on = color === m.value;
@@ -177,14 +180,14 @@ export default function SuaHoSo({
                                 : 'bg-surface-container-lowest border-surface-container-high text-on-surface'}`}
                 >
                   <span className={`w-7 h-7 rounded-full ${m.swatch}`} />
-                  <span className="text-p-body-sm font-bold">{m.ten}</span>
+                  <span className="text-p-body-sm font-bold">{T(m.ten)}</span>
                 </button>
               );
             })}
           </div>
           {trungMau && (
             <p className="text-p-body-sm text-on-surface-variant mt-1.5">
-              {trungMau.name} cũng đang dùng màu này — các con sẽ khó tự nhận ra mình.
+              {T('{name} cũng đang dùng màu này — các con sẽ khó tự nhận ra mình.', { name: trungMau.name })}
             </p>
           )}
         </div>
@@ -198,7 +201,7 @@ export default function SuaHoSo({
           className="flex-1 rounded-card h-14 min-h-p-tap border-2 border-primary text-primary
                      text-p-body font-bold flex items-center justify-center"
         >
-          Huỷ
+          {T('Huỷ')}
         </Link>
         <button
           onClick={luu}
@@ -206,7 +209,7 @@ export default function SuaHoSo({
           className="flex-1 rounded-card h-14 min-h-p-tap bg-primary text-on-primary
                      text-p-body font-bold card-shadow disabled:opacity-60"
         >
-          {busy ?? 'Lưu'}
+          {busy ?? T('Lưu')}
         </button>
       </div>
 
@@ -219,18 +222,18 @@ export default function SuaHoSo({
                        text-p-body-sm font-bold flex items-center justify-center gap-1.5"
           >
             <span className="material-symbols-outlined text-xl">person_remove</span>
-            Xoá {child.name} khỏi nhà mình
+            {T('Xoá {name} khỏi nhà mình', { name: child.name })}
           </button>
         ) : (
           <div className="bg-error-container rounded-card p-3">
             <p className="text-p-body text-on-error-container font-bold mb-0.5">
-              Xoá {child.name}?
+              {T('Xoá {name}?', { name: child.name })}
             </p>
             <p className="text-p-body-sm text-on-error-container mb-3">
               {soBai > 0
-                ? `Mất luôn ${soBai} bài tập của ${child.name}. Không lấy lại được.`
-                : 'Không lấy lại được.'}
-              {laConCuoi && ' Đây là con duy nhất — màn hình của con sẽ trống.'}
+                ? T('Mất luôn {n} bài tập của {name}. Không lấy lại được.', { n: soBai, name: child.name })
+                : T('Không lấy lại được.')}
+              {laConCuoi && ' ' + T('Đây là con duy nhất — màn hình của con sẽ trống.')}
             </p>
 
             <div className="flex gap-2">
@@ -240,7 +243,7 @@ export default function SuaHoSo({
                 className="flex-1 rounded-card min-h-p-tap bg-surface-container-lowest text-on-surface
                            text-p-body-sm font-bold disabled:opacity-60"
               >
-                Thôi, giữ lại
+                {T('Thôi, giữ lại')}
               </button>
               <button
                 onClick={xoa}
@@ -248,7 +251,7 @@ export default function SuaHoSo({
                 className="flex-1 rounded-card min-h-p-tap bg-error text-white
                            text-p-body-sm font-bold disabled:opacity-60"
               >
-                Xoá
+                {T('Xoá')}
               </button>
             </div>
           </div>

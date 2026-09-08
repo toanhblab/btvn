@@ -5,6 +5,7 @@ import { countAssignments, listAssignments, listChildren, todayISO } from '@/lib
 import { HW_SOURCES } from '@/lib/types';
 import XoaBai from '../con/[childId]/XoaBai';
 import XoaTatCa from './XoaTatCa';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,7 @@ export const dynamic = 'force-dynamic';
 export default async function DanhSachNhiemVu() {
   const familyId = await parentFamilyId();
   if (!familyId) redirect('/bome/pin');
+  const T = await chu();
 
   const today = todayISO();
   const [children, items, total] = await Promise.all([
@@ -46,8 +48,8 @@ export default async function DanhSachNhiemVu() {
     <main className="px-p-page pt-4 xl:max-w-[1080px] xl:mx-auto xl:px-12 xl:py-12 xl:flex xl:flex-col">
       <header className="flex items-center justify-between mb-4 xl:items-start xl:mb-8">
         <div>
-          <h1 className="text-p-headline text-on-background">Danh sách bài tập</h1>
-          <p className="text-p-body-sm text-on-surface-variant">Cả nhà · 7 ngày quanh hôm nay</p>
+          <h1 className="text-p-headline text-on-background">{T('Danh sách bài tập')}</h1>
+          <p className="text-p-body-sm text-on-surface-variant">{T('Cả nhà · 7 ngày quanh hôm nay')}</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <span className="text-p-body-sm px-3 py-1.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed shrink-0">
@@ -61,7 +63,7 @@ export default async function DanhSachNhiemVu() {
                        min-h-p-tap px-6 text-p-body-sm font-bold card-shadow"
           >
             <span className="material-symbols-outlined text-xl">add</span>
-            Thêm bài tập mới
+            {T('Thêm bài tập mới')}
           </Link>
         </div>
       </header>
@@ -77,7 +79,7 @@ export default async function DanhSachNhiemVu() {
       </div>
 
       {sorted.length === 0 ? (
-        <p className="text-p-body text-on-surface-variant text-center py-10 xl:order-2">Chưa có bài tập nào.</p>
+        <p className="text-p-body text-on-surface-variant text-center py-10 xl:order-2">{T('Chưa có bài tập nào.')}</p>
       ) : (
         <div className="flex flex-col gap-p-tight mb-4 xl:order-2 xl:gap-3 xl:mb-0">
           {sorted.map((a) => {
@@ -110,7 +112,7 @@ export default async function DanhSachNhiemVu() {
                     </Link>
                     {/* Noi giao — de bo me liec qua biet bai lop nao con chua xong */}
                     <span className="text-p-label px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed">
-                      {HW_SOURCES[a.source].icon} {HW_SOURCES[a.source].label}
+                      {HW_SOURCES[a.source].icon} {T(HW_SOURCES[a.source].label)}
                     </span>
                   </div>
                   <p
@@ -131,16 +133,16 @@ export default async function DanhSachNhiemVu() {
                   {a.media.length > 0 && (
                     <p className="flex items-center gap-1 text-p-body-sm text-on-surface-variant">
                       <span className="material-symbols-outlined text-base shrink-0">attach_file</span>
-                      {a.media.length} tệp đính kèm
+                      {T('{n} tệp đính kèm', { n: a.media.length })}
                     </p>
                   )}
                   <span
                     className={`text-p-body-sm xl:hidden ${overdue ? 'text-error font-bold' : 'text-on-surface-variant'}`}
                   >
                     {overdue
-                      ? `Quá hạn — ${a.dueDate}`
+                      ? `${T('Quá hạn')} — ${a.dueDate}`
                       : a.dueDate === today
-                        ? 'Hôm nay'
+                        ? T('Hôm nay')
                         : a.dueDate}
                   </span>
                 </div>
@@ -154,16 +156,16 @@ export default async function DanhSachNhiemVu() {
                   }`}
                 >
                   {overdue
-                    ? `Quá hạn — ${a.dueDate}`
+                    ? `${T('Quá hạn')} — ${a.dueDate}`
                     : a.dueDate === today
-                      ? 'Hôm nay'
+                      ? T('Hôm nay')
                       : a.dueDate}
                 </span>
                 {/* Sua duoc sau khi giao: doi de bai, han, video… (/bome/bai/<id>) */}
                 <Link
                   href={`/bome/bai/${a.id}`}
                   className="text-outline hover:text-primary min-h-p-tap px-1 shrink-0 flex items-center"
-                  aria-label="Sửa bài tập"
+                  aria-label={T('Sửa bài tập')}
                 >
                   <span className="material-symbols-outlined">edit</span>
                 </Link>
@@ -180,7 +182,7 @@ export default async function DanhSachNhiemVu() {
                    h-14 min-h-p-tap text-p-body font-bold card-shadow xl:hidden"
       >
         <span className="material-symbols-outlined">add</span>
-        Thêm bài tập mới
+        {T('Thêm bài tập mới')}
       </Link>
     </main>
   );

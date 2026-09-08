@@ -1,5 +1,14 @@
 /** Kieu du lieu dung chung — bam theo PRD muc 7. */
 
+import { TU_DIEN, T_VI, type Key, type T } from './i18n/chu';
+
+/**
+ * Cac NHAN trong tep nay (HW_SOURCES, SUBJECTS, NHOM_NHIEM_VU, LY_DO_TRU_*) la
+ * KHOA dich (lib/i18n/chu.ts): gia tri tieng Viet giu nguyen — nha that cua
+ * captain van doc "Nguyễn Siêu" / "Smartkid" — con noi hien boc `T(nhan)` de nha
+ * demo thay ban dich. Ma dinh danh trong DB khong doi.
+ */
+
 export type Lang = 'vi' | 'en';
 export type Status = 'todo' | 'done';
 
@@ -19,7 +28,7 @@ export type ChildColor = 'primary' | 'secondary' | 'tertiary';
 export type HwSource = 'primary_school' | 'english_class' | 'other';
 
 /** Nhan + icon tung nguon. Thu tu khoa = thu tu hien o man cua con. */
-export const HW_SOURCES: Record<HwSource, { label: string; icon: string }> = {
+export const HW_SOURCES: Record<HwSource, { label: Key; icon: string }> = {
   primary_school: { label: 'Nguyễn Siêu', icon: '🏫' },
   english_class: { label: 'Smartkid', icon: '🇬🇧' },
   other: { label: 'Khác', icon: '📚' },
@@ -174,18 +183,39 @@ export function sanitizeDuration(v: unknown): number {
   return Math.min(n, 180);
 }
 
-/** Danh sach mon co dinh + icon. PRD muc 12 con de mo, tam chot ngan gon. */
-export const SUBJECTS: Record<string, string> = {
+/**
+ * Danh sach mon co dinh + icon. PRD muc 12 con de mo, tam chot ngan gon.
+ * Khoa la ten mon TIENG VIET (dong thoi la khoa dich) — ten mon LUU VAO DB la
+ * chu bo me nhin thay luc chon, nen nha demo luu ban dich (xem `subjectsFor`).
+ */
+export const SUBJECTS = {
   'Toán': '🔢',
   'Tiếng Việt': '📖',
   'Tiếng Anh': '🔤',
   'Vẽ': '🎨',
   'Tự nhiên': '🐝',
   'Khác': '📝',
-};
+} satisfies Partial<Record<Key, string>>;
+
+type TenMon = keyof typeof SUBJECTS;
+const SUBJECT_KEYS = Object.keys(SUBJECTS) as TenMon[];
+
+/** Danh sach mon theo ngon ngu cua nha: { ten hien thi (= ten luu DB) -> icon }. */
+export function subjectsFor(T: T = T_VI): Record<string, string> {
+  return Object.fromEntries(SUBJECT_KEYS.map((k) => [T(k), SUBJECTS[k]]));
+}
+
+/**
+ * Icon cua mon — nhan ten mon o BAT KY ngon ngu nao (ten luu trong DB cua nha
+ * demo la ban dich), khong khop thi icon cua "Khác".
+ */
+const ICON_THEO_TEN_MON: Record<string, string> = Object.fromEntries([
+  ...SUBJECT_KEYS.map((k) => [k, SUBJECTS[k]]),
+  ...Object.values(TU_DIEN).flatMap((td) => SUBJECT_KEYS.map((k) => [td[k], SUBJECTS[k]])),
+]);
 
 export function iconFor(subject: string): string {
-  return SUBJECTS[subject] ?? SUBJECTS['Khác'];
+  return ICON_THEO_TEN_MON[subject] ?? SUBJECTS['Khác'];
 }
 
 /* ---------------- Nhiem vu hang ngay ("viec nha") ----------------
@@ -205,7 +235,7 @@ export function iconFor(subject: string): string {
 export type NhomNhiemVu = 'after_study' | 'housework';
 
 /** Nhan + icon tung nhom. Thu tu khoa = thu tu hai nhom hien o man cua con. */
-export const NHOM_NHIEM_VU: Record<NhomNhiemVu, { label: string; icon: string; moTa: string }> = {
+export const NHOM_NHIEM_VU: Record<NhomNhiemVu, { label: Key; icon: string; moTa: Key }> = {
   after_study: {
     label: 'Sau khi học xong',
     icon: '🎒',
@@ -395,13 +425,13 @@ export const LY_DO_TRU_GOI_Y = [
   'Chơi quá giờ',
   'Chưa làm bài',
   'Nói dối',
-];
+] as const satisfies readonly Key[];
 
 /**
  * Cau hien o man cua con khi bo me de trong ly do — khong de trong hoac, va
  * phai tu te voi con: khong buoc toi, chi moi con hoi lai bo me.
  */
-export const LY_DO_TRU_TRONG = 'Con hỏi bố mẹ vì sao nhé';
+export const LY_DO_TRU_TRONG = 'Con hỏi bố mẹ vì sao nhé' satisfies Key;
 
 /** Ly do dai hon thi tran mot dong lich su (cung tran voi ten viec nha). */
 export const MAX_CHU_LY_DO_TRU = MAX_CHU_VIEC_NHA;
@@ -455,12 +485,12 @@ export interface TrangThaiTruDiem {
   canhBao: string;
 }
 
-export function trangThaiTruDiem(dangCo: number, soGo: string): TrangThaiTruDiem {
+export function trangThaiTruDiem(dangCo: number, soGo: string, T: T = T_VI): TrangThaiTruDiem {
   const soTru = lamSachDiemTru(soGo);
   const truHet = soTru !== null && soTru > dangCo && dangCo > 0;
   return {
     nut: soTru === null ? null : truHet ? 'truHet' : 'tru',
     soGui: soTru === null ? null : truHet ? dangCo : soTru,
-    canhBao: truHet ? `Con chỉ có ${dangCo} ⭐` : '',
+    canhBao: truHet ? T('Con chỉ có {n} ⭐', { n: dangCo }) : '',
   };
 }

@@ -16,6 +16,16 @@
  */
 
 import type { Lang } from './types';
+import type { NgonNgu } from './i18n/ngonNgu';
+
+/**
+ * Ma BCP-47 cho giong doc theo ngon ngu GIAO DIEN cua nha (issue #46): loi nhac
+ * cua dong ho va doan de bai "khong phai tieng Anh" doc bang giong nay. en-GB
+ * de khi khong tim duoc giong cu the, engine van nghieng ve giong Anh-Anh.
+ */
+export const GIONG_DOC: Record<NgonNgu, string> = {
+  vi: 'vi-VN', en: 'en-GB', ja: 'ja-JP', ko: 'ko-KR',
+};
 
 export interface SpeechSegment {
   text: string;
@@ -68,7 +78,7 @@ function diemGiongNu(name: string): number {
  */
 export function pickVoice(
   voices: SpeechSynthesisVoice[],
-  lang: Lang
+  lang: Lang | NgonNgu
 ): SpeechSynthesisVoice | undefined {
   // Android co the tra "en_GB" dung gach duoi thay vi gach ngang
   const tag = (v: SpeechSynthesisVoice) => v.lang.toLowerCase().replace('_', '-');

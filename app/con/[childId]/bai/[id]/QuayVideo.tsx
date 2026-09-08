@@ -8,6 +8,7 @@ import {
   uploadSubmissionVideo,
 } from '@/lib/media';
 import { fixVideoDuration } from '@/lib/videoDuration';
+import { useT } from '@/lib/i18n/client';
 
 /**
  * Quay video nop bai — cho bai co requiresVideo (doc to, doc thuoc long, quay
@@ -60,6 +61,7 @@ export default function QuayVideo({
   /** Duoc goi voi URL video sau khi tai len xong; ben ngoai lo PATCH + man khen. */
   onSubmit: (url: string) => Promise<void>;
 }) {
+  const T = useT();
   const [phase, setPhase] = useState<Phase>('idle');
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState('');
@@ -181,7 +183,7 @@ export default function QuayVideo({
       // duong may quay cua he dieu hanh.
       startingRef.current = false;
       setStarting(false);
-      setError('Chưa mở được máy quay. Con thử nút "Quay bằng máy ảnh" bên dưới nhé.');
+      setError(T('Chưa mở được máy quay. Con thử nút "Quay bằng máy ảnh" bên dưới nhé.'));
       return;
     }
 
@@ -230,7 +232,7 @@ export default function QuayVideo({
       // Hong o day thi KHONG duoc ket lai o 'ready' voi luong con song
       stopStream();
       setPhase('idle');
-      setError('Máy này chưa quay trong trang được. Con dùng nút "Quay bằng máy ảnh" nhé.');
+      setError(T('Máy này chưa quay trong trang được. Con dùng nút "Quay bằng máy ảnh" nhé.'));
       return;
     }
     recorderRef.current = recorder;
@@ -242,7 +244,7 @@ export default function QuayVideo({
       if (discardRef.current) { chunksRef.current = []; setPhase('idle'); return; }
       const out = new Blob(chunksRef.current, { type: recorder.mimeType || mime || 'video/mp4' });
       if (out.size === 0) {
-        setError('Chưa quay được gì, con thử lại nhé.');
+        setError(T('Chưa quay được gì, con thử lại nhé.'));
         setPhase('idle');
         return;
       }
@@ -275,7 +277,7 @@ export default function QuayVideo({
       recorderRef.current = null;
       stopStream();
       setPhase('idle');
-      setError('Máy này chưa quay trong trang được. Con dùng nút "Quay bằng máy ảnh" nhé.');
+      setError(T('Máy này chưa quay trong trang được. Con dùng nút "Quay bằng máy ảnh" nhé.'));
       return;
     }
 
@@ -301,7 +303,7 @@ export default function QuayVideo({
     if (r && r.state !== 'inactive') { stoppingRef.current = true; r.stop(); return; }
     // Khong con may ghi nao se ban onstop nua, nen phai tu roi man hinh quay
     stopStream();
-    if (!discard) setError('Chưa quay được gì, con thử lại nhé.');
+    if (!discard) setError(T('Chưa quay được gì, con thử lại nhé.'));
     setPhase('idle');
   }
 
@@ -310,7 +312,7 @@ export default function QuayVideo({
     const file = files?.[0];
     if (!file) return;
     setError('');
-    if (!file.type.startsWith('video/')) { setError('Tệp này không phải video.'); return; }
+    if (!file.type.startsWith('video/')) { setError(T('Tệp này không phải video.')); return; }
     // Huy lan xin quyen camera dang cho (neu co) de no khong de mat tep nay
     startingRef.current = false;
     setStarting(false);
@@ -334,7 +336,7 @@ export default function QuayVideo({
         const file = blob instanceof File
           ? blob
           : new File([blob], `quay-${Date.now()}.${duoi}`, { type: blob.type });
-        url = await uploadSubmissionVideo(file, blobEnabled, setPhanTram);
+        url = await uploadSubmissionVideo(file, blobEnabled, setPhanTram, T);
         uploadedRef.current = { blob, url };
       }
       await onSubmit(url);
@@ -343,7 +345,7 @@ export default function QuayVideo({
       setClip(null);
       setPhase('idle');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Chưa gửi được video. Con thử lại nhé!');
+      setError(e instanceof Error ? e.message : T('Chưa gửi được video. Con thử lại nhé!'));
       setPhase('preview');
     }
   }
@@ -352,7 +354,7 @@ export default function QuayVideo({
     <div className="flex flex-col gap-4 mt-2">
       <p className="flex items-center gap-3 text-k-headline text-on-background">
         <span className="material-symbols-outlined text-4xl text-error icon-fill">videocam</span>
-        Quay video nộp bài
+        {T('Quay video nộp bài')}
       </p>
 
       {/* ---- Da mo may quay: MOT khoi khung hinh dung chung cho 'ready' va
@@ -386,14 +388,14 @@ export default function QuayVideo({
                            justify-center gap-3 px-6 h-20 flex-[2]"
               >
                 <span className="material-symbols-outlined text-4xl icon-fill">radio_button_checked</span>
-                <span className="text-k-headline">Bắt đầu quay</span>
+                <span className="text-k-headline">{T('Bắt đầu quay')}</span>
               </button>
               <button
                 onClick={dongCamera}
                 className="rounded-3xl border-4 border-outline-variant text-on-surface-variant
                            flex items-center justify-center px-6 h-20 flex-1 text-k-body"
               >
-                Thoát
+                {T('Thoát')}
               </button>
             </div>
           ) : (
@@ -411,7 +413,7 @@ export default function QuayVideo({
                 className="rounded-3xl border-4 border-outline-variant text-on-surface-variant
                            flex items-center justify-center px-6 h-20 flex-1 text-k-body"
               >
-                Huỷ
+                {T('Huỷ')}
               </button>
             </div>
           )}
@@ -443,10 +445,10 @@ export default function QuayVideo({
               </span>
               <span className="text-k-headline whitespace-nowrap">
                 {phase !== 'sending'
-                  ? 'Gửi bài'
+                  ? T('Gửi bài')
                   : phanTram === null
-                    ? 'Đang gửi…'
-                    : `Đang gửi… ${phanTram}%`}
+                    ? T('Đang gửi…')
+                    : `${T('Đang gửi…')} ${phanTram}%`}
               </span>
             </button>
             <button
@@ -457,13 +459,13 @@ export default function QuayVideo({
               className="rounded-3xl border-4 border-outline-variant text-on-surface-variant
                          flex items-center justify-center px-6 h-20 flex-1 text-k-body disabled:opacity-60"
             >
-              Quay lại
+              {T('Quay lại')}
             </button>
           </div>
 
           {phase === 'sending' && (
             <p className="text-k-body-sm text-on-surface-variant text-center">
-              Con đợi một chút, đừng tắt máy nhé.
+              {T('Con đợi một chút, đừng tắt máy nhé.')}
             </p>
           )}
         </div>
@@ -474,7 +476,7 @@ export default function QuayVideo({
         <div className="flex flex-col gap-4">
           {existingUrl && (
             <div className="flex flex-col gap-2">
-              <p className="text-k-body-sm text-on-surface-variant">Video con đã gửi:</p>
+              <p className="text-k-body-sm text-on-surface-variant">{T('Video con đã gửi:')}</p>
               <video
                 src={existingUrl}
                 controls
@@ -494,7 +496,7 @@ export default function QuayVideo({
             >
               <span className="material-symbols-outlined text-4xl icon-fill">videocam</span>
               <span className="text-k-headline">
-                {starting ? 'Đang mở máy quay…' : existingUrl ? 'Quay video khác' : 'Mở máy quay'}
+                {starting ? T('Đang mở máy quay…') : existingUrl ? T('Quay video khác') : T('Mở máy quay')}
               </span>
             </button>
           )}
@@ -517,7 +519,7 @@ export default function QuayVideo({
                 onChange={(e) => { onPickFile(e.target.files); e.target.value = ''; }}
               />
               <span className="material-symbols-outlined text-4xl icon-fill">photo_camera</span>
-              <span>{canRecord ? 'Hoặc quay bằng máy ảnh' : existingUrl ? 'Quay video khác' : 'Quay bằng máy ảnh'}</span>
+              <span>{canRecord ? T('Hoặc quay bằng máy ảnh') : existingUrl ? T('Quay video khác') : T('Quay bằng máy ảnh')}</span>
             </label>
           )}
         </div>

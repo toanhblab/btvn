@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useT } from '@/lib/i18n/client';
 
 /**
  * Chia se video con da quay cho co giao lop tieng Anh.
@@ -46,6 +47,7 @@ const coVideo = (m: MucNop): m is MucCoVideo => m.videoUrl !== null && m.tenTep 
 const KEY_TAT_CA = 'tat-ca';
 
 export default function ChiaSeVideo({ nhom, ngayVN }: { nhom: NhomNop[]; ngayVN: string }) {
+  const T = useT();
   const tatCa = useMemo(() => nhom.flatMap((n) => n.mucs).filter(coVideo), [nhom]);
 
   const [dangChay, setDangChay] = useState<string | null>(null);
@@ -75,12 +77,12 @@ export default function ChiaSeVideo({ nhom, ngayVN }: { nhom: NhomNop[]; ngayVN:
 
   const tieuDe = (mucs: MucCoVideo[]) =>
     mucs.length === 1
-      ? `Bài tiếng Anh ${ngayVN} — ${mucs[0].tenTep}`
-      : `Bài tiếng Anh ${ngayVN} — ${mucs.length} video`;
+      ? T('Bài tiếng Anh {date} — {tep}', { date: ngayVN, tep: mucs[0].tenTep })
+      : T('Bài tiếng Anh {date} — {n} video', { date: ngayVN, n: mucs.length });
 
   async function taiTep(m: MucCoVideo): Promise<File> {
     const res = await fetch(m.videoUrl);
-    if (!res.ok) throw new Error(`Không tải được ${m.tenTep}`);
+    if (!res.ok) throw new Error(T('Không tải được {tep}', { tep: m.tenTep }));
     const blob = await res.blob();
     return new File([blob], m.tenTep, { type: blob.type || 'video/mp4' });
   }
@@ -105,16 +107,16 @@ export default function ChiaSeVideo({ nhom, ngayVN }: { nhom: NhomNop[]; ngayVN:
         setBao({
           key,
           loi: false,
-          text: 'Máy không gửi kèm được tệp nên chỉ chia sẻ đường liên kết video.',
+          text: T('Máy không gửi kèm được tệp nên chỉ chia sẻ đường liên kết video.'),
         });
         return;
       }
-      if (!navigator.clipboard?.writeText) throw new Error('không có bộ nhớ tạm');
+      if (!navigator.clipboard?.writeText) throw new Error('no clipboard');   // noi bo, catch ben duoi bao cau chung
       await navigator.clipboard.writeText(lienKet.join('\n'));
       setBao({
         key,
         loi: false,
-        text: 'Máy này không có bảng chia sẻ. Đã chép đường liên kết video — mở Zalo, vào chat của cô rồi dán vào nhé.',
+        text: T('Máy này không có bảng chia sẻ. Đã chép đường liên kết video — mở Zalo, vào chat của cô rồi dán vào nhé.'),
       });
     } catch (e) {
       // Bo me bam Huy tren bang chia se: navigator.share nem AbortError. Day la
@@ -127,10 +129,10 @@ export default function ChiaSeVideo({ nhom, ngayVN }: { nhom: NhomNop[]; ngayVN:
       // them mot nhip nua la gui duoc ngay — khong bat tai lai.
       if (files && e instanceof DOMException && e.name === 'NotAllowedError') {
         setChoBam({ key, files });
-        setBao({ key, loi: false, text: 'Video đã tải xong. Bấm "Gửi ngay" để mở bảng chia sẻ.' });
+        setBao({ key, loi: false, text: T('Video đã tải xong. Bấm "Gửi ngay" để mở bảng chia sẻ.') });
         return;
       }
-      setBao({ key, loi: true, text: 'Chưa chia sẻ được. Thử lại nhé.' });
+      setBao({ key, loi: true, text: T('Chưa chia sẻ được. Thử lại nhé.') });
     }
   }
 
@@ -152,7 +154,7 @@ export default function ChiaSeVideo({ nhom, ngayVN }: { nhom: NhomNop[]; ngayVN:
     }
   }
 
-  const nhanNut = (key: string) => (dangChay === key ? 'Đang tải video…' : 'Chia sẻ');
+  const nhanNut = (key: string) => (dangChay === key ? T('Đang tải video…') : T('Chia sẻ'));
 
   /** Loi/mach bao cua rieng mot nut. Ham thuong, khong phai component: `key` la
       ten dat truoc cua React nen truyen vao component se bi nuot. */
@@ -178,7 +180,7 @@ export default function ChiaSeVideo({ nhom, ngayVN }: { nhom: NhomNop[]; ngayVN:
                        disabled:opacity-60"
           >
             <span className="material-symbols-outlined">ios_share</span>
-            {dangChay === KEY_TAT_CA ? 'Đang tải video…' : `Chia sẻ tất cả (${soVideo} video)`}
+            {dangChay === KEY_TAT_CA ? T('Đang tải video…') : T('Chia sẻ tất cả ({n} video)', { n: soVideo })}
           </button>
           {choBam?.key === KEY_TAT_CA && (
             <button
@@ -187,7 +189,7 @@ export default function ChiaSeVideo({ nhom, ngayVN }: { nhom: NhomNop[]; ngayVN:
                          text-on-secondary rounded-card min-h-p-tap h-12 text-p-body font-bold"
             >
               <span className="material-symbols-outlined">send</span>
-              Gửi ngay
+              {T('Gửi ngay')}
             </button>
           )}
           {khoiBao(KEY_TAT_CA)}
@@ -247,7 +249,7 @@ export default function ChiaSeVideo({ nhom, ngayVN }: { nhom: NhomNop[]; ngayVN:
                                      min-h-p-tap h-12 text-p-body font-bold"
                         >
                           <span className="material-symbols-outlined">send</span>
-                          Gửi ngay
+                          {T('Gửi ngay')}
                         </button>
                       )}
                       {khoiBao(m.id)}
@@ -256,7 +258,7 @@ export default function ChiaSeVideo({ nhom, ngayVN }: { nhom: NhomNop[]; ngayVN:
                     <p className="mt-2 flex items-center gap-1 text-p-body-sm text-on-surface-variant
                                   xl:mt-0 xl:w-[320px] xl:shrink-0">
                       <span className="material-symbols-outlined text-base">videocam_off</span>
-                      Con chưa quay video
+                      {T('Con chưa quay video')}
                     </p>
                   )}
                 </div>

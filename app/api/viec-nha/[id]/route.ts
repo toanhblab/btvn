@@ -6,6 +6,7 @@ import {
 import {
   ICON_NHIEM_VU_MAC_DINH, MAX_CHU_VIEC_NHA, lamSachIcon, lamSachSao, nhomNhiemVuOf,
 } from '@/lib/types';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,20 +27,21 @@ type Ctx = { params: Promise<{ id: string }> };
  * lib/store.ts). getChore loc theo nha nen nhiem vu cua nha khac tra 404.
  */
 export async function PATCH(req: Request, { params }: Ctx) {
+  const T = await chu();
   const familyId = await parentFamilyId();
-  if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+  if (!familyId) return NextResponse.json({ error: T('Cần mã PIN của bố mẹ.') }, { status: 401 });
 
   const { id } = await params;
   const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: 'Dữ liệu không đọc được.' }, { status: 400 });
+  if (!body) return NextResponse.json({ error: T('Dữ liệu không đọc được.') }, { status: 400 });
 
   if (!(await getChore(familyId, id))) {
-    return NextResponse.json({ error: 'Không tìm thấy việc này.' }, { status: 404 });
+    return NextResponse.json({ error: T('Không tìm thấy việc này.') }, { status: 404 });
   }
 
   if (body.move !== undefined) {
     if (body.move !== 'len' && body.move !== 'xuong') {
-      return NextResponse.json({ error: 'Hướng di chuyển không hợp lệ.' }, { status: 400 });
+      return NextResponse.json({ error: T('Hướng di chuyển không hợp lệ.') }, { status: 400 });
     }
     await moveChore(familyId, id, body.move === 'len' ? -1 : 1);
     return NextResponse.json({ chores: await listChores(familyId) });
@@ -49,22 +51,22 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
   if (body.content !== undefined) {
     const content = String(body.content).trim();
-    if (!content) return NextResponse.json({ error: 'Chưa nhập việc gì.' }, { status: 400 });
+    if (!content) return NextResponse.json({ error: T('Chưa nhập việc gì.') }, { status: 400 });
     if (content.length > MAX_CHU_VIEC_NHA) {
-      return NextResponse.json({ error: 'Việc dài quá, để ngắn thôi cho con đọc được.' }, { status: 400 });
+      return NextResponse.json({ error: T('Việc dài quá, để ngắn thôi cho con đọc được.') }, { status: 400 });
     }
     patch.content = content;
   }
   if (body.icon !== undefined) patch.icon = lamSachIcon(body.icon, ICON_NHIEM_VU_MAC_DINH);
   if (body.stars !== undefined) {
     const stars = lamSachSao(body.stars);
-    if (stars === null) return NextResponse.json({ error: 'Số sao phải từ 1 đến 10.' }, { status: 400 });
+    if (stars === null) return NextResponse.json({ error: T('Số sao phải từ 1 đến 10.') }, { status: 400 });
     patch.stars = stars;
   }
   if (body.nhom !== undefined) patch.nhom = nhomNhiemVuOf(body.nhom);
   if ('childIds' in body) {
     const giaoCho = await locChildIdsGiaoCho(familyId, body.childIds);
-    if ('error' in giaoCho) return NextResponse.json({ error: giaoCho.error }, { status: 400 });
+    if ('error' in giaoCho) return NextResponse.json({ error: T(giaoCho.error) }, { status: 400 });
     patch.childIds = giaoCho.childIds;
   }
   if (body.enabled !== undefined) patch.enabled = body.enabled === true;
@@ -81,12 +83,13 @@ export async function PATCH(req: Request, { params }: Ctx) {
  * cong. Khong khoi phuc duoc nen giao dien van phai hoi lai truoc khi goi.
  */
 export async function DELETE(_req: Request, { params }: Ctx) {
+  const T = await chu();
   const familyId = await parentFamilyId();
-  if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+  if (!familyId) return NextResponse.json({ error: T('Cần mã PIN của bố mẹ.') }, { status: 401 });
 
   const { id } = await params;
   if (!(await getChore(familyId, id))) {
-    return NextResponse.json({ error: 'Không tìm thấy việc này.' }, { status: 404 });
+    return NextResponse.json({ error: T('Không tìm thấy việc này.') }, { status: 404 });
   }
 
   await deleteChore(familyId, id);

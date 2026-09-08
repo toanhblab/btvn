@@ -21,6 +21,8 @@
 import { cookies } from 'next/headers';
 import type { NextResponse } from 'next/server';
 import { PIN_LEN } from './pin';
+import { pinDanhRieng } from './i18n/ngonNgu';
+import type { Key, Tham } from './i18n/chu';
 import {
   findFamilyByPinHash,
   insertFamily,
@@ -154,14 +156,29 @@ export async function viewingFamilyId(): Promise<string | null> {
   return (await parentFamilyId()) ?? (await deviceFamilyId());
 }
 
-/* ---------------- Tao nha / doi PIN ---------------- */
+/* ---------------- Tao nha / doi PIN ----------------
+ *
+ * Loi tra ve la KHOA dich (cau tieng Viet goc, lib/i18n/chu.ts) + tham so, de
+ * route handler dich sang ngon ngu cua nha dang mo (`T(loi, tham)`) — tep nay
+ * khong tu dich vi lib/i18n/server.ts import nguoc lai tep nay.
+ */
+
+export interface LoiPin { ok: false; error: Key; tham?: Tham }
 
 export type CreateResult =
   | { ok: true; family: Family }
-  | { ok: false; error: string };
+  | LoiPin;
+
+/**
+ * Ba ma PIN demo (PIN_DEMO) bi giu cho vinh vien — chan o ca tao nha lan doi PIN
+ * de khong ai dang ky trung roi gap loi "co nha khac dung" kho hieu (nha demo
+ * co the chua duoc nap tren DB nay, nen kiem theo DANH SACH, khong theo DB).
+ */
+const LOI_PIN_DEMO: LoiPin = { ok: false, error: 'Mã PIN này dành riêng cho bản demo, chọn mã khác nhé.' };
 
 export async function createFamily(name: string, pin: string): Promise<CreateResult> {
-  if (!pinOk(pin)) return { ok: false, error: `Mã PIN phải là ${PIN_LEN} chữ số.` };
+  if (!pinOk(pin)) return { ok: false, error: 'Mã PIN phải là {n} chữ số.', tham: { n: PIN_LEN } };
+  if (pinDanhRieng(pin)) return LOI_PIN_DEMO;
   const hash = await hashPin(pin);
   if (await pinHashTaken(hash)) {
     return { ok: false, error: 'Mã PIN này có nhà khác dùng rồi, chọn mã khác nhé.' };
@@ -173,12 +190,13 @@ export async function changePin(
   familyId: string,
   oldPin: string,
   newPin: string
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true } | LoiPin> {
   const current = await findFamilyByPin(oldPin);
   if (!current || current.id !== familyId) {
     return { ok: false, error: 'Mã PIN cũ không đúng.' };
   }
-  if (!pinOk(newPin)) return { ok: false, error: `Mã PIN mới phải là ${PIN_LEN} chữ số.` };
+  if (!pinOk(newPin)) return { ok: false, error: 'Mã PIN mới phải là {n} chữ số.', tham: { n: PIN_LEN } };
+  if (pinDanhRieng(newPin)) return LOI_PIN_DEMO;
 
   const hash = await hashPin(newPin);
   if (await pinHashTaken(hash, familyId)) {
@@ -228,10 +246,10 @@ export function recordSuccess(key: string): void {
 export async function attemptPin(
   pin: string,
   ipKey: string
-): Promise<{ ok: true; family: Family } | { ok: false; status: number; error: string }> {
+): Promise<{ ok: true; family: Family } | (LoiPin & { status: number })> {
   const wait = isLocked(ipKey);
   if (wait > 0) {
-    return { ok: false, status: 429, error: `Sai nhiều lần quá. Thử lại sau ${wait} giây.` };
+    return { ok: false, status: 429, error: 'Sai nhiều lần quá. Thử lại sau {n} giây.', tham: { n: wait } };
   }
 
   const family = await findFamilyByPin(pin);

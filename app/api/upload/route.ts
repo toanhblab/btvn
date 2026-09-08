@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { isParent } from '@/lib/auth';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -19,17 +20,18 @@ const hasBlob = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
  * dev. Data URL nang, chi dung tam khi phat trien.
  */
 export async function POST(req: Request) {
+  const T = await chu();
   if (!(await isParent())) {
-    return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+    return NextResponse.json({ error: T('Cần mã PIN của bố mẹ.') }, { status: 401 });
   }
 
   const form = await req.formData().catch(() => null);
   const file = form?.get('file');
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: 'Chưa chọn ảnh.' }, { status: 400 });
+    return NextResponse.json({ error: T('Chưa chọn ảnh.') }, { status: 400 });
   }
   if (!file.type.startsWith('image/')) {
-    return NextResponse.json({ error: 'Chỉ nhận tệp ảnh.' }, { status: 400 });
+    return NextResponse.json({ error: T('Chỉ nhận tệp ảnh.') }, { status: 400 });
   }
 
   if (hasBlob) {
@@ -43,6 +45,6 @@ export async function POST(req: Request) {
   const base64 = Buffer.from(await file.arrayBuffer()).toString('base64');
   return NextResponse.json({
     url: `data:${file.type};base64,${base64}`,
-    warning: 'Chưa bật Vercel Blob nên ảnh đang nhúng trực tiếp, chỉ nên dùng khi thử.',
+    warning: T('Chưa bật Vercel Blob nên ảnh đang nhúng trực tiếp, chỉ nên dùng khi thử.'),
   });
 }

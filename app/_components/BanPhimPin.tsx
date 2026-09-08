@@ -1,6 +1,7 @@
 'use client';
 
 import { PIN_LEN } from '@/lib/pin';
+import { useT } from '@/lib/i18n/client';
 
 /**
  * Ban phim so + o hien PIN — nen tu stitch-parent 06.
@@ -24,6 +25,7 @@ export default function BanPhimPin({
   /** Du so la goi onFull luon. Tat khi man hinh con o khac de bo me bam Xong. */
   autoSubmit?: boolean;
 }) {
+  const T = useT();
   function press(d: string) {
     if (disabled || value.length >= PIN_LEN) return;
     const next = value + d;
@@ -71,7 +73,7 @@ export default function BanPhimPin({
           onClick={() => onChange(value.slice(0, -1))}
           className="w-20 h-20 rounded-full flex items-center justify-center text-on-surface-variant
                      active:bg-surface-container transition-colors"
-          aria-label="Xoá"
+          aria-label={T('Xoá')}
         >
           <span className="material-symbols-outlined text-3xl">backspace</span>
         </button>

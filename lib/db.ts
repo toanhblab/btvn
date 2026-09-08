@@ -62,12 +62,21 @@ export interface CauSQL { sql: string; params?: unknown[] }
  */
 const g = globalThis as typeof globalThis & { __btvnPglite?: Promise<Pg> };
 
+/**
+ * Thu muc PGlite: mac dinh ./.data/pg (DB dev). Test PGlite import thang
+ * lib/store.ts (lib/nha-demo.test.ts) dat BTVN_PGLITE_DIR sang thu muc tam de
+ * KHONG dung vao DB dev; `memory://` la DB trong RAM.
+ */
+const PGLITE_DIR = process.env.BTVN_PGLITE_DIR || './.data/pg';
+
 function getPglite(): Promise<Pg> {
   g.__btvnPglite ??= (async () => {
     const { PGlite } = await import('@electric-sql/pglite');
-    const { mkdirSync } = await import('node:fs');
-    mkdirSync('./.data/pg', { recursive: true });   // PGlite khong tu tao thu muc cha
-    return (await PGlite.create('./.data/pg')) as unknown as Pg;
+    if (!PGLITE_DIR.startsWith('memory://')) {
+      const { mkdirSync } = await import('node:fs');
+      mkdirSync(PGLITE_DIR, { recursive: true });   // PGlite khong tu tao thu muc cha
+    }
+    return (await PGlite.create(PGLITE_DIR)) as unknown as Pg;
   })();
   return g.__btvnPglite;
 }

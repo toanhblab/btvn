@@ -4,6 +4,7 @@ import { parentFamilyId } from '@/lib/auth';
 import { getChild, listAssignments, taoNhiemVuNgay, todayISO } from '@/lib/store';
 import { HW_SOURCES, NHOM_NHIEM_VU, type Assignment } from '@/lib/types';
 import XoaBai from './XoaBai';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,7 @@ export default async function ChiTietCon({
   const { childId } = await params;
   const { pham_vi } = await searchParams;
   const tuanNay = pham_vi === 'tuan';
+  const T = await chu();
 
   const familyId = await parentFamilyId();
   if (!familyId) redirect('/bome/pin');
@@ -96,13 +98,13 @@ export default async function ChiTietCon({
             {child.name} — {child.grade}
           </h1>
           <Link href={`/con/${child.id}`} className="text-p-body-sm text-primary">
-            Xem như con đang thấy →
+            {T('Xem như con đang thấy →')}
           </Link>
         </div>
         <Link
           href={`/bome/con/${child.id}/sua`}
           className="min-h-p-tap flex items-center text-on-surface-variant shrink-0 px-1"
-          aria-label={`Sửa hồ sơ của ${child.name}`}
+          aria-label={T('Sửa hồ sơ của {name}', { name: child.name })}
         >
           <span className="material-symbols-outlined">edit</span>
         </Link>
@@ -110,8 +112,8 @@ export default async function ChiTietCon({
 
       <div className="flex gap-2 mb-4">
         {[
-          ['Hôm nay', `/bome/con/${child.id}`, !tuanNay],
-          ['Tuần này', `/bome/con/${child.id}?pham_vi=tuan`, tuanNay],
+          [T('Hôm nay'), `/bome/con/${child.id}`, !tuanNay],
+          [T('Tuần này'), `/bome/con/${child.id}?pham_vi=tuan`, tuanNay],
         ].map(([label, href, active]) => (
           <Link
             key={label as string}
@@ -128,8 +130,8 @@ export default async function ChiTietCon({
 
       <section className="mb-5">
         <div className="flex justify-between text-p-body-sm text-on-surface-variant mb-1.5">
-          <span>Tiến độ {tuanNay ? 'tuần này' : 'hôm nay'}</span>
-          <span>{done}/{items.length} bài đã xong</span>
+          <span>{tuanNay ? T('Tiến độ tuần này') : T('Tiến độ hôm nay')}</span>
+          <span>{T('{done}/{total} bài đã xong', { done, total: items.length })}</span>
         </div>
         <div className="h-2.5 rounded-full bg-surface-container-high overflow-hidden">
           <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
@@ -139,9 +141,9 @@ export default async function ChiTietCon({
       {choreItems.length > 0 && (
         <section className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-5">
           <div className="flex items-center justify-between gap-2 mb-1.5">
-            <h2 className="text-p-label uppercase text-on-surface-variant">Nhiệm vụ hàng ngày</h2>
+            <h2 className="text-p-label uppercase text-on-surface-variant">{T('Nhiệm vụ hàng ngày')}</h2>
             <span className="text-p-body-sm text-on-surface font-bold">
-              {soViecXong}/{choreItems.length} xong
+              {T('{done}/{total} xong', { done: soViecXong, total: choreItems.length })}
             </span>
           </div>
           <ul className="flex flex-col gap-1">
@@ -167,7 +169,7 @@ export default async function ChiTietCon({
                   {/* Nhom + sao cua dong (sao la so da chep luc tao; dong cu truoc
                       migration 016 khong co sao thi khong hien) */}
                   {c.choreNhom && (
-                    <span className="text-p-label text-outline shrink-0" title={NHOM_NHIEM_VU[c.choreNhom].label}>
+                    <span className="text-p-label text-outline shrink-0" title={T(NHOM_NHIEM_VU[c.choreNhom].label)}>
                       {NHOM_NHIEM_VU[c.choreNhom].icon}
                     </span>
                   )}
@@ -185,7 +187,7 @@ export default async function ChiTietCon({
 
       {items.length === 0 ? (
         <p className="text-p-body text-on-surface-variant text-center py-10">
-          {tuanNay ? 'Tuần này chưa có bài nào.' : 'Hôm nay chưa giao bài nào cho ' + child.name + '.'}
+          {tuanNay ? T('Tuần này chưa có bài nào.') : T('Hôm nay chưa giao bài nào cho {name}.', { name: child.name })}
         </p>
       ) : (
         Object.entries(groups).map(([subject, list]) => (
@@ -227,16 +229,16 @@ export default async function ChiTietCon({
                         )}
                         {/* Noi giao — sua duoc trong man Sua bai tap neu xep nham */}
                         <span className="text-p-label px-2 py-0.5 rounded-full bg-surface-container text-on-surface">
-                          {HW_SOURCES[a.source].icon} {HW_SOURCES[a.source].label}
+                          {HW_SOURCES[a.source].icon} {T(HW_SOURCES[a.source].label)}
                         </span>
                         {a.lang === 'en' && (
                           <span className="text-p-label px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed">
-                            🇬🇧 Giọng Anh
+                            🇬🇧 {T('Giọng Anh')}
                           </span>
                         )}
                         {a.media.length > 0 && (
                           <span className="text-p-label px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed">
-                            📎 {a.media.length} đính kèm
+                            📎 {T('{n} đính kèm', { n: a.media.length })}
                           </span>
                         )}
                         {/* Bai phai quay video: da nop thi mau "xong" — bam Sua
@@ -249,12 +251,12 @@ export default async function ChiTietCon({
                                 : 'bg-secondary-container text-on-secondary-container'
                             }`}
                           >
-                            🎥 {a.submittedVideoUrl ? 'Đã nộp video' : 'Chờ quay video'}
+                            🎥 {a.submittedVideoUrl ? T('Đã nộp video') : T('Chờ quay video')}
                           </span>
                         )}
                         {overdue && (
                           <span className="text-p-label px-2 py-0.5 rounded-full bg-error-container text-on-error-container">
-                            Quá hạn {a.dueDate}
+                            {T('Quá hạn')} {a.dueDate}
                           </span>
                         )}
                         {tuanNay && !overdue && (
@@ -266,7 +268,7 @@ export default async function ChiTietCon({
                     <Link
                       href={`/bome/bai/${a.id}`}
                       className="text-outline hover:text-primary min-h-p-tap px-1 shrink-0 flex items-center"
-                      aria-label="Sửa bài tập"
+                      aria-label={T('Sửa bài tập')}
                     >
                       <span className="material-symbols-outlined">edit</span>
                     </Link>
@@ -285,7 +287,7 @@ export default async function ChiTietCon({
                    h-14 min-h-p-tap text-p-body font-bold card-shadow mt-4"
       >
         <span className="material-symbols-outlined">add</span>
-        Thêm bài tập cho {child.name}
+        {T('Thêm bài tập cho {name}', { name: child.name })}
       </Link>
     </main>
   );

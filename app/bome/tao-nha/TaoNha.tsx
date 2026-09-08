@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import BanPhimPin from '../../_components/BanPhimPin';
 import { PIN_LEN } from '@/lib/pin';
+import { pinDanhRieng } from '@/lib/i18n/ngonNgu';
+import { useT } from '@/lib/i18n/client';
 
 /**
  * Tao nha moi — man dau tien cua ban be bo me khi duoc chia se app.
@@ -14,6 +16,7 @@ import { PIN_LEN } from '@/lib/pin';
  * nham mot so o lan dau la sau nay khong ai vao lai duoc nha do.
  */
 export default function TaoNha() {
+  const T = useT();
   const router = useRouter();
   const [buoc, setBuoc] = useState<'ten' | 'pin' | 'pin2'>('ten');
   const [name, setName] = useState('');
@@ -23,6 +26,13 @@ export default function TaoNha() {
   const [busy, setBusy] = useState(false);
 
   function xongPin(value: string) {
+    // Ba ma PIN demo (1111/2222/3333) giu cho vinh vien — bao ngay o day, truoc
+    // ca buoc nhap lai, cho khoi go hai lan roi moi biet (may chu cung chan).
+    if (pinDanhRieng(value)) {
+      setError(T('Mã PIN này dành riêng cho bản demo, chọn mã khác nhé.'));
+      setPin('');
+      return;
+    }
     setPin(value);
     setBuoc('pin2');
     setError('');
@@ -30,7 +40,7 @@ export default function TaoNha() {
 
   async function xacNhan(value: string) {
     if (value !== pin) {
-      setError('Hai lần nhập chưa giống nhau. Nhập lại mã PIN nhé.');
+      setError(T('Hai lần nhập chưa giống nhau. Nhập lại mã PIN nhé.'));
       setPin('');
       setPin2('');
       setBuoc('pin');
@@ -43,12 +53,12 @@ export default function TaoNha() {
       const res = await fetch('/api/families', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim() || 'Nhà mình', pin: value }),
+        body: JSON.stringify({ name: name.trim() || T('Nhà mình'), pin: value }),
       });
       const data = await res.json();
       if (!res.ok) {
         // Hay gap nhat: PIN da co nha khac dung -> quay lai buoc chon PIN
-        setError(data.error ?? 'Không tạo được nhà.');
+        setError(data.error ?? T('Không tạo được nhà.'));
         setPin('');
         setPin2('');
         setBuoc('pin');
@@ -58,7 +68,7 @@ export default function TaoNha() {
       router.push('/bome/them-con?dau=1');
       router.refresh();
     } catch {
-      setError('Không kết nối được. Thử lại nhé.');
+      setError(T('Không kết nối được. Thử lại nhé.'));
       setPin2('');
     } finally {
       setBusy(false);
@@ -73,7 +83,7 @@ export default function TaoNha() {
                    min-h-p-tap px-3 rounded-full hover:bg-surface-container"
       >
         <span className="material-symbols-outlined">arrow_back</span>
-        <span className="text-p-body">Quay lại</span>
+        <span className="text-p-body">{T('Quay lại')}</span>
       </Link>
 
       <div className="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center mb-6">
@@ -82,17 +92,17 @@ export default function TaoNha() {
 
       {buoc === 'ten' && (
         <>
-          <h1 className="text-p-headline text-on-background mb-1 text-center">Tạo nhà mới</h1>
+          <h1 className="text-p-headline text-on-background mb-1 text-center">{T('Tạo nhà mới')}</h1>
           <p className="text-p-body-sm text-on-surface-variant mb-6 text-center max-w-xs">
-            Mỗi nhà có bài tập và các con riêng. Không ai thấy được của nhà khác.
+            {T('Mỗi nhà có bài tập và các con riêng. Không ai thấy được của nhà khác.')}
           </p>
 
           <label className="w-full max-w-xs">
-            <span className="text-p-label uppercase text-on-surface-variant block mb-1">Tên nhà</span>
+            <span className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Tên nhà')}</span>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nhà mình"
+              placeholder={T('Nhà mình')}
               maxLength={40}
               className="w-full rounded-lg border border-outline-variant min-h-p-tap px-3 text-p-body
                          placeholder:text-outline bg-surface-container-lowest"
@@ -104,7 +114,7 @@ export default function TaoNha() {
             className="w-full max-w-xs mt-5 rounded-card h-14 min-h-p-tap bg-primary text-on-primary
                        text-p-body font-bold card-shadow"
           >
-            Tiếp tục
+            {T('Tiếp tục')}
           </button>
         </>
       )}
@@ -112,12 +122,12 @@ export default function TaoNha() {
       {buoc !== 'ten' && (
         <>
           <h1 className="text-p-headline text-on-background mb-1 text-center">
-            {buoc === 'pin' ? 'Chọn mã PIN của nhà mình' : 'Nhập lại mã PIN'}
+            {buoc === 'pin' ? T('Chọn mã PIN của nhà mình') : T('Nhập lại mã PIN')}
           </h1>
           <p className="text-p-body-sm text-on-surface-variant mb-6 text-center max-w-xs">
             {buoc === 'pin'
-              ? `${PIN_LEN} chữ số. Đây là cách bố mẹ vào lại nhà mình, và cũng là thứ phân biệt nhà mình với nhà khác — đừng cho các con biết.`
-              : 'Nhập lại cho chắc, gõ nhầm thì sau này không vào lại được.'}
+              ? T('{n} chữ số. Đây là cách bố mẹ vào lại nhà mình, và cũng là thứ phân biệt nhà mình với nhà khác — đừng cho các con biết.', { n: PIN_LEN })
+              : T('Nhập lại cho chắc, gõ nhầm thì sau này không vào lại được.')}
           </p>
 
           {buoc === 'pin' ? (
@@ -130,7 +140,7 @@ export default function TaoNha() {
             onClick={() => { setBuoc('ten'); setPin(''); setPin2(''); setError(''); }}
             className="text-p-body-sm text-on-surface-variant min-h-p-tap px-3 mt-6"
           >
-            Đổi tên nhà
+            {T('Đổi tên nhà')}
           </button>
         </>
       )}

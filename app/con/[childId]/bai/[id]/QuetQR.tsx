@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useT } from '@/lib/i18n/client';
 
 /**
  * Quet ma QR in tren to bai tap giay — mo bang may anh cua laptop hoac iPad.
@@ -66,6 +67,7 @@ export function docKetQua(raw: string): KetQua {
 }
 
 export default function QuetQR() {
+  const T = useT();
   const [mo, setMo] = useState(false);
   const [phase, setPhase] = useState<Phase>('opening');
   const [ketQua, setKetQua] = useState<KetQua | null>(null);
@@ -187,11 +189,11 @@ export default function QuetQR() {
     } catch {
       try {
         if (await batLuong(cu, doi)) {
-          setError('Máy này chỉ có một máy ảnh thôi con nhé.');
+          setError(T('Máy này chỉ có một máy ảnh thôi con nhé.'));
         }
       } catch {
         dangMoRef.current = false;
-        setError('Chưa mở được máy ảnh. Con nhờ bố mẹ cho phép dùng máy ảnh, hoặc chụp ảnh mã nhé.');
+        setError(T('Chưa mở được máy ảnh. Con nhờ bố mẹ cho phép dùng máy ảnh, hoặc chụp ảnh mã nhé.'));
         setPhase('error');
       }
     } finally {
@@ -214,7 +216,7 @@ export default function QuetQR() {
       if (!jsQRRef.current) jsQRRef.current = (await import('jsqr')).default;
     } catch {
       dangMoRef.current = false;
-      setError('Chưa nạp được bộ đọc mã QR. Con thử lại nhé.');
+      setError(T('Chưa nạp được bộ đọc mã QR. Con thử lại nhé.'));
       setPhase('error');
       return;
     }
@@ -224,7 +226,7 @@ export default function QuetQR() {
       if (!(await batLuong('user', doi))) return;
     } catch {
       dangMoRef.current = false;
-      setError('Chưa mở được máy ảnh. Con nhờ bố mẹ cho phép dùng máy ảnh, hoặc chụp ảnh mã nhé.');
+      setError(T('Chưa mở được máy ảnh. Con nhờ bố mẹ cho phép dùng máy ảnh, hoặc chụp ảnh mã nhé.'));
       setPhase('error');
       return;
     }
@@ -280,13 +282,13 @@ export default function QuetQR() {
       const anh = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const ma = jsQR(anh.data, anh.width, anh.height);
       if (!ma?.data) {
-        setError('Chưa đọc được mã trong ảnh. Con chụp gần và rõ hơn nhé.');
+        setError(T('Chưa đọc được mã trong ảnh. Con chụp gần và rõ hơn nhé.'));
         return;
       }
       setKetQua(docKetQua(ma.data));
       setPhase('result');
     } catch {
-      setError('Chưa đọc được ảnh này. Con thử chụp lại nhé.');
+      setError(T('Chưa đọc được ảnh này. Con thử chụp lại nhé.'));
     }
   }
 
@@ -302,7 +304,7 @@ export default function QuetQR() {
   /** Phat khong duoc (nha xuat ban chan, hoac dinh dang la mot trang chu khong phai tep) -> hoi mo tab moi. */
   function khongPhatDuoc(url: string) {
     setKetQua({ loai: 'link', url });
-    setError('Bài nghe này không phát được ở đây. Con mở trang của cô nhé.');
+    setError(T('Bài nghe này không phát được ở đây. Con mở trang của cô nhé.'));
   }
 
   if (coMayAnh === null) return null;            // chua mount xong, tranh lech SSR
@@ -315,14 +317,14 @@ export default function QuetQR() {
                    justify-center gap-4 px-6 h-20 min-h-k-tap w-full"
       >
         <span className="material-symbols-outlined text-4xl icon-fill">qr_code_scanner</span>
-        <span className="text-k-headline">Quét mã QR</span>
+        <span className="text-k-headline">{T('Quét mã QR')}</span>
       </button>
 
       {mo && (
         <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col p-k-edge gap-4">
           <div className="shrink-0 flex items-center justify-between gap-4">
             <p className="text-k-headline text-white">
-              {phase === 'result' ? 'Mã QR này là:' : 'Đưa mã QR vào khung'}
+              {phase === 'result' ? T('Mã QR này là:') : T('Đưa mã QR vào khung')}
             </p>
             <div className="shrink-0 flex items-center gap-4">
               {/* Nhan dat theo may anh SE chuyen toi, khong phai cai dang dung. */}
@@ -334,7 +336,7 @@ export default function QuetQR() {
                 >
                   <span className="material-symbols-outlined text-4xl">cameraswitch</span>
                   <span className="text-k-headline">
-                    {mat === 'user' ? 'Máy ảnh sau' : 'Máy ảnh trước'}
+                    {mat === 'user' ? T('Máy ảnh sau') : T('Máy ảnh trước')}
                   </span>
                 </button>
               )}
@@ -344,14 +346,14 @@ export default function QuetQR() {
                            gap-2 px-6 h-20 min-h-k-tap"
               >
                 <span className="material-symbols-outlined text-4xl">close</span>
-                <span className="text-k-headline">Đóng</span>
+                <span className="text-k-headline">{T('Đóng')}</span>
               </button>
             </div>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-center gap-6">
             {phase === 'opening' && (
-              <p className="text-k-headline text-white">Đang mở máy ảnh…</p>
+              <p className="text-k-headline text-white">{T('Đang mở máy ảnh…')}</p>
             )}
 
             {phase === 'scanning' && (
@@ -392,7 +394,7 @@ export default function QuetQR() {
                     onChange={(e) => { docTuAnh(e.target.files); e.target.value = ''; }}
                   />
                   <span className="material-symbols-outlined text-4xl icon-fill">photo_camera</span>
-                  <span className="text-k-headline">Chụp ảnh mã QR</span>
+                  <span className="text-k-headline">{T('Chụp ảnh mã QR')}</span>
                 </label>
               </div>
             )}
@@ -434,7 +436,7 @@ export default function QuetQR() {
                 {ketQua.loai === 'link' && (
                   <div className="flex flex-col gap-4">
                     <div className="bg-white rounded-3xl p-6 flex flex-col gap-2">
-                      <p className="text-k-headline text-on-background">Một trang trên mạng</p>
+                      <p className="text-k-headline text-on-background">{T('Một trang trên mạng')}</p>
                       <p className="text-k-body-sm text-on-surface-variant break-all">
                         {ketQua.url}
                       </p>
@@ -447,7 +449,7 @@ export default function QuetQR() {
                                  justify-center gap-4 px-6 h-20 min-h-k-tap w-full"
                     >
                       <span className="material-symbols-outlined text-4xl icon-fill">open_in_new</span>
-                      <span className="text-k-headline">Mở trang này</span>
+                      <span className="text-k-headline">{T('Mở trang này')}</span>
                     </button>
                   </div>
                 )}
@@ -458,7 +460,7 @@ export default function QuetQR() {
                              justify-center gap-4 px-6 h-20 min-h-k-tap w-full"
                 >
                   <span className="material-symbols-outlined text-4xl">qr_code_scanner</span>
-                  <span className="text-k-headline">Quét mã khác</span>
+                  <span className="text-k-headline">{T('Quét mã khác')}</span>
                 </button>
               </div>
             )}

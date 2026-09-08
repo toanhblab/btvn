@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { isParent } from '@/lib/auth';
 import { extractAssignments, hasAI, inferSource, splitByRule } from '@/lib/ai';
 import { HW_SOURCE_DEFAULT } from '@/lib/types';
+import { chu, ngonNguHienTai } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 // Doc anh bang AI co the lau; Vercel gioi han thoi gian chay ham serverless
@@ -20,8 +21,10 @@ export const maxDuration = 60;
  * kem canh bao, de bo me sua tay chu khong bi ket (PRD muc 10).
  */
 export async function POST(req: Request) {
+  const T = await chu();
+  const ngonNgu = await ngonNguHienTai();
   if (!(await isParent())) {
-    return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+    return NextResponse.json({ error: T('Cần mã PIN của bố mẹ.') }, { status: 401 });
   }
 
   const body = await req.json().catch(() => null);
@@ -29,12 +32,12 @@ export async function POST(req: Request) {
   const images = Array.isArray(body?.images) ? body.images : [];
 
   if (!text.trim() && images.length === 0) {
-    return NextResponse.json({ error: 'Chưa có ảnh hoặc nội dung nào.' }, { status: 400 });
+    return NextResponse.json({ error: T('Chưa có ảnh hoặc nội dung nào.') }, { status: 400 });
   }
 
   if (hasAI) {
     try {
-      const drafts = await extractAssignments({ text, images });
+      const drafts = await extractAssignments({ text, images }, ngonNgu);
       if (drafts.length > 0) {
         return NextResponse.json({ drafts, source: 'ai', hwSource: inferSource(drafts) });
       }
@@ -42,28 +45,28 @@ export async function POST(req: Request) {
         drafts: [],
         source: 'ai',
         hwSource: HW_SOURCE_DEFAULT,
-        warning: 'Không tìm thấy bài tập nào trong nội dung này. Bố mẹ thử nhập tay xem.',
+        warning: T('Không tìm thấy bài tập nào trong nội dung này. Bố mẹ thử nhập tay xem.'),
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       // Ro rang la loi cua AI -> lui ve tach tho, KHONG chan bo me lai
-      const drafts = text.trim() ? splitByRule(text) : [];
+      const drafts = text.trim() ? splitByRule(text, T) : [];
       return NextResponse.json({
         drafts,
         source: 'rule',
         hwSource: inferSource(drafts),
-        warning: `Chưa gọi được AI (${msg}). Đây là bản tách tạm — bố mẹ xem lại kỹ trước khi lưu.`,
+        warning: T('Chưa gọi được AI ({msg}). Đây là bản tách tạm — bố mẹ xem lại kỹ trước khi lưu.', { msg }),
       });
     }
   }
 
-  const drafts = text.trim() ? splitByRule(text) : [];
+  const drafts = text.trim() ? splitByRule(text, T) : [];
   return NextResponse.json({
     drafts,
     source: 'rule',
     hwSource: inferSource(drafts),
     warning: text.trim()
-      ? 'Chưa cài NOUS_API_KEY nên tách tạm theo dòng. Bố mẹ xem lại kỹ trước khi lưu.'
-      : 'Chưa cài NOUS_API_KEY nên chưa đọc được chữ trong ảnh. Bố mẹ nhập tay giúp.',
+      ? T('Chưa cài NOUS_API_KEY nên tách tạm theo dòng. Bố mẹ xem lại kỹ trước khi lưu.')
+      : T('Chưa cài NOUS_API_KEY nên chưa đọc được chữ trong ảnh. Bố mẹ nhập tay giúp.'),
   });
 }

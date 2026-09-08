@@ -1,6 +1,7 @@
 import { isParent } from '@/lib/auth';
 import { MAX_MEDIA_BYTES, mediaKindOf } from '@/lib/media';
 import { xuLyTaiTep } from '@/lib/upload-route';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -24,6 +25,7 @@ const DUOI_MAC_DINH = { video: '.mp4', audio: '.m4a', image: '.jpg' } as const;
  * Rieng route nay: doi PIN bo me, nhan ca ba loai tep, tran MAX_MEDIA_BYTES.
  */
 export async function POST(req: Request) {
+  const T = await chu();
   return xuLyTaiTep(req, {
     auth: isParent,
     duoiMacDinh: (mime) => {
@@ -33,13 +35,14 @@ export async function POST(req: Request) {
     maxBytes: MAX_MEDIA_BYTES,
     allowedContentTypes: ['video/*', 'audio/*', 'image/*'],
     loi: {
-      chuaXacThuc: 'Cần mã PIN của bố mẹ.',
-      chuaBatBlobTrenVercel:
-        'Chưa bật Vercel Blob nên chưa đính kèm tệp được. Vào Storage trên Vercel tạo Blob store rồi deploy lại.',
-      thieuTep: 'Chưa chọn tệp.',
-      saiLoai: 'Chỉ nhận video, ghi âm hoặc ảnh.',
-      quaNang: 'Tệp nặng quá 100MB, bố mẹ cắt ngắn bớt nhé.',
-      taiLoi: 'Tải tệp lỗi.',
+      chuaXacThuc: T('Cần mã PIN của bố mẹ.'),
+      chuaBatBlobTrenVercel: T('Chưa bật Vercel Blob nên chưa đính kèm tệp được. Vào Storage trên Vercel tạo Blob store rồi deploy lại.'),
+      thieuTep: T('Chưa chọn tệp.'),
+      saiLoai: T('Chỉ nhận video, ghi âm hoặc ảnh.'),
+      quaNang: T('Tệp nặng quá 100MB, bố mẹ cắt ngắn bớt nhé.'),
+      taiLoi: T('Tải tệp lỗi.'),
+      chuaBatBlob: T('Chưa bật Vercel Blob.'),
+      duLieuHong: T('Dữ liệu gửi lên không đọc được.'),
     },
   });
 }

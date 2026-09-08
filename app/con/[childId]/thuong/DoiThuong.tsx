@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Redemption, Reward } from '@/lib/types';
+import { useT } from '@/lib/i18n/client';
 
 /**
  * Luoi phan thuong + nut "Doi" cua con (POST /api/doi-thuong, khong can PIN).
@@ -31,6 +32,7 @@ export default function DoiThuong({
   diem: number;
   dangCho: Redemption | null;
 }) {
+  const T = useT();
   const router = useRouter();
   const [dangCho, setDangCho] = useState<Redemption | null>(dangChoBanDau);
   const [hoi, setHoi] = useState<Reward | null>(null);
@@ -47,12 +49,12 @@ export default function DoiThuong({
         body: JSON.stringify({ childId, rewardId: reward.id }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? 'Chưa gửi được. Con thử lại nhé!');
+      if (!res.ok) throw new Error(data.error ?? T('Chưa gửi được. Con thử lại nhé!'));
       setDangCho(data.redemption);
       setHoi(null);
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Chưa gửi được. Con thử lại nhé!');
+      setError(e instanceof Error ? e.message : T('Chưa gửi được. Con thử lại nhé!'));
     } finally {
       setBusy(false);
     }
@@ -65,10 +67,10 @@ export default function DoiThuong({
           <span className="text-6xl shrink-0">{dangCho.rewardIcon}</span>
           <div className="flex-1 min-w-0">
             <p className="text-k-headline text-on-primary-fixed">
-              Con đã xin đổi &ldquo;{dangCho.rewardName}&rdquo; ({dangCho.cost} ⭐)
+              {T('Con đã xin đổi “{name}” ({n} ⭐)', { name: dangCho.rewardName, n: dangCho.cost })}
             </p>
             <p className="text-k-body text-on-primary-fixed-variant">
-              Chờ bố mẹ duyệt nhé! 🙏 Được rồi thì bố mẹ sẽ báo con.
+              {T('Chờ bố mẹ duyệt nhé! 🙏 Được rồi thì bố mẹ sẽ báo con.')}
             </p>
           </div>
           <span className="text-5xl shrink-0 animate-float-slow">⏳</span>
@@ -78,9 +80,9 @@ export default function DoiThuong({
       {rewards.length === 0 ? (
         <div className="bg-surface-container-low rounded-kid p-10 text-center soft-shadow">
           <p className="text-6xl mb-4">🎁</p>
-          <p className="text-k-headline text-on-surface mb-2">Chưa có phần thưởng nào</p>
+          <p className="text-k-headline text-on-surface mb-2">{T('Chưa có phần thưởng nào')}</p>
           <p className="text-k-body text-on-surface-variant">
-            Bố mẹ vào phần &quot;Bố mẹ&quot; → &quot;Thưởng&quot; để thêm phần thưởng cho {childName} nhé.
+            {T('Bố mẹ vào phần "Bố mẹ" → "Thưởng" để thêm phần thưởng cho {name} nhé.', { name: childName })}
           </p>
         </div>
       ) : (
@@ -108,11 +110,11 @@ export default function DoiThuong({
                       className="btn-3d-amber text-on-tertiary-fixed rounded-3xl h-k-tap px-8 text-k-label
                                  self-start disabled:opacity-50 disabled:shadow-none"
                     >
-                      🎁 Đổi
+                      🎁 {T('Đổi')}
                     </button>
                   ) : (
                     <span className="text-k-body-sm text-on-surface-variant">
-                      Còn thiếu {thieu} ⭐ nữa
+                      {T('Còn thiếu {n} ⭐ nữa', { n: thieu })}
                     </span>
                   )}
                 </div>
@@ -137,9 +139,9 @@ export default function DoiThuong({
                        soft-shadow max-w-2xl w-full text-center"
           >
             <span className="text-[120px] leading-none">{hoi.icon}</span>
-            <h2 className="text-k-hero text-on-background">Đổi {hoi.name}?</h2>
+            <h2 className="text-k-hero text-on-background">{T('Đổi {name}?', { name: hoi.name })}</h2>
             <p className="text-k-body text-on-surface-variant">
-              Hết {hoi.cost} ⭐, con còn lại {diem - hoi.cost} ⭐. Bố mẹ duyệt thì mới trừ nhé.
+              {T('Hết {n} ⭐, con còn lại {conLai} ⭐. Bố mẹ duyệt thì mới trừ nhé.', { n: hoi.cost, conLai: diem - hoi.cost })}
             </p>
             {error && <p className="text-k-body text-error">{error}</p>}
             <div className="flex flex-wrap justify-center gap-6 mt-2">
@@ -149,7 +151,7 @@ export default function DoiThuong({
                 className="h-20 min-w-[200px] rounded-3xl border-4 border-outline-variant text-on-surface-variant
                            text-k-headline px-10 disabled:opacity-60"
               >
-                Thôi
+                {T('Thôi')}
               </button>
               <button
                 onClick={() => gui(hoi)}
@@ -157,7 +159,7 @@ export default function DoiThuong({
                 className="btn-3d-primary bg-primary text-on-primary rounded-3xl h-20 min-w-[280px] px-10
                            text-k-headline disabled:opacity-60"
               >
-                {busy ? 'Đang gửi…' : 'Gửi cho bố mẹ 🙏'}
+                {busy ? T('Đang gửi…') : T('Gửi cho bố mẹ 🙏')}
               </button>
             </div>
           </div>

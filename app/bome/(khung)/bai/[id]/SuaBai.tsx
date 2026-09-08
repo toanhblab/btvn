@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Assignment, AttachedMedia, HwSource } from '@/lib/types';
-import { DURATION_DEFAULT, HW_SOURCES, SUBJECTS, iconFor } from '@/lib/types';
+import { DURATION_DEFAULT, HW_SOURCES, iconFor, subjectsFor } from '@/lib/types';
+import { useT } from '@/lib/i18n/client';
 import { MEDIA_ACCEPT, MEDIA_ICON, driveFileIdTu, drivePreviewUrl, uploadMediaFile } from '@/lib/media';
 import { MUI_GIO_NHA } from '@/lib/ngay';
 
@@ -54,6 +55,7 @@ export default function SuaBai({
   childName: string;
   blobEnabled: boolean;
 }) {
+  const T = useT();
   const router = useRouter();
   const [subject, setSubject] = useState(assignment.subject);
   const [content, setContent] = useState(assignment.content);
@@ -79,7 +81,7 @@ export default function SuaBai({
   function addDriveLink() {
     const fileId = driveFileIdTu(driveUrl.trim());
     if (!fileId) {
-      setDriveError('Link chưa đúng dạng chia sẻ Google Drive (…/file/d/<mã phim>/view).');
+      setDriveError(T('Link chưa đúng dạng chia sẻ Google Drive (…/file/d/<mã phim>/view).'));
       return;
     }
     setMedia((prev) => [
@@ -96,18 +98,18 @@ export default function SuaBai({
     setError('');
     try {
       for (const file of Array.from(files)) {
-        const m = await uploadMediaFile(file, blobEnabled);
+        const m = await uploadMediaFile(file, blobEnabled, T);
         setMedia((prev) => [...prev, m]);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không tải được tệp.');
+      setError(e instanceof Error ? e.message : T('Không tải được tệp.'));
     } finally {
       setUploading(false);
     }
   }
 
   async function save() {
-    if (!content.trim()) return setError('Đề bài không được để trống.');
+    if (!content.trim()) return setError(T('Đề bài không được để trống.'));
     setBusy(true);
     setError('');
     try {
@@ -128,11 +130,11 @@ export default function SuaBai({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Lưu lỗi');
+      if (!res.ok) throw new Error(data.error ?? T('Lưu lỗi'));
       router.push(back);
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không lưu được.');
+      setError(e instanceof Error ? e.message : T('Không lưu được.'));
       setBusy(false);
     }
   }
@@ -146,10 +148,10 @@ export default function SuaBai({
           <span className="material-symbols-outlined text-3xl">arrow_back</span>
         </Link>
         <div>
-          <h1 className="text-p-headline text-on-background">Sửa bài tập</h1>
+          <h1 className="text-p-headline text-on-background">{T('Sửa bài tập')}</h1>
           {childName && (
             <p className="text-p-body-sm text-on-surface-variant">
-              Bài của {childName} · hạn {assignment.dueDate}
+              {T('Bài của {name} · hạn {date}', { name: childName, date: assignment.dueDate })}
             </p>
           )}
         </div>
@@ -157,7 +159,7 @@ export default function SuaBai({
 
       <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4 flex flex-col gap-3">
         <div>
-          <label className="text-p-label uppercase text-on-surface-variant block mb-1">Đề bài</label>
+          <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Đề bài')}</label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -169,20 +171,22 @@ export default function SuaBai({
 
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="text-p-label uppercase text-on-surface-variant block mb-1">Môn học</label>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Môn học')}</label>
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               className="w-full rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
                          bg-surface-container-lowest"
             >
-              {Object.keys(SUBJECTS).map((s) => (
-                <option key={s} value={s}>{SUBJECTS[s]} {s}</option>
+              {/* Mon dang luu co the khong nam trong danh sach (AI dat ten, hay nha doi
+                  ngon ngu) — giu no lam mot lua chon de select khong hien trong. */}
+              {Object.entries({ ...(subject in subjectsFor(T) ? {} : { [subject]: iconFor(subject) }), ...subjectsFor(T) }).map(([s, icon]) => (
+                <option key={s} value={s}>{icon} {s}</option>
               ))}
             </select>
           </div>
           <div className="flex-1">
-            <label className="text-p-label uppercase text-on-surface-variant block mb-1">Hạn chót</label>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Hạn chót')}</label>
             <input
               type="date"
               value={dueDate}
@@ -195,32 +199,32 @@ export default function SuaBai({
 
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="text-p-label uppercase text-on-surface-variant block mb-1">Sách / trang</label>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Sách / trang')}</label>
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Vở ô ly — bài 3 trang 34"
+              placeholder={T('Vở ô ly — bài 3 trang 34')}
               className="w-full rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
                          placeholder:text-outline bg-surface-container-lowest"
             />
           </div>
           <div className="flex-1">
-            <label className="text-p-label uppercase text-on-surface-variant block mb-1">Giọng đọc</label>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Giọng đọc')}</label>
             <select
               value={lang}
               onChange={(e) => setLang(e.target.value as 'vi' | 'en')}
               className="w-full rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
                          bg-surface-container-lowest"
             >
-              <option value="vi">🇻🇳 Tiếng Việt</option>
-              <option value="en">🇬🇧 Tiếng Anh</option>
+              <option value="vi">🇻🇳 {T('Tiếng Việt')}</option>
+              <option value="en">🇬🇧 {T('Tiếng Anh')}</option>
             </select>
           </div>
         </div>
 
         {/* Nhap xong moi thay xep nham nhom (AI doan sai chang han) thi sua o day */}
         <div>
-          <label className="text-p-label uppercase text-on-surface-variant block mb-1">Bài của lớp nào</label>
+          <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Bài của lớp nào')}</label>
           <div className="flex gap-2 flex-wrap">
             {(Object.keys(HW_SOURCES) as HwSource[]).map((s) => (
               <button
@@ -231,7 +235,7 @@ export default function SuaBai({
                               ? 'bg-primary text-on-primary border-primary'
                               : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-high'}`}
               >
-                {HW_SOURCES[s].icon} {HW_SOURCES[s].label}
+                {HW_SOURCES[s].icon} {T(HW_SOURCES[s].label)}
               </button>
             ))}
           </div>
@@ -247,7 +251,7 @@ export default function SuaBai({
             className="w-5 h-5 accent-primary shrink-0"
           />
           <span className="text-p-body text-on-surface">
-            🎥 Bài này cần con quay video nộp lại
+            🎥 {T('Bài này cần con quay video nộp lại')}
           </span>
         </label>
 
@@ -255,7 +259,7 @@ export default function SuaBai({
         {assignment.submittedVideoUrl && (
           <div>
             <label className="text-p-label uppercase text-on-surface-variant block mb-1">
-              Video con đã nộp
+              {T('Video con đã nộp')}
               {assignment.submittedVideoAt && ` — ${gioNha(assignment.submittedVideoAt)}`}
             </label>
             <video
@@ -270,7 +274,7 @@ export default function SuaBai({
 
         <div>
           <label className="text-p-label uppercase text-on-surface-variant block mb-1">
-            Thời lượng làm bài (phút)
+            {T('Thời lượng làm bài (phút)')}
           </label>
           {/* Dong ho o man cua con dem nguoc tu so nay. AI uoc 5-15;
               bo me sua tay thi duoc ghi ngoai khoang do (toi da 180). */}
@@ -288,7 +292,7 @@ export default function SuaBai({
 
         <div>
           <label className="text-p-label uppercase text-on-surface-variant block mb-1">
-            Đính kèm — video, ghi âm, ảnh
+            {T('Đính kèm — video, ghi âm, ảnh')}
           </label>
 
           {media.length > 0 && (
@@ -304,12 +308,12 @@ export default function SuaBai({
                         {MEDIA_ICON[m.kind]}
                       </span>
                       <span className="text-p-body-sm text-on-surface truncate flex-1">
-                        {m.name || 'Tệp đính kèm'}
+                        {m.name || T('Tệp đính kèm')}
                       </span>
                       <button
                         onClick={() => setMedia((p) => p.filter((x) => x.url !== m.url))}
                         className="text-outline hover:text-error min-h-p-tap px-1 shrink-0"
-                        aria-label={`Bỏ tệp ${m.name}`}
+                        aria-label={T('Bỏ tệp {name}', { name: m.name })}
                       >
                         <span className="material-symbols-outlined text-lg">close</span>
                       </button>
@@ -355,7 +359,7 @@ export default function SuaBai({
                 setDriveUrl(e.target.value);
                 setDriveError('');
               }}
-              placeholder="Dán link phim Google Drive (drive.google.com/file/d/…)"
+              placeholder={T('Dán link phim Google Drive (drive.google.com/file/d/…)')}
               className="flex-1 rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
                          placeholder:text-outline bg-surface-container-lowest"
             />
@@ -365,7 +369,7 @@ export default function SuaBai({
               className="px-4 min-h-p-tap rounded-lg bg-surface-container-high text-on-surface-variant
                          text-p-body-sm font-bold shrink-0"
             >
-              Thêm
+              {T('Thêm')}
             </button>
           </div>
           {driveError && <p className="text-p-body-sm text-error mb-2">{driveError}</p>}
@@ -386,7 +390,7 @@ export default function SuaBai({
             />
             <span className="material-symbols-outlined text-xl text-primary">attach_file</span>
             <span className="text-p-body-sm">
-              {uploading ? 'Đang tải lên…' : 'Thêm tệp — ví dụ video luyện phát âm, ghi âm cô đọc mẫu'}
+              {uploading ? T('Đang tải lên…') : T('Thêm tệp — ví dụ video luyện phát âm, ghi âm cô đọc mẫu')}
             </span>
           </label>
         </div>
@@ -400,7 +404,7 @@ export default function SuaBai({
           className="flex-1 flex items-center justify-center rounded-card h-14 min-h-p-tap
                      border-2 border-outline-variant text-on-surface-variant text-p-body"
         >
-          Huỷ
+          {T('Huỷ')}
         </Link>
         <button
           onClick={save}
@@ -408,7 +412,7 @@ export default function SuaBai({
           className="flex-[2] flex items-center justify-center gap-2 bg-primary text-on-primary rounded-card
                      h-14 min-h-p-tap text-p-body font-bold card-shadow disabled:opacity-60"
         >
-          {busy ? 'Đang lưu…' : 'Lưu thay đổi'}
+          {busy ? T('Đang lưu…') : T('Lưu thay đổi')}
         </button>
       </div>
     </main>

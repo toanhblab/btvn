@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { TABS, tabDangChon } from './tabs';
+import { useT } from '@/lib/i18n/client';
 
 /**
  * Thanh ben trai — chi hien tu 1280px tro len (bo stitch-parent-macbook).
@@ -21,6 +22,7 @@ export default function ThanhBen({
   childCount: number;
   slug: string;
 }) {
+  const T = useT();
   const path = usePathname();
 
   return (
@@ -33,7 +35,7 @@ export default function ThanhBen({
         {/* Ma nha chi con hien MOT lan trong ca phan bo me o co Macbook (o day).
             Khoi "He thong" ben Cai dat da an di tu 1280px — xem cai-dat/page.tsx */}
         <p className="text-p-label text-on-surface-variant mt-1 truncate">
-          {childCount} con · Mã nhà: {slug}
+          {T('{n} con · Mã nhà: {slug}', { n: childCount, slug })}
         </p>
       </div>
 
@@ -54,7 +56,7 @@ export default function ThanhBen({
                   <span className={`material-symbols-outlined ${active ? 'icon-fill' : ''}`}>
                     {t.icon}
                   </span>
-                  <span className="text-p-body-sm font-bold">{t.label}</span>
+                  <span className="text-p-body-sm font-bold">{T(t.label)}</span>
                 </Link>
               </li>
             );
@@ -69,9 +71,9 @@ export default function ThanhBen({
         >
           <span className="material-symbols-outlined text-primary shrink-0">tablet_android</span>
           <span className="min-w-0">
-            <span className="block text-p-body-sm font-bold">Mở màn hình của con</span>
+            <span className="block text-p-body-sm font-bold">{T('Mở màn hình của con')}</span>
             <span className="block text-p-label text-on-surface-variant">
-              Xem đúng những gì các con đang thấy trên iPad
+              {T('Xem đúng những gì các con đang thấy trên iPad')}
             </span>
           </span>
         </Link>

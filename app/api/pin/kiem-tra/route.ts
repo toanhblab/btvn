@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { attemptPin, recordFail, viewingFamilyId } from '@/lib/auth';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,22 +19,23 @@ export const dynamic = 'force-dynamic';
  * gioi han.
  */
 export async function POST(req: Request) {
+  const T = await chu();
   const familyId = await viewingFamilyId();
   if (!familyId) {
-    return NextResponse.json({ error: 'Máy này chưa gắn với nhà nào.' }, { status: 401 });
+    return NextResponse.json({ error: T('Máy này chưa gắn với nhà nào.') }, { status: 401 });
   }
 
   const body = await req.json().catch(() => null);
   const key = req.headers.get('x-forwarded-for') ?? 'local';
 
   const tried = await attemptPin(String(body?.pin ?? ''), key);
-  if (!tried.ok) return NextResponse.json({ error: tried.error }, { status: tried.status });
+  if (!tried.ok) return NextResponse.json({ error: T(tried.error, tried.tham) }, { status: tried.status });
 
   if (tried.family.id !== familyId) {
     // attemptPin da xoa bo dem vi PIN nay co that — ghi lai mot lan sai, khong
     // thi go lan luot PIN cua cac nha khac khong bao gio bi khoa.
     recordFail(key);
-    return NextResponse.json({ error: 'Mã PIN không đúng.' }, { status: 401 });
+    return NextResponse.json({ error: T('Mã PIN không đúng.') }, { status: 401 });
   }
 
   return NextResponse.json({ ok: true });

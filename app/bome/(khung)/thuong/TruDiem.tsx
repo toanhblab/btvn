@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ChildColor } from '@/lib/types';
 import { LY_DO_TRU_GOI_Y, MAX_CHU_LY_DO_TRU, trangThaiTruDiem } from '@/lib/types';
+import { useT } from '@/lib/i18n/client';
 
 export interface ConDeTru {
   id: string;
@@ -39,6 +40,7 @@ export interface ConDeTru {
  * man hien hai con so khac nhau cho cung mot so du.
  */
 export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
+  const T = useT();
   const router = useRouter();
   const [vuaDoi, setVuaDoi] = useState<Record<string, number>>({});
   useEffect(() => {
@@ -60,7 +62,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
   const soDu = (c: ConDeTru) => vuaDoi[c.id] ?? c.diem;
   const con = initial.find((c) => c.id === chon) ?? null;
   const dangCo = con ? soDu(con) : 0;
-  const { nut, soGui, canhBao } = trangThaiTruDiem(dangCo, so);
+  const { nut, soGui, canhBao } = trangThaiTruDiem(dangCo, so, T);
 
   function moCon(id: string) {
     setChon((c) => (c === id ? null : id));
@@ -83,13 +85,13 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
       const data = await res.json().catch(() => ({}));
       if (typeof data.conLai === 'number') setVuaDoi((d) => ({ ...d, [con.id]: data.conLai }));
       router.refresh();
-      if (!res.ok) throw new Error(data.error ?? 'Không lưu được');
+      if (!res.ok) throw new Error(data.error ?? T('Không lưu được'));
       setVuaTru({ ten: con.name, so: data.penalty.points, conLai: data.conLai });
       setChon(null);
       setSo('');
       setLyDo('');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không lưu được. Thử lại nhé.');
+      setError(e instanceof Error ? e.message : T('Không lưu được. Thử lại nhé.'));
     } finally {
       setBusy(false);
     }
@@ -100,10 +102,10 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
 
   const nhanNut =
     nut === 'truHet'
-      ? `Trừ hết ${soGui} ⭐`
+      ? T('Trừ hết {n} ⭐', { n: soGui ?? 0 })
       : nut === 'tru' && con
-        ? `Trừ ${soGui} ⭐ của ${con.name}`
-        : 'Trừ ⭐';
+        ? T('Trừ {n} ⭐ của {name}', { n: soGui ?? 0, name: con.name })
+        : T('Trừ ⭐');
 
   return (
     <div>
@@ -117,7 +119,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
               type="button"
               onClick={() => moCon(c.id)}
               aria-pressed={dang}
-              aria-label={`Trừ ⭐ của ${c.name}`}
+              aria-label={T('Trừ ⭐ của {name}', { name: c.name })}
               className={`inline-flex items-center gap-2 rounded-full card-shadow pl-1 pr-3 py-1
                           text-p-body-sm min-h-p-tap
                           ${dang ? `bg-primary-fixed ring-2 ${RING[c.color]}` : 'bg-surface-container-lowest'}`}
@@ -136,20 +138,19 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
 
       {vuaTru && !con && (
         <p className="mt-2 text-p-body-sm text-on-success-container bg-success-container rounded-card p-3">
-          Đã trừ {vuaTru.so} ⭐ của <b>{vuaTru.ten}</b>, còn {vuaTru.conLai} ⭐. Con sẽ thấy dòng này
-          kèm lý do ở cửa hàng phần thưởng.
+          {T('Đã trừ {n} ⭐ của {name}, còn {conLai} ⭐. Con sẽ thấy dòng này kèm lý do ở cửa hàng phần thưởng.', { n: vuaTru.so, name: vuaTru.ten, conLai: vuaTru.conLai })}
         </p>
       )}
 
       {con && (
         <div className="mt-2 bg-surface-container-low rounded-card p-3 flex flex-col gap-2">
           <p className="text-p-body text-on-surface">
-            Trừ ⭐ của <b>{con.name}</b> — con đang có <b>{dangCo} ⭐</b>
+            {T('Trừ ⭐ của {name} — con đang có {n} ⭐', { name: con.name, n: dangCo })}
           </p>
 
           <div className="flex items-center gap-2">
             <label htmlFor="so-tru" className="text-p-body-sm text-on-surface-variant shrink-0">
-              Trừ
+              {T('Trừ')}
             </label>
             <input
               id="so-tru"
@@ -160,8 +161,8 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
               }}
               inputMode="numeric"
               autoFocus
-              placeholder="số ⭐"
-              aria-label="Số ⭐ muốn trừ"
+              placeholder={T('số ⭐')}
+              aria-label={T('Số ⭐ muốn trừ')}
               className={`${oNhap} w-24 text-right ${canhBao ? 'border-error text-error' : ''}`}
             />
             <span className="text-p-body">⭐</span>
@@ -174,12 +175,12 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
               <button
                 key={g}
                 type="button"
-                onClick={() => setLyDo(g)}
-                aria-pressed={lyDo === g}
+                onClick={() => setLyDo(T(g))}
+                aria-pressed={lyDo === T(g)}
                 className={`rounded-full px-3 min-h-9 text-p-body-sm font-bold
                             ${lyDo === g ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface'}`}
               >
-                {g}
+                {T(g)}
               </button>
             ))}
           </div>
@@ -187,8 +188,8 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
             value={lyDo}
             onChange={(e) => setLyDo(e.target.value)}
             maxLength={MAX_CHU_LY_DO_TRU}
-            placeholder="Vì sao? (không bắt buộc — con sẽ đọc dòng này)"
-            aria-label="Lý do trừ"
+            placeholder={T('Vì sao? (không bắt buộc — con sẽ đọc dòng này)')}
+            aria-label={T('Lý do trừ')}
             className={`${oNhap} w-full`}
           />
 
@@ -200,7 +201,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
               className="flex-1 rounded-card min-h-p-tap border-2 border-outline-variant
                          text-on-surface-variant text-p-body-sm font-bold disabled:opacity-60"
             >
-              Thôi
+              {T('Thôi')}
             </button>
             <button
               type="button"
@@ -209,7 +210,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
               className="flex-1 rounded-card min-h-p-tap bg-error text-white text-p-body-sm font-bold
                          disabled:opacity-40"
             >
-              {busy ? 'Đang lưu…' : nhanNut}
+              {busy ? T('Đang lưu…') : nhanNut}
             </button>
           </div>
 

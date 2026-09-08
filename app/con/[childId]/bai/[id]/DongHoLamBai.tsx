@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { pickVoice } from '@/lib/speech';
+import { GIONG_DOC, pickVoice } from '@/lib/speech';
+import { T_VI, type T } from '@/lib/i18n/chu';
+import { NGON_NGU_MAC_DINH, type NgonNgu } from '@/lib/i18n/ngonNgu';
+import { useNgonNgu, useT } from '@/lib/i18n/client';
 import DatLaiGio from './DatLaiGio';
 
 /**
@@ -63,12 +66,13 @@ export function conThoiGian(assignmentId: string, minutes: number): boolean {
 }
 
 /** Doc mot cau tieng Viet — cung giong nu uu tien nhu nut "Nghe de bai". */
-export function noi(text: string): void {
+/** Doc mot cau bang giong cua nha (issue #46) — cau da dich san boi nguoi goi. */
+export function noi(text: string, ngonNgu: NgonNgu = NGON_NGU_MAC_DINH): void {
   if (!('speechSynthesis' in window)) return;
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'vi-VN';
+  u.lang = GIONG_DOC[ngonNgu];
   u.rate = 0.9;
-  const v = pickVoice(speechSynthesis.getVoices(), 'vi');
+  const v = pickVoice(speechSynthesis.getVoices(), ngonNgu);
   if (v) u.voice = v;
   speechSynthesis.speak(u);
 }
@@ -80,14 +84,14 @@ export function noi(text: string): void {
  *   - Phut cuoi: "Còn 1 phút, cố lên con!".
  * atSec la GIAY DA TROI QUA de den moc do.
  */
-export function mocNhac(totalMinutes: number): { atSec: number; text: string }[] {
+export function mocNhac(totalMinutes: number, T: T = T_VI): { atSec: number; text: string }[] {
   const mocs: { atSec: number; text: string }[] = [];
   for (let daQua = 5; daQua < totalMinutes; daQua += 5) {
     const conLai = totalMinutes - daQua;
-    if (conLai >= 2) mocs.push({ atSec: daQua * 60, text: `Còn ${conLai} phút nhé!` });
+    if (conLai >= 2) mocs.push({ atSec: daQua * 60, text: T('Còn {n} phút nhé!', { n: conLai }) });
   }
   if (totalMinutes >= 2) {
-    mocs.push({ atSec: (totalMinutes - 1) * 60, text: 'Còn 1 phút, cố lên con!' });
+    mocs.push({ atSec: (totalMinutes - 1) * 60, text: T('Còn 1 phút, cố lên con!') });
   }
   return mocs;
 }
@@ -154,6 +158,8 @@ export default function DongHoLamBai({
   assignmentId: string;
   minutes: number;
 }) {
+  const T = useT();
+  const ngonNgu = useNgonNgu();
   const totalSec = minutes * 60;
   const [startAt, setStartAt] = useState<number | null>(null);
   const [now, setNow] = useState(0);
@@ -194,7 +200,7 @@ export default function DongHoLamBai({
   useEffect(() => {
     if (startAt === null || now === 0) return;
 
-    const mocs = mocNhac(minutes);
+    const mocs = mocNhac(minutes, T);
     if (daNhac.current === null) {
       // Lan tick dau sau khi mo man: moc nao da qua thi ghi nhan im lang
       daNhac.current = new Set(mocs.filter((m) => m.atSec <= elapsedSec).map((m) => m.atSec));
@@ -207,7 +213,7 @@ export default function DongHoLamBai({
       const vuaQua = mocs.filter((m) => m.atSec <= elapsedSec && !daNhac.current!.has(m.atSec));
       if (vuaQua.length > 0 && elapsedSec < totalSec) {
         for (const m of vuaQua) daNhac.current.add(m.atSec);
-        noi(vuaQua[vuaQua.length - 1].text);
+        noi(vuaQua[vuaQua.length - 1].text, ngonNgu);
       }
       if (elapsedSec >= totalSec) {
         daHetGio.current = true;
@@ -216,7 +222,7 @@ export default function DongHoLamBai({
           audioCtx.current = taoAudioContext();
         }
         chuongDiu(audioCtx.current);
-        noi('Hết giờ rồi, con làm nốt nhé!');
+        noi(T('Hết giờ rồi, con làm nốt nhé!'), ngonNgu);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -253,7 +259,7 @@ export default function DongHoLamBai({
     } catch { /* khong co am thanh thi van con giong doc va thong diep tren man */ }
     setStartAt(t);
     // Bam nut la mot cu cham -> iPad cho phep doc; cac cau nhac sau do moi chay duoc
-    noi(`Con có ${minutes} phút để làm bài. Bắt đầu nhé!`);
+    noi(T('Con có {n} phút để làm bài. Bắt đầu nhé!', { n: minutes }), ngonNgu);
   }
 
   if (startAt === null) {
@@ -264,7 +270,7 @@ export default function DongHoLamBai({
                    justify-center gap-4 px-6 h-20 w-full"
       >
         <span className="text-4xl">🚀</span>
-        <span className="text-k-headline">Bắt đầu làm — {minutes} phút</span>
+        <span className="text-k-headline">{T('Bắt đầu làm — {n} phút', { n: minutes })}</span>
       </button>
     );
   }
@@ -304,7 +310,7 @@ export default function DongHoLamBai({
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           {hetGio ? (
             <>
-              <span className="text-k-body-sm text-outline">Quá giờ</span>
+              <span className="text-k-body-sm text-outline">{T('Quá giờ')}</span>
               <span
                 className="text-[52px] font-bold leading-none text-outline"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
@@ -325,7 +331,7 @@ export default function DongHoLamBai({
 
       {hetGio && (
         <p className="text-k-body text-on-surface-variant text-center">
-          Hết giờ rồi, con làm nốt nhé! 💪
+          {T('Hết giờ rồi, con làm nốt nhé!')} 💪
         </p>
       )}
 

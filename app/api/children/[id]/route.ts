@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { parentFamilyId } from '@/lib/auth';
 import { deleteChild, getChild, updateChild } from '@/lib/store';
 import type { ChildColor } from '@/lib/types';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,37 +24,38 @@ const COLORS: ChildColor[] = ['primary', 'secondary', 'tertiary'];
  * bo me nhan duoc loi tieng Viet doc hieu duoc thay vi loi Postgres 500.
  */
 export async function PATCH(req: Request, { params }: Ctx) {
+  const T = await chu();
   const familyId = await parentFamilyId();
-  if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+  if (!familyId) return NextResponse.json({ error: T('Cần mã PIN của bố mẹ.') }, { status: 401 });
 
   const { id } = await params;
   const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: 'Dữ liệu không đọc được.' }, { status: 400 });
+  if (!body) return NextResponse.json({ error: T('Dữ liệu không đọc được.') }, { status: 400 });
 
   if (!(await getChild(familyId, id))) {
-    return NextResponse.json({ error: 'Không tìm thấy con này.' }, { status: 404 });
+    return NextResponse.json({ error: T('Không tìm thấy con này.') }, { status: 404 });
   }
 
   const patch: Parameters<typeof updateChild>[2] = {};
 
   if (body.name !== undefined) {
     const name = String(body.name).trim();
-    if (!name) return NextResponse.json({ error: 'Tên không được để trống.' }, { status: 400 });
+    if (!name) return NextResponse.json({ error: T('Tên không được để trống.') }, { status: 400 });
     if (name.length > 40) {
-      return NextResponse.json({ error: 'Tên dài quá, để ngắn thôi cho vừa màn hình.' }, { status: 400 });
+      return NextResponse.json({ error: T('Tên dài quá, để ngắn thôi cho vừa màn hình.') }, { status: 400 });
     }
     patch.name = name;
   }
 
   if (body.avatarUrl !== undefined) {
     const url = String(body.avatarUrl).trim();
-    if (!url) return NextResponse.json({ error: 'Phải có ảnh của con.' }, { status: 400 });
+    if (!url) return NextResponse.json({ error: T('Phải có ảnh của con.') }, { status: 400 });
     patch.avatarUrl = url;
   }
 
   if (body.color !== undefined) {
     if (!COLORS.includes(body.color)) {
-      return NextResponse.json({ error: 'Màu không hợp lệ.' }, { status: 400 });
+      return NextResponse.json({ error: T('Màu không hợp lệ.') }, { status: 400 });
     }
     patch.color = body.color;
   }
@@ -74,12 +76,13 @@ export async function PATCH(req: Request, { params }: Ctx) {
  * noi ro so bai se mat.
  */
 export async function DELETE(_req: Request, { params }: Ctx) {
+  const T = await chu();
   const familyId = await parentFamilyId();
-  if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+  if (!familyId) return NextResponse.json({ error: T('Cần mã PIN của bố mẹ.') }, { status: 401 });
 
   const { id } = await params;
   if (!(await getChild(familyId, id))) {
-    return NextResponse.json({ error: 'Không tìm thấy con này.' }, { status: 404 });
+    return NextResponse.json({ error: T('Không tìm thấy con này.') }, { status: 404 });
   }
 
   await deleteChild(familyId, id);

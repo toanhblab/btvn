@@ -7,6 +7,7 @@ import { listChildren, listPenalties, listRedemptions, listRewards, soDiemTheoCo
 import DuyetThuong from './DuyetThuong';
 import PhanThuong from './PhanThuong';
 import TruDiem from './TruDiem';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +30,7 @@ export const dynamic = 'force-dynamic';
 export default async function Page() {
   const familyId = await parentFamilyId();
   if (!familyId) redirect('/bome/pin');
+  const T = await chu();
 
   const [children, choDuyet, daXuLy, rewards, diem, daTru] = await Promise.all([
     listChildren(familyId),
@@ -54,11 +56,9 @@ export default async function Page() {
 
   return (
     <main className="px-p-page pt-4 xl:max-w-lg xl:mx-auto">
-      <h1 className="text-p-headline text-on-background mb-1">Thưởng</h1>
+      <h1 className="text-p-headline text-on-background mb-1">{T('Thưởng')}</h1>
       <p className="text-p-body-sm text-on-surface-variant mb-2">
-        Ngày <b>có bài tập</b> mà xong hết cả bài lẫn nhiệm vụ: +{DIEM_NGAY_XONG} ⭐ (ngày không
-        có bài thì chỉ được ⭐ của từng nhiệm vụ). Mỗi bài làm xong trước khi đồng hồ hết giờ:
-        +{DIEM_XONG_SOM} ⭐. Mỗi nhiệm vụ hàng ngày tick xong: thêm đúng số ⭐ của nhiệm vụ đó. Các con dùng ⭐ để đổi phần thưởng bố mẹ đặt ở dưới — bố mẹ duyệt thì ⭐ mới bị trừ. Con chưa nghe lời thì bố mẹ trừ ⭐ được, nhưng không bao giờ xuống dưới 0.
+        {T('Ngày có bài tập mà xong hết cả bài lẫn nhiệm vụ: +{ngay} ⭐ (ngày không có bài thì chỉ được ⭐ của từng nhiệm vụ). Mỗi bài làm xong trước khi đồng hồ hết giờ: +{som} ⭐. Mỗi nhiệm vụ hàng ngày tick xong: thêm đúng số ⭐ của nhiệm vụ đó. Các con dùng ⭐ để đổi phần thưởng bố mẹ đặt ở dưới — bố mẹ duyệt thì ⭐ mới bị trừ. Con chưa nghe lời thì bố mẹ trừ ⭐ được, nhưng không bao giờ xuống dưới 0.', { ngay: DIEM_NGAY_XONG, som: DIEM_XONG_SOM })}
       </p>
       {/* Dong dan sang trang cai nhiem vu (issue #42 Q8) — cach kiem ⭐ nam o do */}
       <Link
@@ -66,7 +66,7 @@ export default async function Page() {
         className="inline-flex items-center gap-1 text-p-body-sm text-primary font-bold mb-5 min-h-p-tap"
       >
         <span className="material-symbols-outlined text-xl">checklist</span>
-        Cài nhiệm vụ hàng ngày — giao cho con nào, mấy ⭐
+        {T('Cài nhiệm vụ hàng ngày — giao cho con nào, mấy ⭐')}
         <span className="material-symbols-outlined text-xl">chevron_right</span>
       </Link>
 
@@ -80,15 +80,14 @@ export default async function Page() {
             }))}
           />
           <p className="text-p-body-sm text-on-surface-variant mt-2">
-            Bấm vào tên con để <b>trừ ⭐</b> khi con chưa nghe lời. Con sẽ thấy dòng bị trừ kèm lý do
-            ở cửa hàng phần thưởng của con.
+            {T('Bấm vào tên con để trừ ⭐ khi con chưa nghe lời. Con sẽ thấy dòng bị trừ kèm lý do ở cửa hàng phần thưởng của con.')}
           </p>
         </section>
       )}
 
       {daTru.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-p-label uppercase text-on-surface-variant mb-2">Đã trừ gần đây</h2>
+          <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Đã trừ gần đây')}</h2>
           <ul className="bg-surface-container-lowest rounded-card card-shadow divide-y divide-outline-variant/30">
             {daTru.map((p) => {
               const c = conCua.get(p.childId);
@@ -101,7 +100,7 @@ export default async function Page() {
                       {p.reason ? ` · ${p.reason}` : ''}
                     </span>
                     <span className="block text-p-body-sm text-on-surface-variant">
-                      {p.reason ? '' : 'Không ghi lý do · '}
+                      {p.reason ? '' : `${T('Không ghi lý do')} · `}
                       {ngayNha(p.createdAt)}
                     </span>
                   </span>
@@ -114,14 +113,14 @@ export default async function Page() {
 
       <section className="mb-6">
         <h2 className="text-p-label uppercase text-on-surface-variant mb-2">
-          Chờ duyệt{choDuyet.length > 0 ? ` (${choDuyet.length})` : ''}
+          {T('Chờ duyệt')}{choDuyet.length > 0 ? ` (${choDuyet.length})` : ''}
         </h2>
         <DuyetThuong initial={choDuyetHienThi} />
       </section>
 
       {ganDay.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-p-label uppercase text-on-surface-variant mb-2">Đã xử lý gần đây</h2>
+          <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Đã xử lý gần đây')}</h2>
           <ul className="bg-surface-container-lowest rounded-card card-shadow divide-y divide-outline-variant/30">
             {ganDay.map((r) => {
               const c = conCua.get(r.childId);
@@ -143,7 +142,7 @@ export default async function Page() {
                         : 'bg-surface-container text-on-surface-variant'
                     }`}
                   >
-                    {r.status === 'approved' ? 'Đã duyệt' : 'Từ chối'}
+                    {r.status === 'approved' ? T('Đã duyệt') : T('Từ chối')}
                   </span>
                 </li>
               );
@@ -153,7 +152,7 @@ export default async function Page() {
       )}
 
       <section className="mb-6">
-        <h2 className="text-p-label uppercase text-on-surface-variant mb-2">Danh sách phần thưởng</h2>
+        <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Danh sách phần thưởng')}</h2>
         <PhanThuong initial={rewards} />
       </section>
     </main>

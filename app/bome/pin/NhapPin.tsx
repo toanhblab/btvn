@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import BanPhimPin from '../../_components/BanPhimPin';
+import { useT } from '@/lib/i18n/client';
 
 /**
  * Man nhap PIN — nen tu stitch-parent 06.
@@ -12,6 +13,7 @@ import BanPhimPin from '../../_components/BanPhimPin';
  * rieng nen nhap dung la vao dung nha minh.
  */
 export default function NhapPin({ next }: { next: string }) {
+  const T = useT();
   const router = useRouter();
   const [pin, setPin] = useState('');
   const [remember, setRemember] = useState(false);
@@ -29,14 +31,14 @@ export default function NhapPin({ next }: { next: string }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? 'Mã PIN không đúng.');
+        setError(data.error ?? T('Mã PIN không đúng.'));
         setPin('');
         return;
       }
       router.push(next);
       router.refresh();
     } catch {
-      setError('Không kết nối được. Thử lại nhé.');
+      setError(T('Không kết nối được. Thử lại nhé.'));
       setPin('');
     } finally {
       setBusy(false);
@@ -51,14 +53,14 @@ export default function NhapPin({ next }: { next: string }) {
                    min-h-p-tap px-3 rounded-full hover:bg-surface-container"
       >
         <span className="material-symbols-outlined">arrow_back</span>
-        <span className="text-p-body">Màn hình của con</span>
+        <span className="text-p-body">{T('Màn hình của con')}</span>
       </Link>
 
       <div className="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center mb-6">
         <span className="material-symbols-outlined text-primary text-3xl icon-fill">lock</span>
       </div>
 
-      <h1 className="text-p-headline text-on-background mb-6">Nhập mã PIN của bố mẹ</h1>
+      <h1 className="text-p-headline text-on-background mb-6">{T('Nhập mã PIN của bố mẹ')}</h1>
 
       <BanPhimPin value={pin} onChange={setPin} onFull={submit} disabled={busy} />
 
@@ -72,9 +74,9 @@ export default function NhapPin({ next }: { next: string }) {
           className="w-6 h-6 mt-0.5 accent-primary shrink-0"
         />
         <span className="text-p-body-sm text-on-surface-variant">
-          Nhớ trên thiết bị này.{' '}
+          {T('Nhớ trên thiết bị này.')}{' '}
           {/* PRD 4.5: nho PIN tren iPad dung chung cua cac con thi coi nhu PIN mat tac dung */}
-          <strong className="text-error">Đừng tick nếu đây là iPad của các con.</strong>
+          <strong className="text-error">{T('Đừng tick nếu đây là iPad của các con.')}</strong>
         </span>
       </label>
 
@@ -82,10 +84,10 @@ export default function NhapPin({ next }: { next: string }) {
         href="/bome/tao-nha"
         className="text-p-body text-primary font-bold min-h-p-tap flex items-center px-3 mt-6"
       >
-        Nhà mình chưa có — tạo nhà mới
+        {T('Nhà mình chưa có — tạo nhà mới')}
       </Link>
 
-      <p className="text-p-body-sm text-outline mt-2">Chỉ bố mẹ dùng phần này</p>
+      <p className="text-p-body-sm text-outline mt-2">{T('Chỉ bố mẹ dùng phần này')}</p>
     </main>
   );
 }

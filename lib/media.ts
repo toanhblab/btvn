@@ -25,6 +25,7 @@
 
 import { upload } from '@vercel/blob/client';
 import type { AttachedMedia, MediaKind } from './types';
+import { T_VI, type T as TDich } from './i18n/chu';
 
 /** Video luyen phat am co giao gui qua Zalo thuong vai chuc MB, chan o 100MB. */
 export const MAX_MEDIA_BYTES = 100 * 1024 * 1024;
@@ -162,11 +163,12 @@ export const MAX_NOP_VIDEO_BYTES = 700 * 1024 * 1024;
 export async function uploadSubmissionVideo(
   file: File,
   blobEnabled: boolean,
-  onProgress?: (phanTram: number) => void
+  onProgress?: (phanTram: number) => void,
+  T: TDich = T_VI
 ): Promise<string> {
-  if (!file.type.startsWith('video/')) throw new Error('Tệp này không phải video.');
+  if (!file.type.startsWith('video/')) throw new Error(T('Tệp này không phải video.'));
   if (file.size > MAX_NOP_VIDEO_BYTES) {
-    throw new Error('Video hơi dài, con quay lại ngắn hơn nhé.');
+    throw new Error(T('Video hơi dài, con quay lại ngắn hơn nhé.'));
   }
 
   if (blobEnabled) {
@@ -186,15 +188,15 @@ export async function uploadSubmissionVideo(
   fd.append('file', file);
   const res = await fetch('/api/nop-video', { method: 'POST', body: fd });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error ?? 'Tải video lỗi.');
+  if (!res.ok) throw new Error(data.error ?? T('Tải video lỗi.'));
   return data.url as string;
 }
 
-export async function uploadMediaFile(file: File, blobEnabled: boolean): Promise<AttachedMedia> {
+export async function uploadMediaFile(file: File, blobEnabled: boolean, T: TDich = T_VI): Promise<AttachedMedia> {
   const kind = mediaKindOf(file.type);
-  if (!kind) throw new Error(`"${file.name}" không phải video, ghi âm hay ảnh.`);
+  if (!kind) throw new Error(T('"{name}" không phải video, ghi âm hay ảnh.', { name: file.name }));
   if (file.size > MAX_MEDIA_BYTES) {
-    throw new Error(`"${file.name}" nặng quá 100MB, bố mẹ cắt ngắn bớt nhé.`);
+    throw new Error(T('"{name}" nặng quá 100MB, bố mẹ cắt ngắn bớt nhé.', { name: file.name }));
   }
 
   if (blobEnabled) {
@@ -219,6 +221,6 @@ export async function uploadMediaFile(file: File, blobEnabled: boolean): Promise
   fd.append('file', file);
   const res = await fetch('/api/upload-media', { method: 'POST', body: fd });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error ?? 'Tải tệp lỗi.');
+  if (!res.ok) throw new Error(data.error ?? T('Tải tệp lỗi.'));
   return { url: data.url as string, name: file.name, kind };
 }

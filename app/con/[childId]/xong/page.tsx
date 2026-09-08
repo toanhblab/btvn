@@ -4,6 +4,7 @@ import { viewingFamilyId } from '@/lib/auth';
 import { DIEM_NGAY_XONG } from '@/lib/diem';
 import { daCongDiemNgay, getChild, listAssignments, soDiem, todayISO } from '@/lib/store';
 import Confetti from './Confetti';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +30,7 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
   //
   // homNay: de cau khen noi dung thu con vua lam xong (issue #42 Q2): ngay khong
   // co bai tap ma chi co nhiem vu thi khong duoc noi "lam het bai".
+  const T = await chu();
   const today = todayISO();
   const [child, diem, coDiemNgay, homNay] = await Promise.all([
     getChild(familyId, childId),
@@ -39,7 +41,7 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
   if (!child) notFound();
   const coBai = homNay.some((a) => a.choreId === null);
   const coNhiemVu = homNay.some((a) => a.choreId !== null);
-  const vuaXong = coBai && coNhiemVu ? 'hết bài và nhiệm vụ' : coNhiemVu ? 'hết nhiệm vụ' : 'hết bài';
+  const vuaXong = coBai && coNhiemVu ? T('hết bài và nhiệm vụ') : coNhiemVu ? T('hết nhiệm vụ') : T('hết bài');
 
   return (
     <main className="kid-scope min-h-screen flex flex-col items-center justify-center relative overflow-hidden text-center px-k-edge">
@@ -65,9 +67,9 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
           alt=""
           className="w-56 h-56 xl:w-60 xl:h-60 object-cover rounded-full mb-6 animate-pulse-glow soft-shadow"
         />
-        <h1 className="text-k-hero text-primary mb-4">Giỏi quá {child.name}!</h1>
+        <h1 className="text-k-hero text-primary mb-4">{T('Giỏi quá {name}!', { name: child.name })}</h1>
         <p className="text-k-body text-on-surface-variant mb-6">
-          Con làm {vuaXong} hôm nay rồi. Đi chơi thôi!
+          {T('Con làm {gi} hôm nay rồi. Đi chơi thôi!', { gi: vuaXong })}
         </p>
 
         {/* Diem cua ngay chi hien khi HOM NAY da co dong day_complete (ngay truoc
@@ -79,11 +81,11 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
         <div className="flex flex-col items-center gap-3 mb-8">
           {coDiemNgay && (
             <span className="text-k-headline bg-primary-fixed text-on-primary-fixed px-8 py-3 rounded-full soft-shadow">
-              🏆 Hôm nay con được {DIEM_NGAY_XONG} điểm!
+              {T('🏆 Hôm nay con được {n} điểm!', { n: DIEM_NGAY_XONG })}
             </span>
           )}
           <span className="text-k-headline bg-tertiary-fixed text-on-tertiary-fixed px-8 py-3 rounded-full soft-shadow">
-            Con đang có {diem} ⭐
+            {T('Con đang có {n} ⭐', { n: diem })}
           </span>
         </div>
 
@@ -95,7 +97,7 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
                        active:border-b-0 active:translate-y-2 transition-all"
           >
             <span className="material-symbols-outlined text-[40px]">arrow_back</span>
-            <span>Quay lại</span>
+            <span>{T('Quay lại')}</span>
           </Link>
           <Link
             href={`/con/${childId}/thuong`}
@@ -104,7 +106,7 @@ export default async function Xong({ params }: { params: Promise<{ childId: stri
                        active:border-b-0 active:translate-y-2 transition-all"
           >
             <span className="text-[40px] leading-none">🎁</span>
-            <span>Đổi thưởng</span>
+            <span>{T('Đổi thưởng')}</span>
           </Link>
         </div>
       </div>

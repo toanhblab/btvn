@@ -4,6 +4,7 @@ import { parentFamilyId } from '@/lib/auth';
 import { getFamilyById, listChildren, listChores } from '@/lib/store';
 import { hasNeon } from '@/lib/db';
 import CaiDat from './CaiDat';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,13 +27,13 @@ export default async function Page() {
     listChores(familyId),
   ]);
   if (!family) redirect('/bome/pin');
+  const T = await chu();
 
   return (
     <main className="px-p-page pt-4 xl:max-w-[1080px] xl:mx-auto xl:px-12 xl:py-12">
-      <h1 className="text-p-headline text-on-background mb-1">Cài đặt</h1>
+      <h1 className="text-p-headline text-on-background mb-1">{T('Cài đặt')}</h1>
       <p className="text-p-body-sm text-on-surface-variant mb-5 xl:text-p-body xl:max-w-3xl xl:mb-8">
-        Nhà mình dùng chung một mã PIN, không cần tài khoản. Nhà khác dùng mã
-        riêng của họ và không thấy được gì của nhà mình.
+        {T('Nhà mình dùng chung một mã PIN, không cần tài khoản. Nhà khác dùng mã riêng của họ và không thấy được gì của nhà mình.')}
       </p>
 
       {/* Tu 1280px chia hai cot (ban thiet ke 01): trai la ho so cac con, phai la
@@ -51,18 +52,18 @@ export default async function Page() {
               <span className="material-symbols-outlined text-primary">tablet_android</span>
             </span>
             <span className="flex-1">
-              <span className="block text-p-body text-on-surface font-bold">Mở màn hình của con</span>
+              <span className="block text-p-body text-on-surface font-bold">{T('Mở màn hình của con')}</span>
               <span className="block text-p-body-sm text-on-surface-variant">
-                Xem đúng những gì các con đang thấy trên iPad
+                {T('Xem đúng những gì các con đang thấy trên iPad')}
               </span>
             </span>
             <span className="material-symbols-outlined text-outline">chevron_right</span>
           </Link>
 
           <section className="xl:bg-surface-container-lowest xl:rounded-card xl:shadow-[0_2px_8px_rgba(0,0,0,0.10)] xl:p-6">
-            <h2 className="text-p-label uppercase text-on-surface-variant mb-2">Hồ sơ các con</h2>
+            <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Hồ sơ các con')}</h2>
             <p className="text-p-body-sm text-on-surface-variant mb-2 xl:mb-4">
-              Bấm vào một con để đổi tên, ảnh, lớp, màu riêng — hoặc xoá.
+              {T('Bấm vào một con để đổi tên, ảnh, lớp, màu riêng — hoặc xoá.')}
             </p>
             <div className="flex flex-col gap-p-tight mb-3 xl:mb-4">
               {children.map((c) => (
@@ -89,7 +90,7 @@ export default async function Page() {
                          text-p-body font-bold flex items-center justify-center gap-1.5 mb-5 xl:mb-0"
             >
               <span className="material-symbols-outlined">person_add</span>
-              Thêm con
+              {T('Thêm con')}
             </Link>
           </section>
 
@@ -100,15 +101,15 @@ export default async function Page() {
               nhung khi dev tren may that no lai la thu can liec, nen giu lai o
               ban dien thoai chu khong xoa han. */}
           <section className="xl:hidden">
-            <h2 className="text-p-label uppercase text-on-surface-variant mb-2">Hệ thống</h2>
+            <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Hệ thống')}</h2>
             <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4">
               <dl className="text-p-body-sm text-on-surface-variant flex flex-col gap-1">
                 <div className="flex justify-between gap-3">
-                  <dt>Dữ liệu</dt>
-                  <dd className="text-on-surface">{hasNeon ? 'Neon Postgres' : 'PGlite (máy này)'}</dd>
+                  <dt>{T('Dữ liệu')}</dt>
+                  <dd className="text-on-surface">{hasNeon ? 'Neon Postgres' : T('PGlite (máy này)')}</dd>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <dt>Mã nhà</dt>
+                  <dt>{T('Mã nhà')}</dt>
                   <dd className="text-on-surface font-mono text-xs break-all">{family.slug}</dd>
                 </div>
               </dl>

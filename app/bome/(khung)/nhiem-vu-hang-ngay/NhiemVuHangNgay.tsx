@@ -6,11 +6,13 @@ import {
   NHOM_NHIEM_VU, NHOM_NHIEM_VU_MAC_DINH, SAO_NHIEM_VU_MAC_DINH,
   type Child, type DailyChore, type NhomNhiemVu,
 } from '@/lib/types';
+import { useT } from '@/lib/i18n/client';
 
 /** Hang chip chon nhom — dung cho ca the dang co va o them moi. */
 function ChonNhom({ value, onChange, busy }: { value: NhomNhiemVu; onChange: (n: NhomNhiemVu) => void; busy: boolean }) {
+  const T = useT();
   return (
-    <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Nhóm">
+    <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={T('Nhóm')}>
       {(Object.keys(NHOM_NHIEM_VU) as NhomNhiemVu[]).map((n) => (
         <button
           key={n}
@@ -24,7 +26,7 @@ function ChonNhom({ value, onChange, busy }: { value: NhomNhiemVu; onChange: (n:
                         ? 'bg-primary text-on-primary border-primary'
                         : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant'}`}
         >
-          {NHOM_NHIEM_VU[n].icon} {NHOM_NHIEM_VU[n].label}
+          {NHOM_NHIEM_VU[n].icon} {T(NHOM_NHIEM_VU[n].label)}
         </button>
       ))}
     </div>
@@ -42,9 +44,10 @@ function ChonNhom({ value, onChange, busy }: { value: NhomNhiemVu; onChange: (n:
 function GiaoCho({ value, onChange, busy, cacCon }: {
   value: string[] | null; onChange: (v: string[] | null) => void; busy: boolean; cacCon: Child[];
 }) {
+  const T = useT();
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-p-body-sm text-on-surface-variant mr-0.5">Giao cho:</span>
+      <span className="text-p-body-sm text-on-surface-variant mr-0.5">{T('Giao cho:')}</span>
       <button
         type="button"
         aria-pressed={value === null}
@@ -55,7 +58,7 @@ function GiaoCho({ value, onChange, busy, cacCon }: {
                       ? 'bg-primary text-on-primary border-primary'
                       : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant'}`}
       >
-        Cả nhà
+        {T('Cả nhà')}
       </button>
       {cacCon.map((ch) => {
         const chon = value !== null && value.includes(ch.id);
@@ -83,7 +86,7 @@ function GiaoCho({ value, onChange, busy, cacCon }: {
       })}
       {chuaGiaoAi(value) && (
         <p className="w-full text-p-body-sm text-error font-bold">
-          Chưa giao cho ai — chọn &quot;Cả nhà&quot; hoặc một con
+          {T('Chưa giao cho ai — chọn "Cả nhà" hoặc một con')}
         </p>
       )}
     </div>
@@ -119,6 +122,7 @@ export default function NhiemVuHangNgay({
   /** Cac con cua nha — de ve hang chip "Giao cho". */
   cacCon: Child[];
 }) {
+  const T = useT();
   const [chores, setChores] = useState(initial);
   const [hoiXoa, setHoiXoa] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -138,10 +142,10 @@ export default function NhiemVuHangNgay({
     try {
       const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...init });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? 'Không lưu được');
+      if (!res.ok) throw new Error(data.error ?? T('Không lưu được'));
       return data;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không lưu được. Thử lại nhé.');
+      setError(e instanceof Error ? e.message : T('Không lưu được. Thử lại nhé.'));
       return null;
     } finally {
       setBusy(false);
@@ -198,15 +202,10 @@ export default function NhiemVuHangNgay({
           hoiXoa === c.id ? (
             <div key={c.id} className="bg-error-container rounded-card p-3">
               <p className="text-p-body text-on-error-container font-bold mb-0.5">
-                Xoá nhiệm vụ “{c.icon} {c.content}”?
+                {T('Xoá nhiệm vụ “{name}”?', { name: `${c.icon} ${c.content}` })}
               </p>
               <p className="text-p-body-sm text-on-error-container mb-3">
-                Nhiệm vụ này biến mất khỏi đây và không được thêm vào những ngày
-                app tạo sau đó nữa — không lấy lại được. Những ngày đã tạo vẫn giữ
-                nguyên, kể cả những lần các con đã tick và ⭐ đã cộng. Chỉ muốn tạm
-                dừng thì tắt công tắc: app thôi tạo việc này cho những ngày chưa
-                tạo, còn ngày đã tạo rồi thì con vẫn thấy và vẫn tick được — hôm
-                nay, và cả ngày mai nếu bố mẹ đã giao bài cho ngày mai.
+                {T('Nhiệm vụ này biến mất khỏi đây và không được thêm vào những ngày app tạo sau đó nữa — không lấy lại được. Những ngày đã tạo vẫn giữ nguyên, kể cả những lần các con đã tick và ⭐ đã cộng. Chỉ muốn tạm dừng thì tắt công tắc: app thôi tạo việc này cho những ngày chưa tạo, còn ngày đã tạo rồi thì con vẫn thấy và vẫn tick được — hôm nay, và cả ngày mai nếu bố mẹ đã giao bài cho ngày mai.')}
               </p>
               <div className="flex gap-2">
                 <button
@@ -215,7 +214,7 @@ export default function NhiemVuHangNgay({
                   className="flex-1 rounded-card min-h-p-tap bg-surface-container-lowest text-on-surface
                              text-p-body-sm font-bold disabled:opacity-60"
                 >
-                  Thôi, giữ lại
+                  {T('Thôi, giữ lại')}
                 </button>
                 <button
                   onClick={() => xoa(c)}
@@ -223,7 +222,7 @@ export default function NhiemVuHangNgay({
                   className="flex-1 rounded-card min-h-p-tap bg-error text-white text-p-body-sm font-bold
                              disabled:opacity-60"
                 >
-                  Xoá nhiệm vụ này
+                  {T('Xoá nhiệm vụ này')}
                 </button>
               </div>
             </div>
@@ -250,7 +249,7 @@ export default function NhiemVuHangNgay({
                   defaultValue={c.content}
                   key={`${c.id}:content:${c.content}`}
                   maxLength={MAX_CHU_VIEC_NHA}
-                  aria-label="Tên nhiệm vụ"
+                  aria-label={T('Tên nhiệm vụ')}
                   onBlur={(e) => {
                     // Xoa trang roi bam ra ngoai thi tra lai chu cu ngay tren the
                     // input (key khong doi nen React giu the, defaultValue bi bo qua)
@@ -270,7 +269,7 @@ export default function NhiemVuHangNgay({
                     inputMode="numeric"
                     min={1}
                     max={MAX_SAO_NHIEM_VU}
-                    aria-label="Số sao"
+                    aria-label={T('Số sao')}
                     onBlur={(e) => {
                       const moi = Number(e.target.value);
                       if (!(moi >= 1 && moi <= MAX_SAO_NHIEM_VU) || moi === c.stars) {
@@ -296,7 +295,7 @@ export default function NhiemVuHangNgay({
                 <button
                   onClick={() => chuyen(c, 'len')}
                   disabled={busy || i === 0}
-                  aria-label={`Đưa "${c.content}" lên trên`}
+                  aria-label={T('Đưa "{name}" lên trên', { name: c.content })}
                   className={oNut}
                 >
                   <span className="material-symbols-outlined">arrow_upward</span>
@@ -304,7 +303,7 @@ export default function NhiemVuHangNgay({
                 <button
                   onClick={() => chuyen(c, 'xuong')}
                   disabled={busy || i === chores.length - 1}
-                  aria-label={`Đưa "${c.content}" xuống dưới`}
+                  aria-label={T('Đưa "{name}" xuống dưới', { name: c.content })}
                   className={oNut}
                 >
                   <span className="material-symbols-outlined">arrow_downward</span>
@@ -318,7 +317,7 @@ export default function NhiemVuHangNgay({
                   className="flex-1 min-h-p-tap flex items-center justify-end gap-2 px-2 disabled:opacity-60"
                 >
                   <span className="text-p-body-sm text-on-surface-variant">
-                    {c.enabled ? 'Đang bật' : 'Đang tắt'}
+                    {c.enabled ? T('Đang bật') : T('Đang tắt')}
                   </span>
                   <span
                     className={`w-11 h-6 rounded-full flex items-center shrink-0 transition-colors
@@ -334,7 +333,7 @@ export default function NhiemVuHangNgay({
                 <button
                   onClick={() => { setHoiXoa(c.id); setError(''); }}
                   disabled={busy}
-                  aria-label={`Xoá "${c.content}"`}
+                  aria-label={T('Xoá "{name}"', { name: c.content })}
                   className={`${oNut} hover:text-error`}
                 >
                   <span className="material-symbols-outlined">delete</span>
@@ -346,7 +345,7 @@ export default function NhiemVuHangNgay({
 
         {chores.length === 0 && (
           <p className="text-p-body-sm text-on-surface-variant py-2">
-            Chưa có nhiệm vụ nào. Thêm một việc thì các con sẽ thấy nó mỗi ngày trên màn của mình.
+            {T('Chưa có nhiệm vụ nào. Thêm một việc thì các con sẽ thấy nó mỗi ngày trên màn của mình.')}
           </p>
         )}
       </div>
@@ -359,7 +358,7 @@ export default function NhiemVuHangNgay({
               key={ic}
               type="button"
               onClick={() => setThemIcon(ic)}
-              aria-label={`Chọn icon ${ic}`}
+              aria-label={T('Chọn icon {icon}', { icon: ic })}
               aria-pressed={themIcon === ic}
               className={`w-10 h-10 rounded-lg text-xl flex items-center justify-center
                           ${themIcon === ic ? 'bg-primary-fixed ring-2 ring-primary' : 'bg-surface-container-lowest'}`}
@@ -372,7 +371,7 @@ export default function NhiemVuHangNgay({
           <input
             value={themIcon}
             onChange={(e) => setThemIcon(e.target.value)}
-            aria-label="Icon nhiệm vụ mới"
+            aria-label={T('Icon nhiệm vụ mới')}
             className={`${oNhap} w-14 text-center text-2xl px-0 shrink-0`}
           />
           <input
@@ -380,7 +379,7 @@ export default function NhiemVuHangNgay({
             onChange={(e) => setThemTen(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') them(); }}
             maxLength={MAX_CHU_VIEC_NHA}
-            placeholder="Thêm nhiệm vụ mới…"
+            placeholder={T('Thêm nhiệm vụ mới…')}
             className={`${oNhap} flex-1 min-w-0`}
           />
           <label className="flex items-center gap-1 shrink-0">
@@ -389,7 +388,7 @@ export default function NhiemVuHangNgay({
               onChange={(e) => setThemSao(e.target.value.replace(/\D/g, '').slice(0, 2))}
               onKeyDown={(e) => { if (e.key === 'Enter') them(); }}
               inputMode="numeric"
-              aria-label="Số sao"
+              aria-label={T('Số sao')}
               className={`${oNhap} w-16 text-right`}
             />
             <span className="text-p-body">⭐</span>
@@ -403,7 +402,7 @@ export default function NhiemVuHangNgay({
           className="rounded-card min-h-p-tap px-4 bg-primary text-on-primary text-p-body font-bold
                      disabled:opacity-40"
         >
-          Thêm nhiệm vụ
+          {T('Thêm nhiệm vụ')}
         </button>
       </div>
 

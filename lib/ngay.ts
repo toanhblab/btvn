@@ -5,6 +5,8 @@
  * roi lech nhau dan.
  */
 
+import { T_VI, type Key, type T as TDich } from './i18n/chu';
+
 /** YYYY-MM-DD -> Date GIO DIA PHUONG. new Date('2026-09-02') la nua dem UTC nen
     o mui gio am se lui mat mot ngay — tach tay cho chac. */
 export function tuISO(s: string): Date {
@@ -23,12 +25,18 @@ export function lechNgay(ngay: string, n: number): string {
   return sangISO(d);
 }
 
-const THU = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+/** Ten thu theo getDay() — la KHOA dich (lib/i18n), noi hien phai boc `T(...)`. */
+export const THU = [
+  'Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy',
+] as const satisfies readonly Key[];
 
-/** "2026-09-02" -> "Thứ Ba, 2/9". */
-export function ngayTiengViet(ngay: string): string {
+/**
+ * "2026-09-02" -> "Thứ Ba, 2/9" (theo ngon ngu cua T; mac dinh tieng Viet).
+ * Khuon ngay/thang giu nguyen o moi ngon ngu — muc do can cho demo (issue #46).
+ */
+export function ngayTiengViet(ngay: string, T: TDich = T_VI): string {
   const d = tuISO(ngay);
-  return `${THU[d.getDay()]}, ${d.getDate()}/${d.getMonth() + 1}`;
+  return `${T(THU[d.getDay()])}, ${d.getDate()}/${d.getMonth() + 1}`;
 }
 
 /** Cua so tim "ngay gan nhat co bai" (issue #31) — du rong cho ky nghi he/Tet

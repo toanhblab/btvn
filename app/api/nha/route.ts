@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { attemptPin, setDeviceFamily } from '@/lib/auth';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,10 @@ export async function POST(req: Request) {
   const key = req.headers.get('x-forwarded-for') ?? 'local';
 
   const tried = await attemptPin(String(body?.pin ?? ''), key);
-  if (!tried.ok) return NextResponse.json({ error: tried.error }, { status: tried.status });
+  if (!tried.ok) {
+    const T = await chu();
+    return NextResponse.json({ error: T(tried.error, tried.tham) }, { status: tried.status });
+  }
 
   await setDeviceFamily(tried.family.id);
   return NextResponse.json({ ok: true, family: tried.family });

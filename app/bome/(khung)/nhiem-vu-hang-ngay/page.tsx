@@ -5,6 +5,7 @@ import { DIEM_NGAY_XONG } from '@/lib/diem';
 import { listChildren, listChores } from '@/lib/store';
 import { NHOM_NHIEM_VU } from '@/lib/types';
 import NhiemVuHangNgay from './NhiemVuHangNgay';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,23 +23,18 @@ export default async function Page() {
   if (!familyId) redirect('/bome/pin');
 
   const [children, chores] = await Promise.all([listChildren(familyId), listChores(familyId)]);
+  const T = await chu();
 
   return (
     <main className="px-p-page pt-4 xl:max-w-lg xl:mx-auto">
       <header className="flex items-center gap-2 mb-1">
-        <Link href="/bome/cai-dat" className="min-h-p-tap flex items-center text-on-surface-variant pr-1" aria-label="Về Cài đặt">
+        <Link href="/bome/cai-dat" className="min-h-p-tap flex items-center text-on-surface-variant pr-1" aria-label={T('Về Cài đặt')}>
           <span className="material-symbols-outlined text-3xl">arrow_back</span>
         </Link>
-        <h1 className="text-p-headline text-on-background">Nhiệm vụ hàng ngày</h1>
+        <h1 className="text-p-headline text-on-background">{T('Nhiệm vụ hàng ngày')}</h1>
       </header>
       <p className="text-p-body-sm text-on-surface-variant mb-5">
-        Mỗi ngày — kể cả cuối tuần và ngày không có bài — các nhiệm vụ này hiện trên màn của
-        từng con, chia hai nhóm <b>{NHOM_NHIEM_VU.after_study.label}</b> và{' '}
-        <b>{NHOM_NHIEM_VU.housework.label}</b>. Bố mẹ và con cùng tick ở đó; tick xong là được ⭐
-        của nhiệm vụ ngay, và ngày nào <b>có bài tập</b> mà xong hết cả bài lẫn nhiệm vụ thì được
-        thêm +{DIEM_NGAY_XONG} ⭐ (ngày không có bài thì chỉ có ⭐ của từng nhiệm vụ).
-        Cả nhà dùng chung một danh sách; sửa chỉ ảnh hưởng những dòng app tạo sau đó (riêng
-        đổi nhóm thì dòng của hôm nay đổi chỗ theo ngay), ⭐ đã cộng không bị rút.
+        {T('Mỗi ngày — kể cả cuối tuần và ngày không có bài — các nhiệm vụ này hiện trên màn của từng con, chia hai nhóm “{a}” và “{b}”. Bố mẹ và con cùng tick ở đó; tick xong là được ⭐ của nhiệm vụ ngay, và ngày nào có bài tập mà xong hết cả bài lẫn nhiệm vụ thì được thêm +{n} ⭐ (ngày không có bài thì chỉ có ⭐ của từng nhiệm vụ). Cả nhà dùng chung một danh sách; sửa chỉ ảnh hưởng những dòng app tạo sau đó (riêng đổi nhóm thì dòng của hôm nay đổi chỗ theo ngay), ⭐ đã cộng không bị rút.', { a: T(NHOM_NHIEM_VU.after_study.label), b: T(NHOM_NHIEM_VU.housework.label), n: DIEM_NGAY_XONG })}
       </p>
 
       <NhiemVuHangNgay initial={chores} cacCon={children} />

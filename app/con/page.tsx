@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { viewingFamilyId } from '@/lib/auth';
 import { DIEM_NGAY_XONG, xepHang } from '@/lib/diem';
 import { progressUpcoming } from '@/lib/store';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,7 @@ export default async function ChonCon() {
   const familyId = await viewingFamilyId();
   if (!familyId) redirect('/vao');
 
+  const T = await chu();
   const rows = await progressUpcoming(familyId);
   const bangXepHang = xepHang(rows.map((r) => ({ child: r.child, points: r.points })));
   const chuaAiCoDiem = rows.every((r) => r.points === 0);
@@ -51,14 +53,14 @@ export default async function ChonCon() {
           ngang 1440px thi ba con nam xa nhau, mat phai quet ca man moi tim ten. */}
       <div className="w-full max-w-[1100px] mx-auto flex flex-col items-center px-k-edge">
         <h1 className="text-k-hero text-on-surface mb-8 xl:mb-3 text-center">
-          {rows.length === 0 ? 'Chưa có bạn nào ở đây' : 'Hôm nay con là ai?'}
+          {rows.length === 0 ? T('Chưa có bạn nào ở đây') : T('Hôm nay con là ai?')}
         </h1>
 
         {/* Cau phu chi co trong ban Macbook (01), ban iPad khong co — nen an duoi
             1280px de man iPad giu y nguyen ban da duyet. mb bu lai cho khong lech. */}
         {rows.length > 0 && (
           <p className="hidden xl:block text-k-body text-on-surface-variant mb-7 text-center">
-            Chọn tên của con để bắt đầu học vui nhé!
+            {T('Chọn tên của con để bắt đầu học vui nhé!')}
           </p>
         )}
 
@@ -66,7 +68,7 @@ export default async function ChonCon() {
             de man hinh trong khong (PRD 4.3: khong bao gio de man trong tay khong) */}
         {rows.length === 0 && (
           <p className="text-k-headline text-on-surface-variant text-center mt-6 max-w-2xl">
-            Bố mẹ vào phần &quot;Bố mẹ&quot; ở góc dưới, thêm hồ sơ cho các con trước nhé.
+            {T('Bố mẹ vào phần "Bố mẹ" ở góc dưới, thêm hồ sơ cho các con trước nhé.')}
           </p>
         )}
 
@@ -115,10 +117,10 @@ export default async function ChonCon() {
                               }`}
                 >
                   {total === 0
-                    ? 'Chưa có bài'
+                    ? T('Chưa có bài')
                     : left === 0
-                      ? 'Xong hết 🎉'
-                      : `${left} việc`}
+                      ? T('Xong hết 🎉')
+                      : T('{n} việc', { n: left })}
                 </span>
               </div>
 
@@ -144,23 +146,22 @@ export default async function ChonCon() {
             bang mot cau nhac luat de con biet lam gi de duoc sao. */}
         {rows.length >= 2 && (
           <section
-            aria-label="Bảng xếp hạng"
+            aria-label={T('Bảng xếp hạng')}
             className="mt-10 xl:mt-12 bg-surface-container-lowest rounded-[32px] soft-shadow px-8 py-5
                        flex flex-col items-center gap-4 max-w-full"
           >
             <h2 className="text-k-label uppercase tracking-wider text-on-surface-variant">
-              🏆 Bảng xếp hạng
+              🏆 {T('Bảng xếp hạng')}
             </h2>
             {chuaAiCoDiem ? (
               <p className="text-k-body text-on-surface-variant text-center">
-                Mỗi nhiệm vụ xong là được ⭐ ngay. Ngày nào có bài tập mà làm xong hết cả bài
-                lẫn nhiệm vụ thì được thêm {DIEM_NGAY_XONG} ⭐ nữa!
+                {T('Mỗi nhiệm vụ xong là được ⭐ ngay. Ngày nào có bài tập mà làm xong hết cả bài lẫn nhiệm vụ thì được thêm {n} ⭐ nữa!', { n: DIEM_NGAY_XONG })}
               </p>
             ) : (
               <ol className="flex flex-row flex-wrap justify-center gap-x-10 gap-y-3">
                 {bangXepHang.map(({ child, points, rank }) => (
                   <li key={child.id} className="flex items-center gap-3">
-                    <span className="text-[40px] leading-none w-12 text-center" aria-label={`Hạng ${rank}`}>
+                    <span className="text-[40px] leading-none w-12 text-center" aria-label={T('Hạng {n}', { n: rank })}>
                       {HUY_CHUONG[rank] ?? <span className="text-k-headline text-outline">{rank}</span>}
                     </span>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -187,7 +188,7 @@ export default async function ChonCon() {
                    transition-colors min-h-k-tap"
       >
         <span className="material-symbols-outlined text-2xl">settings</span>
-        <span className="text-sm font-bold uppercase tracking-wider">Bố mẹ</span>
+        <span className="text-sm font-bold uppercase tracking-wider">{T('Bố mẹ')}</span>
       </Link>
     </main>
   );
