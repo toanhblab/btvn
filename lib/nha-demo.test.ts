@@ -212,7 +212,15 @@ test('KHONG co duong nao tu nha demo nhin sang nha khac (moi ham doc cua store),
   assert.equal(await store.countPendingRedemptions(THAT), 1);
 });
 
-test('moi nha demo co du thu de xem, khong man nao trong', async () => {
+/**
+ * Dung NGAY SAU khi nap, khong phai mai mai: `ngayLech` tinh hom qua/hom nay/mai
+ * theo NGAY CHAY, ma seed chi chay luc build. Sau vai ngay ke tu lan deploy, moi
+ * dong bai cua nha demo deu thanh qua khu va man cua con (loc `from: today`) khong
+ * con the bai nao — nen truoc buoi demo phai chay lai `npm run db:seed:demo`
+ * (README + HUONG-DAN-BO-ME ghi ro). Bai kiem nay nap roi kiem ngay, dung voi
+ * dung thoi diem do.
+ */
+test('vua nap xong thi moi nha demo co du thu de xem, khong man nao trong', async () => {
   for (const lang of ['ja', 'ko', 'en'] as const) {
     const fam = idNhaDemo(lang);
     const con = await store.listChildren(fam);

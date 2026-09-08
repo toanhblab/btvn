@@ -312,6 +312,15 @@ cũng chỉ bằng cách mở link khác: mở link của nhà khác là app đ�
 lại, nên nhập được mã của nhà mới ngay. Mở lại link của **chính nhà đang mở** thì
 không phải nhập lại gì. Ba nhà này là dữ liệu mẫu, không phải nhà thật.
 
+Bài tập trong ba nhà mẫu được xếp theo ngày nạp, nên để lâu là hết bài của "hôm
+nay" và màn của con trông trống. **Trước mỗi lần đem đi cho người khác xem, nhờ
+người làm app nạp lại dữ liệu mẫu một lượt** — chỉ đụng ba nhà mẫu, không ảnh
+hưởng gì tới nhà mình.
+
+Ba mã 1111 / 2222 / 3333 chỉ mở được **phần bố mẹ** để xem thử. Gõ chúng ở màn
+"Đây là máy của nhà nào?" thì app từ chối — máy sẽ không bị gắn vào nhà mẫu. Muốn
+một máy vào hẳn nhà mẫu thì mở link `/nha/demo-ja`, `/nha/demo-ko`, `/nha/demo-en`.
+
 **Xoá hết bài cũ đi được không?**
 Được. Vào **Nhiệm vụ → "Xoá tất cả bài tập và việc nhà"** — app hỏi lại hai nhịp
 trước khi xoá. Việc này xoá luôn cả lịch sử việc nhà, cân nhắc trước khi bấm.

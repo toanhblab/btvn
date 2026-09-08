@@ -112,8 +112,22 @@ export async function signIn(familyId: string, remember: boolean, pin: string): 
     ...baseOpts,
     maxAge: remember ? 60 * 60 * 24 * 30 : undefined, // undefined = het khi dong trinh duyet
   });
-  if (pinDanhRieng(pin)) return;
+  await ganMaySauKhiNhapPin(familyId, pin);
+}
+
+/**
+ * Gan may sau khi NHAP PIN — tra ve false neu KHONG gan vi day la PIN demo.
+ *
+ * Luat o MOT cho cho ca hai duong nhap PIN (`signIn` mo phan bo me, POST
+ * /api/nha gan may o man "Day la may cua nha nao?"): ba ma demo ai cung biet,
+ * ma gan may la gan MOT NAM — go 1111 mot lan tren iPad cua cac con la tu do
+ * man cua con hien nha Nhat. Muon may vao han nha demo thi mo link
+ * /nha/demo-ja, duong do CO Y giu nguyen.
+ */
+export async function ganMaySauKhiNhapPin(familyId: string, pin: string): Promise<boolean> {
+  if (pinDanhRieng(pin)) return false;
   await setDeviceFamily(familyId);
+  return true;
 }
 
 /**

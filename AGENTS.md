@@ -204,7 +204,13 @@ dấu tiếng Việt KHÔNG đủ: "xong", "Giao cho", "Quay xong" không dấu 
 tận bản demo, vì thế trong `app/**` còn hai phép nữa không phụ thuộc dấu — đoạn chữ
 tràn trong JSX, và giá trị chuỗi của `placeholder`/`aria-label`/`title`/`alt`.
 Icon Material Symbols nhận ra bằng CHÍNH THẺ chứa nó, đừng đoán theo hình dạng chữ
-(một từ thường như `add` là tên icon thật, mà "xong" cũng vậy). Đó là
+(một từ thường như `add` là tên icon thật, mà "xong" cũng vậy). Phép quét CHỈ bắt
+chữ chưa dịch, không bắt chữ dịch rồi mà SAI NGHĨA: ô "Giọng đọc" từng dán nhãn
+"🇻🇳 đọc giọng Việt" cho một lựa chọn thực ra đọc bằng tiếng Nhật, và từng mượn
+khoá tên MÔN học ('Tiếng Việt' → '国語') làm tên NGÔN NGỮ. Tên + cờ của ngôn ngữ
+nằm ở `TEN_NGON_NGU` / `CO_NGON_NGU` (`lib/speech.ts`, khoá dịch RIÊNG, chữ thường
+để ghép được vào câu "Máy chưa có giọng {giong}"), và hai lựa chọn của ô đó do
+`luaChonGiong` dựng — một bản cho cả ba màn. Đó là
 bước QUÉT MÃ NGUỒN đứng riêng, KHÔNG nằm trong `npm test`; `lib/i18n.test.ts` chỉ
 giữ phần hành vi (từ điển đủ khoá, `dich`/`dienTham`, PIN demo). Phép quét chạy
 bằng `npm run lint` (cùng với `tsc --noEmit`).
@@ -236,11 +242,18 @@ chính nhà đang ở thì GIỮ phiên. Thêm đường gắn máy thứ ba th�
 đó, đừng tự `cookies().set` — `signIn` từng là đường thứ ba đó và nay đã đi qua
 `setDeviceFamily`.
 
-**Nhập PIN demo thì KHÔNG gắn máy** (`signIn` bỏ qua bước gắn khi `pinDanhRieng`):
-gắn máy là gắn một năm, mà ba mã demo ai cũng biết và captain nhập ngay trên máy
-mình — hết phiên bố mẹ là `viewingFamilyId` rơi về cookie thiết bị và màn của con
-hiện nhà Nhật ngay trên máy nhà mình. PIN thật giữ nguyên: mở phiên VÀ gắn máy.
-(`lib/nha-link.test.ts` kiểm cả hai đường gắn máy lẫn hai loại PIN.)
+**Nhập PIN demo thì KHÔNG gắn máy** — luật ở MỘT hàm `ganMaySauKhiNhapPin`, dùng
+bởi CẢ HAI đường nhập PIN: `signIn` (mở phần bố mẹ) và POST `/api/nha` (màn "Đây là
+máy của nhà nào?", ở đó còn trả lỗi 400 vì gắn máy là việc duy nhất của màn ấy).
+Lý do: gắn máy là gắn một năm, mà ba mã demo ai cũng biết — gõ 1111 một lần trên
+iPad của các con là từ đó màn của con hiện nhà Nhật. PIN thật giữ nguyên: mở phiên
+VÀ gắn máy. Link `/nha/<slug>` CỐ Ý nằm ngoài luật này — đó là đường duy nhất để
+gắn hẳn một máy vào nhà demo. (`lib/nha-link.test.ts` kiểm cả hai đường lẫn hai
+loại PIN.)
+
+**Dữ liệu ba nhà demo cũ dần theo ngày** (`ngayLech` tính theo lúc chạy, mà
+`seed-demo.mjs` chỉ tự chạy lúc build): trước buổi demo phải chạy lại
+`npm run db:seed:demo`. Cố ý không thêm cron và không đặc biệt hoá đường đọc.
 
 Tài liệu có hai người đọc khác nhau: `README.md` cho người phát triển, còn
 `HUONG-DAN-BO-ME.md` (kèm ảnh trong `huong-dan-anh/`) cho bố mẹ dùng app thật —

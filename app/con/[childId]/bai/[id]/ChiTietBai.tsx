@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Assignment, DiemVuaCong, Lang } from '@/lib/types';
 import { driveFileIdTu, drivePreviewUrl } from '@/lib/media';
-import { GIONG_DOC, pickVoice, splitSpeech } from '@/lib/speech';
+import { GIONG_DOC, TEN_NGON_NGU, pickVoice, splitSpeech } from '@/lib/speech';
 import { useNgonNgu, useT } from '@/lib/i18n/client';
 import Confetti from '../../xong/Confetti';
 import DongHoLamBai, { conThoiGian, docMocBatDau, noi, xoaDongHo } from './DongHoLamBai';
@@ -74,7 +74,7 @@ export default function ChiTietBai({
         missing.length === 0
           ? ''
           : T('Máy chưa có giọng {giong}. Bố mẹ vào Cài đặt → Trợ năng → Nội dung đọc để tải thêm giọng.', {
-              giong: [...new Set(missing.map((lang) => GIONG_DOC[lang]))].join(', '),
+              giong: [...new Set(missing)].map((lang) => T(TEN_NGON_NGU[lang])).join(', '),
             })
       );
     };

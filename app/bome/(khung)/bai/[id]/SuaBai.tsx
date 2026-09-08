@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Assignment, AttachedMedia, HwSource } from '@/lib/types';
 import { DURATION_DEFAULT, HW_SOURCES, iconFor, subjectsFor } from '@/lib/types';
-import { useT } from '@/lib/i18n/client';
+import { useNgonNgu, useT } from '@/lib/i18n/client';
+import { giaTriGiong, luaChonGiong } from '@/lib/speech';
 import { MEDIA_ACCEPT, MEDIA_ICON, driveFileIdTu, drivePreviewUrl, uploadMediaFile } from '@/lib/media';
 import { MUI_GIO_NHA } from '@/lib/ngay';
 
@@ -56,6 +57,7 @@ export default function SuaBai({
   blobEnabled: boolean;
 }) {
   const T = useT();
+  const ngonNgu = useNgonNgu();
   const router = useRouter();
   const [subject, setSubject] = useState(assignment.subject);
   const [content, setContent] = useState(assignment.content);
@@ -211,13 +213,14 @@ export default function SuaBai({
           <div className="flex-1">
             <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Giọng đọc')}</label>
             <select
-              value={lang}
+              value={giaTriGiong(ngonNgu, lang)}
               onChange={(e) => setLang(e.target.value as 'vi' | 'en')}
               className="w-full rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
                          bg-surface-container-lowest"
             >
-              <option value="vi">🇻🇳 {T('Tiếng Việt')}</option>
-              <option value="en">🇬🇧 {T('Tiếng Anh')}</option>
+              {luaChonGiong(ngonNgu, T).map((o) => (
+                <option key={o.value} value={o.value}>{o.nhan}</option>
+              ))}
             </select>
           </div>
         </div>

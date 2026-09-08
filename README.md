@@ -112,6 +112,15 @@ deploy bản demo lại mới theo ngày hôm đó; lỗi ở bước này khôn
 Nếu PIN demo đang là của một nhà thật (đăng ký trước khi giữ chỗ) thì nhà demo đó
 bị bỏ qua và in cảnh báo.
 
+**Chạy lại `npm run db:seed:demo` ngay trước mỗi buổi demo.** Ngày của dữ liệu mẫu
+(hôm qua / hôm nay / mai) tính theo lúc CHẠY, mà lệnh này chỉ tự chạy lúc build —
+nên vài ngày sau lần deploy, mọi bài của nhà demo đã thành quá khứ và màn của con
+không còn thẻ bài nào (nó lọc từ hôm nay trở đi). Cố ý không thêm cron và cố ý
+không đặc biệt hoá đường đọc cho nhà demo: một lệnh chạy tay trước buổi demo là đủ,
+và nó chạy được bất cứ lúc nào trên DB đang chạy mà không đụng nhà thật
+(`DATABASE_URL=... npm run db:seed:demo`; `lib/nha-demo.test.ts` chụp nhà thật
+trước/sau để khẳng định).
+
 Lớp dịch ở `lib/i18n/`: khoá là **chính câu tiếng Việt** trong mã nguồn —
 `T('Hôm nay con là ai?')` — nên không phải đặt tên khoá; `en.ts` là danh sách khoá
 (TypeScript báo lỗi khi gọi câu chưa có), `ja.ts`/`ko.ts` là `Record<Key, string>`

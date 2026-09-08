@@ -167,6 +167,16 @@ test('PIN demo: chi mo phien bo me, KHONG gan may vao nha demo', async () => {
   assert.equal(await viewingFamilyId(), nhaA.id, 'het phien thi ve lai nha that');
 });
 
+test('POST /api/nha voi PIN demo: tu choi, KHONG gan may vao nha demo', async () => {
+  await nhapPinGanMay(PIN_A);
+  const mayCuaNhaA = hu.get('btvn_nha')!;
+
+  const { res, than } = await nhapPinGanMay('1111');
+  assert.equal(res.status, 400, 'man "Day la may cua nha nao?" tu choi PIN demo');
+  assert.ok(than.error, 'co cau bao cho bo me doc');
+  assert.equal(hu.get('btvn_nha'), mayCuaNhaA, 'may van la cua nha that');
+});
+
 test('PIN that: van gan may vao nha do nhu cu', async () => {
   await signIn(nhaA.id, false, PIN_A);
   assert.ok(hu.get('btvn_nha')!.startsWith(`${nhaA.id}.`));

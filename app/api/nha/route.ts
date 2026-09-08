@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { attemptPin, setDeviceFamily } from '@/lib/auth';
+import { attemptPin, ganMaySauKhiNhapPin } from '@/lib/auth';
 import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
@@ -14,18 +14,26 @@ export const dynamic = 'force-dynamic';
  * Nho vay PIN cua bo me khong bi "nho" tren may cua tre.
  *
  * Nhap PIN cua NHA KHAC o day thi phien bo me dang mo bi go (luat nam trong
- * `setDeviceFamily`) — khong thi man cua con van hien nha cu.
+ * `setDeviceFamily`) — khong thi man cua con van hien nha cu. PIN DEMO thi tu
+ * choi han: xem `ganMaySauKhiNhapPin`.
  */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
+  const pin = String(body?.pin ?? '');
   const key = req.headers.get('x-forwarded-for') ?? 'local';
 
-  const tried = await attemptPin(String(body?.pin ?? ''), key);
+  const tried = await attemptPin(pin, key);
   if (!tried.ok) {
     const T = await chu();
     return NextResponse.json({ error: T(tried.error, tried.tham) }, { status: tried.status });
   }
 
-  await setDeviceFamily(tried.family.id);
+  if (!(await ganMaySauKhiNhapPin(tried.family.id, pin))) {
+    const T = await chu();
+    return NextResponse.json(
+      { error: T('Mã PIN demo chỉ để xem thử phần bố mẹ, không gắn máy này vào nhà demo được.') },
+      { status: 400 }
+    );
+  }
   return NextResponse.json({ ok: true, family: tried.family });
 }

@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Child, DraftAssignment, HwSource } from '@/lib/types';
 import { DURATION_DEFAULT, HW_SOURCES, HW_SOURCE_DEFAULT, SUBJECTS, hwSourceOf, iconFor, subjectsFor } from '@/lib/types';
-import { useT } from '@/lib/i18n/client';
+import { useNgonNgu, useT } from '@/lib/i18n/client';
+import { giaTriGiong, luaChonGiong } from '@/lib/speech';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 interface Payload {
@@ -32,6 +33,7 @@ export default function KiemTraLai({
   blobEnabled: boolean;
 }) {
   const T = useT();
+  const ngonNgu = useNgonNgu();
   const router = useRouter();
   const [payload, setPayload] = useState<Payload | null>(null);
   const [drafts, setDrafts] = useState<Draft[]>([]);
@@ -269,12 +271,13 @@ export default function KiemTraLai({
 
                 {/* Ngon ngu quyet dinh giong doc o man cua con — phai sua duoc (PRD 4.2) */}
                 <select
-                  value={d.lang}
+                  value={giaTriGiong(ngonNgu, d.lang)}
                   onChange={(e) => patch(i, 'lang', e.target.value)}
                   className="text-p-body-sm rounded-full bg-surface-container px-3 py-1.5 text-on-surface"
                 >
-                  <option value="vi">🇻🇳 {T('Đọc giọng Việt')}</option>
-                  <option value="en">🇬🇧 {T('Đọc giọng Anh')}</option>
+                  {luaChonGiong(ngonNgu, T).map((o) => (
+                    <option key={o.value} value={o.value}>{o.nhan}</option>
+                  ))}
                 </select>
 
                 {/* Dong ho o man cua con dem nguoc tu so nay. AI uoc 5-15 phut;
