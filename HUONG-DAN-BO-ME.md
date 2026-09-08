@@ -168,6 +168,8 @@ Nhiệm vụ hàng ngày thì con bấm tick ngay tại danh sách, không phả
 xong là ⭐ của nhiệm vụ đó cộng ngay, hiện luôn chip **"+N ⭐"** trên dòng vừa tick.
 Xong hết cả bài lẫn nhiệm vụ, con thấy màn ăn mừng **"Giỏi quá!"**.
 
+![Hai nhóm nhiệm vụ ở cuối màn của con — dòng vừa tick hiện chip "+2 ⭐"](huong-dan-anh/con-nhiem-vu-hang-ngay.png)
+
 ---
 
 ## 5. Sao ⭐ và phần thưởng
