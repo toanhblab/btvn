@@ -319,14 +319,20 @@ bấm viên ⭐ của con, **gõ số ⭐ muốn trừ** (không gõ "tổng m�
 bắt buộc, có chip gợi ý viết bằng lời nói được với con vì **con sẽ đọc dòng đó** ở
 cửa hàng ("Bố mẹ đã trừ ⭐": −3 ⭐ · Cãi bố mẹ; để trống thì con thấy "Con hỏi bố mẹ
 vì sao nhé"). Chỉ trừ, **không có đường cộng tay**. **Số dư không bao giờ âm**: gõ quá
-số đang có thì nút khoá; máy chủ là chốt cuối (con vừa kiếm thêm, máy khác vừa trừ)
-— bị từ chối thì hiện "chỉ còn N ⭐" và nút **"Trừ hết N ⭐"**, N do máy chủ tính lại
-tại lúc bấm. Mỗi lần trừ là **một dòng `score_penalties`** lưu đúng số đã trừ + lý
+số đang có thì chính cái nút đó đổi thành **"Trừ hết N ⭐"** (gửi `truHet: true`, N do
+máy chủ tính lại tại lúc bấm — không gửi số đang hiện); máy chủ là chốt cuối (con vừa
+kiếm thêm, máy khác vừa trừ) nên khi nó từ chối kèm `conLai` thì màn đi qua **đúng
+cái nút đó** với N mới — cả hai đường dùng **một hàm thuần** `trangThaiTruDiem`
+(`lib/types.ts`), không có hai bản luật. Mỗi lần trừ là **một dòng `score_penalties`** lưu đúng số đã trừ + lý
 do + thời điểm (bảng riêng, không phải dòng âm trong `score_events`, không phải đổi
 thưởng giả — lý do ở [migrations/017_tru_diem.sql](migrations/017_tru_diem.sql));
 kiểm-và-ghi chạy trong **một transaction có khoá theo con** (`queryTx` trong
 `lib/db.ts`, SQL ở `lib/sqlDiem.ts`) nên hai request cùng lúc không đẩy số dư xuống
-âm. Trừ điểm không đụng vào ba luật cộng.
+âm. **Cả hai đường trừ ⭐ xếp hàng ở cùng một khoá đó**: `duyetDoiThuong` cũng chạy
+trong transaction ấy với `SQL_DUYET_DOI_THUONG` (UPDATE có điều kiện số dư ≥ giá),
+vì "không âm" là luật của số dư chứ không của riêng một đường — đọc số dư ở một câu
+rồi UPDATE ở câu sau là đúng chỗ để bố mẹ A bấm Duyệt và bố mẹ B bấm "Trừ hết" đan
+vào nhau. Trừ điểm không đụng vào ba luật cộng.
 
 **Không bao giờ để bố mẹ bị kẹt.** AI hỏng, hết quota hay chưa có key thì vẫn
 tách tạm theo dòng kèm cảnh báo, và luôn có đường "Nhập tay từng bài".

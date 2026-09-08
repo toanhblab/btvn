@@ -417,3 +417,41 @@ export function lamSachDiemTru(v: unknown): number | null {
 export function lamSachLyDoTru(v: unknown): string {
   return String(v ?? '').trim().slice(0, MAX_CHU_LY_DO_TRU);
 }
+
+/**
+ * MOT cho duy nhat quyet dinh o "tru ⭐" tren man bo me lam gi (issue #43).
+ *
+ * Hai duong "go qua so con dang co" — chan ngay o giao dien, va may chu tu choi
+ * (400 kem `conLai`, man cap nhat so dang tin roi tinh lai) — phai ra CUNG mot
+ * ket qua: moi bo me bam "Tru het N" mot cham, khong bao gio la nut khoa cut
+ * duong bat bo me go lai cho dung.
+ *
+ * `lenh` la thu goi len may chu:
+ *   'tru'    -> { points: soTru }
+ *   'truHet' -> { truHet: true } — KHONG gui N: may chu tinh lai so du tai luc
+ *               bam (con co the vua kiem them ⭐), N o nhan nut chi de bo me doc.
+ *   null     -> nut khoa: chua go so, hoac con khong con ⭐ nao de tru.
+ *
+ *   dangCo  so ⭐ man dang tin la con co (props may chu, hoac `conLai` may chu vua tra)
+ *   soGo    chu trong o nhap
+ */
+export interface TrangThaiTruDiem {
+  lenh: 'tru' | 'truHet' | null;
+  /** So bo me go, da lam sach nhu may chu (lamSachDiemTru); null = chua go so hop le. */
+  soTru: number | null;
+  quaSo: boolean;
+  /** Dong do duoi o nhap; '' = khong hien gi. */
+  canhBao: string;
+}
+
+export function trangThaiTruDiem(dangCo: number, soGo: string): TrangThaiTruDiem {
+  const soTru = lamSachDiemTru(soGo);
+  const quaSo = soTru !== null && soTru > dangCo;
+  const lenh = soTru === null ? null : !quaSo ? 'tru' : dangCo > 0 ? 'truHet' : null;
+  return {
+    lenh,
+    soTru,
+    quaSo,
+    canhBao: !quaSo ? '' : dangCo > 0 ? `Con chỉ có ${dangCo} ⭐` : 'Con không còn ⭐ nào để trừ',
+  };
+}

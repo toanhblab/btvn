@@ -60,3 +60,28 @@ export const SQL_TRU_DIEM = `INSERT INTO score_penalties (id, child_id, points, 
  */
 export const SQL_SO_DU_MOT_CON = `SELECT ${SQL_SO_DU_CON} AS so_du
      FROM children c WHERE c.id = $1 AND c.family_id = $2`;
+
+/**
+ * Duyet mot yeu cau doi thuong — cau THU HAI cua transaction duyet, chay SAU
+ * SQL_KHOA_TRU_DIEM cua con do.
+ *
+ * Duyet la duong TRU ⭐ thu hai (so du bot vi dong nay thanh 'approved', khong
+ * ghi dong nao ca), nen phai xep hang o CUNG mot khoa voi SQL_TRU_DIEM: doc "du
+ * diem" o mot request roi UPDATE trong khi request kia vua tru het la cach day
+ * so du xuong duoi 0.
+ *
+ * Dieu kien so du >= r.cost tinh TAI CHO (dong nay con 'pending' nen chua nam
+ * trong SQL_SO_DU_CON) — day la tang du lieu cua luat "khong am" cho duong duyet,
+ * cung khuon voi SQL_TRU_DIEM. Duyet duoc thi RETURNING dong vua doi; khong du
+ * diem (hoac dong da bi xu ly) thi 0 dong, khong doi gi. Doc so du sau do bang
+ * SQL_SO_DU_MOT_CON ngay trong cung transaction de biet la vi thieu diem hay vi
+ * dong da xu ly, va de bao dung "chi con N diem".
+ *   $1 id (reward_redemptions)   $2 familyId
+ */
+export const SQL_DUYET_DOI_THUONG = `UPDATE reward_redemptions r
+      SET status = 'approved', decided_at = now()
+    WHERE r.id = $1 AND r.status = 'pending'
+      AND EXISTS (SELECT 1 FROM children c
+                   WHERE c.id = r.child_id AND c.family_id = $2
+                     AND ${SQL_SO_DU_CON} >= r.cost)
+   RETURNING r.*`;

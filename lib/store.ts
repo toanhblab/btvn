@@ -9,7 +9,9 @@ import type {
 import { DURATION_DEFAULT, HW_SOURCE_DEFAULT, hwSourceOf, nhomNhiemVuOf } from './types';
 import { veTrenManCuaCon } from './nhomNhiemVu';
 import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu';
-import { SQL_KHOA_TRU_DIEM, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON, SQL_TRU_DIEM } from './sqlDiem';
+import {
+  SQL_DUYET_DOI_THUONG, SQL_KHOA_TRU_DIEM, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON, SQL_TRU_DIEM,
+} from './sqlDiem';
 
 /** Ngay hom nay theo gio dia phuong, YYYY-MM-DD (toISOString la UTC nen lech mui gio). */
 export function todayISO(offsetDays = 0): string {
@@ -1399,9 +1401,17 @@ export async function xinDoiThuong(
 
 /**
  * Bo me duyet / tu choi. Duyet thi diem bi tru NGAY: so du doc tu status =
- * 'approved' (soDiemTheoCon), khong ghi them dong nao — mot cau UPDATE duy nhat,
- * khong co buoc thu hai de lech nhau. Kiem du diem lai luc duyet (khong chi luc
- * con xin) lam chot cuoi cho so du am, vi re va vi luat co the doi sau nay.
+ * 'approved' (soDiemTheoCon), khong ghi them dong nao.
+ *
+ * DUYET la mot duong tru ⭐, y nhu truDiem (issue #43), nen no chay trong CUNG
+ * khuon: MOT transaction, cau dau la SQL_KHOA_TRU_DIEM theo con, roi UPDATE co
+ * DIEU KIEN so du >= gia (SQL_DUYET_DOI_THUONG), roi doc so du. Kiem du diem
+ * bang mot cau doc rieng truoc UPDATE thi hai duong tru dan xen nhau duoc: bo me
+ * A bam Duyet (doc thay du) trong khi bo me B bam "Tru het" -> so du xuong duoi
+ * 0. Khong am la luat cua so du, khong cua rieng mot duong nao.
+ *
+ * 0 dong doi = hoac dong da bi xu ly (409), hoac khong con du diem (400) — so du
+ * doc trong cung transaction phan biet hai truong hop, giu dung chu bao cu.
  */
 export async function duyetDoiThuong(
   familyId: string,
@@ -1414,19 +1424,28 @@ export async function duyetDoiThuong(
     return { ok: false, status: 409, error: 'Yêu cầu này đã được xử lý rồi.' };
   }
   if (approve) {
-    const diem = await soDiem(familyId, r.childId);
-    if (diem < r.cost) {
-      return {
-        ok: false, status: 400,
-        error: `Con chỉ còn ${diem} điểm, chưa đủ ${r.cost} điểm. Bố mẹ có thể từ chối để con chọn lại.`,
-      };
+    const [, daDuyet, soDu] = await queryTx<RedemptionRow & { so_du: number | string }>([
+      { sql: SQL_KHOA_TRU_DIEM, params: [r.childId] },
+      { sql: SQL_DUYET_DOI_THUONG, params: [id, familyId] },
+      { sql: SQL_SO_DU_MOT_CON, params: [r.childId, familyId] },
+    ]);
+    if (daDuyet.length === 0) {
+      const diem = Number(soDu[0]?.so_du ?? 0);
+      if (diem < r.cost) {
+        return {
+          ok: false, status: 400,
+          error: `Con chỉ còn ${diem} điểm, chưa đủ ${r.cost} điểm. Bố mẹ có thể từ chối để con chọn lại.`,
+        };
+      }
+      return { ok: false, status: 409, error: 'Yêu cầu này đã được xử lý rồi.' };
     }
+    return { ok: true, redemption: toRedemption(daDuyet[0]) };
   }
   const rows = await query<RedemptionRow>(
-    `UPDATE reward_redemptions r SET status = $3, decided_at = now()
+    `UPDATE reward_redemptions r SET status = 'rejected', decided_at = now()
       WHERE r.id = $1 AND r.status = 'pending' AND ${REDEMPTION_OF_FAMILY}
       RETURNING r.*`,
-    [id, familyId, approve ? 'approved' : 'rejected']
+    [id, familyId]
   );
   if (rows.length === 0) return { ok: false, status: 409, error: 'Yêu cầu này đã được xử lý rồi.' };
   return { ok: true, redemption: toRedemption(rows[0]) };

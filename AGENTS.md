@@ -100,8 +100,14 @@ lưu đúng số đã trừ mỗi lần, không lưu tổng. "Không âm" chặn
 là MỘT transaction `queryTx` (`lib/db.ts` — cách duy nhất trong repo chạy nhiều
 câu trong một transaction; Neon HTTP không tương tác nên gói phải là danh sách cố
 định): khoá `pg_advisory_xact_lock` theo con → `INSERT … SELECT` chỉ ghi khi số dư
-tính tại chỗ đủ → đọc số dư. Đừng kẹp `GREATEST(0, …)` trong SUM. "Trừ hết N" gửi
-`truHet: true`, máy chủ tự tính N — không gửi số đang hiện. Lý do là thứ CON ĐỌC ở
+tính tại chỗ đủ → đọc số dư. Đừng kẹp `GREATEST(0, …)` trong SUM. **"Không âm" là
+luật của SỐ DƯ, không của riêng một đường**: `duyetDoiThuong` cũng là một đường trừ
+(dòng thành `'approved'`) nên chạy trong CÙNG khuôn đó — cùng khoá theo con, rồi
+UPDATE có điều kiện số dư ≥ giá (`SQL_DUYET_DOI_THUONG`); thêm đường trừ thứ ba thì
+lặp lại đúng khuôn này, đừng đọc số dư ở một câu rồi ghi ở câu sau. "Trừ hết N" gửi
+`truHet: true`, máy chủ tự tính N — không gửi số đang hiện; gõ quá số dư thì chính
+nút đó đổi thành "Trừ hết N" (một hàm thuần `trangThaiTruDiem`, dùng cho cả đường
+chặn ở giao diện lẫn đường máy chủ trả 400 + `conLai`). Lý do là thứ CON ĐỌC ở
 cửa hàng (`LY_DO_TRU_GOI_Y`, `LY_DO_TRU_TRONG` trong `lib/types.ts`).
 
 Nhiệm vụ hàng ngày (`daily_chores` + dòng `assignments` có `chore_id`, hai nhóm

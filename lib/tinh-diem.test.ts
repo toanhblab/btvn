@@ -32,6 +32,10 @@
  *      qua so dang co thi khong ghi gi, hai request cung luc chi mot ben ghi;
  *      "Tru het" tinh so du tai luc cau chay; ba luat cong khong doi; xoa con
  *      keo theo; nha khac khong tru duoc.
+ *  10. HAI duong tru ⭐ (bo me tru, va duyet doi thuong) xep hang o CUNG mot
+ *      khoa theo con: duyet + "Tru het" cung luc chi mot ben di qua, so du
+ *      khong xuong duoi 0. Kem nut cua o tru ⭐ (trangThaiTruDiem): go qua so du
+ *      la moi "Tru het N", khong phai nut khoa.
  */
 
 import { test, before, after } from 'node:test';
@@ -42,7 +46,10 @@ import {
   DIEM_NGAY_XONG, DIEM_XONG_SOM, ngayDuocTinhDiem, ngayHoanThanh, xongSom,
 } from './diem.ts';
 import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu.ts';
-import { SQL_KHOA_TRU_DIEM, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON, SQL_TRU_DIEM } from './sqlDiem.ts';
+import {
+  SQL_DUYET_DOI_THUONG, SQL_KHOA_TRU_DIEM, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON, SQL_TRU_DIEM,
+} from './sqlDiem.ts';
+import { trangThaiTruDiem } from './types.ts';
 
 const TEP_015 = '015_tinh_diem_doi_thuong.sql';
 const PHUT = 60_000;
@@ -1127,4 +1134,111 @@ test('nha khac khong tru duoc con nha minh; xoa con keo theo hinh phat (CASCADE)
   assert.equal(await soDongPhat('con_p6'), 1);
   await db.exec(`DELETE FROM children WHERE id = 'con_p6'`);
   assert.equal(await soDongPhat('con_p6'), 0);
+});
+
+/**
+ * Mo phong nhanh DUYET cua duyetDoiThuong (lib/store.ts): CUNG ba cau SQL tu
+ * lib/sqlDiem.ts trong MOT transaction — khoa theo con (cung khoa voi `tru` o
+ * tren), UPDATE co kiem so du, doc so du sau. Duyet la duong tru ⭐ thu hai nen
+ * hai duong phai xep hang cung cho, khong thi so du xuong duoi 0.
+ */
+async function duyet(rdmId: string, childId: string, familyId = 'fam_cu') {
+  return db.transaction(async (tx) => {
+    await tx.query(SQL_KHOA_TRU_DIEM, [childId]);
+    const daDuyet = (await tx.query(SQL_DUYET_DOI_THUONG, [rdmId, familyId])).rows;
+    const [sd] = (await tx.query(SQL_SO_DU_MOT_CON, [childId, familyId])).rows as { so_du: unknown }[];
+    return { daDuyet: daDuyet as Record<string, unknown>[], conLai: Number(sd?.so_du ?? 0) };
+  });
+}
+
+async function xinDoi(rdmId: string, childId: string, cost: number) {
+  await db.query(
+    `INSERT INTO reward_redemptions (id, child_id, reward_id, reward_name, reward_icon, cost)
+     VALUES ($1, $2, NULL, 'Ăn kem', '🍦', $3)`,
+    [rdmId, childId, cost]
+  );
+}
+
+const trangThai = async (rdmId: string): Promise<string> => {
+  const [r] = await rows(`SELECT status FROM reward_redemptions WHERE id = $1`, [rdmId]);
+  return String(r.status);
+};
+
+test('duyet doi thuong: du diem thi tru dung gia; thieu diem thi KHONG doi gi (con pending); nha khac khong duyet duoc', async () => {
+  await conMoiCoDiem('con_p7', 10);
+  await xinDoi('rdm_p7', 'con_p7', 4);
+
+  const kq = await duyet('rdm_p7', 'con_p7');
+  assert.equal(kq.daDuyet.length, 1);
+  assert.equal(kq.conLai, 6, 'so du bot dung gia phan thuong, khong ghi dong nao');
+  assert.equal(await soDu('con_p7'), 6);
+  assert.equal(await soDongPhat('con_p7'), 0, 'duyet khong sinh dong phat');
+
+  // Bo me tru gan het roi moi duyet cai moi: cau UPDATE tu tu choi
+  await xinDoi('rdm_p7b', 'con_p7', 5);
+  await tru('con_p7', 4, 'Chưa làm bài');
+  const thieu = await duyet('rdm_p7b', 'con_p7');
+  assert.equal(thieu.daDuyet.length, 0, 'khong du 5 ⭐ thi khong duyet');
+  assert.equal(thieu.conLai, 2, 'so du that de bao "chi con 2 diem"');
+  assert.equal(await trangThai('rdm_p7b'), 'pending', 'van cho, bo me tu choi duoc');
+  assert.equal(await soDu('con_p7'), 2);
+
+  const la = await duyet('rdm_p7b', 'con_p7', 'fam_la');
+  assert.equal(la.daDuyet.length, 0, 'nha khac khong duyet duoc yeu cau cua nha nay');
+  assert.equal(await trangThai('rdm_p7b'), 'pending');
+});
+
+test('duyet va "Tru het" cung luc: chi MOT ben tru duoc, so du KHONG xuong duoi 0', async () => {
+  await conMoiCoDiem('con_p8', 10);
+  await xinDoi('rdm_p8', 'con_p8', 10);
+
+  const [d, t] = await Promise.all([duyet('rdm_p8', 'con_p8'), tru('con_p8', null, 'Cãi bố mẹ')]);
+  assert.deepEqual(
+    [d.daDuyet.length, t.ghi.length].sort(),
+    [0, 1],
+    'dung mot trong hai duong tru di qua — ben sau thay so du da het'
+  );
+  assert.equal(await soDu('con_p8'), 0, 'khong bao gio am');
+
+  const daTru = d.daDuyet.length === 1 ? 10 : Number(t.ghi[0].points);
+  assert.equal(daTru, 10, 'ben nao thang thi cung tru dung 10, khong tru mot phan');
+  if (d.daDuyet.length === 0) {
+    assert.equal(await trangThai('rdm_p8'), 'pending', 'chua duyet duoc thi con cho, khong mat yeu cau');
+  }
+
+  // Ben chua duoc thi thu lai cung khong lot: so du da 0
+  const lai = await duyet('rdm_p8', 'con_p8');
+  const laiTru = await tru('con_p8', 1);
+  assert.equal(lai.daDuyet.length, 0);
+  assert.equal(laiTru.ghi.length, 0);
+  assert.equal(await soDu('con_p8'), 0);
+});
+
+/**
+ * Nut chinh cua o "tru ⭐" tren man bo me (trangThaiTruDiem trong lib/types.ts) —
+ * mot cho duy nhat cho ca hai duong "go qua so du": chan o giao dien, va may chu
+ * tu choi roi tra `conLai` (man cap nhat `dangCo` bang so do rot tinh lai).
+ */
+test('o tru ⭐: go qua so du thi nut thanh "Tru het N" chu khong khoa; go vua thi tru dung so go', async () => {
+  assert.deepEqual(trangThaiTruDiem(5, '3'), { lenh: 'tru', soTru: 3, quaSo: false, canhBao: '' });
+  assert.deepEqual(trangThaiTruDiem(5, '5'), { lenh: 'tru', soTru: 5, quaSo: false, canhBao: '' });
+
+  // Go 8 khi con co 5: moi "Tru het" mot cham, KHONG phai nut khoa
+  const qua = trangThaiTruDiem(5, '8');
+  assert.equal(qua.lenh, 'truHet', 'nut bam duoc va gui truHet — may chu tinh lai N');
+  assert.equal(qua.canhBao, 'Con chỉ có 5 ⭐', 'van noi ro con co bao nhieu');
+
+  // Cung duong do khi may chu vua tu choi va tra conLai = 3
+  assert.equal(trangThaiTruDiem(3, '8').lenh, 'truHet');
+  assert.equal(trangThaiTruDiem(3, '8').canhBao, 'Con chỉ có 3 ⭐');
+
+  // Het sao thi khong con gi de tru: nut khoa
+  const het = trangThaiTruDiem(0, '2');
+  assert.equal(het.lenh, null);
+  assert.equal(het.canhBao, 'Con không còn ⭐ nào để trừ');
+
+  // Chua go / go rac: nut khoa, khong canh bao gi
+  for (const s of ['', '0', 'abc']) {
+    assert.deepEqual(trangThaiTruDiem(5, s), { lenh: null, soTru: null, quaSo: false, canhBao: '' }, s);
+  }
 });

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ChildColor } from '@/lib/types';
-import { LY_DO_TRU_GOI_Y, MAX_CHU_LY_DO_TRU } from '@/lib/types';
+import { LY_DO_TRU_GOI_Y, MAX_CHU_LY_DO_TRU, trangThaiTruDiem } from '@/lib/types';
 
 export interface ConDeTru {
   id: string;
@@ -22,29 +22,34 @@ export interface ConDeTru {
  * moi), ghi ly do KHONG bat buoc, co hang nut goi y mot cham. Ly do la thu CON
  * DOC o cua hang, nen cac goi y viet bang loi noi duoc voi con (LY_DO_TRU_GOI_Y).
  *
- * Khong am, hai tang:
- *   - O day khoa nut khi so go > so dang hien, de bo me hieu ngay vi sao.
+ * Khong am, hai tang, nhung CHI MOT nut:
+ *   - Go qua so dang hien: `trangThaiTruDiem` (lib/types.ts) doi nut thanh
+ *     "Tru het N ⭐" ngay tai day, kem dong "Con chi co N ⭐" — bo me van xong
+ *     viec bang mot cham, khong phai go lai cho dung.
  *   - May chu la chot cuoi (truDiem trong lib/store.ts, transaction co khoa theo
  *     con): con vua kiem them / mot may khac vua tru thi so tren man nay da cu.
- *     Bi tu choi thi may chu tra `conLai` — hien "chi con N ⭐" + nut "Tru het N ⭐"
- *     (cung khuon "Duyet, tru N ⭐" cua doi thuong). Nut do gui `truHet: true`,
- *     KHONG gui N: may chu tinh lai N tai luc bam, dung so that.
+ *     Bi tu choi thi may chu tra `conLai`, ghi vao lop phu `vuaDoi` duoi day —
+ *     va vi the di qua DUNG mot nut "Tru het N ⭐" o tren, voi N moi.
+ *   Nut "Tru het" gui `truHet: true`, KHONG gui N: may chu tinh lai N tai luc
+ *   bam, dung so that.
  *
- * Xong thi router.refresh() de vien ⭐ va muc "Đã trừ gần đây" o trang cha doc lai;
- * `conLai` may chu tra ve dung de cap nhat vien ngay, khong doi refresh.
+ * `vuaDoi` la lop phu NGAN HAN cua so ⭐ tung con: may chu vua tra `conLai` thi
+ * vien doi ngay, khong doi tai lai. Nhung props `initial` moi (bo me duyet mot
+ * yeu cau doi thuong ngay ben duoi, con vua tick o iPad, hay router.refresh()
+ * cua chinh cho nay) la so THAT moi nhat, nen xoa lop phu di — giu lai la mot
+ * man hien hai con so khac nhau cho cung mot so du.
  */
 export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
   const router = useRouter();
-  const [diemCua, setDiemCua] = useState<Record<string, number>>(
-    () => Object.fromEntries(initial.map((c) => [c.id, c.diem]))
-  );
+  const [vuaDoi, setVuaDoi] = useState<Record<string, number>>({});
+  useEffect(() => {
+    setVuaDoi((d) => (Object.keys(d).length === 0 ? d : {}));
+  }, [initial]);
   const [chon, setChon] = useState<string | null>(null);
   const [so, setSo] = useState('');
   const [lyDo, setLyDo] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  /** So du may chu vua bao khi tu choi — bam "Tru het" thi gui truHet, khong gui so nay. */
-  const [conLaiBaoLoi, setConLaiBaoLoi] = useState<number | null>(null);
   const [vuaTru, setVuaTru] = useState<{ ten: string; so: number; conLai: number } | null>(null);
 
   const RING: Record<ChildColor, string> = {
@@ -53,42 +58,36 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
     tertiary: 'ring-tertiary',
   };
 
+  const soDu = (c: ConDeTru) => vuaDoi[c.id] ?? c.diem;
   const con = initial.find((c) => c.id === chon) ?? null;
-  const dangCo = con ? diemCua[con.id] ?? 0 : 0;
-  const soTru = Number(so);
-  const soHopLe = Number.isInteger(soTru) && soTru > 0;
-  const quaSo = soHopLe && soTru > dangCo;
+  const dangCo = con ? soDu(con) : 0;
+  const { lenh, soTru, quaSo, canhBao } = trangThaiTruDiem(dangCo, so);
 
   function moCon(id: string) {
     setChon((c) => (c === id ? null : id));
     setSo('');
     setLyDo('');
     setError('');
-    setConLaiBaoLoi(null);
     setVuaTru(null);
   }
 
-  async function gui(truHet: boolean) {
-    if (!con) return;
+  async function gui() {
+    if (!con || lenh === null) return;
     setBusy(true);
     setError('');
-    setConLaiBaoLoi(null);
     try {
       const res = await fetch('/api/tru-diem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
-          truHet
+          lenh === 'truHet'
             ? { childId: con.id, truHet: true, reason: lyDo }
             : { childId: con.id, points: soTru, reason: lyDo }
         ),
       });
       const data = await res.json().catch(() => ({}));
-      if (typeof data.conLai === 'number') setDiemCua((d) => ({ ...d, [con.id]: data.conLai }));
-      if (!res.ok) {
-        if (typeof data.conLai === 'number') setConLaiBaoLoi(data.conLai);
-        throw new Error(data.error ?? 'Không lưu được');
-      }
+      if (typeof data.conLai === 'number') setVuaDoi((d) => ({ ...d, [con.id]: data.conLai }));
+      if (!res.ok) throw new Error(data.error ?? 'Không lưu được');
       setVuaTru({ ten: con.name, so: data.penalty.points, conLai: data.conLai });
       setChon(null);
       setSo('');
@@ -103,6 +102,13 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
 
   const oNhap =
     'rounded-lg border border-outline-variant min-h-p-tap px-3 text-p-body bg-surface-container-lowest';
+
+  const nhanNut =
+    lenh === 'truHet'
+      ? `Trừ hết ${dangCo} ⭐`
+      : soTru !== null && con
+        ? `Trừ ${soTru} ⭐ của ${con.name}`
+        : 'Trừ ⭐';
 
   return (
     <div>
@@ -124,7 +130,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={c.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
               <span className="font-bold text-on-surface">{c.name}</span>
-              <span className="text-on-tertiary-fixed-variant font-bold">{diemCua[c.id] ?? 0} ⭐</span>
+              <span className="text-on-tertiary-fixed-variant font-bold">{soDu(c)} ⭐</span>
               <span className="material-symbols-outlined text-on-surface-variant" aria-hidden>
                 {dang ? 'expand_less' : 'remove_circle'}
               </span>
@@ -153,7 +159,10 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
             <input
               id="so-tru"
               value={so}
-              onChange={(e) => { setSo(e.target.value.replace(/\D/g, '').slice(0, 4)); setConLaiBaoLoi(null); }}
+              onChange={(e) => {
+                setSo(e.target.value.replace(/\D/g, '').slice(0, 4));
+                setError('');
+              }}
               inputMode="numeric"
               autoFocus
               placeholder="số ⭐"
@@ -161,9 +170,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
               className={`${oNhap} w-24 text-right ${quaSo ? 'border-error text-error' : ''}`}
             />
             <span className="text-p-body">⭐</span>
-            {quaSo && (
-              <span className="text-p-body-sm text-error">Con chỉ có {dangCo} ⭐</span>
-            )}
+            {canhBao && <span className="text-p-body-sm text-error">{canhBao}</span>}
           </div>
 
           {/* Ly do — con se doc, nen goi y la loi noi voi con */}
@@ -190,49 +197,26 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
             className={`${oNhap} w-full`}
           />
 
-          {conLaiBaoLoi !== null && conLaiBaoLoi > 0 ? (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setConLaiBaoLoi(null)}
-                disabled={busy}
-                className="flex-1 rounded-card min-h-p-tap border-2 border-outline-variant
-                           text-on-surface-variant text-p-body-sm font-bold disabled:opacity-60"
-              >
-                Thôi
-              </button>
-              <button
-                type="button"
-                onClick={() => gui(true)}
-                disabled={busy}
-                className="flex-1 rounded-card min-h-p-tap bg-error text-white text-p-body-sm font-bold
-                           disabled:opacity-60"
-              >
-                {busy ? 'Đang lưu…' : `Trừ hết ${conLaiBaoLoi} ⭐`}
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => moCon(con.id)}
-                disabled={busy}
-                className="flex-1 rounded-card min-h-p-tap border-2 border-outline-variant
-                           text-on-surface-variant text-p-body-sm font-bold disabled:opacity-60"
-              >
-                Thôi
-              </button>
-              <button
-                type="button"
-                onClick={() => gui(false)}
-                disabled={busy || !soHopLe || quaSo}
-                className="flex-1 rounded-card min-h-p-tap bg-error text-white text-p-body-sm font-bold
-                           disabled:opacity-40"
-              >
-                {busy ? 'Đang lưu…' : soHopLe ? `Trừ ${soTru} ⭐ của ${con.name}` : 'Trừ ⭐'}
-              </button>
-            </div>
-          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => moCon(con.id)}
+              disabled={busy}
+              className="flex-1 rounded-card min-h-p-tap border-2 border-outline-variant
+                         text-on-surface-variant text-p-body-sm font-bold disabled:opacity-60"
+            >
+              Thôi
+            </button>
+            <button
+              type="button"
+              onClick={gui}
+              disabled={busy || lenh === null}
+              className="flex-1 rounded-card min-h-p-tap bg-error text-white text-p-body-sm font-bold
+                         disabled:opacity-40"
+            >
+              {busy ? 'Đang lưu…' : nhanNut}
+            </button>
+          </div>
 
           {error && (
             <p className="text-p-body text-error bg-error-container rounded-card p-3">{error}</p>
