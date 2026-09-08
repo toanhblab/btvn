@@ -506,7 +506,4 @@ export const JA: Record<Key, string> = {
   'Tắt đèn học': '勉強机のライトを消す',
   'Soạn sách vở cho ngày mai': '明日の教科書をそろえる',
   'Việc nhà': 'おてつだい',
-  'Đang đóng…': '閉じています…',
-  'Quên PIN trên thiết bị này': 'この端末でPINを忘れる',
-  'Đóng phần bố mẹ trên máy này; màn của con vẫn mở như cũ. Lần sau nhập PIN lại — nhập PIN nhà khác thì sang nhà đó.': 'この端末で保護者ページを閉じます。こども画面はそのまま使えます。次回はPINを入力し直してください。別の家族のPINを入れるとその家族に切り替わります。',
 };

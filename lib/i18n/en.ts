@@ -530,10 +530,6 @@ export const EN = {
   'Tắt đèn học': 'Turn off the desk lamp',
   'Soạn sách vở cho ngày mai': "Pack books for tomorrow",
   'Việc nhà': 'Chores',
-  /* ---- Quen PIN tren may (Cai dat) ---- */
-  'Đang đóng…': 'Signing out…',
-  'Quên PIN trên thiết bị này': 'Forget PIN on this device',
-  'Đóng phần bố mẹ trên máy này; màn của con vẫn mở như cũ. Lần sau nhập PIN lại — nhập PIN nhà khác thì sang nhà đó.': "Signs out of the parents area on this device. The kids' screen keeps working. Next time enter a PIN again. A different family's PIN switches to that family.",
 } as const;
 
 export type Key = keyof typeof EN;

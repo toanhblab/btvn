@@ -298,9 +298,15 @@ bình thường, không phải cài lại gì.
 
 **App hiện tiếng nước ngoài, không phải tiếng Việt?**
 Máy đang mở nhà mẫu (mã 1111 tiếng Nhật, 2222 tiếng Hàn, 3333 tiếng Anh). Chữ của
-app đi theo **nhà** chứ không theo máy: ở màn của bố mẹ vào **Cài đặt → "Quên PIN
-trên thiết bị này"** rồi nhập lại mã PIN của nhà mình là về tiếng Việt; ở máy của
-con thì mở lại link `/nha/<mã nhà>` của nhà mình (bố mẹ copy ở Cài đặt).
+app đi theo **nhà** chứ không theo máy. Mở lại link `/nha/<mã nhà>` của nhà mình
+(bố mẹ copy ở Cài đặt) là máy quay về nhà mình và tiếng Việt. Phần của bố mẹ thì đi
+theo mã PIN vừa nhập: đóng trình duyệt rồi mở lại, nhập PIN của nhà mình.
+
+**Muốn cho người khác xem app bằng tiếng Nhật / Hàn / Anh?**
+Mở một trong ba link `/nha/demo-ja` (tiếng Nhật), `/nha/demo-ko` (tiếng Hàn),
+`/nha/demo-en` (tiếng Anh) — mở link nào là máy sang nhà mẫu đó ngay, không phải
+nhập gì; muốn xem phần của bố mẹ thì nhập mã 1111 / 2222 / 3333. Nhảy giữa các nhà
+chỉ bằng cách mở link khác. Ba nhà này là dữ liệu mẫu, không phải nhà thật.
 
 **Xoá hết bài cũ đi được không?**
 Được. Vào **Nhiệm vụ → "Xoá tất cả bài tập và việc nhà"** — app hỏi lại hai nhịp

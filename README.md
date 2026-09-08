@@ -78,6 +78,12 @@ lịch sử ⭐, một yêu cầu chờ duyệt, một lần bị trừ ⭐):
 | `2222` | 한국어 | `/nha/demo-ko` |
 | `3333` | English | `/nha/demo-en` |
 
+Nhảy giữa ba nhà demo (và về nhà thật) bằng cách mở link `/nha/<slug>` tương ứng:
+mở một lần là máy gắn sang nhà đó và vào thẳng màn chọn con, không phải nhập gì
+(`app/nha/[slug]/route.ts`). Lưu ý link chỉ đổi **cookie thiết bị**; phiên bố mẹ
+(`btvn_parent`, hết khi đóng trình duyệt nếu không tick "Nhớ") vẫn là nhà của PIN
+vừa nhập và được ưu tiên khi xác định nhà đang xem (`viewingFamilyId`).
+
 Ba mã PIN này **giữ chỗ vĩnh viễn** (`PIN_DEMO` trong `lib/i18n/ngonNgu.ts`):
 tạo nhà / đổi PIN trùng bị từ chối ngay. Nhà demo dùng PIN dễ đoán nên chỉ chứa
 dữ liệu mẫu, và `lib/nha-demo.test.ts` khẳng định không có đường nào từ nhà demo

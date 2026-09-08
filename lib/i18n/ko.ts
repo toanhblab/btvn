@@ -506,7 +506,4 @@ export const KO: Record<Key, string> = {
   'Tắt đèn học': '공부방 불 끄기',
   'Soạn sách vở cho ngày mai': '내일 책 챙기기',
   'Việc nhà': '집안일',
-  'Đang đóng…': '닫는 중…',
-  'Quên PIN trên thiết bị này': '이 기기에서 PIN 잊기',
-  'Đóng phần bố mẹ trên máy này; màn của con vẫn mở như cũ. Lần sau nhập PIN lại — nhập PIN nhà khác thì sang nhà đó.': '이 기기에서 보호자 페이지를 닫습니다. 아이 화면은 그대로 사용할 수 있습니다. 다음에는 PIN을 다시 입력하세요. 다른 가족의 PIN을 입력하면 그 가족으로 바뀝니다.',
 };
