@@ -438,10 +438,11 @@ export async function saveSubmission(input: {
 
   // Nhiem vu hang ngay (issue #36, #42): dot bai nay cho (con, ngay) thi cac
   // dong nhiem vu cua (con, ngay) do cung duoc tao ngay — ke ca ngay mai — de
-  // con thay chung duoi nhom "Ngay mai" cung luc voi bai. Tu #42 day KHONG con
-  // la noi duy nhat tao dong: ngay khong co bai thi taoNhiemVuNgay chay luc mo
-  // man cua con / man chon-con (progressUpcoming). Idempotent nen goi thua
-  // khong sao.
+  // tien do cua ngay do day du ngay tu luc giao bai. Man cua con KHONG ve dong
+  // cua ngay mai (tick duoc la an ⭐ truoc mot ngay — xem lib/nhomNhiemVu.ts),
+  // sang mai mo man la thay. Tu #42 day KHONG con la noi duy nhat tao dong:
+  // ngay khong co bai thi taoNhiemVuNgay chay luc mo man cua con / man chon-con
+  // (progressUpcoming). Idempotent nen goi thua khong sao.
   //
   // Nuot loi, y het seedDefaultChores o insertFamily: cac dong bai tap that o
   // tren da ghi xong va khong chung transaction voi khoi nay, nen nem loi len se

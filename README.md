@@ -258,8 +258,10 @@ cả nhà). Nhiệm vụ hiện **mỗi ngày, kể cả cuối tuần và ngày
 ngày được **tạo lười khi mở màn** (`taoNhiemVuNgay` — một câu `INSERT … SELECT …
 ON CONFLICT DO NOTHING`, gọi ở màn của con, màn chọn-con, chi tiết con của bố mẹ và
 lúc bố mẹ giao bài), không cần cron. Trên màn của con chúng xếp thành **hai nhóm
-riêng cuối cùng**, mỗi dòng có icon + chip "⭐ N"; con bấm là tick ngay tại chỗ
-(không mở màn chi tiết bài), tick xong hiện chip "+N ⭐". Xong hết cả bài lẫn nhiệm
+riêng cuối cùng** và **chỉ hiện việc của hôm nay** (dòng của ngày mai vẫn tạo sẵn
+nhưng không vẽ — tick được là ⭐ trước một ngày; bài tập ngày mai thì vẫn hiện),
+mỗi dòng có icon + chip "⭐ N"; con bấm là tick ngay tại chỗ (không mở màn chi
+tiết bài), tick xong hiện chip "+N ⭐". Xong hết cả bài lẫn nhiệm
 vụ mới sang màn khen "Giỏi quá!". Badge ở màn chọn-con nói **"N việc"** — đếm gộp
 bài tập và nhiệm vụ còn lại, không tách hai loại — "Xong hết 🎉" khi hết việc, và
 "Chưa có bài" chỉ khi không có gì cả.

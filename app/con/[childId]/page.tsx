@@ -4,6 +4,7 @@ import { viewingFamilyId } from '@/lib/auth';
 import { getChild, listAssignments, soDiem, taoNhiemVuNgay, todayISO } from '@/lib/store';
 import type { Assignment, HwSource, NhomNhiemVu } from '@/lib/types';
 import { HW_SOURCES, NHOM_NHIEM_VU } from '@/lib/types';
+import { nhomNhiemVuHomNay } from '@/lib/nhomNhiemVu';
 import TickHomNay from './TickHomNay';
 import ViecNhaBai from './ViecNhaBai';
 
@@ -101,16 +102,20 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   // a.choreNhom ("Sau khi hoc xong", "Viec nha hang ngay" — issue #42 Q1, khong
   // tron chung mot danh sach), noi CUOI mang (issue #36 muc 7), khong dung
   // HW_SOURCES cho hai nhom do de khong phai them 'viec nha' vao hang so day.
-  // Tien do o dau moi nhom (total/done) chi tinh dong cua HOM NAY, giong moi con
-  // so khac cua man nay ("x/y xong hom nay", todoHomNay, dieu kien day sang
-  // /xong) — xem AGENTS.md, truc thoi gian. Dong cua ngay mai VAN hien duoi tieu
-  // de "Ngày mai" nhung khong tinh vao tien do: khong thi con lam xong het phan
-  // hom nay ma huy hieu nhom van bao "3/6", khong xanh, khong 🎉.
-  const sourceGroups: { key: string; icon: string; label: string; isChores: boolean;
-    byDate: { date: string; items: Assignment[] }[]; total: number; done: number;
-    xongHet: boolean }[] =
+  //
+  // Hai nhom nhiem vu chi ve dong cua HOM NAY (mot danh sach phang, khong tieu de
+  // ngay — xem lib/nhomNhiemVu.ts), con nhom bai tap van gom theo ngay vi bai cua
+  // ngay mai phai hien. Tien do o dau moi nhom cung chi tinh HOM NAY, giong moi
+  // con so khac cua man nay ("x/y xong hom nay", todoHomNay, dieu kien day sang
+  // /xong) — xem AGENTS.md, truc thoi gian.
+  type NhomHien = { key: string; icon: string; label: string; total: number; done: number;
+    xongHet: boolean } & (
+      | { isChores: true; choreItems: Assignment[] }
+      | { isChores: false; byDate: { date: string; items: Assignment[] }[] }
+    );
+  const sourceGroups: NhomHien[] =
     (Object.keys(HW_SOURCES) as HwSource[])
-      .map((source) => {
+      .map((source): NhomHien => {
         const mine = items.filter((a) => a.source === source && a.choreId == null);
         const homNay = mine.filter((a) => a.dueDate === today);
         const done = homNay.filter((a) => a.status === 'done').length;
@@ -127,34 +132,32 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
       })
       // Nhom chi co bai cua ngay mai van phai hien (total = 0 nhung byDate co
       // dong) — loc theo byDate, khong loc theo total.
-      .filter((g) => g.byDate.length > 0);
+      .filter((g) => !g.isChores && g.byDate.length > 0);
 
-  for (const nhom of Object.keys(NHOM_NHIEM_VU) as NhomNhiemVu[]) {
-    // Dong viec nha cu ma daily_chores khong con (choreNhom null) roi vao nhom
-    // dau — khong bo rơi dong nao dang 'todo' cua hom nay.
-    const choreItems = items.filter((a) =>
-      a.choreId != null && (a.choreNhom ?? Object.keys(NHOM_NHIEM_VU)[0]) === nhom
-    );
-    if (choreItems.length === 0) continue;
-    const choreHomNay = choreItems.filter((a) => a.dueDate === today);
-    const choreDone = choreHomNay.filter((a) => a.status === 'done').length;
+  for (const { nhom, items: choreItems } of nhomNhiemVuHomNay(
+    items,
+    today,
+    Object.keys(NHOM_NHIEM_VU) as NhomNhiemVu[]
+  )) {
+    const choreDone = choreItems.filter((a) => a.status === 'done').length;
     sourceGroups.push({
       key: `nhiem-vu-${nhom}`,
       icon: NHOM_NHIEM_VU[nhom].icon,
       label: NHOM_NHIEM_VU[nhom].label,
       isChores: true,
-      byDate: gomTheoNgay(choreItems),
-      total: choreHomNay.length,
+      choreItems,
+      total: choreItems.length,
       done: choreDone,
-      xongHet: choreHomNay.length > 0 && choreDone === choreHomNay.length,
+      xongHet: choreDone === choreItems.length,
     });
   }
 
-  /* ---- Khong con bai nao sap toi VA khong co nhiem vu nao: man khen thay vi man
-     trong (PRD 4.3). Tu issue #42 nhiem vu hien moi ngay nen man nay hau nhu chi
-     con hien khi con khong duoc giao nhiem vu nao (bo me tat het / khong giao
-     cho con nay). ---- */
-  if (items.length === 0) {
+  /* ---- Khong co gi de VE: man khen thay vi man trong (PRD 4.3). Tu issue #42
+     nhiem vu hien moi ngay nen man nay hau nhu chi con hien khi con khong duoc
+     giao nhiem vu nao (bo me tat het / khong giao cho con nay). Do theo
+     sourceGroups chu khong theo items: con co the con dong nhiem vu cua NGAY MAI
+     trong items ma man nay khong ve dong nao ca. ---- */
+  if (sourceGroups.length === 0) {
     return (
       <main className="kid-scope h-screen flex flex-col items-center justify-center text-center px-k-edge relative overflow-hidden">
         <div className="absolute top-[15%] left-[20%] w-16 h-8 bg-primary-fixed rounded-full opacity-60 animate-float-slow" />
@@ -280,22 +283,19 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
             )}
           </div>
 
-          {sg.byDate.map((g) => (
+          {sg.isChores ? (
+            // Nhiem vu: the tick nhe tai cho, KHONG dan sang /bai/[id] — man do
+            // co doc to + dong ho dem nguoc + co the quay video, khong hop voi
+            // mot viec don gian nhu "tat den hoc" (xem ViecNhaBai.tsx). Mot danh
+            // sach phang, khong tieu de ngay: chi co dong cua hom nay.
+            <ViecNhaBai items={sg.choreItems} childId={child.id} />
+          ) : (
+            sg.byDate.map((g) => (
             <div key={g.date} className="mb-6 last:mb-0">
               <h3 className="text-k-headline text-on-surface-variant mb-4">
                 {nhanNgay(g.date, today, tomorrow)}
               </h3>
 
-              {sg.isChores ? (
-                // Nhiem vu: the tick nhe tai cho, KHONG dan sang /bai/[id] — man
-                // do co doc to + dong ho dem nguoc + co the quay video, khong hop
-                // voi mot viec don gian nhu "tat den hoc" (xem ViecNhaBai.tsx).
-                <ViecNhaBai
-                  items={g.items}
-                  childId={child.id}
-                  laHomNay={g.date === today}
-                />
-              ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-k-gutter">
             {g.items.map((a) => {
               const isDone = a.status === 'done';
@@ -401,9 +401,9 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
               );
             })}
               </div>
-              )}
             </div>
-          ))}
+            ))
+          )}
         </section>
       ))}
       </TickHomNay>

@@ -29,17 +29,15 @@ import { useTickHomNay } from './TickHomNay';
  * CHUNG mot so dem, khong thi tick het nhom nay roi nhom kia lien tuc se khong
  * ai thay "het viec hom nay" (xem lib/tickHomNay.ts).
  *
- * @param laHomNay      nhom nay la nhom cua HOM NAY (chi hom nay moi dan sang
- *                      man khen — xong bai ngay mai thi chua "het viec hom nay").
+ * `items` chi gom dong cua HOM NAY (trang cha loc san — xem lib/nhomNhiemVu.ts),
+ * nen tick not dong cuoi cung la dan thang sang man khen.
  */
 export default function ViecNhaBai({
   items,
   childId,
-  laHomNay,
 }: {
   items: Assignment[];
   childId: string;
-  laHomNay: boolean;
 }) {
   const router = useRouter();
   const { daTick, datTick, conLai } = useTickHomNay();
@@ -72,7 +70,7 @@ export default function ViecNhaBai({
       // Tick not viec cuoi cung cua hom nay -> man khen, giong het duong di khi
       // con lam xong bai that cuoi cung (ChiTietBai.tsx). Vua duoc sao thi cho
       // con nhin thay chip "+N ⭐" mot nhip roi moi chuyen man.
-      if (done && laHomNay && conLai() <= 0) {
+      if (done && conLai() <= 0) {
         setTimeout(() => router.push(`/con/${childId}/xong`), sao > 0 ? 900 : 0);
         return;
       }

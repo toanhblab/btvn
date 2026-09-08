@@ -7,8 +7,9 @@ import {
 } from '@/lib/types';
 
 /**
- * Danh sach phan thuong o man Thuong cua bo me — cung khuon voi ViecNha.tsx
- * (Cai dat > Nhiem vu moi ngay): MOT danh sach chung ca nha, sua tai cho, giu
+ * Danh sach phan thuong o man Thuong cua bo me — cung khuon voi
+ * NhiemVuHangNgay.tsx (/bome/nhiem-vu-hang-ngay, trang do dung lai khuon nay):
+ * MOT danh sach chung ca nha, sua tai cho, giu
  * state o day (khong router.refresh sau moi lan bam) vi bo me hay bam lien tay.
  *
  * Moi phan thuong: icon (mot emoji, chon nhanh tu hang goi y hoac go), ten, gia

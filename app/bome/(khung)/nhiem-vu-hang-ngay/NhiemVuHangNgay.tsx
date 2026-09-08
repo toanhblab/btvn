@@ -31,7 +31,14 @@ function ChonNhom({ value, onChange, busy }: { value: NhomNhiemVu; onChange: (n:
   );
 }
 
-/** Hang chip "Giao cho": Cả nhà + tung con (avatar tron nho + ten). */
+/**
+ * Hang chip "Giao cho": Cả nhà + tung con (avatar tron nho + ten).
+ *
+ * Mang RONG (`[]`) la mot trang thai that trong DB: xoa con cuoi cung duoc giao
+ * mot nhiem vu thi deleteChild go id do ra, con lai mang rong (xem lib/store.ts).
+ * Luc do khong chip nao sang va nhiem vu khong sinh dong cho ai — phai noi ro,
+ * khong thi bo me chi thay mot the "Đang bật" im lang.
+ */
 function GiaoCho({ value, onChange, busy, cacCon }: {
   value: string[] | null; onChange: (v: string[] | null) => void; busy: boolean; cacCon: Child[];
 }) {
@@ -74,8 +81,18 @@ function GiaoCho({ value, onChange, busy, cacCon }: {
           </button>
         );
       })}
+      {chuaGiaoAi(value) && (
+        <p className="w-full text-p-body-sm text-error font-bold">
+          Chưa giao cho ai — chọn &quot;Cả nhà&quot; hoặc một con
+        </p>
+      )}
     </div>
   );
+}
+
+/** Nhiem vu dang bat nhung khong giao cho ai: co bat cung khong con nao thay. */
+function chuaGiaoAi(childIds: string[] | null): boolean {
+  return childIds !== null && childIds.length === 0;
 }
 
 /**
@@ -210,7 +227,8 @@ export default function NhiemVuHangNgay({
           ) : (
             <div
               key={c.id}
-              className="bg-surface-container-lowest rounded-card card-shadow p-2 flex flex-col gap-2"
+              className={`bg-surface-container-lowest rounded-card card-shadow p-2 flex flex-col gap-2
+                          ${chuaGiaoAi(c.childIds) ? 'opacity-70' : ''}`}
             >
               {/* Hang 1: icon + ten + so sao */}
               <div className="flex gap-1.5">
@@ -237,7 +255,9 @@ export default function NhiemVuHangNgay({
                     if (!moi || moi === c.content) { e.target.value = c.content; return; }
                     sua(c, { content: moi });
                   }}
-                  className={`${oNhap} flex-1 min-w-0 ${c.enabled ? 'text-on-surface' : 'text-on-surface-variant'}`}
+                  className={`${oNhap} flex-1 min-w-0 ${
+                    c.enabled && !chuaGiaoAi(c.childIds) ? 'text-on-surface' : 'text-on-surface-variant'
+                  }`}
                 />
                 <label className="flex items-center gap-1 shrink-0">
                   <input

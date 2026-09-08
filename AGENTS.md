@@ -113,12 +113,17 @@ Mọi con số TÓM TẮT có hai trục, sai một trục là con số nói d�
   `homeworkTotal`/`homeworkTodo`: tách ra thì con số nào cũng sai một nửa (đếm
   riêng bài thật thì ngày không có bài huy hiệu lại nói "1 bài" vì một bài của
   NGÀY MAI, còn nhiệm vụ hôm nay không ai đếm).
-- **Trục THỜI GIAN: mọi con số trên màn của con tính theo HÔM NAY** — "x/y xong
-  hôm nay", `todoHomNay`, điều kiện đẩy sang `/xong`, và tiến độ ở đầu từng nhóm.
-  Dòng của ngày mai vẫn hiện dưới tiêu đề "Ngày mai" nhưng KHÔNG vào tiến độ
-  nhóm (nhóm không có gì của hôm nay thì ẩn luôn chip tiến độ). Ngược lại, huy
-  hiệu màn chọn tên và ba ô của bố mẹ là "TỪ HÔM NAY TRỞ ĐI" — bố mẹ nhập bài
-  tối hôm trước cho hôm sau nên hai màn đó phải thấy trước.
+- **Trục THỜI GIAN: màn của con tính theo HÔM NAY, TRỪ bài tập** — "x/y xong hôm
+  nay", `todoHomNay`, điều kiện đẩy sang `/xong` và tiến độ đầu mỗi nhóm đều chỉ
+  đếm hôm nay. Nhiệm vụ hàng ngày thì **chỉ VẼ dòng của hôm nay**
+  (`nhomNhiemVuHomNay` trong `lib/nhomNhiemVu.ts` — đọc chú thích đầu file):
+  dòng của ngày mai vẫn được tạo sẵn nhưng vẽ ra là con tick được, mà tick là ăn
+  ⭐ ngay, tức là ⭐ trước một ngày cho việc chưa làm. **Bài tập thì ngược lại** —
+  bài ngày mai VẪN hiện dưới tiêu đề "Ngày mai" (làm bài trước là tốt), chỉ
+  không vào tiến độ nhóm; nhóm không có gì của hôm nay thì ẩn chip tiến độ.
+- **Huy hiệu màn chọn tên (và ba ô của bố mẹ) là TẤT CẢ CÒN LẠI, "từ hôm nay trở
+  đi"** — không phải riêng hôm nay: bố mẹ nhập bài tối hôm trước cho hôm sau nên
+  hai màn đó phải thấy trước.
 
 Hai chỗ tách loại là CÓ Ý, đừng gộp: badge "Quá hạn" (nhiệm vụ hôm qua không
 phải bài quá hạn) và màn chi tiết con của bố mẹ (tiến độ bài tập và hộp "Nhiệm vụ
