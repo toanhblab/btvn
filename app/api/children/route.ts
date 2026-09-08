@@ -9,7 +9,10 @@ const COLORS: ChildColor[] = ['primary', 'secondary', 'tertiary'];
 
 /**
  * GET /api/children            -> danh sach con CUA NHA NAY
- * GET /api/children?progress=1 -> kem so bai sap toi / da xong / qua han
+ * GET /api/children?progress=1 -> kem so viec sap toi / da xong / qua han, lay
+ *   thang tu `progressUpcoming` nen dem GIONG HET huy hieu o man chon con: bai
+ *   tap tu hom nay tro di + nhiem vu cua hom nay (lib/nhomNhiemVu.ts). Dung tu
+ *   dem lai o day.
  *
  * Khong can PIN: man chon con cua tre goi endpoint nay. Nhung phai biet la nha
  * nao — lay tu cookie thiet bi (may da duoc bay cho nha do) hoac tu phien bo me.

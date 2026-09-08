@@ -113,6 +113,18 @@ export interface Assignment {
    * cua phep so sanh do. null = con khong bam dong ho / bai chua xong.
    */
   startedAt: string | null;
+  /**
+   * So sao cua dong NHIEM VU nay (chep tu daily_chores.stars luc tao dong, issue
+   * #42). null = bai tap that, HOAC dong viec nha cu tao truoc migration 016 —
+   * dong null khong bao gio duoc cong sao (khong hoi to).
+   */
+  stars: number | null;
+  /**
+   * Nhom cua nhiem vu (doc LIVE qua JOIN daily_chores, nhu sort_order — xem
+   * listAssignments). null = bai tap that. Dong viec nha ma daily_chores khong
+   * con (chore_id ve NULL) thi cung la null — luc do no da la bai that.
+   */
+  choreNhom: NhomNhiemVu | null;
 }
 
 /** Mot bai do AI tach ra, chua luu — bo me con phai duyet o man "Kiem tra lai". */
@@ -176,23 +188,92 @@ export function iconFor(subject: string): string {
   return SUBJECTS[subject] ?? SUBJECTS['Khác'];
 }
 
-/* ---------------- Nhiem vu moi ngay ("viec nha") ----------------
+/* ---------------- Nhiem vu hang ngay ("viec nha") ----------------
  *
- * MOT danh sach chung ca nha, khong phai moi con mot danh sach (issue #25): bo me
- * sua o man Cai dat, moi con deu thay danh sach do o man khen sau khi lam xong
- * bai cuoi cung cua hom nay.
+ * MOT danh sach chung ca nha (issue #25), bo me sua o man rieng
+ * /bome/nhiem-vu-hang-ngay (issue #42). Moi nhiem vu dang bat sinh ra mot DONG
+ * assignments that cho moi (con duoc giao, ngay) — tao luoi khi mo man, moi
+ * ngay ke ca ngay khong co bai (taoNhiemVuNgay trong lib/store.ts).
+ *
+ * HAI NHOM (captain chot o #42, Q1): "Sau khi hoc xong" (don dep, chuan bi do
+ * dung — ba viec mac dinh thuoc nhom nay) va "Viec nha hang ngay" (viec nha cua
+ * con). Man cua con hien hai nhom rieng, khong tron. MA trong DB co dinh
+ * ('after_study' / 'housework', CHECK o migrations/016) — doi nhan hien thi thi
+ * chi sua NHOM_NHIEM_VU, dung sua ma.
  */
+
+export type NhomNhiemVu = 'after_study' | 'housework';
+
+/** Nhan + icon tung nhom. Thu tu khoa = thu tu hai nhom hien o man cua con. */
+export const NHOM_NHIEM_VU: Record<NhomNhiemVu, { label: string; icon: string; moTa: string }> = {
+  after_study: {
+    label: 'Sau khi học xong',
+    icon: '🎒',
+    moTa: 'Dọn dẹp, chuẩn bị đồ dùng sau buổi học',
+  },
+  housework: {
+    label: 'Việc nhà hàng ngày',
+    icon: '🏠',
+    moTa: 'Việc nhà của con, ngày nào cũng làm',
+  },
+};
+
+export const NHOM_NHIEM_VU_MAC_DINH: NhomNhiemVu = 'after_study';
+
+/** Loc gia tri la (API body, DB) ve mot nhom hop le — hong thi ve nhom mac dinh. */
+export function nhomNhiemVuOf(v: unknown): NhomNhiemVu {
+  return v === 'housework' ? 'housework' : NHOM_NHIEM_VU_MAC_DINH;
+}
 
 export interface DailyChore {
   id: string;
   content: string;
+  /** Mot emoji — con chua doc duoc chu nen icon la thu con nhan ra truoc. */
+  icon: string;
+  /** So sao con duoc khi tick xong, 1..MAX_SAO_NHIEM_VU. */
+  stars: number;
+  nhom: NhomNhiemVu;
+  /** Giao cho con nao: null = CA NHA (con them sau tu duoc nhan), hoac danh sach id con. */
+  childIds: string[] | null;
   sortOrder: number;
-  /** Tat thi con khong thay nua, nhung nhung lan da tick van con. */
+  /** Tat thi khong tao dong moi nua, nhung nhung lan da tick van con. */
   enabled: boolean;
 }
 
 /** Chu cua mot viec — dai hon thi tran ra khoi dong to o man cua con. */
 export const MAX_CHU_VIEC_NHA = 60;
+
+/** Sao toi da cho mot nhiem vu — khop CHECK o migrations/016. */
+export const MAX_SAO_NHIEM_VU = 10;
+export const SAO_NHIEM_VU_MAC_DINH = 1;
+
+/** Icon mac dinh + goi y cho bo me chon nhanh khi them nhiem vu. */
+export const ICON_NHIEM_VU_MAC_DINH = '🧹';
+export const ICON_NHIEM_VU_GOI_Y = ['🧹', '🎒', '💡', '📚', '🪥', '🛏️', '🍽️', '🧸', '🌱', '👕', '🐶', '🗑️'];
+
+/** So sao bo me nhap: so nguyen trong [1, MAX_SAO_NHIEM_VU]; hong -> null. */
+export function lamSachSao(v: unknown): number | null {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n) || n < 1 || n > MAX_SAO_NHIEM_VU) return null;
+  return n;
+}
+
+/**
+ * Bam mot chip con o hang "Giao cho" (man /bome/nhiem-vu-hang-ngay): dang
+ * "Cả nhà" (null) -> chi giao cho con do; dang danh sach -> them / bo con do.
+ *
+ * Bo con CUOI CUNG la KHONG LAM GI — tra ve dung `hienTai` (cung tham chieu, de
+ * noi goi biet la khong co gi thay doi). Mang rong thi API chan, ma quy ve null
+ * thi thanh "Cả nhà": bo me bam de BO giao mot con lai hoa ra giao cho CA BA
+ * con, nguoc han y dinh va khong bao loi gi. Muon ve ca nha thi bam chip
+ * "Cả nhà" — day la duong duy nhat, co y.
+ */
+export function docChildIds(hienTai: string[] | null, childId: string): string[] | null {
+  if (hienTai === null) return [childId];
+  if (!hienTai.includes(childId)) return [...hienTai, childId];
+  const moi = hienTai.filter((x) => x !== childId);
+  return moi.length === 0 ? hienTai : moi;
+}
 
 /* ---------------- Diem thuong & doi thuong ----------------
  *
@@ -240,9 +321,11 @@ export interface DiemVuaCong {
   xongSom: number;
   /** DIEM_NGAY_XONG neu ngay cua bai nay VUA duoc cong o lan tick nay, 0 neu khong. */
   ngayXong: number;
+  /** So sao cua NHIEM VU nay neu vua duoc cong o lan tick nay (issue #42), 0 neu khong. */
+  nhiemVu: number;
   /**
    * So diem con dang co sau lan tick nay — CHI co khi lan tick nay THUC SU cong
-   * diem (xongSom hay ngayXong khac 0). Khong cong gi thi khong tinh: man cua
+   * diem (xongSom, ngayXong hay nhiemVu khac 0). Khong cong gi thi khong tinh: man cua
    * con chi hien so nay kem chip "+1", nen doc no moi luc la mot vong thua Neon
    * khong ai dung.
    */
@@ -264,14 +347,14 @@ export const ICON_PHAN_THUONG_GOI_Y = ['🎁', '🍦', '🍕', '📺', '🎮', '
  * 14.1+), khong thi lay tu Array.from (tach theo code point — emoji ghep se
  * mat phan sau, van hien duoc mot hinh).
  */
-export function lamSachIcon(v: unknown): string {
+export function lamSachIcon(v: unknown, macDinh: string = ICON_PHAN_THUONG_MAC_DINH): string {
   const s = String(v ?? '').trim();
-  if (!s) return ICON_PHAN_THUONG_MAC_DINH;
+  if (!s) return macDinh;
   const Seg = (Intl as unknown as { Segmenter?: new (l: string, o: { granularity: string }) => { segment: (s: string) => Iterable<{ segment: string }> } }).Segmenter;
   if (Seg) {
     for (const g of new Seg('vi', { granularity: 'grapheme' }).segment(s)) return g.segment;
   }
-  return Array.from(s)[0] ?? ICON_PHAN_THUONG_MAC_DINH;
+  return Array.from(s)[0] ?? macDinh;
 }
 
 /** Gia diem bo me nhap: so nguyen duong, kep tran MAX_GIA_PHAN_THUONG; hong -> null. */

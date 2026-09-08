@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
-import { getChild, listAssignments, todayISO } from '@/lib/store';
-import { HW_SOURCES, type Assignment } from '@/lib/types';
+import { getChild, listAssignments, taoNhiemVuNgay, todayISO } from '@/lib/store';
+import { HW_SOURCES, NHOM_NHIEM_VU, type Assignment } from '@/lib/types';
 import XoaBai from './XoaBai';
 
 export const dynamic = 'force-dynamic';
@@ -27,11 +27,24 @@ export default async function ChiTietCon({
 
   const today = todayISO();
 
-  // Viec nha lay rieng va CHI CHO HOM NAY, ke ca khi dang xem tab "Tuan nay":
+  // Tao dong nhiem vu hom nay cho con nay neu chua co (issue #42): bo me mo man
+  // nay truoc khi con mo man cua con (hay truoc khi ai mo man chon-con) van phai
+  // thay dung danh sach hom nay. Idempotent, khong co gi de chen thi no-op.
+  await taoNhiemVuNgay(familyId, today, [childId]);
+
+  // Nhiem vu hang ngay lay rieng va CHI CHO HOM NAY, ke ca khi dang xem tab "Tuan nay":
   // no la viec cua buoi toi hom nay, khong phai bai tap co han. Cung vi the no
-  // khong duoc cong vao tien do bai tap ngay duoi hay vao ba o o man tong quan
-  // — captain dung ba con so do de theo bai tap (khong doi bang co nay: xem
-  // listAssignments, includeChores mac dinh false).
+  // khong duoc cong vao tien do bai tap ngay duoi (co nay: listAssignments voi
+  // includeChores mac dinh false).
+  //
+  // O man tong quan thi KHAC, va la co y: hai o "Hoàn thành" / "Đang chờ" dem
+  // ca dong nhiem vu (total/done cua progressUpcoming KHONG loc theo LOAI), chi
+  // o "Quá hạn" moi loai chung ra. Captain da chot giu cach dem gop nay: dung
+  // "sua" bang cach them bo loc chore_id vao progressUpcoming.
+  //
+  // Loc theo NGAY thi lai DUNG va da co: progressUpcoming dem bai tu hom nay tro
+  // di nhung nhiem vu CHI hom nay, bang cung mot ham voi man cua con
+  // (`veTrenManCuaCon`, lib/nhomNhiemVu.ts) — hai chuyen khac nhau, dung lan.
   //
   // Doc theo CAC DONG THAT da tao cho hom nay (issue #36), KHONG theo cau hinh
   // dang bat (listChores): hai ben lech nhau ngay khi bo me sua danh sach giua
@@ -126,7 +139,7 @@ export default async function ChiTietCon({
       {choreItems.length > 0 && (
         <section className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-5">
           <div className="flex items-center justify-between gap-2 mb-1.5">
-            <h2 className="text-p-label uppercase text-on-surface-variant">Việc nhà hôm nay</h2>
+            <h2 className="text-p-label uppercase text-on-surface-variant">Nhiệm vụ hàng ngày</h2>
             <span className="text-p-body-sm text-on-surface font-bold">
               {soViecXong}/{choreItems.length} xong
             </span>
@@ -143,13 +156,26 @@ export default async function ChiTietCon({
                   >
                     {xong ? 'check_circle' : 'radio_button_unchecked'}
                   </span>
+                  <span className="shrink-0" aria-hidden>{c.icon}</span>
                   <span
-                    className={`text-p-body-sm ${
+                    className={`text-p-body-sm flex-1 min-w-0 ${
                       xong ? 'text-on-surface-variant line-through' : 'text-on-surface'
                     }`}
                   >
                     {c.content}
                   </span>
+                  {/* Nhom + sao cua dong (sao la so da chep luc tao; dong cu truoc
+                      migration 016 khong co sao thi khong hien) */}
+                  {c.choreNhom && (
+                    <span className="text-p-label text-outline shrink-0" title={NHOM_NHIEM_VU[c.choreNhom].label}>
+                      {NHOM_NHIEM_VU[c.choreNhom].icon}
+                    </span>
+                  )}
+                  {c.stars !== null && (
+                    <span className="text-p-label px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed shrink-0">
+                      {c.stars} ⭐
+                    </span>
+                  )}
                 </li>
               );
             })}

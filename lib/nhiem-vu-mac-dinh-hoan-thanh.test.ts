@@ -17,6 +17,11 @@
  * vay bai test nay mo phong LAI dung cau SQL cua progressUpcoming, chay tren
  * PGlite that — sua logic hoan thanh o store.ts thi phai sua ca o day cho khop.
  *
+ * Tu issue #42 progressUpcoming con goi taoNhiemVuNgay TRUOC khi dem, nen dong
+ * nhiem vu cua hom nay khong con phu thuoc vao viec bo me co giao bai hay
+ * khong (Q2) — phan mo phong duoi day co ca buoc tao luoi do, giong
+ * lib/nhiem-vu-hang-ngay.test.ts.
+ *
  * Chay tren PGlite trong bo nho, qua chinh bo chay migration cua du an
  * (scripts/db.mjs) — giong nhu lib/nhiem-vu-moi-ngay.test.ts.
  */
@@ -25,6 +30,8 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { chayMigrations } from '../scripts/db.mjs';
+import { veTrenManCuaCon } from './nhomNhiemVu.ts';
+import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu.ts';
 
 const HOM_NAY = '2026-09-04';
 
@@ -34,37 +41,68 @@ let boChay: { query: (t: string, p?: unknown[]) => Promise<Record<string, unknow
 const rows = async (sql: string) => (await db.query(sql)).rows as Record<string, unknown>[];
 
 /**
+ * Mo phong CHINH XAC dieu kien WHERE cua progressUpcoming (lib/store.ts) cho
+ * MOT con: mot cau duy nhat tren assignments, MOI la khac voi ban truoc #36 —
+ * khong con cau rieng tren daily_chore_checks nua, vi dong viec nha da nam san
+ * trong assignments.
+ *
+ * Nhanh "bai con no" chi nhan bai THAT (chore_id IS NULL): tu #42 moi ngay sinh
+ * mot dong nhiem vu cho moi con nen dong nhiem vu cu chua tick nam lai 'todo'
+ * mai mai — keo het ve la vai nghin dong mot nam cho mot ket qua khong dung den
+ * chung.
+ */
+async function dongDuocKeo(childId: string) {
+  return rows(
+    `SELECT status, due_date::text AS due_date, chore_id FROM assignments
+      WHERE child_id = '${childId}'
+        AND (due_date >= '${HOM_NAY}' OR (status = 'todo' AND chore_id IS NULL))`
+  );
+}
+
+/**
  * Mo phong nhanh "Qua han" cua progressUpcoming: han truoc hom nay, con 'todo',
  * VA khong phai viec nha (chore_id IS NULL) — man bo me khong duoc thay viec nha
  * lam phinh badge nay.
  */
 async function quaHan(childId: string) {
-  const bai = await rows(
-    `SELECT status, due_date::text AS due_date, chore_id FROM assignments
-      WHERE child_id = '${childId}' AND (due_date >= '${HOM_NAY}' OR status = 'todo')`
-  );
+  const bai = await dongDuocKeo(childId);
   return bai.filter(
     (r) => String(r.due_date) < HOM_NAY && r.status === 'todo' && r.chore_id === null
   ).length;
 }
 
 /**
- * Mo phong CHINH XAC cau truy van cua progressUpcoming (lib/store.ts) cho MOT
- * con: mot cau duy nhat tren assignments (chore_id de tach homeworkTotal), MOI
- * la khac voi ban truoc #36 — khong con cau rieng tren daily_chore_checks nua,
- * vi dong viec nha da nam san trong assignments.
+ * Mo phong total / done cua progressUpcoming cho MOT con — hai so nay dem GOP
+ * bai tap va nhiem vu, khong tach hai loai (luat chung o AGENTS.md).
+ *
+ * Buoc loc `upcoming` goi CHINH ham ma man cua con dung (`veTrenManCuaCon`),
+ * dung nhu progressUpcoming: bai tu hom nay tro di, nhiem vu CHI hom nay. Day la
+ * bat bien "tap dem == tap ve" — dung viet lai dieu kien o day.
+ *
+ * `baiThat` KHONG phai truong tra ve cua progressUpcoming (khong con truong nao
+ * tach rieng bai that nua): no chi de ghim kich ban cua tung bai test duoi day —
+ * "con nay co may bai THAT tu hom nay tro di".
  */
 async function tienDo(childId: string) {
-  const bai = await rows(
-    `SELECT status, due_date::text AS due_date, chore_id FROM assignments
-      WHERE child_id = '${childId}' AND (due_date >= '${HOM_NAY}' OR status = 'todo')`
+  const bai = await dongDuocKeo(childId);
+  const upcoming = bai.filter((r) =>
+    veTrenManCuaCon(r.chore_id as string | null, String(r.due_date), HOM_NAY)
   );
-  const upcoming = bai.filter((r) => String(r.due_date) >= HOM_NAY);
   return {
     total: upcoming.length,
     done: upcoming.filter((r) => r.status === 'done').length,
-    homeworkTotal: upcoming.filter((r) => r.chore_id === null).length,
+    baiThat: upcoming.filter((r) => r.chore_id === null).length,
   };
+}
+
+/**
+ * Buoc tao luoi ma progressUpcoming chay TRUOC khi dem (issue #42), dung CHINH
+ * cau SQL cua taoNhiemVuNgay — lay tu lib/sqlNhiemVu.ts (mot ban duy nhat cho
+ * lib/store.ts, scripts/seed.mjs va ba tep test; node khong nap duoc store.ts,
+ * xem chu thich dau file).
+ */
+async function taoNhiemVuNgay(familyId: string, date: string, childIds: string[] | null) {
+  await db.query(SQL_TAO_NHIEM_VU_NGAY, [familyId, date, 'Việc nhà', 'primary_school', 10, childIds]);
 }
 
 before(async () => {
@@ -117,8 +155,8 @@ test('lam het bai tap hom nay nhung CHUA tick viec nha: ngay chua duoc tinh hoan
     );
   }
 
-  const { total, done, homeworkTotal } = await tienDo('con_x');
-  assert.equal(homeworkTotal, 1, 'co dung 1 bai tap that hom nay (viec nha khong tinh vao day)');
+  const { total, done, baiThat } = await tienDo('con_x');
+  assert.equal(baiThat, 1, 'co dung 1 bai tap that hom nay (viec nha khong tinh vao day)');
   assert.equal(total, 4, 'total = 1 bai that + 3 dong viec nha da duoc tao');
   assert.ok(
     done < total,
@@ -137,20 +175,119 @@ test('lam het bai tap VA tick het viec nha: ngay duoc tinh hoan thanh', async ()
   assert.equal(done, total, 'bai va viec nha da xong het thi done phai bang total');
 });
 
-test('con khong duoc giao bai nao: khong co dong viec nha nao duoc tao, total = 0', async () => {
+test('con khong duoc giao bai nao: chua chay tao luoi thi chua co dong nhiem vu nao', async () => {
   await db.exec(`INSERT INTO children (id, family_id, name, grade, color, avatar_url)
                   VALUES ('con_y', 'fam_x', 'Su', 'Lớp 2', 'secondary', '/img/y.png')`);
 
-  // KHAC voi hanh vi truoc #36: viec nha khong con la mot danh sach luon-co-san
-  // (khong phu thuoc bai tap) — no chi xuat hien khi saveSubmission tao no cho
-  // mot ngay cu the. Con nay chua bao gio duoc giao bai nen chua co dong viec
-  // nha nao ca — total phai la 0, khong phai 3 nhu cong thuc cu (progressUpcoming
-  // truoc day cong CHUNG so viec nha dang bat cua ca nha, bat ke con co bai
-  // hay khong).
-  const { total, done, homeworkTotal } = await tienDo('con_y');
-  assert.equal(homeworkTotal, 0, 'khong co bai tap nao cho con nay');
-  assert.equal(total, 0, 'chua tung duoc giao bai nen chua co dong viec nha nao duoc tao (issue #36)');
+  // KHAC voi hanh vi truoc #36: nhiem vu khong con la mot danh sach luon-co-san
+  // cong thang vao tien do (progressUpcoming truoc day cong CHUNG so viec nha
+  // dang bat cua ca nha, bat ke con co bai hay khong) — no chi duoc tinh khi co
+  // DONG THAT trong assignments.
+  const { total, done, baiThat } = await tienDo('con_y');
+  assert.equal(baiThat, 0, 'khong co bai tap that nao cho con nay');
+  assert.equal(total, 0, 'chua co dong nao trong assignments thi chua co gi de dem');
   assert.equal(done, 0, 'khong co gi de tinh xong');
+});
+
+test('con khong duoc giao bai nao: sau buoc tao luoi cua #42 van co du nhiem vu hom nay', async () => {
+  // Tu #42 (Q2) nhiem vu phai hien MOI NGAY, ke ca ngay bo me khong giao bai —
+  // nen progressUpcoming goi taoNhiemVuNgay(familyId, today, null) TRUOC khi dem
+  // (lib/store.ts). Day chinh la so ma badge "N viec" o man chon-con dua vao:
+  // con chua tung duoc giao bai van co du dong nhiem vu cua hom nay.
+  const dangBat = await rows(
+    `SELECT id FROM daily_chores WHERE family_id = 'fam_x' AND enabled AND archived_at IS NULL`
+  );
+  assert.equal(dangBat.length, 3, 'nha nay dang bat dung 3 nhiem vu');
+
+  await taoNhiemVuNgay('fam_x', HOM_NAY, null);
+
+  const { total, done, baiThat } = await tienDo('con_y');
+  assert.equal(baiThat, 0, 'van khong co bai tap that nao cho con nay');
+  assert.equal(total, 3, 'ba nhiem vu dang bat -> ba dong cua hom nay (issue #42 Q2)');
+  assert.equal(done, 0, 'con chua tick nhiem vu nao');
+
+  // Goi lai (moi lan mo man la mot lan goi) khong duoc sinh them dong nao.
+  await taoNhiemVuNgay('fam_x', HOM_NAY, null);
+  assert.equal((await tienDo('con_y')).total, 3, 'tao luoi phai idempotent');
+});
+
+test('dong nhiem vu cu chua tick KHONG bi keo ve nua; bai THAT con no thi van keo', async () => {
+  // Tu #42 moi ngay moi con co mot dong nhiem vu, ngay nao con khong tick het
+  // (cuoi tuan, om, quen) thi dong do nam lai 'todo' mai mai. Nhanh "bai con no"
+  // cua progressUpcoming phai loai chung ra: chung khong vao duoc truong nao
+  // (`upcoming` loc theo due_date, `overdue` loc chore_id IS NULL), chi lam cau
+  // truy van phinh len theo thoi gian.
+  const HOM_KIA = '2026-08-30';
+  const [chore] = await rows(
+    `SELECT id FROM daily_chores WHERE family_id = 'fam_x' AND enabled ORDER BY sort_order LIMIT 1`
+  );
+  await db.exec(
+    `INSERT INTO children (id, family_id, name, grade, color, avatar_url) VALUES
+       ('con_cu', 'fam_x', 'Ha', 'Lớp 1', 'primary', '/img/h.png');
+     INSERT INTO assignments (id, child_id, subject, content, due_date, status, chore_id) VALUES
+       ('cu_nv', 'con_cu', 'Việc nhà', 'viec cu', '${HOM_KIA}', 'todo', '${chore.id}'),
+       ('cu_bai', 'con_cu', 'Toán', 'Trang 7', '${HOM_KIA}', 'todo', NULL)`
+  );
+
+  const keo = await dongDuocKeo('con_cu');
+  assert.deepEqual(
+    keo.map((r) => r.chore_id),
+    [null],
+    'chi con bai THAT qua han duoc keo ve; dong nhiem vu cu bi loai ngay o SQL'
+  );
+
+  // Ket qua tra ve khong doi mot chut nao so voi truoc khi loc.
+  const { total, done, baiThat } = await tienDo('con_cu');
+  assert.equal(total, 0, 'con nay khong co gi tu hom nay tro di');
+  assert.equal(done, 0);
+  assert.equal(baiThat, 0);
+  assert.equal(await quaHan('con_cu'), 1, 'dung mot bai THAT qua han vao badge "Qua han"');
+});
+
+test('dong nhiem vu cua NGAY MAI khong vao total/done; bai cua ngay mai thi vao', async () => {
+  // Luong thuong ngay: bo me nhap bai cho NGAY MAI toi nay -> saveSubmission tao
+  // luon dong nhiem vu cua ngay mai. Man cua con khong ve dong nhiem vu do (chi
+  // ve cua hom nay) nen huy hieu khong duoc dem no: dem mot viec khong co cho
+  // tick thi "Xong hết 🎉" thanh bat kha moi toi.
+  const NGAY_MAI = '2026-09-05';
+  await db.exec(
+    `INSERT INTO children (id, family_id, name, grade, color, avatar_url) VALUES
+       ('con_mai', 'fam_x', 'Mai', 'Lớp 1', 'primary', '/img/m.png')`
+  );
+  await taoNhiemVuNgay('fam_x', HOM_NAY, ['con_mai']);
+  await taoNhiemVuNgay('fam_x', NGAY_MAI, ['con_mai']);
+  await db.exec(
+    `INSERT INTO assignments (id, child_id, subject, content, due_date, status) VALUES
+       ('mai_bai', 'con_mai', 'Toán', 'Trang 9', '${NGAY_MAI}', 'todo')`
+  );
+
+  const daTao = await rows(
+    `SELECT id FROM assignments WHERE child_id = 'con_mai' AND chore_id IS NOT NULL`
+  );
+  assert.equal(daTao.length, 6, '3 nhiem vu hom nay + 3 nhiem vu ngay mai da nam trong DB');
+
+  const truoc = await tienDo('con_mai');
+  assert.equal(truoc.total, 4, '3 nhiem vu HOM NAY + 1 bai cua ngay mai; 3 nhiem vu ngay mai bi loai');
+  assert.equal(truoc.baiThat, 1, 'bai cua ngay mai VAN dem — man cua con co ve va cho lam');
+
+  // Con tick het moi thu man cua con dang ve cua hom nay: con lai dung 1 (bai
+  // ngay mai), khong phai 4.
+  await db.exec(
+    `UPDATE assignments SET status = 'done'
+      WHERE child_id = 'con_mai' AND due_date = '${HOM_NAY}' AND chore_id IS NOT NULL`
+  );
+  const sau = await tienDo('con_mai');
+  assert.equal(sau.total - sau.done, 1, 'chi con bai cua ngay mai');
+
+  // ...va tick bat ke status: dong nhiem vu 'done' cua ngay mai cung khong duoc
+  // lam phinh total (neu khong thi total tang ma left khong doi).
+  await db.exec(
+    `UPDATE assignments SET status = 'done'
+      WHERE child_id = 'con_mai' AND due_date = '${NGAY_MAI}' AND chore_id IS NOT NULL`
+  );
+  const sauNua = await tienDo('con_mai');
+  assert.equal(sauNua.total, 4, 'total khong doi khi dong nhiem vu ngay mai chuyen sang done');
+  assert.equal(sauNua.total - sauNua.done, 1, 'van dung con bai cua ngay mai');
 });
 
 test('hai dot nop bai cung ngay cho cung mot con: khong tao trung viec nha (unique index)', async () => {

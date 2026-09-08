@@ -4,7 +4,7 @@ import { locMocBatDau } from '@/lib/diem';
 import { laUrlTepAppCap } from '@/lib/media';
 import {
   congDiemNgayNeuXong, deleteAssignment, getAssignment, ghiDiemSauKhiXong, setStatus,
-  submitVideo, updateAssignment,
+  submitVideo, updateAssignment, xuLySauKhiDoiHanChot,
 } from '@/lib/store';
 import { hwSourceOf, sanitizeDuration, type DiemVuaCong } from '@/lib/types';
 
@@ -128,11 +128,11 @@ export async function PATCH(req: Request, { params }: Ctx) {
   }
   const assignment = await updateAssignment(familyId, id, body);
 
-  // Doi bai sang ngay khac la BOT mot dong cua ngay CU: cac dong con lai cua
-  // (con, ngay cu) co the da done het roi, va con thi khong tick gi nua nen
-  // duong cua con khong bao gio xet lai. Xet o day, idempotent nen an toan.
+  // Doi han chot: dong nhiem vu cua ngay MOI (hang rao +10) va xet lai ngay CU
+  // vua bot mot dong — ca hai luat nam trong xuLySauKhiDoiHanChot (lib/store.ts)
+  // de bo test PGlite voi tay den duoc.
   if (assignment && assignment.dueDate !== truoc.dueDate) {
-    await congDiemNgayNeuXong(familyId, truoc.childId, truoc.dueDate);
+    await xuLySauKhiDoiHanChot(familyId, truoc.childId, truoc.dueDate, assignment.dueDate);
   }
   return NextResponse.json({ assignment });
 }

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
 import { DIEM_NGAY_XONG, DIEM_XONG_SOM } from '@/lib/diem';
@@ -49,11 +50,20 @@ export default async function Page() {
   return (
     <main className="px-p-page pt-4 xl:max-w-lg xl:mx-auto">
       <h1 className="text-p-headline text-on-background mb-1">Thưởng</h1>
-      <p className="text-p-body-sm text-on-surface-variant mb-5">
-        Xong hết bài một ngày: +{DIEM_NGAY_XONG} ⭐. Mỗi bài làm xong trước khi đồng hồ hết giờ:
-        +{DIEM_XONG_SOM} ⭐. Các con dùng ⭐ để đổi phần thưởng bố mẹ đặt ở dưới — bố mẹ duyệt
-        thì ⭐ mới bị trừ.
+      <p className="text-p-body-sm text-on-surface-variant mb-2">
+        Ngày <b>có bài tập</b> mà xong hết cả bài lẫn nhiệm vụ: +{DIEM_NGAY_XONG} ⭐ (ngày không
+        có bài thì chỉ được ⭐ của từng nhiệm vụ). Mỗi bài làm xong trước khi đồng hồ hết giờ:
+        +{DIEM_XONG_SOM} ⭐. Mỗi nhiệm vụ hàng ngày tick xong: thêm đúng số ⭐ của nhiệm vụ đó. Các con dùng ⭐ để đổi phần thưởng bố mẹ đặt ở dưới — bố mẹ duyệt thì ⭐ mới bị trừ.
       </p>
+      {/* Dong dan sang trang cai nhiem vu (issue #42 Q8) — cach kiem ⭐ nam o do */}
+      <Link
+        href="/bome/nhiem-vu-hang-ngay"
+        className="inline-flex items-center gap-1 text-p-body-sm text-primary font-bold mb-5 min-h-p-tap"
+      >
+        <span className="material-symbols-outlined text-xl">checklist</span>
+        Cài nhiệm vụ hàng ngày — giao cho con nào, mấy ⭐
+        <span className="material-symbols-outlined text-xl">chevron_right</span>
+      </Link>
 
       {/* Diem tung con — cung con so tren man chon-con va cua hang */}
       {children.length > 0 && (

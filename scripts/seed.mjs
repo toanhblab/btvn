@@ -10,6 +10,7 @@
  */
 
 import { chayMigrations, moKetNoi, CONN } from './db.mjs';
+import { SQL_TAO_NHIEM_VU_NGAY } from '../lib/sqlNhiemVu.ts';
 
 const FORCE = process.argv.includes('--force');
 if (CONN && !FORCE) {
@@ -61,8 +62,12 @@ await query(
   [familyId, 'Nhà mình', slug, await sha256(`${SECRET}:${PIN}`)]
 );
 
-// 3b. Ba viec nha mac dinh — cheo lai VIEC_NHA_MAC_DINH trong lib/store.ts (script
-//     node khong import duoc TypeScript). Doi mot ben la phai doi ben kia.
+// 3b. Ba viec mac dinh — cheo lai VIEC_NHA_MAC_DINH trong lib/store.ts (script
+//     node khong import duoc TypeScript). Doi mot ben la phai doi ben kia. Sao /
+//     icon / nhom / giao cho lay DEFAULT cua DB (1 ⭐, 🧹, "Sau khi hoc xong", ca
+//     nha — migrations/016) dung nhu nha that. Them hai nhiem vu nhom "Viec nha
+//     hang ngay" (issue #42) — mot giao ca nha, mot chi giao hai be sinh doi — de
+//     thu duoc ca hai nhom va bo loc theo con tren man cua tung con.
 const chores = ['Cất sách vở vào ba lô', 'Tắt đèn học', 'Soạn sách vở cho ngày mai'].map(
   (content, i) => ({ id: id('chr'), content, sortOrder: i + 1 })
 );
@@ -70,6 +75,17 @@ for (const c of chores) {
   await query(
     `INSERT INTO daily_chores (id, family_id, content, sort_order) VALUES ($1,$2,$3,$4)`,
     [c.id, familyId, c.content, c.sortOrder]
+  );
+}
+const nhiemVuNha = [
+  { icon: '🪥', content: 'Đánh răng buổi tối', stars: 2, childIds: null },
+  { icon: '📚', content: 'Đọc sách 15 phút', stars: 3, childIds: ['minh', 'an'] },
+];
+for (const [i, c] of nhiemVuNha.entries()) {
+  await query(
+    `INSERT INTO daily_chores (id, family_id, content, icon, stars, category, child_ids, sort_order)
+     VALUES ($1,$2,$3,$4,$5,'housework',$6,$7)`,
+    [id('chr'), familyId, c.content, c.icon, c.stars, c.childIds, chores.length + i + 1]
   );
 }
 
@@ -101,8 +117,8 @@ const twinTasks = [
   ['Vẽ',         '🎨', 'Vẽ ngôi nhà của em, tô màu cho thật đẹp.', 'Giấy A4',                'vi', 'primary_school', '/img/bai-ngoi-nha.jpg'],
 ];
 
-// Moi cap (con, ngay) duoc giao bai o duoi deu phai co viec nha di kem, dung
-// nhu luong that — xem muc 6.
+// Moi (con, ngay) duoc giao bai o duoi deu co dong nhiem vu di kem, dung nhu
+// saveSubmission lam — xem muc 6.
 const capCoBai = new Set();
 
 let n = 0;
@@ -127,7 +143,9 @@ await query(
 n++;
 capCoBai.add(`minh|${dateOffset(-1)}`);
 
-// Be Na: hom nay KHONG co bai -> dung de thu man "Hom nay khong co bai tap"
+// Be Na: hom nay KHONG co bai — nhung tu issue #42 van co nhiem vu hang ngay
+// (muc 6 tao cho ca nha hom nay), dung de thu badge "N việc" o man chon-con va
+// man cua con chi co nhiem vu ma khong co bai.
 await query(
   `INSERT INTO assignments (id, submission_id, child_id, subject, icon, content, note, lang, source, due_date, image_url)
    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
@@ -136,26 +154,26 @@ await query(
 n++;
 capCoBai.add(`bena|${dateOffset(1)}`);
 
-// 6. Dong viec nha cho dung nhung (con, ngay) vua duoc giao bai (issue #36).
-//    NHAN BAN logic tao dong viec nha trong saveSubmission (lib/store.ts) vi
-//    script node khong import duoc TypeScript — doi ben do thi phai doi ca o
-//    day: cung subject/icon (VIEC_NHA_SUBJECT/VIEC_NHA_ICON), cung
-//    HW_SOURCE_DEFAULT + DURATION_DEFAULT (lib/types.ts), cung chore_id va
-//    due_date. Khong seed dong nao cho ngay khong co bai — dung hanh vi that:
-//    hom nao khong ai giao bai thi hom do khong co viec nha (vd hom nay cua Bé
-//    Na, van dung de thu man "Hôm nay không có bài tập").
-let nViecNha = 0;
+// 6. Dong nhiem vu hang ngay (issue #36, #42): cho HOM NAY voi CA NHA (nhu
+//    taoNhiemVuNgay chay luc mo man chon-con), va cho moi (con, ngay) vua duoc
+//    giao bai o tren (nhu saveSubmission). Dung CHINH cau SQL cua taoNhiemVuNgay
+//    (lib/sqlNhiemVu.ts — mot ban duy nhat cho store, seed va ba tep test); ba
+//    tham so hang so o day phai khop VIEC_NHA_SUBJECT (lib/store.ts) +
+//    HW_SOURCE_DEFAULT / DURATION_DEFAULT (lib/types.ts).
+//    Bo qua ngay DA QUA y het `taoNhiemVuNgayNeuChuaQua` (lib/store.ts): san pham
+//    khong tao dong nhiem vu cho ngay da qua (khong ai tick duoc, ma lai khoa +10
+//    cua ngay do), nen DB mau cung khong duoc co — capCoBai co mot cap cua HOM QUA
+//    (bai qua han cua Minh, de thu badge "Qua han").
+const taoNhiemVu = (dueDate, childIds) =>
+  dueDate < dateOffset(0)
+    ? Promise.resolve()
+    : query(SQL_TAO_NHIEM_VU_NGAY, [familyId, dueDate, 'Việc nhà', 'primary_school', 10, childIds]);
+await taoNhiemVu(dateOffset(0), null);
 for (const cap of capCoBai) {
   const [childId, dueDate] = cap.split('|');
-  for (const c of chores) {
-    await query(
-      `INSERT INTO assignments (id, submission_id, child_id, subject, icon, content, note, lang, source, due_date, image_url, duration_minutes, requires_video, chore_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
-      [id('asg'), null, childId, 'Việc nhà', '🧹', c.content, null, 'vi', 'primary_school', dueDate, null, 10, false, c.id]
-    );
-    nViecNha++;
-  }
+  await taoNhiemVu(dueDate, [childId]);
 }
+const [{ n: nNhiemVu }] = await query(`SELECT COUNT(*) AS n FROM assignments WHERE chore_id IS NOT NULL`);
 
 // 7. Vai phan thuong mau de cua hang cua con (/con/<id>/thuong) co gi de xem.
 //    Nha that thi bo me tu them o /bome/thuong; migration 015 KHONG nap mac dinh
@@ -175,7 +193,7 @@ for (const [icon, name, cost] of rewards) {
   );
 }
 
-console.log(`✓ 1 gia đình, ${children.length} con, ${n} bài tập, ${chores.length} việc nhà (${nViecNha} dòng), ${rewards.length} phần thưởng`);
+console.log(`✓ 1 gia đình, ${children.length} con, ${n} bài tập, ${chores.length + nhiemVuNha.length} nhiệm vụ hàng ngày (${nNhiemVu} dòng), ${rewards.length} phần thưởng`);
 console.log(`  PIN bố mẹ      : ${PIN}`);
 console.log(`  Link cho iPad  : /nha/${slug}`);
 process.exit(0);

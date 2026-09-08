@@ -2,25 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { TABS, tabDangChon } from './tabs';
 
 /**
  * Thanh ben trai — chi hien tu 1280px tro len (bo stitch-parent-macbook).
- * Duoi nguong do van la ThanhDuoi nhu cu, hai cai khong bao gio cung hien.
- *
- * Bon tep thiet ke Macbook ve thanh ben KHAC NHAU (dau thanh co bon kieu, ten
- * muc doi giua "Nhiem vu"/"Bai tap" va "Them bai"/"Them moi", mau muc dang chon
- * luc xanh luc cam). Chung sinh roi tung man mot nen lech nhau; lay APP lam
- * chuan: dung y cac muc + icon cua ThanhDuoi, mau dang chon la primary. Muc
- * "Thuong" (/bome/thuong: duyet doi thuong + danh sach phan thuong) them sau,
- * khong co trong ban thiet ke nao — hai thanh phai luon cung mot danh sach.
+ * Duoi nguong do van la ThanhDuoi nhu cu, hai cai khong bao gio cung hien, nen
+ * danh sach muc va luat "dang chon" nam o ./tabs.ts cho ca hai cung dung. Dau
+ * thanh (ten nha / ma nha) va o "Mo man hinh cua con" o duoi thi rieng cua thanh
+ * nay.
  */
-const TABS = [
-  { href: '/bome', icon: 'home', label: 'Trang chủ' },
-  { href: '/bome/them', icon: 'photo_camera', label: 'Thêm bài' },
-  { href: '/bome/nhiem-vu', icon: 'checklist', label: 'Nhiệm vụ' },
-  { href: '/bome/thuong', icon: 'redeem', label: 'Thưởng' },
-  { href: '/bome/cai-dat', icon: 'settings', label: 'Cài đặt' },
-];
 
 export default function ThanhBen({
   familyName,
@@ -50,7 +40,7 @@ export default function ThanhBen({
       <nav className="flex-1 overflow-y-auto py-2">
         <ul className="flex flex-col gap-1 px-2">
           {TABS.map((t) => {
-            const active = t.href === '/bome' ? path === '/bome' : path.startsWith(t.href);
+            const active = tabDangChon(path, t.href);
             return (
               <li key={t.href}>
                 <Link

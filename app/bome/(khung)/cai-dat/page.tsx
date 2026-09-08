@@ -119,7 +119,7 @@ export default async function Page() {
         <div>
           <CaiDat
             family={family}
-            chores={chores}
+            soNhiemVu={chores.length}
             hasAI={Boolean(process.env.NOUS_API_KEY)}
             hasBlob={Boolean(process.env.BLOB_READ_WRITE_TOKEN)}
           />

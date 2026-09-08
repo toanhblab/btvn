@@ -2,20 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { TABS, tabDangChon } from './tabs';
 
 /**
  * Thanh dieu huong duoi cung — nen tu stitch-parent 02/04/05.
  * Ban Stitch bi loi hien thi Unicode ("Nhlệm vụ", "CỠ0e0i đ11ầt") nen go lai.
  *
- * Tu 1280px thi an di, ThanhBen ben trai thay cho no (xem layout.tsx).
+ * Tu 1280px thi an di, ThanhBen ben trai thay cho no (xem layout.tsx). Danh sach
+ * muc va luat "dang chon" o ./tabs.ts, dung chung voi ThanhBen.
  */
-const TABS = [
-  { href: '/bome', icon: 'home', label: 'Trang chủ' },
-  { href: '/bome/them', icon: 'photo_camera', label: 'Thêm bài' },
-  { href: '/bome/nhiem-vu', icon: 'checklist', label: 'Nhiệm vụ' },
-  { href: '/bome/thuong', icon: 'redeem', label: 'Thưởng' },
-  { href: '/bome/cai-dat', icon: 'settings', label: 'Cài đặt' },
-];
 
 export default function ThanhDuoi() {
   const path = usePathname();
@@ -26,7 +21,7 @@ export default function ThanhDuoi() {
                  flex items-stretch z-40 pb-[env(safe-area-inset-bottom)] xl:hidden"
     >
       {TABS.map((t) => {
-        const active = t.href === '/bome' ? path === '/bome' : path.startsWith(t.href);
+        const active = tabDangChon(path, t.href);
         return (
           <Link
             key={t.href}

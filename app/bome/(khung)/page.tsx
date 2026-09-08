@@ -90,10 +90,12 @@ export default async function BangDieuKhien() {
         </div>
       </header>
 
-      {/* Ba o tinh trang chung — dem bai tu hom nay tro di, ghi ro de khoi doc nham la rieng hom nay */}
+      {/* Ba o tinh trang chung — dem GOP bai tap va nhiem vu hang ngay (bai tu hom
+          nay tro di, nhiem vu cua hom nay), nen chu la "Việc" chu khong phai "Bài";
+          ghi ro "tu hom nay tro di" de khoi doc nham la rieng hom nay. */}
       <div className="flex items-center gap-4 mb-2 xl:mb-4">
         <span className="hidden xl:block h-px flex-1 bg-outline-variant/40" />
-        <p className="text-p-body-sm text-on-surface-variant xl:text-p-label">Bài từ hôm nay trở đi</p>
+        <p className="text-p-body-sm text-on-surface-variant xl:text-p-label">Việc từ hôm nay trở đi</p>
         <span className="hidden xl:block h-px flex-1 bg-outline-variant/40" />
       </div>
       <section className="grid grid-cols-3 gap-p-card mb-6 xl:gap-6 xl:mb-10">

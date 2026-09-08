@@ -71,7 +71,7 @@ export default async function ChonCon() {
         )}
 
         <div className="flex flex-row flex-wrap justify-center items-start gap-12 xl:gap-14 w-full">
-        {rows.map(({ child, total, done, homeworkTotal, points }) => {
+        {rows.map(({ child, total, done, points }) => {
           const left = total - done;
           return (
             <Link
@@ -89,27 +89,36 @@ export default async function ChonCon() {
                   <img src={child.avatarUrl} alt="" className="w-full h-full object-cover" />
                 </div>
 
-                {/* Badge dem so bai con lai. Ban Stitch hardcode "Xong het" cho ca 3 con.
-                    Phan biet ro "xong het" (co bai va da lam xong) voi "khong co bai"
-                    (hom nay khong duoc giao gi) — hai chuyen khac han nhau.
-
-                    "Khong co bai" xet rieng homeworkTotal (chi bai tap): viec nha
-                    mac dinh (#25/#30) hau nhu nha nao cung co san 3 viec, neu xet ca
-                    viec nha thi badge nay se gan nhu khong bao gio hien "Chua co bai"
-                    nua — trong khi con thuc su khong duoc giao bai gi hom nay thi cung
-                    khong co duong nao den man tick viec nha (chi mo tu bai cuoi cung). */}
+                {/* Badge dem con bao nhieu thu chua xong. Ban Stitch hardcode "Xong het"
+                    cho ca 3 con. Ba trang thai, theo thu tu uu tien:
+                      - khong co gi (khong bai, khong nhiem vu)    -> "Chưa có bài"
+                      - xong het (co viec va da lam xong)          -> "Xong hết 🎉"
+                      - con viec                                   -> "N việc"
+                    "N việc" dem GOP bai tap va nhiem vu (total - done), khong tach hai
+                    loai: tre 4-6 tuoi chi can biet "con bao nhieu viec phai lam", ma tach
+                    ra thi mot con so nao cung sai — dem rieng bai that thi ngay khong co
+                    bai badge noi "1 bài" vi mot bai cua NGAY MAI, con nhiem vu hom nay thi
+                    khong ai dem. Luat chung nay ghi o AGENTS.md.
+                    Tu issue #42 nhiem vu hien MOI NGAY (progressUpcoming tao dong hom
+                    nay truoc khi dem), nen ngay khong ai giao bai thi badge noi "3 việc"
+                    chu KHONG noi "Chưa có bài" nua — con van co duong vao man cua minh
+                    de tick. "Chưa có bài" chi con khi con khong duoc giao nhiem vu nao. */}
                 <span
                   className={`absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-k-label px-4 py-2 rounded-full
                               border-4 border-surface-container-lowest
                               ${
-                                homeworkTotal === 0
+                                total === 0
                                   ? 'bg-surface-container-high text-on-surface-variant'
                                   : left === 0
                                     ? 'bg-success text-white'
                                     : 'bg-secondary-container text-white'
                               }`}
                 >
-                  {homeworkTotal === 0 ? 'Chưa có bài' : left === 0 ? 'Xong hết 🎉' : `${left} bài`}
+                  {total === 0
+                    ? 'Chưa có bài'
+                    : left === 0
+                      ? 'Xong hết 🎉'
+                      : `${left} việc`}
                 </span>
               </div>
 
@@ -144,7 +153,8 @@ export default async function ChonCon() {
             </h2>
             {chuaAiCoDiem ? (
               <p className="text-k-body text-on-surface-variant text-center">
-                Làm xong hết bài một ngày là được {DIEM_NGAY_XONG} ⭐ nhé!
+                Mỗi nhiệm vụ xong là được ⭐ ngay. Ngày nào có bài tập mà làm xong hết cả bài
+                lẫn nhiệm vụ thì được thêm {DIEM_NGAY_XONG} ⭐ nữa!
               </p>
             ) : (
               <ol className="flex flex-row flex-wrap justify-center gap-x-10 gap-y-3">

@@ -78,17 +78,82 @@ kết quả vá tại chỗ. Test `lib/videoDuration.test.ts` có bộ dựng mp
 giả, bộ duyệt cây kiểm từng offset, và hàm mô phỏng phép tính của Safari.
 
 Điểm thưởng (+10 một ngày xong hết, +1 mỗi bài xong sớm hơn `duration_minutes`,
-đổi thưởng có bố mẹ duyệt): luật là hàm thuần trong `lib/diem.ts` (đọc chú thích
-đầu file trước — nó giải thích vì sao "xong sớm" đo bằng mốc con bấm "Bắt đầu
-làm" của đồng hồ sẵn có và giới hạn của cách đó), SQL cộng điểm ở
-`ghiDiemSauKhiXong` + `congDiemNgayNeuXong` trong `lib/store.ts` (đường con tick
-KHÔNG phải chỗ duy nhất gọi: route xoá bài / đổi ngày của bố mẹ gọi hàm sau),
-lược đồ + lý do ở `migrations/015_tinh_diem_doi_thuong.sql`. Hai điều dễ vấp:
-(1) "cộng một lần" KHÔNG nằm trong code mà nằm ở hai unique index partial của
-`score_events` + `ON CONFLICT ... RETURNING` — đổi luật thì sửa index trước;
-(2) số dư = tổng `score_events` TRỪ `reward_redemptions` đã duyệt, không có dòng
-điểm âm nào, đừng thêm. Test PGlite trong `lib/tinh-diem.test.ts` mô phỏng lại đúng SQL của
-store — sửa một bên là phải sửa bên kia.
++`stars` mỗi dòng nhiệm vụ hàng ngày tick xong, đổi thưởng có bố mẹ duyệt): luật
+là hàm thuần trong `lib/diem.ts` (đọc chú thích đầu file trước — nó giải thích vì
+sao "xong sớm" đo bằng mốc con bấm "Bắt đầu làm" của đồng hồ sẵn có và giới hạn
+của cách đó), SQL cộng điểm ở `ghiDiemSauKhiXong` + `congDiemNgayNeuXong` trong
+`lib/store.ts` (đường con tick KHÔNG phải chỗ duy nhất gọi: route xoá bài / đổi
+ngày của bố mẹ gọi hàm sau), lược đồ + lý do ở `migrations/015_tinh_diem_doi_thuong.sql`
+và `016_nhiem_vu_hang_ngay_thuong_sao.sql`. Ba điều dễ vấp: (1) "cộng một lần"
+KHÔNG nằm trong code mà nằm ở BA unique index partial của `score_events` +
+`ON CONFLICT ... RETURNING` — đổi luật thì sửa index trước; (2) số dư = tổng
+`score_events` TRỪ `reward_redemptions` đã duyệt, không có dòng điểm âm nào, đừng
+thêm; (3) CHECK của `score_events.kind` được 016 DROP rồi ADD lại đủ ba giá trị —
+migration nào thêm `kind` nữa phải liệt kê lại ĐỦ, không chỉ thêm giá trị của mình.
+Test PGlite trong `lib/tinh-diem.test.ts` mô phỏng lại đúng SQL của store — sửa
+một bên là phải sửa bên kia.
+
+Nhiệm vụ hàng ngày (`daily_chores` + dòng `assignments` có `chore_id`, hai nhóm
+`category`, sao/icon/`child_ids`): dòng của ngày được tạo LƯỜI bằng
+`taoNhiemVuNgay` trong `lib/store.ts` — **năm nơi gọi**: đầu màn của con,
+`progressUpcoming`, chi tiết con của bố mẹ, `saveSubmission`, và
+`xuLySauKhiDoiHanChot` (nhánh bố mẹ đổi hạn chót của `PATCH
+/api/assignments/:id`); không có cron. Câu `INSERT … SELECT` nằm ở
+**`lib/sqlNhiemVu.ts`** — một bản duy nhất, `lib/store.ts` + `scripts/seed.mjs` +
+ba tệp test PGlite đều import từ đó (tệp không import gì lúc chạy nên cả Next,
+`node --test` và `node scripts/seed.mjs` đều nạp được); chỉ còn ba hằng số
+`subject`/`source`/`duration` là seed/test truyền tay.
+
+**Hàng rào "+10 của ngày mai" nằm ở MỘT hàm**: `taoNhiemVuNgayNeuChuaQua` — hai
+đường mà bố mẹ tự chọn ngày (`saveSubmission` khi nhập bài, `xuLySauKhiDoiHanChot`
+khi đổi hạn chót) đều gọi nó, đừng gọi `taoNhiemVuNgay` trực tiếp từ đó nữa.
+`xuLySauKhiDoiHanChot` còn gọi `congDiemNgayNeuXong` cho **cả hai** ngày (cũ vừa
+bớt một dòng, mới vừa nhận một dòng có thể đã 'done') — tiền lệ: mọi thao tác có
+thể làm một ngày thành "xong hết" đều gọi hàm đó, và nó idempotent. Hàm
+đó giữ cả hai chiều của cùng một luật, đọc chú thích ở đó trước khi định sửa:
+`congDiemNgayNeuXong` không kiểm "ngày đó đã tới chưa", nên (a) ngày **từ hôm nay
+trở đi** PHẢI có dòng nhiệm vụ `'todo'` — nó là thứ duy nhất chặn +10 cộng sớm một
+ngày; (b) ngày **đã qua** thì KHÔNG được tạo — không còn gì phải gác, mà thêm một
+dòng không ai tick được (màn của con liệt kê từ hôm nay) là khoá luôn +10 của ngày
+đó. Best-effort (nuốt lỗi để không 500 một lần ghi đã thành công); ba nhánh đều có
+test ở `lib/tinh-diem.test.ts`.
+
+`stars`/`icon`/`content` CHÉP vào dòng lúc tạo (sửa cấu hình chỉ ảnh hưởng dòng
+tạo sau, và **tắt công tắc chỉ ngăn dòng tạo SAU** — dòng của hôm nay đã tạo vẫn
+hiện, vẫn tick được, vẫn ăn ⭐), riêng nhóm đọc LIVE qua `LEFT JOIN daily_chores`
+trong `ASSIGNMENT_SELECT` — giống `sort_order`. Xoá nhiệm vụ là `archived_at`,
+không DELETE (migration 014 giải thích vì sao).
+
+**Một con số tóm tắt đếm đúng những dòng mà màn nó đại diện VẼ RA và cho TICK —
+không hơn, không kém — và phải được lọc bằng CÙNG một hàm với màn đó, không viết
+lại điều kiện bằng SQL hay JS riêng.** Hàm đó là `veTrenManCuaCon` /
+`dongTrenManCuaCon` trong `lib/nhomNhiemVu.ts` (bài tập: từ hôm nay trở đi;
+nhiệm vụ hàng ngày: chỉ hôm nay — đọc chú thích đầu file), dùng ở cả
+`app/con/[childId]/page.tsx` lẫn `progressUpcoming` trong `lib/store.ts`.
+
+Bất biến này áp cả **trong một màn**: tiến độ ở đầu mỗi nhóm đếm đúng tập mà
+thân nhóm đó vẽ — nhóm bài tập tính cả bài "Ngày mai" (`nhomBaiTheoNoiGiao`),
+nhóm nhiệm vụ chỉ tính hôm nay (`nhomNhiemVuHomNay`), cả hai qua cùng
+`tienDoNhom`. Đếm lệch một bên là đầu nhóm tô xanh + "🎉 2/2 bài xong" trong khi
+ngay dưới còn ba thẻ bài chưa làm.
+
+**Phép thử về-0:** mở màn của con, tick hết mọi thứ đang thấy, thì mọi con số dẫn
+tới màn đó (huy hiệu chọn tên, hai ô "Hoàn thành"/"Đang chờ", tiến độ nhóm) phải
+về 0 hoặc "Xong hết"; còn một số nào khác 0 là có dòng đang được đếm mà không có
+chỗ tick — **sửa bộ lọc, không sửa chữ**. (Buổi tối bố mẹ đã nhập bài cho hôm sau
+thì huy hiệu đọc "1 việc" vì bài ngày mai CÓ vẽ và CÓ tick được — đó là đếm đúng,
+không phải lỗi.)
+
+Từ bất biến trên suy ra được cả hai điều mà trước đây phải liệt kê theo từng màn:
+đếm gộp bài tập và nhiệm vụ (vì màn của con vẽ cả hai — đừng thêm lại trường kiểu
+`homeworkTotal`/`homeworkTodo`), và bài đếm từ hôm nay trở đi còn nhiệm vụ chỉ
+hôm nay (vì màn vẽ đúng như vậy). Hồi quy ghim ở `lib/nhomNhiemVu.test.ts`.
+
+Hai ngoại lệ CÓ Ý: badge "Quá hạn" (nhiệm vụ hôm qua không phải bài quá hạn) và
+hộp "Nhiệm vụ hàng ngày" ở màn chi tiết con của bố mẹ (tách khỏi tiến độ bài tập,
+chỉ tính HÔM NAY). Cả hai KHÔNG phải con số dẫn tới màn của con nên không chịu
+phép thử về-0. Muốn thêm một con số mới thì phải trả lời được: **nó tóm tắt màn
+nào, dùng hàm lọc nào của màn đó** — không trả lời được thì chưa được thêm.
 
 Máy này đã bật Safari > Develop > Allow Remote Automation: `safaridriver -p <cổng
 riêng>` + WebDriver W3C lái được Safari thật để đo `video.duration` (phục vụ tệp

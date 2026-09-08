@@ -86,8 +86,11 @@ rồi sửa chỗ nào chưa đúng — chữ đề bài, môn, thời lượng 
 
 ### Xem con làm tới đâu
 
-Màn **Trang chủ** cho biết ngay: bao nhiêu bài **Hoàn thành / Đang chờ / Quá hạn**,
-từng con xong mấy bài, và số ⭐ mỗi con đang có.
+Màn **Trang chủ** cho biết ngay: **Hoàn thành / Đang chờ / Quá hạn** trong khối
+"Việc từ hôm nay trở đi", từng con xong mấy việc, và số ⭐ mỗi con đang có. Hai ô
+**Hoàn thành / Đang chờ** (và tiến độ từng con ngay dưới) đếm cả **nhiệm vụ hàng
+ngày** — đúng những việc con đang thấy trên máy của mình; riêng ô **Quá hạn** chỉ
+đếm bài tập, vì một nhiệm vụ của hôm qua không phải bài quá hạn.
 
 ![Màn tổng quan của bố mẹ](huong-dan-anh/bome-tong-quan.png)
 
@@ -97,15 +100,30 @@ từng con xong mấy bài, và số ⭐ mỗi con đang có.
 - **Nộp bài cho cô** (ở Trang chủ) → gom các video con đã quay cho lớp tiếng Anh
   theo từng ngày, đặt sẵn tên tệp dễ hiểu để gửi cho cô.
 
-### Việc nhà mỗi ngày
+### Nhiệm vụ hàng ngày của con
 
-Vào **Cài đặt → "Nhiệm vụ mỗi ngày"**: sửa chữ, đổi thứ tự, bật/tắt, xoá. Cả nhà
-dùng chung một danh sách (mặc định có sẵn 3 việc: cất sách vở vào ba lô, tắt đèn
-học, soạn sách vở cho ngày mai).
+Vào **Cài đặt → "Nhiệm vụ hàng ngày"** (cũng vào được từ dòng dẫn trên màn
+**Thưởng**). Cả nhà dùng chung một danh sách; mặc định có sẵn 3 việc: cất sách vở
+vào ba lô, tắt đèn học, soạn sách vở cho ngày mai — mỗi việc 1 ⭐.
 
-Những việc này hiện thành nhóm **"Việc nhà"** ở cuối danh sách bài hôm nay của con.
-Lưu ý: **hôm nào bố mẹ không giao bài thì hôm đó không có việc nhà**, và thay đổi
-danh sách chỉ ảnh hưởng những ngày tạo **sau đó**.
+Mỗi nhiệm vụ bố mẹ đặt được:
+
+- **Tên** và **một icon** (một emoji — con chưa đọc thạo thì nhìn icon là biết).
+- **Số ⭐** con được khi tick xong, từ **1 đến 10**.
+- **Nhóm**: **"🎒 Sau khi học xong"** (dọn dẹp, chuẩn bị đồ dùng — 3 việc mặc định
+  nằm ở đây) hoặc **"🏠 Việc nhà hàng ngày"** (việc nhà của con).
+- **"Giao cho"**: mặc định **Cả nhà**, hoặc bấm chọn từng con.
+
+Còn có hai nút mũi tên để đổi thứ tự, công tắc bật/tắt, và nút xoá.
+
+Trên màn của con, các nhiệm vụ hiện thành **hai nhóm riêng** (đúng hai nhóm ở
+trên) ở cuối danh sách hôm nay; con bấm tick ngay tại chỗ, không phải mở ra.
+**Nhiệm vụ hiện MỖI NGÀY** — kể cả cuối tuần và những hôm bố mẹ không giao bài
+tập nào.
+
+Sửa danh sách chỉ ảnh hưởng những ngày **app tạo dòng sau đó**: tên, icon và số ⭐
+đã chép sang việc của những ngày đã tạo nên giữ nguyên (riêng đổi **nhóm** thì
+việc của hôm nay đổi chỗ theo ngay).
 
 ### Duyệt đổi thưởng
 
@@ -146,8 +164,11 @@ Con mở app trên máy của mình (máy đã gắn vào nhà thì vào thẳng
 - **Đã làm xong** — tick xong bài. Bài nào có 🎥 thì con **quay video ngay trong
   app**; gửi video xong tức là bài đó đã xong (không có nút tick riêng).
 
-Việc nhà thì con bấm tick ngay tại danh sách, không phải mở ra. Xong hết cả bài
-lẫn việc nhà, con thấy màn ăn mừng **"Giỏi quá!"**.
+Nhiệm vụ hàng ngày thì con bấm tick ngay tại danh sách, không phải mở ra; tick
+xong là ⭐ của nhiệm vụ đó cộng ngay, hiện luôn chip **"+N ⭐"** trên dòng vừa tick.
+Xong hết cả bài lẫn nhiệm vụ, con thấy màn ăn mừng **"Giỏi quá!"**.
+
+![Hai nhóm nhiệm vụ ở cuối màn của con — dòng vừa tick hiện chip "+2 ⭐"](huong-dan-anh/con-nhiem-vu-hang-ngay.png)
 
 ---
 
@@ -157,18 +178,22 @@ Luật hiện hành (đúng như app đang tính):
 
 | Con làm gì | Được bao nhiêu |
 | --- | --- |
-| Xong hết **cả bài tập lẫn việc nhà** của một ngày | **+10 ⭐**, mỗi con mỗi ngày chỉ một lần |
+| Ngày **có bài tập**, con xong hết **cả bài tập lẫn nhiệm vụ hàng ngày** | **+10 ⭐**, mỗi con mỗi ngày chỉ một lần |
 | Mỗi bài làm xong **nhanh hơn thời lượng dự kiến của chính bài đó** | **+1 ⭐** |
+| Mỗi **nhiệm vụ hàng ngày** con tick xong | **+ đúng số ⭐ bố mẹ đặt cho nhiệm vụ đó** |
 
 Vài điều nên biết để khỏi thắc mắc:
 
 - Muốn được **+1**, con phải bấm **"Bắt đầu làm"** rồi tick xong trước khi hết giờ.
   Con làm ra giấy trước rồi mới vào tick thì không có mốc giờ nào để so, nên không
   được +1. Làm đúng bằng thời lượng (5 phút cho bài 5 phút) cũng chưa tính là sớm.
-- **Việc nhà không có đồng hồ**, nên không bao giờ được +1 — nhưng vẫn phải tick
-  hết mới được +10 của ngày.
-- Ngày phải có **ít nhất một bài tập thật** mới tính +10 (chỉ tick vài việc nhà
-  thì chưa phải là "làm xong bài").
+- **Nhiệm vụ hàng ngày không có đồng hồ**, nên không bao giờ được +1 — nhưng vẫn
+  phải tick hết mới được +10 của ngày.
+- Ngày phải có **ít nhất một bài tập thật** mới tính +10 (chỉ tick vài nhiệm vụ
+  thì chưa phải là "làm xong bài"). Nên cuối tuần không có bài, con tick hết nhiệm
+  vụ thì được ⭐ của từng nhiệm vụ chứ **không** có +10.
+- Mỗi nhiệm vụ chỉ cộng ⭐ **một lần**: con bỏ tick cũng **không bị rút** ⭐, mà
+  tick lại cũng không được cộng thêm lần nữa.
 - **Không tính lùi về quá khứ**: chỉ những ngày từ hôm tạo nhà trở đi mới được điểm.
 - Con bấm nhầm **"Bắt đầu làm"**? Ngay dưới đồng hồ, trên chính máy của con, có
   nút nhỏ **"Bố mẹ đặt lại giờ"** — bố mẹ nhập mã PIN là bài quay về như chưa bấm.
@@ -211,8 +236,15 @@ Con mở lại bài đó, bấm **"Chưa làm xong"** là bài quay về chưa x
 **Con quay video nhưng muốn quay lại?**
 Bấm **"Quay video khác"** — app chỉ giữ video mới nhất. Quay tối đa 10 phút mỗi bài.
 
-**Hôm nay không giao bài thì con có việc nhà không?**
-Không. Việc nhà của một ngày chỉ được tạo cùng lúc với bài tập của ngày đó.
+**Hôm nay không giao bài thì con có nhiệm vụ hàng ngày không?**
+Có. Nhiệm vụ hiện mỗi ngày, kể cả cuối tuần và ngày bố mẹ không giao bài tập nào.
+Chỉ có điều ngày không có bài thì con chỉ được ⭐ của từng nhiệm vụ, không có +10.
+
+**Tắt hoặc xoá một nhiệm vụ thì việc của hôm nay có biến mất không?**
+Không. Tắt công tắc (hay xoá) chỉ làm app **thôi tạo** nhiệm vụ đó cho những ngày
+chưa tạo. Ngày nào app đã tạo rồi thì con vẫn thấy và vẫn tick được — là hôm nay,
+và cả ngày mai nếu tối nay bố mẹ đã giao bài cho ngày mai. Những lần con đã tick
+và ⭐ đã cộng đều giữ nguyên.
 
 **Con nhìn thấy mã PIN rồi, sợ con tự vào phần bố mẹ?**
 Vào **Cài đặt → Đổi mã PIN** (cần mã hiện tại). Đổi xong máy của các con vẫn dùng
