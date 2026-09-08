@@ -26,7 +26,9 @@ export default function ThanhDuoi() {
                  flex items-stretch z-40 pb-[env(safe-area-inset-bottom)] xl:hidden"
     >
       {TABS.map((t) => {
-        const active = t.href === '/bome' ? path === '/bome' : path.startsWith(t.href);
+        // So khop theo doan duong dan, khong theo tien to chu: /bome/nhiem-vu-hang-ngay
+        // (trang cai nhiem vu, vao tu Cai dat) khong duoc sang tab "Nhiem vu" (/bome/nhiem-vu).
+        const active = t.href === '/bome' ? path === '/bome' : path === t.href || path.startsWith(t.href + '/');
         return (
           <Link
             key={t.href}

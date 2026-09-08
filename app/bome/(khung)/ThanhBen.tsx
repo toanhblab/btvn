@@ -50,7 +50,9 @@ export default function ThanhBen({
       <nav className="flex-1 overflow-y-auto py-2">
         <ul className="flex flex-col gap-1 px-2">
           {TABS.map((t) => {
-            const active = t.href === '/bome' ? path === '/bome' : path.startsWith(t.href);
+            // So khop theo doan duong dan, khong theo tien to chu: /bome/nhiem-vu-hang-ngay
+            // (trang cai nhiem vu, vao tu Cai dat) khong duoc sang tab "Nhiem vu" (/bome/nhiem-vu).
+            const active = t.href === '/bome' ? path === '/bome' : path === t.href || path.startsWith(t.href + '/');
             return (
               <li key={t.href}>
                 <Link
