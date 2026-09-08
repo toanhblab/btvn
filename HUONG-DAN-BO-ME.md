@@ -299,14 +299,17 @@ bình thường, không phải cài lại gì.
 **App hiện tiếng nước ngoài, không phải tiếng Việt?**
 Máy đang mở nhà mẫu (mã 1111 tiếng Nhật, 2222 tiếng Hàn, 3333 tiếng Anh). Chữ của
 app đi theo **nhà** chứ không theo máy. Mở lại link `/nha/<mã nhà>` của nhà mình
-(bố mẹ copy ở Cài đặt) là máy quay về nhà mình và tiếng Việt. Phần của bố mẹ thì đi
-theo mã PIN vừa nhập: đóng trình duyệt rồi mở lại, nhập PIN của nhà mình.
+(bố mẹ copy ở Cài đặt) là máy quay về nhà mình và tiếng Việt ngay — kể cả khi trước
+đó đã nhập mã của nhà mẫu, vì mở link của một nhà khác thì app tự đóng phần bố mẹ
+đang mở lại. Nhập PIN của nhà mình là vào lại phần bố mẹ.
 
 **Muốn cho người khác xem app bằng tiếng Nhật / Hàn / Anh?**
 Mở một trong ba link `/nha/demo-ja` (tiếng Nhật), `/nha/demo-ko` (tiếng Hàn),
 `/nha/demo-en` (tiếng Anh) — mở link nào là máy sang nhà mẫu đó ngay, không phải
-nhập gì; muốn xem phần của bố mẹ thì nhập mã 1111 / 2222 / 3333. Nhảy giữa các nhà
-chỉ bằng cách mở link khác. Ba nhà này là dữ liệu mẫu, không phải nhà thật.
+nhập gì; muốn xem phần của bố mẹ thì nhập mã 1111 / 2222 / 3333. Nhảy sang nhà khác
+cũng chỉ bằng cách mở link khác: mở link của nhà khác là app đóng phần bố mẹ đang mở
+lại, nên nhập được mã của nhà mới ngay. Mở lại link của **chính nhà đang mở** thì
+không phải nhập lại gì. Ba nhà này là dữ liệu mẫu, không phải nhà thật.
 
 **Xoá hết bài cũ đi được không?**
 Được. Vào **Nhiệm vụ → "Xoá tất cả bài tập và việc nhà"** — app hỏi lại hai nhịp

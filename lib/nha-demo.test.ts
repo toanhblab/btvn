@@ -32,7 +32,7 @@ delete process.env.DATABASE_URL_UNPOOLED; delete process.env.POSTGRES_URL_NON_PO
 const { query, queryTx } = await import('./db.ts');
 const store = await import('./store.ts');
 const { chayMigrations } = await import('../scripts/db.mjs');
-const { napNhaDemo, ID_NHA_DEMO, ngayLech } = await import('../scripts/seed-demo.mjs');
+const { napNhaDemo, idNhaDemo, ngayLech } = await import('../scripts/seed-demo.mjs');
 const { PIN_DEMO } = await import('./i18n/ngonNgu.ts');
 
 /** Cung khuon voi moKetNoi (scripts/db.mjs) nhung di qua lib/db.ts de dung chung PGlite voi store. */
@@ -141,14 +141,14 @@ test('nap demo len DB dang co nha that: nha that giu nguyen tung byte, chay lai 
 
 test('PIN demo dang la cua mot nha that: bo qua nha demo do, khong dong vao nha that', async () => {
   const CHIEM = 'fam_chiem';
-  await db.query(`DELETE FROM families WHERE id = $1`, [ID_NHA_DEMO.ja]);
+  await db.query(`DELETE FROM families WHERE id = $1`, [idNhaDemo('ja')]);
   await db.query(`INSERT INTO families (id, name, slug, parent_pin_hash) VALUES ($1, 'Nhà chiếm 1111', 'chiem', $2)`,
     [CHIEM, await hashPin('1111')]);
   const truoc = await chupNha(CHIEM);
   const kq = await napNhaDemo(db);
   assert.deepEqual(kq.find((k: { lang: string }) => k.lang === 'ja')?.trangThai, 'bo-qua-trung-pin');
   assert.deepEqual(await chupNha(CHIEM), truoc);
-  assert.equal((await db.query(`SELECT 1 FROM families WHERE id = $1`, [ID_NHA_DEMO.ja])).length, 0);
+  assert.equal((await db.query(`SELECT 1 FROM families WHERE id = $1`, [idNhaDemo('ja')])).length, 0);
   // Bo nha chiem di -> lan sau nap duoc
   await db.query(`DELETE FROM families WHERE id = $1`, [CHIEM]);
   const kq2 = await napNhaDemo(db);
@@ -158,14 +158,14 @@ test('PIN demo dang la cua mot nha that: bo qua nha demo do, khong dong vao nha 
 test('nhap PIN 1111/2222/3333 -> dung nha demo, dung ngon ngu', async () => {
   for (const [pin, lang] of Object.entries(PIN_DEMO)) {
     const nha = await store.findFamilyByPinHash(await hashPin(pin));
-    assert.equal(nha?.id, ID_NHA_DEMO[lang], `PIN ${pin}`);
+    assert.equal(nha?.id, idNhaDemo(lang), `PIN ${pin}`);
     assert.equal(nha?.ngonNgu, lang, `PIN ${pin}`);
   }
   assert.equal((await store.findFamilyByPinHash(await hashPin('1234')))?.id, THAT);
 });
 
 test('KHONG co duong nao tu nha demo nhin sang nha khac (moi ham doc cua store), va nguoc lai', async () => {
-  const demo = ID_NHA_DEMO.ja;
+  const demo = idNhaDemo('ja');
   const conDemo = new Set((await store.listChildren(demo)).map((c) => c.id));
   assert.equal(conDemo.size, 3);
   for (const c of conDemo) assert.ok(c.startsWith(`${demo}_con_`), `con la trong nha demo: ${c}`);
@@ -214,7 +214,7 @@ test('KHONG co duong nao tu nha demo nhin sang nha khac (moi ham doc cua store),
 
 test('moi nha demo co du thu de xem, khong man nao trong', async () => {
   for (const lang of ['ja', 'ko', 'en'] as const) {
-    const fam = ID_NHA_DEMO[lang];
+    const fam = idNhaDemo(lang);
     const con = await store.listChildren(fam);
     assert.equal(con.length, 3, lang);
     const homNay = ngayLech(0);

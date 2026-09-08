@@ -171,18 +171,21 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
 
           {/* Ly do — con se doc, nen goi y la loi noi voi con */}
           <div className="flex flex-wrap gap-1">
-            {LY_DO_TRU_GOI_Y.map((g) => (
-              <button
-                key={g}
-                type="button"
-                onClick={() => setLyDo(T(g))}
-                aria-pressed={lyDo === T(g)}
-                className={`rounded-full px-3 min-h-9 text-p-body-sm font-bold
-                            ${lyDo === g ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface'}`}
-              >
-                {T(g)}
-              </button>
-            ))}
+            {LY_DO_TRU_GOI_Y.map((g) => {
+              const nhan = T(g);
+              return (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setLyDo(nhan)}
+                  aria-pressed={lyDo === nhan}
+                  className={`rounded-full px-3 min-h-9 text-p-body-sm font-bold
+                              ${lyDo === nhan ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface'}`}
+                >
+                  {nhan}
+                </button>
+              );
+            })}
           </div>
           <input
             value={lyDo}

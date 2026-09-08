@@ -17,7 +17,9 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   const T = await chu();
   const body = await req.json().catch(() => null);
-  const name = String(body?.name ?? '').trim() || T('Nhà mình');
+  // Ten mac dinh KHONG dich: nha moi luon bat dau o ui_locale 'vi' (migration 018),
+  // dich theo nha DANG MO se luu ten tieng Nhat cho mot nha hien tieng Viet.
+  const name = String(body?.name ?? '').trim() || 'Nhà mình';
   if (name.length > 40) {
     return NextResponse.json({ error: T('Tên nhà dài quá, để ngắn thôi.') }, { status: 400 });
   }

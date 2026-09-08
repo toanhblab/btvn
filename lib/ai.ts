@@ -304,7 +304,10 @@ export async function extractAssignments(input: {
  * con biet bai do that su tu dau. Dung "sua" ham nay cho phu voi HW_SOURCES.
  */
 export function inferSource(drafts: DraftAssignment[]): HwSource {
-  const en = drafts.filter((d) => d.lang === 'en' || d.subject === 'Tiếng Anh').length;
+  // `subject` da la ten mon THEO NGON NGU cua nha (tenMonTheoNha) nen khong so
+  // sanh voi chuoi tieng Viet duoc — icon la thu khong doi theo ngon ngu.
+  const iconTiengAnh = SUBJECTS['Tiếng Anh'];
+  const en = drafts.filter((d) => d.lang === 'en' || iconFor(d.subject) === iconTiengAnh).length;
   return en * 2 > drafts.length ? 'english_class' : 'primary_school';
 }
 

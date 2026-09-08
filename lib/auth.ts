@@ -147,6 +147,26 @@ export async function attachDeviceFamily(res: NextResponse, familyId: string): P
 }
 
 /**
+ * Gan may vao mot nha qua link /nha/<slug>, va GO phien bo me neu phien do la
+ * CUA NHA KHAC.
+ *
+ * Vi sao phai go: `viewingFamilyId` uu tien phien bo me, nen neu chi doi cookie
+ * thiet bi thi mo link nha khac xong man cua con van hien nha cu — va man nhap
+ * PIN thi tu chuyen huong di khi da co phien, nen khong con duong nao doi sang
+ * nha moi trong app (nut "Quen PIN tren thiet bi nay" da bo o issue #17).
+ *
+ * Mo LAI link chinh nha minh thi GIU nguyen phien: bo me dang lam viec o phan
+ * cua minh ma bi dang xuat chi vi bam link cua chinh nha minh la vo ly.
+ */
+export async function attachFamilyLink(res: NextResponse, familyId: string): Promise<void> {
+  await attachDeviceFamily(res, familyId);
+  const phienBoMe = await parentFamilyId();
+  if (phienBoMe !== null && phienBoMe !== familyId) {
+    res.cookies.set(PARENT_COOKIE, '', { ...baseOpts, maxAge: 0 });
+  }
+}
+
+/**
  * Nha dang xem o man cua con.
  *
  * Uu tien phien bo me: bo me dang mo /con de xem thu tren dien thoai cua minh

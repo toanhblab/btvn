@@ -193,16 +193,26 @@ Chrome có nhiều `moof`, `mfra>tfra` (offset tuyệt đối), Opus, `mvhd`/`tk
 `lib/i18n/chu.ts`: khoá là CHÍNH CÂU TIẾNG VIỆT trong mã (`T('Hôm nay')`), `en.ts`
 là danh sách khoá, `ja.ts`/`ko.ts` là `Record<Key, string>`; server dùng
 `await chu()`, client dùng `useT()`, hàm thuần nhận `T`. **Mọi chữ mới trên màn
-hình phải qua `T(...)`** và thêm vào cả ba từ điển — `lib/i18n.test.ts` quét mọi
-tệp giao diện, còn một câu tiếng Việt nằm ngoài `T(...)` là test đỏ (danh sách
-miễn trừ trong test, mỗi mục một lý do). Chữ bố mẹ tự gõ (đề bài, tên nhiệm vụ,
-phần thưởng) KHÔNG dịch. Tiếng Nhật/Hàn/Anh chỉ để captain demo bằng ba nhà riêng
-PIN 1111/2222/3333 (`PIN_DEMO`, giữ chỗ vĩnh viễn) — `scripts/seed-demo.mjs` nạp
-lại được trên DB đang chạy (chạy trong `npm run build`), chỉ đụng `family_id` của
-nhà demo; `lib/nha-demo.test.ts` chụp nhà thật trước/sau và gọi mọi hàm đọc của
+hình phải qua `T(...)`** và thêm vào cả ba từ điển — `npm run quet:chu-viet`
+(`scripts/quet-chu-viet.mjs`) quét mọi tệp giao diện, còn một câu tiếng Việt nằm
+ngoài `T(...)` là đỏ (miễn trừ ở `MIEN_TRU`, mỗi mục kèm một dòng lý do). Đó là
+bước QUÉT MÃ NGUỒN đứng riêng, KHÔNG nằm trong `npm test`; `lib/i18n.test.ts` chỉ
+giữ phần hành vi (từ điển đủ khoá, `dich`/`dienTham`, PIN demo). Chữ bố mẹ tự gõ
+(đề bài, tên nhiệm vụ, phần thưởng) KHÔNG dịch — kể cả tên nhà mặc định "Nhà mình"
+của nhà mới, vì nhà mới luôn bắt đầu ở `ui_locale` `vi`. Tiếng Nhật/Hàn/Anh chỉ để
+captain demo bằng ba nhà riêng PIN 1111/2222/3333 (`PIN_DEMO`, giữ chỗ vĩnh viễn) —
+`scripts/seed-demo.mjs` nạp lại được trên DB đang chạy (chạy trong `npm run build`,
+nên nó nạp mọi `.ts` bằng `import()` ĐỘNG trong try/catch: import tĩnh được phân
+giải TRƯỚC khối bắt lỗi nên một bản Node không tự bỏ kiểu sẽ làm hỏng cả bản
+deploy), chỉ đụng `family_id` của nhà demo; `lib/nha-demo.test.ts` chụp nhà thật trước/sau và gọi mọi hàm đọc của
 store để khẳng định nhà demo không nhìn sang nhà khác. Test PGlite giờ import
 thẳng `lib/store.ts` được nhờ `scripts/test-hook.mjs` (resolve import không đuôi,
-`npm test` nạp qua `--import`) + `BTVN_PGLITE_DIR=memory://`.
+`npm test` nạp qua `--import`) + `BTVN_PGLITE_DIR=memory://`. Link `/nha/<slug>`
+trỏ sang nhà KHÁC thì gỡ luôn phiên bố mẹ (`attachFamilyLink` trong `lib/auth.ts`):
+`viewingFamilyId` ưu tiên `btvn_parent`, mà màn nhập PIN tự chuyển hướng đi khi đã
+có phiên và nút "Quên PIN trên thiết bị này" đã bỏ (#17) — giữ phiên cũ là không
+còn đường nào đổi nhà trong app. Mở lại link chính nhà mình thì GIỮ phiên
+(`lib/nha-link.test.ts`).
 
 Tài liệu có hai người đọc khác nhau: `README.md` cho người phát triển, còn
 `HUONG-DAN-BO-ME.md` (kèm ảnh trong `huong-dan-anh/`) cho bố mẹ dùng app thật —

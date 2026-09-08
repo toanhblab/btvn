@@ -53,7 +53,8 @@ export default function TaoNha() {
       const res = await fetch('/api/families', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim() || T('Nhà mình'), pin: value }),
+        // Nha moi luon bat dau o tieng Viet nen ten mac dinh de nguyen, khong dich
+        body: JSON.stringify({ name: name.trim() || 'Nhà mình', pin: value }),
       });
       const data = await res.json();
       if (!res.ok) {

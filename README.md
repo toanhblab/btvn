@@ -80,9 +80,14 @@ lịch sử ⭐, một yêu cầu chờ duyệt, một lần bị trừ ⭐):
 
 Nhảy giữa ba nhà demo (và về nhà thật) bằng cách mở link `/nha/<slug>` tương ứng:
 mở một lần là máy gắn sang nhà đó và vào thẳng màn chọn con, không phải nhập gì
-(`app/nha/[slug]/route.ts`). Lưu ý link chỉ đổi **cookie thiết bị**; phiên bố mẹ
-(`btvn_parent`, hết khi đóng trình duyệt nếu không tick "Nhớ") vẫn là nhà của PIN
-vừa nhập và được ưu tiên khi xác định nhà đang xem (`viewingFamilyId`).
+(`app/nha/[slug]/route.ts`).
+
+Link trỏ sang **nhà khác** thì `attachFamilyLink` (`lib/auth.ts`) gỡ luôn phiên bố
+mẹ đang mở, không chỉ đổi cookie thiết bị. Bắt buộc phải thế: `viewingFamilyId` ưu
+tiên `btvn_parent`, nên nếu giữ phiên cũ thì mở link nhà B xong màn của con vẫn hiện
+nhà A — mà màn nhập PIN tự chuyển hướng đi khi đã có phiên, và nút "Quên PIN trên
+thiết bị này" đã bỏ (issue #17), nên sẽ không còn đường nào đổi nhà trong app. Mở
+**lại link chính nhà mình** thì giữ nguyên phiên. Hồi quy ở `lib/nha-link.test.ts`.
 
 Ba mã PIN này **giữ chỗ vĩnh viễn** (`PIN_DEMO` trong `lib/i18n/ngonNgu.ts`):
 tạo nhà / đổi PIN trùng bị từ chối ngay. Nhà demo dùng PIN dễ đoán nên chỉ chứa
@@ -102,9 +107,15 @@ Lớp dịch ở `lib/i18n/`: khoá là **chính câu tiếng Việt** trong mã
 (TypeScript báo lỗi khi gọi câu chưa có), `ja.ts`/`ko.ts` là `Record<Key, string>`
 (thiếu câu nào cũng báo lỗi). Server component / route: `const T = await chu()`
 (`lib/i18n/server.ts`); client component: `const T = useT()` (`lib/i18n/client.tsx`);
-hàm thuần nhận `T` làm tham số. Tham số dạng `{n}`. `lib/i18n.test.ts` quét mọi tệp
-giao diện để không còn câu tiếng Việt nào nằm ngoài `T(...)`, và kiểm ba từ điển
-đủ khoá, không rỗng, giữ đúng tham số.
+hàm thuần nhận `T` làm tham số. Tham số dạng `{n}`.
+
+Hai lớp bảo vệ, chạy bằng hai lệnh khác nhau: `npm test` (`lib/i18n.test.ts`) kiểm
+**hành vi** — ba từ điển đủ khoá, không rỗng, giữ đúng tham số, `dich`/`dienTham`
+chạy đúng; còn `npm run quet:chu-viet` (`scripts/quet-chu-viet.mjs`) **quét mã
+nguồn** mọi tệp giao diện để không còn câu tiếng Việt nào nằm ngoài `T(...)`. Phép
+quét đứng riêng vì bằng chứng của nó là ký tự trong mã nguồn chứ không phải app
+chạy ra gì — đó là việc của một bước kiểm mã nguồn, không phải của bộ kiểm thử.
+Danh sách miễn trừ ở `MIEN_TRU` trong tệp đó, mỗi mục kèm một dòng lý do.
 
 Mọi truy vấn trong `lib/store.ts` đều nhận `familyId` và tự lọc theo nó — kể cả
 đường con tick bài xong (việc nhà cũng đi đúng đường này), con nộp video và con
@@ -217,7 +228,9 @@ proxy.ts        chặn /bome/* khi chưa nhập PIN
 migrations/     từng bước thay đổi lược đồ, chạy theo thứ tự tên tệp (bám PRD mục 7)
 scripts/        db.mjs (kết nối + bộ chạy migration), migrate.mjs (CLI, chạy khi
                 build), seed.mjs (dữ liệu mẫu để dev — xoá sạch trước khi nạp),
-                seed-demo.mjs + demo-data.mjs (ba nhà demo, chạy khi build),
+                seed-demo.mjs + demo-data.mjs (ba nhà demo, chạy khi build —
+                nạp `.ts` bằng import() động để lỗi demo không hỏng build),
+                quet-chu-viet.mjs (`npm run quet:chu-viet`, quét mã nguồn),
                 test-hook.mjs (node --test resolve import không đuôi)
 stitch/         bản Stitch gốc của phần trẻ (đối chiếu)
 stitch-parent/  bản Stitch gốc của phần bố mẹ + design system

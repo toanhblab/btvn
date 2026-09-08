@@ -23,15 +23,35 @@
  */
 import { pathToFileURL } from 'node:url';
 import { chayMigrations, moKetNoi, CONN } from './db.mjs';
-import { SQL_TAO_NHIEM_VU_NGAY } from '../lib/sqlNhiemVu.ts';
-import { PIN_DEMO } from '../lib/i18n/ngonNgu.ts';
-import { NHA_DEMO } from './demo-data.mjs';
 
 const SECRET_MAC_DINH = 'dev-secret-doi-truoc-khi-deploy';
 
-export const ID_NHA_DEMO = Object.fromEntries(
-  Object.keys(NHA_DEMO).map((lang) => [lang, `fam_demo_${lang}`])
-);
+/**
+ * Ba phu thuoc duoi day la tep .ts, nap bang import() DONG chu khong phai import
+ * tinh: import tinh duoc phan giai TRUOC khi vao try/catch o cuoi tep, nen tren
+ * mot ban Node khong tu bo kieu san (Node 20, hay 22 duoi 22.18) ca `npm run
+ * build` chet vi ERR_UNKNOWN_FILE_EXTENSION — dung thu ma loi cua demo lam hong
+ * ban deploy that. Nap dong thi loi roi vao dung catch da co.
+ */
+let phuThuocDaNap;
+async function phuThuoc() {
+  if (!phuThuocDaNap) {
+    const [sqlNhiemVu, ngonNgu, demoData] = await Promise.all([
+      import('../lib/sqlNhiemVu.ts'),
+      import('../lib/i18n/ngonNgu.ts'),
+      import('./demo-data.mjs'),
+    ]);
+    phuThuocDaNap = {
+      SQL_TAO_NHIEM_VU_NGAY: sqlNhiemVu.SQL_TAO_NHIEM_VU_NGAY,
+      PIN_DEMO: ngonNgu.PIN_DEMO,
+      NHA_DEMO: demoData.NHA_DEMO,
+    };
+  }
+  return phuThuocDaNap;
+}
+
+/** Id CO DINH cua mot nha demo — nap lai bao nhieu lan cung dung mot dong families. */
+export const idNhaDemo = (lang) => `fam_demo_${lang}`;
 
 async function sha256(text) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -47,12 +67,14 @@ export function ngayLech(days) {
 }
 
 /**
- * Goi cau lenh nap MOT nha demo. Thuan: chi dung tren du lieu, khong goi DB —
- * nguoi goi chay ca goi trong mot transaction (db.chayGoi).
+ * Goi cau lenh nap MOT nha demo. Chi dung tren du lieu, khong goi DB (async chi
+ * vi doc du lieu mau qua `phuThuoc()`) — nguoi goi chay ca goi trong mot
+ * transaction (db.chayGoi).
  */
-export function goiLenhNhaDemo(lang, pinHash) {
+export async function goiLenhNhaDemo(lang, pinHash) {
+  const { NHA_DEMO, SQL_TAO_NHIEM_VU_NGAY } = await phuThuoc();
   const d = NHA_DEMO[lang];
-  const fam = ID_NHA_DEMO[lang];
+  const fam = idNhaDemo(lang);
   const id = (s) => `${fam}_${s}`;
   const cid = (c) => id(`con_${c}`);
   const homQua = ngayLech(-1), homNay = ngayLech(0), mai = ngayLech(1);
@@ -179,10 +201,11 @@ export function goiLenhNhaDemo(lang, pinHash) {
  * va voi bo doc cua test). Tra ve danh sach { lang, pin, trangThai }.
  */
 export async function napNhaDemo(db, { secret = process.env.PIN_SECRET || SECRET_MAC_DINH, log = () => {} } = {}) {
+  const { PIN_DEMO } = await phuThuoc();
   const ketQua = [];
   for (const [pin, lang] of Object.entries(PIN_DEMO)) {
     const hash = await sha256(`${secret}:${pin}`);
-    const fam = ID_NHA_DEMO[lang];
+    const fam = idNhaDemo(lang);
     // PIN demo dang la cua mot nha THAT (dang ky truoc khi giu cho): khong dong vao.
     const trung = await db.query(
       `SELECT id, name FROM families WHERE parent_pin_hash = $1 AND id <> $2`, [hash, fam]);
@@ -191,7 +214,7 @@ export async function napNhaDemo(db, { secret = process.env.PIN_SECRET || SECRET
       ketQua.push({ lang, pin, trangThai: 'bo-qua-trung-pin' });
       continue;
     }
-    await db.chayGoi(goiLenhNhaDemo(lang, hash));
+    await db.chayGoi(await goiLenhNhaDemo(lang, hash));
     log(`  + nha demo ${lang} — PIN ${pin} — /nha/demo-${lang}`);
     ketQua.push({ lang, pin, trangThai: 'ok' });
   }
