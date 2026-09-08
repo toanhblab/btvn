@@ -201,11 +201,12 @@ export default function NhiemVuHangNgay({
                 Xoá nhiệm vụ “{c.icon} {c.content}”?
               </p>
               <p className="text-p-body-sm text-on-error-container mb-3">
-                Nhiệm vụ này biến mất khỏi đây và không được thêm vào những ngày sau
-                nữa — không lấy lại được. Những ngày đã tạo vẫn giữ nguyên, kể cả
-                những lần các con đã tick và ⭐ đã cộng. Chỉ muốn tạm dừng thì tắt
-                công tắc: từ ngày mai con không thấy việc này nữa, việc của hôm nay
-                đã tạo rồi thì vẫn còn.
+                Nhiệm vụ này biến mất khỏi đây và không được thêm vào những ngày
+                app tạo sau đó nữa — không lấy lại được. Những ngày đã tạo vẫn giữ
+                nguyên, kể cả những lần các con đã tick và ⭐ đã cộng. Chỉ muốn tạm
+                dừng thì tắt công tắc: app thôi tạo việc này cho những ngày chưa
+                tạo, còn ngày đã tạo rồi thì con vẫn thấy và vẫn tick được — hôm
+                nay, và cả ngày mai nếu bố mẹ đã giao bài cho ngày mai.
               </p>
               <div className="flex gap-2">
                 <button

@@ -37,7 +37,8 @@ export default async function Page() {
         <b>{NHOM_NHIEM_VU.housework.label}</b>. Bố mẹ và con cùng tick ở đó; tick xong là được ⭐
         của nhiệm vụ ngay, và ngày nào <b>có bài tập</b> mà xong hết cả bài lẫn nhiệm vụ thì được
         thêm +{DIEM_NGAY_XONG} ⭐ (ngày không có bài thì chỉ có ⭐ của từng nhiệm vụ).
-        Cả nhà dùng chung một danh sách; sửa chỉ ảnh hưởng những ngày sau, ⭐ đã cộng không bị rút.
+        Cả nhà dùng chung một danh sách; sửa chỉ ảnh hưởng những dòng app tạo sau đó (riêng
+        đổi nhóm thì dòng của hôm nay đổi chỗ theo ngay), ⭐ đã cộng không bị rút.
       </p>
 
       <NhiemVuHangNgay initial={chores} cacCon={children} />
