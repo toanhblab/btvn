@@ -237,7 +237,7 @@ export default function NhiemVuHangNgay({
                 <input
                   defaultValue={c.icon}
                   key={`${c.id}:icon:${c.icon}`}
-                  aria-label="Icon"
+                  aria-label={T('Icon')}
                   onBlur={(e) => {
                     const moi = e.target.value.trim();
                     if (!moi || moi === c.icon) { e.target.value = c.icon; return; }

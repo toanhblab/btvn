@@ -123,7 +123,7 @@ export default function PhanThuong({ initial }: { initial: Reward[] }) {
                 <input
                   defaultValue={r.icon}
                   key={`${r.id}:icon:${r.icon}`}
-                  aria-label="Icon"
+                  aria-label={T('Icon')}
                   onBlur={(e) => {
                     const moi = e.target.value.trim();
                     if (!moi || moi === r.icon) { e.target.value = r.icon; return; }

@@ -133,12 +133,33 @@ export async function deviceFamilyId(): Promise<string | null> {
   return unseal((await cookies()).get(DEVICE_COOKIE)?.value);
 }
 
+/**
+ * GAN MAY VAO MOT NHA phai GO phien bo me neu phien do la CUA NHA KHAC — luat
+ * nay o day, khong o tung route, de MOI duong gan may deu thua huong.
+ *
+ * Vi sao phai go: `viewingFamilyId` uu tien phien bo me, nen neu chi doi cookie
+ * thiet bi thi gan may sang nha khac xong man cua con van hien nha cu — ma man
+ * nhap PIN tu chuyen huong di khi da co phien, va nut "Quen PIN tren thiet bi
+ * nay" da bo (issue #17), nen se khong con duong nao doi nha trong app.
+ *
+ * Gan LAI chinh nha dang o thi GIU nguyen phien: bo me dang lam viec o phan cua
+ * minh ma bi dang xuat chi vi bam link cua chinh nha minh la vo ly.
+ *
+ * Hai duong gan may, cung mot luat: POST /api/nha (man "Day la may cua nha
+ * nao?") di qua `setDeviceFamily`, con link /nha/<slug> di qua
+ * `attachFamilyLink` vi no dat cookie tren mot response redirect da tao san.
+ */
+async function laPhienCuaNhaKhac(familyId: string): Promise<boolean> {
+  const phienBoMe = await parentFamilyId();
+  return phienBoMe !== null && phienBoMe !== familyId;
+}
+
 /** Gan thiet bi nay vao mot nha (goi trong route handler). */
 export async function setDeviceFamily(familyId: string): Promise<void> {
-  (await cookies()).set(DEVICE_COOKIE, await seal(familyId), {
-    ...baseOpts,
-    maxAge: DEVICE_MAX_AGE,
-  });
+  const doiNha = await laPhienCuaNhaKhac(familyId);
+  const jar = await cookies();
+  jar.set(DEVICE_COOKIE, await seal(familyId), { ...baseOpts, maxAge: DEVICE_MAX_AGE });
+  if (doiNha) jar.delete(PARENT_COOKIE);
 }
 
 /** Gan thiet bi khi tra ve mot response da tao san (vi du redirect). */
@@ -146,24 +167,11 @@ export async function attachDeviceFamily(res: NextResponse, familyId: string): P
   res.cookies.set(DEVICE_COOKIE, await seal(familyId), { ...baseOpts, maxAge: DEVICE_MAX_AGE });
 }
 
-/**
- * Gan may vao mot nha qua link /nha/<slug>, va GO phien bo me neu phien do la
- * CUA NHA KHAC.
- *
- * Vi sao phai go: `viewingFamilyId` uu tien phien bo me, nen neu chi doi cookie
- * thiet bi thi mo link nha khac xong man cua con van hien nha cu — va man nhap
- * PIN thi tu chuyen huong di khi da co phien, nen khong con duong nao doi sang
- * nha moi trong app (nut "Quen PIN tren thiet bi nay" da bo o issue #17).
- *
- * Mo LAI link chinh nha minh thi GIU nguyen phien: bo me dang lam viec o phan
- * cua minh ma bi dang xuat chi vi bam link cua chinh nha minh la vo ly.
- */
+/** `setDeviceFamily` cho mot response da tao san — cung luat go phien bo me. */
 export async function attachFamilyLink(res: NextResponse, familyId: string): Promise<void> {
+  const doiNha = await laPhienCuaNhaKhac(familyId);
   await attachDeviceFamily(res, familyId);
-  const phienBoMe = await parentFamilyId();
-  if (phienBoMe !== null && phienBoMe !== familyId) {
-    res.cookies.set(PARENT_COOKIE, '', { ...baseOpts, maxAge: 0 });
-  }
+  if (doiNha) res.cookies.set(PARENT_COOKIE, '', { ...baseOpts, maxAge: 0 });
 }
 
 /**

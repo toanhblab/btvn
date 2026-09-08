@@ -53,7 +53,7 @@ export default async function DanhSachNhiemVu() {
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <span className="text-p-body-sm px-3 py-1.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed shrink-0">
-            {done}/{items.length} xong
+            {T('{done}/{total} xong', { done, total: items.length })}
           </span>
           {/* Tren Macbook nut chinh len goc tren; ban dien thoai giu nut rong ca
               hang o cuoi trang (o duoi) */}

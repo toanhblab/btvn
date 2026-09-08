@@ -7,9 +7,13 @@
  * va man nhap PIN tu chuyen huong di khi da co phien, nut "Quen PIN tren thiet bi
  * nay" thi da bo (issue #17), nen khong con duong nao doi nha trong app.
  *
- * Chay THAT: goi chinh GET cua app/nha/[slug]/route.ts tren PGlite trong RAM, doc
- * Set-Cookie cua response tra ve. `next/headers` duoc thay bang mot hu cookie gia
- * (route handler that lay cookie cua request qua do).
+ * HAI duong gan may vao mot nha, cung mot luat (nam trong lib/auth.ts, khong o
+ * tung route): link /nha/<slug>, va POST /api/nha o man "Day la may cua nha nao?".
+ * Ca hai deu duoc kiem o day — bo sot mot duong la con nguyen ngo cut.
+ *
+ * Chay THAT: goi chinh GET/POST cua hai route tren PGlite trong RAM, doc cookie
+ * chung dat. `next/headers` duoc thay bang mot hu cookie gia (route handler that
+ * lay cookie cua request qua do).
  */
 
 import { test, before, beforeEach, mock } from 'node:test';
@@ -34,9 +38,13 @@ mock.module('next/headers', {
 
 const { chayMigrations } = await import('../scripts/db.mjs');
 const { query, queryTx } = await import('./db.ts');
-const { signIn } = await import('./auth.ts');
+const { signIn, hashPin } = await import('./auth.ts');
 const { insertFamily } = await import('./store.ts');
 const { GET } = await import('../app/nha/[slug]/route.ts');
+const { POST } = await import('../app/api/nha/route.ts');
+
+const PIN_A = '4321';
+const PIN_B = '5678';
 
 let nhaA: { id: string; slug: string };
 let nhaB: { id: string; slug: string };
@@ -47,8 +55,8 @@ before(async () => {
     query: (t: string, p: unknown[] = []) => query(t, p),
     chayGoi: async (cau: { sql: string; params?: unknown[] }[]) => { await queryTx(cau); },
   });
-  nhaA = await insertFamily('Nha A', 'hash-a');
-  nhaB = await insertFamily('Nha B', 'hash-b');
+  nhaA = await insertFamily('Nha A', await hashPin(PIN_A));
+  nhaB = await insertFamily('Nha B', await hashPin(PIN_B));
 });
 
 beforeEach(() => hu.clear());
@@ -100,4 +108,39 @@ test('slug khong co nha nao: ve man chon nha, khong dung cookie', async () => {
   const { res, dat } = await moLink('khong-co-that');
   assert.equal(res.headers.get('location'), 'http://localhost/vao?loi=link');
   assert.equal(dat.size, 0);
+});
+
+/** Nhap PIN o man "Day la may cua nha nao?" — duong gan may thu hai. */
+async function nhapPinGanMay(pin: string) {
+  const res = await POST(new Request('http://localhost/api/nha', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-forwarded-for': `test-${pin}` },
+    body: JSON.stringify({ pin }),
+  }));
+  return { res, than: await res.json() };
+}
+
+test('POST /api/nha voi PIN cua NHA KHAC: may sang nha moi va phien bo me cu bi go', async () => {
+  await signIn(nhaA.id, true);
+  assert.ok(hu.get('btvn_parent'), 'da co phien bo me nha A');
+
+  const { res } = await nhapPinGanMay(PIN_B);
+  assert.equal(res.status, 200);
+  assert.ok(hu.get('btvn_nha')!.startsWith(`${nhaB.id}.`), 'may phai sang nha B');
+  assert.equal(hu.get('btvn_parent'), undefined, 'phien bo me nha A phai bi go');
+});
+
+test('POST /api/nha voi PIN CHINH NHA MINH: giu nguyen phien bo me', async () => {
+  await signIn(nhaA.id, true);
+  const phienA = hu.get('btvn_parent')!;
+
+  await nhapPinGanMay(PIN_A);
+  assert.equal(hu.get('btvn_parent'), phienA, 'khong duoc dung toi phien cua chinh nha do');
+  assert.ok(hu.get('btvn_nha')!.startsWith(`${nhaA.id}.`));
+});
+
+test('POST /api/nha khi chua nhap PIN bo me: chi gan may, khong tao phien', async () => {
+  await nhapPinGanMay(PIN_B);
+  assert.equal(hu.get('btvn_parent'), undefined);
+  assert.ok(hu.get('btvn_nha')!.startsWith(`${nhaB.id}.`));
 });

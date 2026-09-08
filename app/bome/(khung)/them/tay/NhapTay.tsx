@@ -285,7 +285,7 @@ export default function NhapTay({
         </div>
 
         <div>
-          <label className="text-p-label uppercase text-on-surface-variant block mb-1">Giao cho</label>
+          <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Giao cho')}</label>
           <div className="flex gap-2">
             {kids.map((c) => {
               const on = chosen.includes(c.id);

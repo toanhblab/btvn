@@ -82,12 +82,16 @@ Nhảy giữa ba nhà demo (và về nhà thật) bằng cách mở link `/nha/<
 mở một lần là máy gắn sang nhà đó và vào thẳng màn chọn con, không phải nhập gì
 (`app/nha/[slug]/route.ts`).
 
-Link trỏ sang **nhà khác** thì `attachFamilyLink` (`lib/auth.ts`) gỡ luôn phiên bố
-mẹ đang mở, không chỉ đổi cookie thiết bị. Bắt buộc phải thế: `viewingFamilyId` ưu
-tiên `btvn_parent`, nên nếu giữ phiên cũ thì mở link nhà B xong màn của con vẫn hiện
-nhà A — mà màn nhập PIN tự chuyển hướng đi khi đã có phiên, và nút "Quên PIN trên
-thiết bị này" đã bỏ (issue #17), nên sẽ không còn đường nào đổi nhà trong app. Mở
-**lại link chính nhà mình** thì giữ nguyên phiên. Hồi quy ở `lib/nha-link.test.ts`.
+Gắn máy sang **nhà khác** thì phiên bố mẹ đang mở bị gỡ, không chỉ đổi cookie thiết
+bị. Bắt buộc phải thế: `viewingFamilyId` ưu tiên `btvn_parent`, nên nếu giữ phiên cũ
+thì sang nhà B xong màn của con vẫn hiện nhà A — mà màn nhập PIN tự chuyển hướng đi
+khi đã có phiên, và nút "Quên PIN trên thiết bị này" đã bỏ (issue #17), nên sẽ không
+còn đường nào đổi nhà trong app. Gắn **lại chính nhà đang ở** thì giữ nguyên phiên.
+
+Luật nằm trong `lib/auth.ts`, không ở từng route, vì có hai đường gắn máy:
+`setDeviceFamily` (POST `/api/nha`, màn "Đây là máy của nhà nào?") và
+`attachFamilyLink` (link `/nha/<slug>` — cần bản riêng vì đặt cookie trên một
+response redirect đã tạo sẵn). Hồi quy cho cả hai ở `lib/nha-link.test.ts`.
 
 Ba mã PIN này **giữ chỗ vĩnh viễn** (`PIN_DEMO` trong `lib/i18n/ngonNgu.ts`):
 tạo nhà / đổi PIN trùng bị từ chối ngay. Nhà demo dùng PIN dễ đoán nên chỉ chứa
@@ -116,6 +120,12 @@ nguồn** mọi tệp giao diện để không còn câu tiếng Việt nào n�
 quét đứng riêng vì bằng chứng của nó là ký tự trong mã nguồn chứ không phải app
 chạy ra gì — đó là việc của một bước kiểm mã nguồn, không phải của bộ kiểm thử.
 Danh sách miễn trừ ở `MIEN_TRU` trong tệp đó, mỗi mục kèm một dòng lý do.
+
+Ba phép đo, vì đo theo dấu thôi thì không đủ — "xong", "Giao cho", "Quay xong"
+không có dấu nào: (1) còn dấu tiếng Việt ngoài `T(...)`; (2) trong `app/**`, đoạn
+chữ tràn trong JSX (`>Chữ<`, và `{n} chữ</span>`); (3) trong `app/**`, giá trị
+chuỗi của `placeholder`/`aria-label`/`title`/`alt`. Hai phép sau báo oan nhiều hơn
+— đó là chủ ý, cái nào oan thật thì thêm vào `MIEN_TRU` kèm lý do.
 
 Mọi truy vấn trong `lib/store.ts` đều nhận `familyId` và tự lọc theo nó — kể cả
 đường con tick bài xong (việc nhà cũng đi đúng đường này), con nộp video và con

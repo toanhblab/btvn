@@ -65,7 +65,6 @@ export function conThoiGian(assignmentId: string, minutes: number): boolean {
   return start !== null && Date.now() - start < minutes * 60_000;
 }
 
-/** Doc mot cau tieng Viet — cung giong nu uu tien nhu nut "Nghe de bai". */
 /** Doc mot cau bang giong cua nha (issue #46) — cau da dich san boi nguoi goi. */
 export function noi(text: string, ngonNgu: NgonNgu = NGON_NGU_MAC_DINH): void {
   if (!('speechSynthesis' in window)) return;

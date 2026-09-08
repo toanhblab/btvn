@@ -406,7 +406,7 @@ export default function QuayVideo({
                            justify-center gap-3 px-6 h-20 flex-[2]"
               >
                 <span className="material-symbols-outlined text-4xl icon-fill">stop_circle</span>
-                <span className="text-k-headline">Quay xong</span>
+                <span className="text-k-headline">{T('Quay xong')}</span>
               </button>
               <button
                 onClick={() => stopRecording(true)}

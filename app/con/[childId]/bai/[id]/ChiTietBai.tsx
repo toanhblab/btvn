@@ -73,9 +73,9 @@ export default function ChiTietBai({
       setVoiceWarning(
         missing.length === 0
           ? ''
-          : missing.includes('en') && ngonNgu !== 'en'
-            ? T('Máy chưa có giọng tiếng Anh. Bố mẹ vào Cài đặt → Trợ năng → Nội dung đọc để tải thêm giọng.')
-            : T('Máy chưa có giọng tiếng Việt. Bố mẹ vào Cài đặt → Trợ năng → Nội dung đọc để tải giọng vi-VN.')
+          : T('Máy chưa có giọng {giong}. Bố mẹ vào Cài đặt → Trợ năng → Nội dung đọc để tải thêm giọng.', {
+              giong: [...new Set(missing.map((lang) => GIONG_DOC[lang]))].join(', '),
+            })
       );
     };
     check();

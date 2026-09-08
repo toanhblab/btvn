@@ -12,6 +12,9 @@ export const dynamic = 'force-dynamic';
  * mot nam, cac con mo len la chay, khong dang nhap gi (PRD 4.5).
  *
  * Nho vay PIN cua bo me khong bi "nho" tren may cua tre.
+ *
+ * Nhap PIN cua NHA KHAC o day thi phien bo me dang mo bi go (luat nam trong
+ * `setDeviceFamily`) — khong thi man cua con van hien nha cu.
  */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);

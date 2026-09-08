@@ -298,10 +298,11 @@ bình thường, không phải cài lại gì.
 
 **App hiện tiếng nước ngoài, không phải tiếng Việt?**
 Máy đang mở nhà mẫu (mã 1111 tiếng Nhật, 2222 tiếng Hàn, 3333 tiếng Anh). Chữ của
-app đi theo **nhà** chứ không theo máy. Mở lại link `/nha/<mã nhà>` của nhà mình
-(bố mẹ copy ở Cài đặt) là máy quay về nhà mình và tiếng Việt ngay — kể cả khi trước
-đó đã nhập mã của nhà mẫu, vì mở link của một nhà khác thì app tự đóng phần bố mẹ
-đang mở lại. Nhập PIN của nhà mình là vào lại phần bố mẹ.
+app đi theo **nhà** chứ không theo máy. Có hai cách quay về, cách nào cũng được:
+mở lại link `/nha/<mã nhà>` của nhà mình (bố mẹ copy ở Cài đặt), hoặc vào màn
+**"Đây là máy của nhà nào?"** rồi nhập mã PIN của nhà mình. Cả hai đều đưa máy về
+nhà mình và tiếng Việt ngay — kể cả khi trước đó đã nhập mã của nhà mẫu, vì chuyển
+máy sang một nhà khác thì app tự đóng phần bố mẹ đang mở lại.
 
 **Muốn cho người khác xem app bằng tiếng Nhật / Hàn / Anh?**
 Mở một trong ba link `/nha/demo-ja` (tiếng Nhật), `/nha/demo-ko` (tiếng Hàn),

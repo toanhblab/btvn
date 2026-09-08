@@ -11,8 +11,8 @@ export const dynamic = 'force-dynamic';
  * con. Khong phai nhap gi ca: iPad cua tre khong dang nhap (PRD 4.5), va slug
  * ngau nhien nen nguoi ngoai khong doan ra (PRD muc 10).
  *
- * Link tro sang NHA KHAC thi go luon phien bo me dang mo (attachFamilyLink) —
- * neu khong, man cua con van hien nha cu vi `viewingFamilyId` uu tien phien bo me.
+ * Link tro sang NHA KHAC thi go luon phien bo me dang mo — luat chung cua moi
+ * duong gan may, xem `attachFamilyLink` / `setDeviceFamily` trong lib/auth.ts.
  *
  * Day la route handler chu khong phai page vi chi route handler moi dat duoc
  * cookie — server component khong dat duoc trong luc render.

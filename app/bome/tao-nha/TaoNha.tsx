@@ -103,7 +103,7 @@ export default function TaoNha() {
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={T('Nhà mình')}
+              placeholder="Nhà mình"
               maxLength={40}
               className="w-full rounded-lg border border-outline-variant min-h-p-tap px-3 text-p-body
                          placeholder:text-outline bg-surface-container-lowest"

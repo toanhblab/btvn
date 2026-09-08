@@ -17,8 +17,9 @@
  *   - ham thuan can dich:        nhan `T` lam tham so, mac dinh `taoT('vi')`.
  *
  * Chu BO ME TU GO (de bai, ten nhiem vu, ten phan thuong) KHONG di qua day —
- * chi chu cua app. Bai kiem `lib/i18n.test.ts` quet moi tep giao dien de bao
- * dam khong con cau tieng Viet nao nam ngoai `T(...)`.
+ * chi chu cua app. Buoc quet ma nguon `npm run quet:chu-viet`
+ * (scripts/quet-chu-viet.mjs) bao dam khong con cau tieng Viet nao nam ngoai
+ * `T(...)`; `lib/i18n.test.ts` giu phan hanh vi cua lop dich.
  */
 
 import { EN, type Key } from './en';
