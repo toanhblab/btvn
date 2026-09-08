@@ -104,15 +104,25 @@ chỉ ảnh hưởng dòng tạo sau), riêng nhóm đọc LIVE qua `LEFT JOIN d
 trong `ASSIGNMENT_SELECT` — giống `sort_order`. Xoá nhiệm vụ là `archived_at`,
 không DELETE (migration 014 giải thích vì sao).
 
-**Mọi con số TÓM TẮT đếm GỘP bài tập và nhiệm vụ hàng ngày, không tách hai
-loại** — huy hiệu "N việc" ở màn chọn con, hai ô "Hoàn thành"/"Đang chờ" ở tổng
-quan của bố mẹ (`total`/`done` của `progressUpcoming`), "x/y xong hôm nay" ở màn
-của con. Đừng thêm lại trường kiểu `homeworkTotal`/`homeworkTodo`: tách ra thì
-con số nào cũng sai một nửa (đếm riêng bài thật thì ngày không có bài huy hiệu
-lại nói "1 bài" vì một bài của NGÀY MAI, còn nhiệm vụ hôm nay không ai đếm). Hai
-chỗ tách là CÓ Ý, đừng gộp: badge "Quá hạn" (nhiệm vụ hôm qua không phải bài quá
-hạn) và màn chi tiết con của bố mẹ (tiến độ bài tập và hộp "Nhiệm vụ hàng ngày"
-là hai khối riêng, hộp nhiệm vụ chỉ tính HÔM NAY).
+Mọi con số TÓM TẮT có hai trục, sai một trục là con số nói dối:
+
+- **Trục LOẠI VIỆC: đếm GỘP bài tập và nhiệm vụ hàng ngày, không tách hai loại**
+  — huy hiệu "N việc" ở màn chọn con, hai ô "Hoàn thành"/"Đang chờ" ở tổng quan
+  của bố mẹ (`total`/`done` của `progressUpcoming`), "x/y xong hôm nay" và tiến
+  độ từng nhóm ở màn của con. Đừng thêm lại trường kiểu
+  `homeworkTotal`/`homeworkTodo`: tách ra thì con số nào cũng sai một nửa (đếm
+  riêng bài thật thì ngày không có bài huy hiệu lại nói "1 bài" vì một bài của
+  NGÀY MAI, còn nhiệm vụ hôm nay không ai đếm).
+- **Trục THỜI GIAN: mọi con số trên màn của con tính theo HÔM NAY** — "x/y xong
+  hôm nay", `todoHomNay`, điều kiện đẩy sang `/xong`, và tiến độ ở đầu từng nhóm.
+  Dòng của ngày mai vẫn hiện dưới tiêu đề "Ngày mai" nhưng KHÔNG vào tiến độ
+  nhóm (nhóm không có gì của hôm nay thì ẩn luôn chip tiến độ). Ngược lại, huy
+  hiệu màn chọn tên và ba ô của bố mẹ là "TỪ HÔM NAY TRỞ ĐI" — bố mẹ nhập bài
+  tối hôm trước cho hôm sau nên hai màn đó phải thấy trước.
+
+Hai chỗ tách loại là CÓ Ý, đừng gộp: badge "Quá hạn" (nhiệm vụ hôm qua không
+phải bài quá hạn) và màn chi tiết con của bố mẹ (tiến độ bài tập và hộp "Nhiệm vụ
+hàng ngày" là hai khối riêng, hộp nhiệm vụ chỉ tính HÔM NAY).
 
 Máy này đã bật Safari > Develop > Allow Remote Automation: `safaridriver -p <cổng
 riêng>` + WebDriver W3C lái được Safari thật để đo `video.duration` (phục vụ tệp

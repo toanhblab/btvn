@@ -19,7 +19,9 @@
  *      live qua JOIN (dung nhu listAssignments).
  *   4. Loc theo nhom cho hai nhom tren man cua con.
  *   5. CHECK: stars ngoai 1..10 va nhom la bi chan.
- *   6. Ba ham thuan lamSachSao / nhomNhiemVuOf / docChildIds (lib/types.ts).
+ *   6. Xoa mot con: id do phai bien khoi `child_ids`, khong thi hang "Giao cho"
+ *      cua nhiem vu do khong bao gio sua duoc nua (locChildIdsGiaoCho tra 400).
+ *   7. Ba ham thuan lamSachSao / nhomNhiemVuOf / docChildIds (lib/types.ts).
  */
 
 import { test, before, after } from 'node:test';
@@ -253,6 +255,95 @@ test('CHECK: stars ngoai 1..10, nhom la, assignments.stars <= 0 bi chan', async 
   );
   await assert.rejects(
     db.exec(`INSERT INTO assignments (id, child_id, subject, content, due_date, stars) VALUES ('x4', 'minh', 'T', 'x', '2026-09-20', 0)`), /check/i
+  );
+});
+
+/**
+ * Mo phong deleteChild (lib/store.ts): xoa dong children VA go id con do khoi
+ * `daily_chores.child_ids`. `goKhoiCauHinh: false` la hanh vi CHI xoa children,
+ * de doi chieu cai gia phai tra ben duoi.
+ */
+async function xoaCon(familyId: string, id: string, goKhoiCauHinh = true) {
+  await db.query(`DELETE FROM children WHERE id = $1 AND family_id = $2`, [id, familyId]);
+  if (goKhoiCauHinh) {
+    await db.query(
+      `UPDATE daily_chores SET child_ids = array_remove(child_ids, $1)
+        WHERE family_id = $2 AND child_ids IS NOT NULL`,
+      [id, familyId]
+    );
+  }
+}
+
+/**
+ * Mo phong luat kiem cua locChildIdsGiaoCho (lib/store.ts) — cai ma route
+ * PATCH /api/viec-nha/:id dua vao: null = ca nha (duoc), mang rong bi chan, va
+ * MOI id trong mang phai la con cua nha nay, khong thi 400 "Có con không thuộc
+ * nhà mình". Tra ve true = luu duoc.
+ */
+async function luuDuocGiaoCho(familyId: string, childIds: string[] | null) {
+  if (childIds === null) return true;
+  if (childIds.length === 0) return false;
+  const con = new Set(
+    (await rows(`SELECT id FROM children WHERE family_id = $1`, [familyId])).map((r) => String(r.id))
+  );
+  return childIds.every((id) => con.has(id));
+}
+
+test('xoa mot con: id do bien khoi child_ids nen hang "Giao cho" con sua duoc', async () => {
+  await db.exec(
+    `INSERT INTO families (id, name, slug, parent_pin_hash) VALUES ('fam_xoa', 'Nhà xoá', 'nha-xoa', 'hx');
+     INSERT INTO children (id, family_id, name, grade, color, avatar_url, sort_order) VALUES
+       ('x_minh', 'fam_xoa', 'Minh', 'Lớp 1', 'primary', '/a.png', 1),
+       ('x_an',   'fam_xoa', 'An',   'Lớp 1', 'secondary', '/b.png', 2),
+       ('x_na',   'fam_xoa', 'Na',   'Mẫu giáo', 'tertiary', '/c.png', 3);
+     INSERT INTO daily_chores (id, family_id, content, stars, category, child_ids, sort_order) VALUES
+       ('x_sach', 'fam_xoa', 'Đọc sách', 3, 'housework', ARRAY['x_minh','x_an'], 1),
+       ('x_rang', 'fam_xoa', 'Đánh răng', 2, 'housework', ARRAY['x_an'], 2),
+       ('x_cu',   'fam_xoa', 'Việc cũ', 1, 'housework', ARRAY['x_minh','x_na'], 3)`
+  );
+
+  const giaoCho = async (id: string) =>
+    (await rows(`SELECT child_ids FROM daily_chores WHERE id = $1`, [id]))[0].child_ids;
+
+  // Bo me xoa con An (nut o /bome/con/an/sua).
+  await xoaCon('fam_xoa', 'x_an');
+
+  assert.deepEqual(await giaoCho('x_sach'), ['x_minh'], 'chi con lai con van ton tai');
+  assert.deepEqual(await giaoCho('x_rang'), [], 'con duy nhat bi xoa -> mang rong: "chua giao cho ai"');
+
+  // Mang rong khong tao dong nao (khong khop con nao), khac han NULL = ca nha.
+  const NGAY = '2026-09-25';
+  await taoNhiemVuNgay('fam_xoa', NGAY, null);
+  const dongCuaNgay = await rows(
+    `SELECT child_id, chore_id FROM assignments WHERE due_date = $1 ORDER BY chore_id, child_id`,
+    [NGAY]
+  );
+  assert.deepEqual(
+    dongCuaNgay.filter((d) => d.chore_id === 'x_rang'),
+    [],
+    'nhiem vu khong giao cho ai thi khong sinh dong nao'
+  );
+  assert.deepEqual(
+    dongCuaNgay.filter((d) => d.chore_id === 'x_sach').map((d) => d.child_id),
+    ['x_minh'],
+    'chi con Minh duoc giao Đọc sách'
+  );
+
+  // Man /bome/nhiem-vu-hang-ngay doc NGUYEN mang tren roi gui lai khi bo me bam
+  // mot chip. Bam chip Na tren the "Đọc sách" (docChildIds(['x_minh'],'x_na')):
+  assert.equal(await luuDuocGiaoCho('fam_xoa', ['x_minh', 'x_na']), true, 'luu duoc');
+  // ...va bam mot con tren the dang "chua giao cho ai" (docChildIds([], 'x_na')):
+  assert.equal(await luuDuocGiaoCho('fam_xoa', ['x_na']), true);
+
+  // Cai gia phai tra neu chi DELETE children ma khong go id khoi cau hinh: mang
+  // con id cua con da xoa, nen MOI lan bo me bam mot chip tren the do deu 400 —
+  // hang "Giao cho" cua nhiem vu ay khong bao gio sua duoc nua.
+  await xoaCon('fam_xoa', 'x_na', false);
+  assert.deepEqual(await giaoCho('x_cu'), ['x_minh', 'x_na'], 'id cua con da xoa con nam lai');
+  assert.equal(
+    await luuDuocGiaoCho('fam_xoa', ['x_minh', 'x_na']),
+    false,
+    'bo me bam chip nao cung gui kem id la -> 400, khong sua duoc'
   );
 });
 

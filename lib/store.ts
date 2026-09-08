@@ -210,6 +210,18 @@ export async function updateChild(
 /** Xoa mot con. Bai tap cua con do di theo nho ON DELETE CASCADE. */
 export async function deleteChild(familyId: string, id: string): Promise<void> {
   await query(`DELETE FROM children WHERE id = $1 AND family_id = $2`, [id, familyId]);
+  // Bat bien: cau hinh nhiem vu hang ngay KHONG bao gio tro toi mot con khong con
+  // ton tai. De lai id cu trong daily_chores.child_ids thi taoNhiemVuNgay khong
+  // sao (khong khop ai), nhung man /bome/nhiem-vu-hang-ngay doc nguyen mang do
+  // roi gui lai khi bo me bam mot chip — locChildIdsGiaoCho tra 400 "Có con
+  // không thuộc nhà mình", va hang "Giao cho" cua nhiem vu do khong sua duoc nua.
+  // Mang rong con lai la trang thai thanh that ("chua giao cho ai"): khong tao
+  // dong nao, bam mot con la ve ['id'] va luu duoc.
+  await query(
+    `UPDATE daily_chores SET child_ids = array_remove(child_ids, $1)
+      WHERE family_id = $2 AND child_ids IS NOT NULL`,
+    [id, familyId]
+  );
 }
 
 /* ---------------- Assignments ----------------

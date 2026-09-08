@@ -101,22 +101,33 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   // a.choreNhom ("Sau khi hoc xong", "Viec nha hang ngay" — issue #42 Q1, khong
   // tron chung mot danh sach), noi CUOI mang (issue #36 muc 7), khong dung
   // HW_SOURCES cho hai nhom do de khong phai them 'viec nha' vao hang so day.
+  // Tien do o dau moi nhom (total/done) chi tinh dong cua HOM NAY, giong moi con
+  // so khac cua man nay ("x/y xong hom nay", todoHomNay, dieu kien day sang
+  // /xong) — xem AGENTS.md, truc thoi gian. Dong cua ngay mai VAN hien duoi tieu
+  // de "Ngày mai" nhung khong tinh vao tien do: khong thi con lam xong het phan
+  // hom nay ma huy hieu nhom van bao "3/6", khong xanh, khong 🎉.
   const sourceGroups: { key: string; icon: string; label: string; isChores: boolean;
-    byDate: { date: string; items: Assignment[] }[]; total: number; done: number }[] =
+    byDate: { date: string; items: Assignment[] }[]; total: number; done: number;
+    xongHet: boolean }[] =
     (Object.keys(HW_SOURCES) as HwSource[])
       .map((source) => {
         const mine = items.filter((a) => a.source === source && a.choreId == null);
+        const homNay = mine.filter((a) => a.dueDate === today);
+        const done = homNay.filter((a) => a.status === 'done').length;
         return {
           key: source,
           icon: HW_SOURCES[source].icon,
           label: HW_SOURCES[source].label,
           isChores: false,
           byDate: gomTheoNgay(mine),
-          total: mine.length,
-          done: mine.filter((a) => a.status === 'done').length,
+          total: homNay.length,
+          done,
+          xongHet: homNay.length > 0 && done === homNay.length,
         };
       })
-      .filter((g) => g.total > 0);
+      // Nhom chi co bai cua ngay mai van phai hien (total = 0 nhung byDate co
+      // dong) — loc theo byDate, khong loc theo total.
+      .filter((g) => g.byDate.length > 0);
 
   for (const nhom of Object.keys(NHOM_NHIEM_VU) as NhomNhiemVu[]) {
     // Dong viec nha cu ma daily_chores khong con (choreNhom null) roi vao nhom
@@ -125,14 +136,17 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
       a.choreId != null && (a.choreNhom ?? Object.keys(NHOM_NHIEM_VU)[0]) === nhom
     );
     if (choreItems.length === 0) continue;
+    const choreHomNay = choreItems.filter((a) => a.dueDate === today);
+    const choreDone = choreHomNay.filter((a) => a.status === 'done').length;
     sourceGroups.push({
       key: `nhiem-vu-${nhom}`,
       icon: NHOM_NHIEM_VU[nhom].icon,
       label: NHOM_NHIEM_VU[nhom].label,
       isChores: true,
       byDate: gomTheoNgay(choreItems),
-      total: choreItems.length,
-      done: choreItems.filter((a) => a.status === 'done').length,
+      total: choreHomNay.length,
+      done: choreDone,
+      xongHet: choreHomNay.length > 0 && choreDone === choreHomNay.length,
     });
   }
 
@@ -242,23 +256,28 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
         <section key={sg.key} className="mb-k-stack last:mb-0">
           {/* Dau moi nhom: noi giao + tien do RIENG cua nhom do, de con lam het
               mot loai bai (vd het bai cua mot ma trong HW_SOURCES) roi moi sang loai kia.
-              Hai nhom nhiem vu luon xep cuoi mang sourceGroups (issue #36 muc 7, #42). */}
+              Hai nhom nhiem vu luon xep cuoi mang sourceGroups (issue #36 muc 7, #42).
+              Nhom khong co gi cua hom nay (chi co bai ngay mai) thi KHONG hien chip
+              tien do: "0/0 xong" khong noi len dieu gi, ma to xanh + 🎉 cho no thi
+              con tuong da xong mot viec chua den luot lam. */}
           <div
             className={`flex items-center gap-4 rounded-2xl p-4 mb-4 soft-shadow ${
-              sg.done === sg.total ? 'bg-success-container' : 'bg-surface-container-low'
+              sg.xongHet ? 'bg-success-container' : 'bg-surface-container-low'
             }`}
           >
             <span className="text-5xl shrink-0">{sg.icon}</span>
             <h2 className="text-k-headline text-on-surface flex-1 min-w-0">
               {sg.label}
             </h2>
-            <span
-              className={`text-k-label px-5 py-2 rounded-full shrink-0 ${
-                sg.done === sg.total ? 'bg-success text-white' : 'bg-surface-container-highest text-on-surface'
-              }`}
-            >
-              {sg.done === sg.total ? '🎉 ' : ''}{sg.done}/{sg.total} {sg.isChores ? 'việc' : 'bài'} xong
-            </span>
+            {sg.total > 0 && (
+              <span
+                className={`text-k-label px-5 py-2 rounded-full shrink-0 ${
+                  sg.xongHet ? 'bg-success text-white' : 'bg-surface-container-highest text-on-surface'
+                }`}
+              >
+                {sg.xongHet ? '🎉 ' : ''}{sg.done}/{sg.total} {sg.isChores ? 'việc' : 'bài'} xong
+              </span>
+            )}
           </div>
 
           {sg.byDate.map((g) => (
