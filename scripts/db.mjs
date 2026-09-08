@@ -52,11 +52,13 @@ export async function moKetNoi() {
     );
   }
 
+  // Cung bien BTVN_PGLITE_DIR voi lib/db.ts (test / thu tren DB tam), mac dinh ./.data/pg
+  const dir = process.env.BTVN_PGLITE_DIR || './.data/pg';
   const { PGlite } = await import('@electric-sql/pglite');
-  mkdirSync('./.data/pg', { recursive: true });   // PGlite khong tu tao thu muc cha
-  const db = await PGlite.create('./.data/pg');
+  if (!dir.startsWith('memory://')) mkdirSync(dir, { recursive: true });   // PGlite khong tu tao thu muc cha
+  const db = await PGlite.create(dir);
   return {
-    ten: 'PGlite (local, .data/pg)',
+    ten: `PGlite (local, ${dir})`,
     query: async (t, p = []) => (await db.query(t, p)).rows,
     chayGoi: async (cauLenh) => {
       await db.query('BEGIN');
