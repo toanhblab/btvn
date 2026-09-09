@@ -447,16 +447,20 @@ hơn giá và nếu chỉ đọc số dư thì app sẽ mời bố mẹ đi từ
 tách tạm theo dòng kèm cảnh báo, và luôn có đường "Nhập tay từng bài".
 
 **PIN trên iPad.** Ô "Nhớ trên thiết bị này" mặc định **không** tick. iPad là máy
-dùng chung của các con — nhớ PIN ở đó thì PIN mất tác dụng. Trót tick rồi thì
-vào Cài đặt → "Quên PIN trên thiết bị này".
+dùng chung của các con — nhớ PIN ở đó thì PIN mất tác dụng. Không tick thì phiên bố
+mẹ hết ngay khi đóng trình duyệt. Trót tick rồi thì xoá dữ liệu site của trình duyệt
+trên đúng máy đó: nút "Quên PIN trên thiết bị này" đã bỏ theo yêu cầu của captain ở
+issue #17 và **không được thêm lại** (đường `DELETE /api/pin` vẫn còn nhưng không
+giao diện nào gọi).
 
 **Riêng tư.** App chạy trên internet công khai còn màn của con không đăng nhập,
 nên toàn site đặt `noindex`, và mỗi gia đình có `slug` ngẫu nhiên làm đường dẫn
 khó đoán.
 
 **Đổi PIN không đăng xuất máy khác.** Cookie phiên ký theo id của nhà, không theo
-PIN. Muốn đóng phần bố mẹ trên một máy thì vào Cài đặt trên đúng máy đó bấm "Quên
-PIN trên thiết bị này" — nút đó **giữ** phần màn hình của con, đúng cho iPad dùng
+PIN. Vì không còn nút "Quên PIN trên thiết bị này" (issue #17), cách đóng phần bố mẹ
+trên một máy là đóng trình duyệt (khi chưa tick "Nhớ") hoặc xoá dữ liệu site. Màn
+hình của con không phụ thuộc phiên bố mẹ nên vẫn mở lên là chạy — đúng cho iPad dùng
 chung.
 
 ## Trước khi deploy

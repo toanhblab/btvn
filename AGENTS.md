@@ -251,6 +251,12 @@ VÀ gắn máy. Link `/nha/<slug>` CỐ Ý nằm ngoài luật này — đó là
 gắn hẳn một máy vào nhà demo. (`lib/nha-link.test.ts` kiểm cả hai đường lẫn hai
 loại PIN.)
 
+**Ba mã demo TRUNG TÍNH với bộ chặn mò mã** (`attemptPin`): không chạm vào bộ đếm
+theo bất kỳ hướng nào — không `recordSuccess`, không `recordFail`. Chúng là mã công
+khai mà lại tra ra một nhà thật, nên nếu tính như một lần nhập đúng thì chúng xoá bộ
+đếm và ai cũng dò được PIN của nhà THẬT không giới hạn (sai 4 lần → gõ 1111 → lặp
+lại). Thêm mã công khai nào nữa thì phải giữ đúng tính trung tính này.
+
 **Dữ liệu ba nhà demo cũ dần theo ngày** (`ngayLech` tính theo lúc chạy, mà
 `seed-demo.mjs` chỉ tự chạy lúc build): trước buổi demo phải chạy lại
 `npm run db:seed:demo`. Cố ý không thêm cron và không đặc biệt hoá đường đọc.

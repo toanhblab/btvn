@@ -296,6 +296,13 @@ export function recordSuccess(key: string): void {
  * hai duong khong the co gioi han khac nhau — bo qua mot duong la coi nhu khong
  * co gioi han nao.
  *
+ * BA MA DEMO LA TRUNG TINH: khong recordSuccess ma cung khong recordFail, bo dem
+ * giu nguyen. Chung tra ra mot nha THAT (seed-demo chay trong `npm run build`) va
+ * duoc in cong khai o README + HUONG-DAN-BO-ME, nen neu chung xoa bo dem nhu mot
+ * lan nhap dung thi bo chan mo PIN het tac dung: sai 4 lan -> go 1111 -> bo dem ve
+ * 0 -> lap lai vo han, khong bao gio cham khoa 60 giay, va phan thuong cua nguoi
+ * mo la phan bo me cua mot nha THAT.
+ *
  * @param ipKey  Khoa dem, thuong la IP. Cung IP thi dung chung han muc.
  */
 export async function attemptPin(
@@ -308,11 +315,12 @@ export async function attemptPin(
   }
 
   const family = await findFamilyByPin(pin);
+  const demo = pinDanhRieng(pin);
   if (!family) {
-    recordFail(ipKey);
+    if (!demo) recordFail(ipKey);
     return { ok: false, status: 401, error: 'Mã PIN không đúng.' };
   }
 
-  recordSuccess(ipKey);
+  if (!demo) recordSuccess(ipKey);
   return { ok: true, family };
 }

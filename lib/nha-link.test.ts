@@ -14,6 +14,8 @@
  * Chay THAT: goi chinh GET/POST cua hai route tren PGlite trong RAM, doc cookie
  * chung dat. `next/headers` duoc thay bang mot hu cookie gia (route handler that
  * lay cookie cua request qua do).
+ *
+ * Cuoi tep con mot bai ve `attemptPin` — chot chung cua CA HAI duong nhap PIN.
  */
 
 import { test, before, beforeEach, mock } from 'node:test';
@@ -38,7 +40,7 @@ mock.module('next/headers', {
 
 const { chayMigrations } = await import('../scripts/db.mjs');
 const { query, queryTx } = await import('./db.ts');
-const { signIn, hashPin, viewingFamilyId } = await import('./auth.ts');
+const { signIn, hashPin, viewingFamilyId, attemptPin, isLocked } = await import('./auth.ts');
 const { insertFamily } = await import('./store.ts');
 const { GET } = await import('../app/nha/[slug]/route.ts');
 const { POST } = await import('../app/api/nha/route.ts');
@@ -184,4 +186,35 @@ test('PIN that: van gan may vao nha do nhu cu', async () => {
   await signIn(nhaB.id, false, PIN_B);
   assert.ok(hu.get('btvn_nha')!.startsWith(`${nhaB.id}.`), 'PIN that doi ca may sang nha B');
   assert.ok(hu.get('btvn_parent')!.startsWith(`${nhaB.id}.`), 'phien khong bi chinh no go');
+});
+
+/**
+ * Hoi quy: ba ma demo cong khai KHONG duoc lam mat tac dung bo chan mo PIN.
+ *
+ * `attemptPin` xoa bo dem moi lan nhap DUNG. Tu khi co ba nha demo, 1111/2222/3333
+ * luon tra ra mot nha va duoc in cong khai o README, nen neu chung tinh la "nhap
+ * dung" thi ai cung dò duoc PIN cua nha THAT vo han: sai 4 lan -> go 1111 -> bo dem
+ * ve 0 -> lap lai, khong bao gio cham khoa 60 giay.
+ */
+test('ma demo TRUNG TINH voi bo chan mo PIN: khong xoa bo dem sai', async () => {
+  const ip = 'ip-mo-pin';
+  for (let i = 0; i < 4; i++) {
+    assert.equal((await attemptPin('0000', ip)).ok, false, `lan sai thu ${i + 1}`);
+  }
+  assert.equal(isLocked(ip), 0, '4 lan sai thi chua khoa');
+
+  assert.equal((await attemptPin('1111', ip)).ok, true, 'ma demo van vao duoc');
+
+  assert.equal((await attemptPin('0000', ip)).ok, false, 'lan sai thu 5');
+  assert.ok(isLocked(ip) > 0, 'lan sai thu 5 PHAI khoa — ma demo khong duoc xoa bo dem');
+});
+
+test('PIN that van xoa bo dem sai nhu cu', async () => {
+  const ip = 'ip-pin-that';
+  for (let i = 0; i < 4; i++) await attemptPin('0000', ip);
+
+  assert.equal((await attemptPin(PIN_A, ip)).ok, true);
+
+  assert.equal((await attemptPin('0000', ip)).ok, false);
+  assert.equal(isLocked(ip), 0, 'nhap dung bang PIN that thi bo dem ve 0');
 });
