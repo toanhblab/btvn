@@ -20,6 +20,17 @@
  * chi chu cua app. Buoc quet ma nguon `npm run quet:chu-viet`
  * (scripts/quet-chu-viet.mjs) bao dam khong con cau tieng Viet nao nam ngoai
  * `T(...)`; `lib/i18n.test.ts` giu phan hanh vi cua lop dich.
+ *
+ * DANH DOI CO CHU DICH — ba tu dien deu vao goi client:
+ *
+ * `TU_DIEN` import TINH ca en/ja/ko (~128 KB tho), va lib/i18n/client.tsx cung
+ * lib/types.ts keo tep nay vao goi cua trinh duyet, nen may nao cung tai ca ba du
+ * nha that chi dung tieng Viet (tieng Viet khong can tu dien: khoa chinh la cau
+ * goc). BIET va CHAP NHAN: truyen dung mot tu dien tu server xuong thi phai bo
+ * `Record<Key, string>` tinh, tuc mat phep kiem LUC BIEN DICH rang ba tu dien du
+ * khoa — ma do chinh la thu bao dam khong sot mot ban dich nao truoc mat khach
+ * hang, dung muc tieu cua issue #46. 128 KB tren WiFi trong nha khong dang ke.
+ * Xem lai neu sau nay co nguoi NGOAI dung that tren mang di dong.
  */
 
 import { EN, type Key } from './en';

@@ -51,9 +51,6 @@ const MIEN_TRU = {
     /const DAU_TIENG_VIET =[\s\S]*?;/,
     /const viChars = .*;/,
   ],
-  // O "Ten nha" CO Y hien chuoi goc: de trong thi nha moi luu dung chu do, va nha
-  // moi luon bat dau o ui_locale 'vi' — dich goi y se hua mot ten khac ten se luu.
-  'app/bome/tao-nha/TaoNha.tsx': [/placeholder="Nhà mình"/],
   // Bang chu cai dung de NHAN DIEN tieng Viet trong de bai (regex), khong hien.
   'lib/speech.ts': [/\/\[[^\]]*\]\/i/],
   // Bo dau de dat ten tep video nop cho co (regex trong boDau), khong hien.

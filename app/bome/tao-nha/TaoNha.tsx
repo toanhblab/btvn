@@ -53,7 +53,8 @@ export default function TaoNha() {
       const res = await fetch('/api/families', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Nha moi luon bat dau o tieng Viet nen ten mac dinh de nguyen, khong dich
+        // Goi y tren o nhap thi DICH cho khop man dang xem, nhung gia tri THAT luu
+        // khi de trong van la chuoi goc: nha moi luon bat dau o ui_locale 'vi'.
         body: JSON.stringify({ name: name.trim() || 'Nhà mình', pin: value }),
       });
       const data = await res.json();
@@ -103,7 +104,7 @@ export default function TaoNha() {
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nhà mình"
+              placeholder={T('Nhà mình')}
               maxLength={40}
               className="w-full rounded-lg border border-outline-variant min-h-p-tap px-3 text-p-body
                          placeholder:text-outline bg-surface-container-lowest"
