@@ -19,6 +19,9 @@ Luồng đúng ở bản hiện tại, nếu muốn quay lại:
   `/nha/demo-en`. Đi demo thì nhảy nhà bằng ba link này.
 - `*-bome-*.png` — màn của bố mẹ: tổng quan, thưởng (duyệt / trừ ⭐ / danh sách),
   nhiệm vụ hàng ngày, thêm bài, cài đặt, danh sách bài, chi tiết con.
-  `ja-bome-dien-thoai.png`, `ja-bome-thuong-dien-thoai.png` ở cỡ điện thoại 430×932.
+  `ja-bome-dien-thoai.png`, `ja-bome-thuong-dien-thoai.png` ở cỡ điện thoại 500×932.
+- `ja-bome-pin.png` / `vi-bome-pin.png` — chính màn nhập PIN, hai ảnh tĩnh thay cho
+  ảnh động đã xoá: `ja` là khi máy đang gắn nhà demo Nhật (mở `/nha/demo-ja`), `vi`
+  là khi máy đang gắn nhà thật. Cùng một màn, chữ đi theo nhà của MÁY.
 - `*-con-*.png` — màn của con: chọn tên, bài hôm nay, chi tiết bài, cửa hàng
   phần thưởng. `ko-con-ipad.png` ở cỡ iPad 1180×820.

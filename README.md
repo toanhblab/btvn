@@ -139,7 +139,16 @@ chạy đúng; còn `npm run quet:chu-viet` (`scripts/quet-chu-viet.mjs`) **qué
 nguồn** mọi tệp giao diện để không còn câu tiếng Việt nào nằm ngoài `T(...)`. Phép
 quét đứng riêng vì bằng chứng của nó là ký tự trong mã nguồn chứ không phải app
 chạy ra gì — đó là việc của một bước kiểm mã nguồn, không phải của bộ kiểm thử.
-Danh sách miễn trừ ở `MIEN_TRU` trong tệp đó, mỗi mục kèm một dòng lý do.
+Danh sách miễn trừ ở `MIEN_TRU` trong tệp đó, mỗi mục kèm một dòng lý do. Bản thân
+logic của phép quét (nhận diện, miễn trừ) có hồi quy riêng ở
+`lib/quet-chu-viet.test.ts` — nó gọi thẳng `kiemTep(...)` với chuỗi dựng sẵn, nên
+chạy trong `npm test` mà không cần quét cả cây.
+
+Phép quét chỉ bỏ qua literal nằm **ngay sau `T(`**, không bỏ qua mọi literal trùng
+khoá dịch: một câu đã có trong từ điển mà dùng THÔ (`setError('Mã PIN không đúng.')`,
+thiếu `T`) vẫn biên dịch được nên phải bị bắt. Vì thế các **bảng khai báo** khoá
+(`SUBJECTS`, `THU`, `TABS`…) đi vào `MIEN_TRU` hoặc được nhận ra qua kiểu khai báo
+`Key` của chính hằng số đó.
 
 Ba phép đo, vì đo theo dấu thôi thì không đủ — "xong", "Giao cho", "Quay xong"
 không có dấu nào: (1) còn dấu tiếng Việt ngoài `T(...)`; (2) trong `app/**`, đoạn
@@ -165,9 +174,11 @@ migrations/001_khoi_tao.sql        5 bảng đầu tiên
 migrations/002_moi_nha_mot_pin.sql unique index "mỗi nhà một PIN"
 ```
 
-**Vercel tự chạy mỗi lần deploy** — `build` là `node scripts/migrate.mjs && next
-build`, nên push code lên GitHub là migration chạy trước khi build. Migration lỗi
-thì build dừng, không deploy code mới lên DB cũ.
+**Vercel tự chạy mỗi lần deploy** — `build` là `node scripts/migrate.mjs && node
+scripts/seed-demo.mjs && next build`, nên push code lên GitHub là migration chạy
+trước khi build. Migration lỗi thì build dừng, không deploy code mới lên DB cũ.
+(Bước `seed-demo` nạp lại ba nhà demo và **không** làm hỏng build nếu lỗi — xem
+mục [Đa ngôn ngữ](#đa-ngôn-ngữ-issue-46).)
 
 Chạy tay khi cần: `npm run db:migrate` (không có `DATABASE_URL` thì chạy trên DB
 local).

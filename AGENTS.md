@@ -199,8 +199,11 @@ là danh sách khoá, `ja.ts`/`ko.ts` là `Record<Key, string>`; server dùng
 `await chu()`, client dùng `useT()`, hàm thuần nhận `T`. **Mọi chữ mới trên màn
 hình phải qua `T(...)`** và thêm vào cả ba từ điển — `npm run quet:chu-viet`
 (`scripts/quet-chu-viet.mjs`) quét mọi tệp giao diện, còn một câu tiếng Việt nằm
-ngoài `T(...)` là đỏ (miễn trừ ở `MIEN_TRU`, mỗi mục kèm một dòng lý do). Phép đo
-dấu tiếng Việt KHÔNG đủ: "xong", "Giao cho", "Quay xong" không dấu nên từng lọt ra
+ngoài `T(...)` là đỏ. Nó CHỈ bỏ qua literal nằm ngay sau `T(`, nên một câu đã có
+trong từ điển mà dùng THÔ (thiếu `T`) vẫn bị bắt; ba vị trí được miễn (bảng khai
+báo có kiểu `Key`, `error: '…'` chỉ trong `lib/**`, tên môn trên dòng nói về môn
+học) ghi ngay trên `boLiteralKhoaODungCho`, còn `MIEN_TRU` là danh sách theo tệp,
+mỗi mục kèm một dòng lý do. Phép đo dấu tiếng Việt KHÔNG đủ: "xong", "Giao cho", "Quay xong" không dấu nên từng lọt ra
 tận bản demo, vì thế trong `app/**` còn hai phép nữa không phụ thuộc dấu — đoạn chữ
 tràn trong JSX, và giá trị chuỗi của `placeholder`/`aria-label`/`title`/`alt`.
 Icon Material Symbols nhận ra bằng CHÍNH THẺ chứa nó, đừng đoán theo hình dạng chữ
@@ -210,10 +213,11 @@ chữ chưa dịch, không bắt chữ dịch rồi mà SAI NGHĨA: ô "Giọng 
 khoá tên MÔN học ('Tiếng Việt' → '国語') làm tên NGÔN NGỮ. Tên + cờ của ngôn ngữ
 nằm ở `TEN_NGON_NGU` / `CO_NGON_NGU` (`lib/speech.ts`, khoá dịch RIÊNG, chữ thường
 để ghép được vào câu "Máy chưa có giọng {giong}"), và hai lựa chọn của ô đó do
-`luaChonGiong` dựng — một bản cho cả ba màn. Đó là
-bước QUÉT MÃ NGUỒN đứng riêng, KHÔNG nằm trong `npm test`; `lib/i18n.test.ts` chỉ
-giữ phần hành vi (từ điển đủ khoá, `dich`/`dienTham`, PIN demo). Phép quét chạy
-bằng `npm run lint` (cùng với `tsc --noEmit`).
+`luaChonGiong` dựng — một bản cho cả ba màn. Đó là bước QUÉT MÃ NGUỒN đứng riêng, KHÔNG nằm trong `npm test`; `lib/i18n.test.ts` chỉ
+giữ phần hành vi (từ điển đủ khoá, giữ đúng khoảng trắng ở mép của từ nối như
+`' và '`, `dich`/`dienTham`, PIN demo), còn logic nhận diện/miễn trừ của chính
+phép quét có hồi quy ở `lib/quet-chu-viet.test.ts` (gọi thẳng `kiemTep`). Phép
+quét chạy bằng `npm run lint` (cùng với `tsc --noEmit`).
 
 **Gỡ một hàng rào ra khỏi chỗ cũ thì phải nối nó vào chỗ mới TRONG CÙNG một lần
 sửa.** Phép quét chữ Việt từng nằm trong `npm test`; tách ra thành lệnh riêng là
