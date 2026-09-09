@@ -92,24 +92,45 @@ const xoaGiuDong = (m) => m.replace(/[^\n]/g, ' ');
  * Nhat. Cac bang KHAI BAO khoa (SUBJECTS, THU, TABS…) khong the phan biet bang
  * regex nen di vao MIEN_TRU kem mot dong ly do.
  */
-/* Ten mon la KHOA PHAN LOAI, khong phai chu hien len man: dong assignments luu ten
-   mon tieng Viet o MOI nha, con luc ve thi di qua `subjectsFor`/`tenMonTheoNha`
-   (lib/types.ts, lib/ai.ts). Nen `SUBJECTS['Toán']`, `iconFor(x ?? 'Khác')` la du
-   lieu, khong phai chu lot. Ve thang ra man thi hai phep JSX ben duoi van bat.
+/* Ten mon (va 'Việc nhà') vua la KHOA DICH vua la KHOA TRA CUU cua bang SUBJECTS.
+   Ten mon LUU VAO DB la ban DA DICH — man nhap tay lay tu `subjectsFor(T)`, duong
+   AI dich bang `tenMonTheoNha` truoc khi tra draft (lib/types.ts, lib/ai.ts) — nen
+   chuoi tieng Viet o day chi con dung mot viec: TRA CUU (`SUBJECTS['Toán']`,
+   `iconFor(x ?? 'Khác')`, `VIEC_NHA_SUBJECT`). Vi the chi mien o DONG nao that su
+   noi ve mon hoc; gan vao mot bien roi ve ra man thi van bi bao.
    Guong theo SUBJECTS trong lib/types.ts — them mon moi ma quen o day thi phep
    quet do, tuc bao cho nguoi sua biet, dung chieu an toan. */
 const KHOA_PHAN_LOAI = new Set([
   'Toán', 'Tiếng Việt', 'Tiếng Anh', 'Vẽ', 'Tự nhiên', 'Khác', 'Việc nhà',
 ]);
 
-/** Doan `[mo, dong)` cua cau lenh `const` bat dau tai `mo` — can bang ()[]{}. */
+/* Dong "that su noi ve mon hoc": co nhac bang SUBJECTS, ham iconFor/subjectsFor,
+   hoac chinh cai ten `subject` (ke ca VIEC_NHA_SUBJECT). */
+const DONG_NOI_VE_MON = /SUBJECTS|iconFor|subjectsFor|subject/i;
+/**
+ * Doan `[mo, dong)` cua cau lenh `const` bat dau tai `mo` — can bang ()[]{}.
+ *
+ * Dung lai som o BA moc, vi mot cau thieu dau cham phay (ASI) khong duoc phep nuot
+ * phan con lai cua tep roi mien tru moi khoa dung tho trong do:
+ *   - `;` o do sau \u2264 0        (cau ket thuc binh thuong)
+ *   - do sau < 0                (da chay qua dau `}` cua khoi bao ngoai)
+ *   - dau dong moi o do sau 0 ma bat dau bang mot tu khoa khai bao
+ */
+const TU_KHOA_KHAI_BAO = /^\s*(?:export|import|function|class|const|let|var|type|interface|enum)\b/;
+
 function thanCauLenh(s, mo) {
   let sau = 0;
   for (let i = mo; i < s.length; i++) {
     const c = s[i];
     if (c === '(' || c === '[' || c === '{') sau++;
-    else if (c === ')' || c === ']' || c === '}') sau--;
-    else if (c === ';' && sau <= 0) return [mo, i + 1];
+    else if (c === ')' || c === ']' || c === '}') {
+      sau--;
+      if (sau < 0) return [mo, i];
+    } else if (c === ';' && sau <= 0) return [mo, i + 1];
+    else if (c === '\n' && sau <= 0 && i > mo) {
+      const dongSau = s.slice(i + 1, s.indexOf('\n', i + 1) === -1 ? s.length : s.indexOf('\n', i + 1));
+      if (TU_KHOA_KHAI_BAO.test(dongSau)) return [mo, i];
+    }
   }
   return [mo, s.length];
 }
@@ -122,11 +143,14 @@ function thanCauLenh(s, mo) {
  *      (SUBJECTS, THU, TABS, TEN_NGON_NGU, LY_DO_TRU_*, MAU.ten…). Dung chinh
  *      chu thich kieu lam dau, khong liet ke theo tep: them bang moi ma khai
  *      dung kieu la tu duoc, con quen kieu thi phep quet bao.
- *   2. `error: '…'` — hop dong da ghi o dau lib/auth.ts: ham cua lib TRA VE khoa,
- *      route handler moi dich (`T(loi.error, loi.tham)`).
- *   3. Ten mon / 'Việc nhà' (KHOA_PHAN_LOAI).
+ *   2. `error: '…'` — CHI trong `lib/**`. Hop dong ghi o dau lib/auth.ts la: ham
+ *      cua LIB tra ve khoa, ROUTE moi dich (`T(loi.error, loi.tham)`). Mien ca
+ *      `app/**` thi mot route quen `T` se im lang tra chu Viet xuong client, ma
+ *      client hien thang ra man (`setError(data.error)`) — dung hinh dang "quen T"
+ *      de xay ra nhat trong repo nay (~60 cho `NextResponse.json({ error: T(…) })`).
+ *   3. Ten mon / 'Việc nhà' — chi tren DONG noi ve mon hoc (DONG_NOI_VE_MON).
  */
-function boLiteralKhoaODungCho(s) {
+function boLiteralKhoaODungCho(s, tep) {
   const bo = (doan) => doan.replace(/'((?:[^'\\\n]|\\.)*)'/g, (m, noiDung) =>
     KHOA.has(noiDung.replace(/\\'/g, "'")) ? "''" : m
   );
@@ -144,15 +168,24 @@ function boLiteralKhoaODungCho(s) {
   }
   ra += s.slice(i);
 
-  // (2) hop dong "lib tra ve khoa, route dich"
-  ra = ra.replace(/(\berror:\s*)'((?:[^'\\\n]|\\.)*)'/g, (m, mo, noiDung) =>
-    KHOA.has(noiDung.replace(/\\'/g, "'")) ? `${mo}''` : m
-  );
+  // (2) hop dong "lib tra ve khoa, route dich" — CHI o lib/**
+  if (tep.startsWith('lib')) {
+    ra = ra.replace(/(\berror:\s*)'((?:[^'\\\n]|\\.)*)'/g, (m, mo, noiDung) =>
+      KHOA.has(noiDung.replace(/\\'/g, "'")) ? `${mo}''` : m
+    );
+  }
 
-  // (3) ten mon / 'Việc nhà' — khoa phan loai
-  return ra.replace(/'((?:[^'\\\n]|\\.)*)'/g, (m, noiDung) =>
-    KHOA_PHAN_LOAI.has(noiDung.replace(/\\'/g, "'")) ? "''" : m
-  );
+  // (3) ten mon / 'Việc nhà' — chi tren dong noi ve mon hoc
+  return ra
+    .split('\n')
+    .map((dong) =>
+      DONG_NOI_VE_MON.test(dong)
+        ? dong.replace(/'((?:[^'\\\n]|\\.)*)'/g, (m, noiDung) =>
+            KHOA_PHAN_LOAI.has(noiDung.replace(/\\'/g, "'")) ? "''" : m
+          )
+        : dong
+    )
+    .join('\n');
 }
 
 export function phanChuaDich(src, tep) {
@@ -164,7 +197,7 @@ export function phanChuaDich(src, tep) {
   s = s.replace(/(\bT\(\s*)'((?:[^'\\\n]|\\.)*)'/g, (m, mo, noiDung) =>
     KHOA.has(noiDung.replace(/\\'/g, "'")) ? `${mo}''` : m
   );
-  return boLiteralKhoaODungCho(s);
+  return boLiteralKhoaODungCho(s, tep);
 }
 
 /* Doan chu TRAN giua hai the JSX: `>Chu<`. Chu da dich nam trong `{T('…')}` nen
@@ -240,7 +273,7 @@ export function quet() {
   return lot;
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const lot = quet();
   if (lot.length > 0) {
     console.error(`✗ ${lot.length} cau tieng Viet chua qua T(...):`);

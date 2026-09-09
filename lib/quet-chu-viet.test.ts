@@ -75,3 +75,66 @@ test('KHONG bao ten icon Material Symbols', () => {
   );
   assert.deepEqual(lot, []);
 });
+
+/**
+ * Hop dong "lib tra ve khoa, route dich" (chu thich dau lib/auth.ts): chi LIB moi
+ * duoc tra khoa tho. Route quen `T` thi tra chu Viet xuong client, ma client hien
+ * thang ra man (`setError(data.error)`), nen phai bi bao.
+ */
+test('bao error: khoa tho trong route cua app/**', () => {
+  const lot = kiemTep(
+    `import { NextResponse } from 'next/server';
+     export async function GET() {
+       return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+     }`,
+    'app/api/x/route.ts'
+  );
+  assert.equal(lot.length, 1, JSON.stringify(lot));
+  assert.match(lot[0], /Cần mã PIN của bố mẹ/);
+});
+
+test('KHONG bao error: khoa tho trong lib/** (ham tra ve khoa, route moi dich)', () => {
+  const lot = kiemTep(
+    `export function f(): { error: Key } { return { error: 'Cần mã PIN của bố mẹ.' }; }`,
+    'lib/store.ts'
+  );
+  assert.deepEqual(lot, []);
+});
+
+/**
+ * Ten mon la khoa TRA CUU, khong phai chu ve ra man (ten luu DB la ban da dich —
+ * xem subjectsFor / tenMonTheoNha). Nen chi mien o dong noi ve mon hoc.
+ */
+test('bao ten mon gan vao bien roi ve ra JSX', () => {
+  const lot = kiemTep(
+    `export default function X() { const nhan = 'Toán'; return <p>{nhan}</p>; }`,
+    'app/y.tsx'
+  );
+  assert.equal(lot.length, 1, JSON.stringify(lot));
+  assert.match(lot[0], /Toán/);
+});
+
+test('KHONG bao ten mon o vi tri tra cuu', () => {
+  const lot = kiemTep(
+    `const mau = SUBJECTS['Toán'];
+     const icon = iconFor(d.subject ?? 'Khác');
+     export const VIEC_NHA_SUBJECT = 'Việc nhà';`,
+    'app/y.tsx'
+  );
+  assert.deepEqual(lot, []);
+});
+
+/**
+ * Mot cau `const … Key …` thieu dau cham phay (ASI) khong duoc phep nuot phan con
+ * lai cua tep roi mien tru moi khoa dung tho trong do.
+ */
+test('cau const thieu cham phay khong nuot phan sau cua tep', () => {
+  const lot = kiemTep(
+    `const A: Key = 'Trang chủ'
+export function loi() { return 'Mã PIN không đúng.'; }
+const b = 1;`,
+    'app/z.tsx'
+  );
+  assert.equal(lot.length, 1, JSON.stringify(lot));
+  assert.match(lot[0], /Mã PIN không đúng/);
+});
