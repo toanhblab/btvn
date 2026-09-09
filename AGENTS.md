@@ -191,79 +191,50 @@ trẻ em, phân tích xong phải xoá ngay. File Safari: `tfhd` flags `0x2001a`
 là `default-base-is-moof` (offset tương đối), một `moof`, không `mfra`, AAC; file
 Chrome có nhiều `moof`, `mfra>tfra` (offset tuyệt đối), Opus, `mvhd`/`tkhd` version 1.
 
-Đa ngôn ngữ (issue #46): chữ của app hiện theo **ngôn ngữ của nhà**
-(`families.ui_locale`, migration 018, mặc định `vi`; KHÔNG phải `assignments.lang`
-— cột đó là ngôn ngữ ĐỀ BÀI). Lớp dịch ở `lib/i18n/` — đọc chú thích đầu
-`lib/i18n/chu.ts`: khoá là CHÍNH CÂU TIẾNG VIỆT trong mã (`T('Hôm nay')`), `en.ts`
-là danh sách khoá, `ja.ts`/`ko.ts` là `Record<Key, string>`; server dùng
-`await chu()`, client dùng `useT()`, hàm thuần nhận `T`. **Mọi chữ mới trên màn
-hình phải qua `T(...)`** và thêm vào cả ba từ điển — `npm run quet:chu-viet`
-(`scripts/quet-chu-viet.mjs`) quét mọi tệp giao diện, còn một câu tiếng Việt nằm
-ngoài `T(...)` là đỏ. Nó CHỈ bỏ qua literal nằm ngay sau `T(`, nên một câu đã có
-trong từ điển mà dùng THÔ (thiếu `T`) vẫn bị bắt; ba vị trí được miễn (bảng khai
-báo có kiểu `Key`, `error: '…'` chỉ trong `lib/**`, tên môn trên dòng nói về môn
-học) ghi ngay trên `boLiteralKhoaODungCho`, còn `MIEN_TRU` là danh sách theo tệp,
-mỗi mục kèm một dòng lý do. Phép đo dấu tiếng Việt KHÔNG đủ: "xong", "Giao cho", "Quay xong" không dấu nên từng lọt ra
-tận bản demo, vì thế trong `app/**` còn hai phép nữa không phụ thuộc dấu — đoạn chữ
-tràn trong JSX, và giá trị chuỗi của `placeholder`/`aria-label`/`title`/`alt`.
-Icon Material Symbols nhận ra bằng CHÍNH THẺ chứa nó, đừng đoán theo hình dạng chữ
-(một từ thường như `add` là tên icon thật, mà "xong" cũng vậy). Phép quét CHỈ bắt
-chữ chưa dịch, không bắt chữ dịch rồi mà SAI NGHĨA: ô "Giọng đọc" từng dán nhãn
-"🇻🇳 đọc giọng Việt" cho một lựa chọn thực ra đọc bằng tiếng Nhật, và từng mượn
-khoá tên MÔN học ('Tiếng Việt' → '国語') làm tên NGÔN NGỮ. Tên + cờ của ngôn ngữ
-nằm ở `TEN_NGON_NGU` / `CO_NGON_NGU` (`lib/speech.ts`, khoá dịch RIÊNG, chữ thường
-để ghép được vào câu "Máy chưa có giọng {giong}"), và hai lựa chọn của ô đó do
-`luaChonGiong` dựng — một bản cho cả ba màn. Đó là bước QUÉT MÃ NGUỒN đứng riêng, KHÔNG nằm trong `npm test`; `lib/i18n.test.ts` chỉ
-giữ phần hành vi (từ điển đủ khoá, giữ đúng khoảng trắng ở mép của từ nối như
-`' và '`, `dich`/`dienTham`, PIN demo), còn logic nhận diện/miễn trừ của chính
-phép quét có hồi quy ở `lib/quet-chu-viet.test.ts` (gọi thẳng `kiemTep`). Phép
-quét chạy bằng `npm run lint` (cùng với `tsc --noEmit`).
+Đa ngôn ngữ (issue #46) — chi tiết ở mục "Đa ngôn ngữ" của `README.md`; ở đây chỉ
+những điều phải biết TRƯỚC khi đụng vào mã:
+
+- Chữ của app hiện theo **ngôn ngữ của nhà** (`families.ui_locale`), KHÔNG phải
+  `assignments.lang` — cột đó là ngôn ngữ ĐỀ BÀI. Chữ bố mẹ tự gõ (đề bài, tên
+  nhiệm vụ, phần thưởng) không dịch, kể cả tên nhà mặc định "Nhà mình" vì nhà mới
+  luôn bắt đầu ở `vi`.
+- **Mọi chữ mới trên màn hình phải qua `T(...)`** và phải có ở cả ba từ điển; khoá
+  là CHÍNH câu tiếng Việt. Đọc chú thích đầu `lib/i18n/chu.ts` trước.
+- Hàng rào của luật trên là `npm run lint` (`tsc --noEmit` + `npm run
+  quet:chu-viet`), KHÔNG phải `npm test`. Luật nhận diện và các vị trí miễn trừ ghi
+  ngay trên `boLiteralKhoaODungCho` / `MIEN_TRU` trong `scripts/quet-chu-viet.mjs`,
+  hồi quy ở `lib/quet-chu-viet.test.ts`. Icon Material Symbols nhận ra bằng CHÍNH
+  THẺ chứa nó, đừng đoán theo hình dạng chữ: `add` là tên icon thật, mà "xong"
+  cũng vậy.
+- Phép quét chỉ bắt chữ CHƯA dịch, không bắt chữ dịch rồi mà SAI NGHĨA: ô "Giọng
+  đọc" từng dán nhãn "🇻🇳 đọc giọng Việt" cho một lựa chọn thực ra đọc bằng tiếng
+  Nhật, và từng mượn khoá tên MÔN học ('Tiếng Việt' → '国語') làm tên NGÔN NGỮ. Tên
+  + cờ của ngôn ngữ có khoá dịch RIÊNG (`TEN_NGON_NGU` / `CO_NGON_NGU` trong
+  `lib/speech.ts`, chữ thường để ghép được vào câu "Máy chưa có giọng {giong}"), và
+  hai lựa chọn của ô đó do `luaChonGiong` dựng — một bản cho cả ba màn.
+- **Gắn máy sang nhà KHÁC thì gỡ luôn phiên bố mẹ**, và **nhập PIN demo thì KHÔNG
+  gắn máy**. Hai luật này nằm trong `lib/auth.ts` chứ không ở từng route, vì mỗi
+  luật có nhiều đường đi qua (`setDeviceFamily` + `attachFamilyLink`;
+  `ganMaySauKhiNhapPin`). Thêm đường gắn máy hay đường nhập PIN thứ ba thì đi qua
+  đúng hàm đó, đừng tự `cookies().set`. Link `/nha/<slug>` CỐ Ý nằm ngoài luật PIN
+  demo — nó là đường duy nhất gắn hẳn một máy vào nhà demo.
+- **Ba mã demo TRUNG TÍNH với bộ chặn mò mã** (`attemptPin`): không chạm bộ đếm
+  theo bất kỳ hướng nào — không `recordSuccess`, không `recordFail`. Chúng là mã
+  công khai mà lại tra ra một nhà thật, nên tính như một lần nhập đúng là chúng xoá
+  bộ đếm và ai cũng dò được PIN của nhà THẬT không giới hạn (sai 4 lần → gõ 1111 →
+  lặp lại). Thêm mã công khai nào nữa thì phải giữ đúng tính trung tính này.
+- Dữ liệu ba nhà demo cũ dần theo ngày, phải chạy lại `npm run db:seed:demo` trước
+  mỗi buổi demo (cố ý không thêm cron, không đặc biệt hoá đường đọc).
+  `scripts/seed-demo.mjs` chạy trong `npm run build` nên nó nạp mọi `.ts` bằng
+  `import()` ĐỘNG trong try/catch: import tĩnh được phân giải TRƯỚC khối bắt lỗi
+  nên một bản Node không tự bỏ kiểu sẽ làm hỏng cả bản deploy.
+- Test PGlite import thẳng `lib/store.ts` được nhờ `scripts/test-hook.mjs` (resolve
+  import không đuôi, `npm test` nạp qua `--import`) + `BTVN_PGLITE_DIR=memory://`.
 
 **Gỡ một hàng rào ra khỏi chỗ cũ thì phải nối nó vào chỗ mới TRONG CÙNG một lần
-sửa.** Phép quét chữ Việt từng nằm trong `npm test`; tách ra thành lệnh riêng là
-đúng (bằng chứng của nó là ký tự trong mã nguồn, không phải hành vi) nhưng lần
-tách đó không nối lại chỗ nào chạy nó, và ngay sau đó một câu tiếng Việt lọt ra
-đúng khoảng trống ấy. Đổi chỗ một hàng rào mà chưa có lệnh nào gọi nó thì coi như
-đã bỏ hàng rào. Chữ bố mẹ tự gõ
-(đề bài, tên nhiệm vụ, phần thưởng) KHÔNG dịch — kể cả tên nhà mặc định "Nhà mình"
-của nhà mới, vì nhà mới luôn bắt đầu ở `ui_locale` `vi`. Tiếng Nhật/Hàn/Anh chỉ để
-captain demo bằng ba nhà riêng PIN 1111/2222/3333 (`PIN_DEMO`, giữ chỗ vĩnh viễn) —
-`scripts/seed-demo.mjs` nạp lại được trên DB đang chạy (chạy trong `npm run build`,
-nên nó nạp mọi `.ts` bằng `import()` ĐỘNG trong try/catch: import tĩnh được phân
-giải TRƯỚC khối bắt lỗi nên một bản Node không tự bỏ kiểu sẽ làm hỏng cả bản
-deploy), chỉ đụng `family_id` của nhà demo; `lib/nha-demo.test.ts` chụp nhà thật trước/sau và gọi mọi hàm đọc của
-store để khẳng định nhà demo không nhìn sang nhà khác. Test PGlite giờ import
-thẳng `lib/store.ts` được nhờ `scripts/test-hook.mjs` (resolve import không đuôi,
-`npm test` nạp qua `--import`) + `BTVN_PGLITE_DIR=memory://`.
-
-**Gắn máy sang nhà KHÁC thì gỡ luôn phiên bố mẹ** — luật nằm trong `lib/auth.ts`
-chứ không ở từng route, vì có HAI đường gắn máy: `setDeviceFamily` (POST
-`/api/nha`, màn "Đây là máy của nhà nào?") và `attachFamilyLink` (link
-`/nha/<slug>`, đặt cookie trên response redirect có sẵn). Bỏ sót một đường là còn
-nguyên ngõ cụt: `viewingFamilyId` ưu tiên `btvn_parent`, mà màn nhập PIN tự chuyển
-hướng đi khi đã có phiên và nút "Quên PIN trên thiết bị này" đã bỏ (#17). Gắn lại
-chính nhà đang ở thì GIỮ phiên. Thêm đường gắn máy thứ ba thì đi qua cùng hai hàm
-đó, đừng tự `cookies().set` — `signIn` từng là đường thứ ba đó và nay đã đi qua
-`setDeviceFamily`.
-
-**Nhập PIN demo thì KHÔNG gắn máy** — luật ở MỘT hàm `ganMaySauKhiNhapPin`, dùng
-bởi CẢ HAI đường nhập PIN: `signIn` (mở phần bố mẹ) và POST `/api/nha` (màn "Đây là
-máy của nhà nào?", ở đó còn trả lỗi 400 vì gắn máy là việc duy nhất của màn ấy).
-Lý do: gắn máy là gắn một năm, mà ba mã demo ai cũng biết — gõ 1111 một lần trên
-iPad của các con là từ đó màn của con hiện nhà Nhật. PIN thật giữ nguyên: mở phiên
-VÀ gắn máy. Link `/nha/<slug>` CỐ Ý nằm ngoài luật này — đó là đường duy nhất để
-gắn hẳn một máy vào nhà demo. (`lib/nha-link.test.ts` kiểm cả hai đường lẫn hai
-loại PIN.)
-
-**Ba mã demo TRUNG TÍNH với bộ chặn mò mã** (`attemptPin`): không chạm vào bộ đếm
-theo bất kỳ hướng nào — không `recordSuccess`, không `recordFail`. Chúng là mã công
-khai mà lại tra ra một nhà thật, nên nếu tính như một lần nhập đúng thì chúng xoá bộ
-đếm và ai cũng dò được PIN của nhà THẬT không giới hạn (sai 4 lần → gõ 1111 → lặp
-lại). Thêm mã công khai nào nữa thì phải giữ đúng tính trung tính này.
-
-**Dữ liệu ba nhà demo cũ dần theo ngày** (`ngayLech` tính theo lúc chạy, mà
-`seed-demo.mjs` chỉ tự chạy lúc build): trước buổi demo phải chạy lại
-`npm run db:seed:demo`. Cố ý không thêm cron và không đặc biệt hoá đường đọc.
+sửa** — đổi chỗ một hàng rào mà chưa lệnh nào gọi nó thì coi như đã bỏ hàng rào.
+Tiền lệ là phép quét chữ Việt: nó chạy bằng `npm run lint`, hồi quy ở
+`lib/quet-chu-viet.test.ts`.
 
 Tài liệu có hai người đọc khác nhau: `README.md` cho người phát triển, còn
 `HUONG-DAN-BO-ME.md` (kèm ảnh trong `huong-dan-anh/`) cho bố mẹ dùng app thật —
