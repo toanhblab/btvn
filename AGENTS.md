@@ -77,6 +77,20 @@ kích thước tệp nên phải dịch mọi offset tuyệt đối; gặp hộp
 kết quả vá tại chỗ. Test `lib/videoDuration.test.ts` có bộ dựng mp4 phân mảnh
 giả, bộ duyệt cây kiểm từng offset, và hàm mô phỏng phép tính của Safari.
 
+Cùng luồng quay, issue #51 (MacBook Safari: "chỉ lưu một đoạn" + "thời lượng gấp
+đôi") là MỘT nguyên nhân KHÁC metadata: camera **ngừng sinh khung giữa buổi** trong
+khi track vẫn `live`, `MediaRecorder` vẫn chạy; phần sau mốc đứng CHƯA TỪNG được
+ghi nên không bản vá hộp nào cứu được (đo trên 10 video production, báo cáo
+`data/btvn-video-macbook-dieu-tra` trong home firstmate). Sửa ở LÚC QUAY:
+`lib/phienQuay.ts` giữ toàn bộ vòng đời ghi (React chỉ vẽ) kèm bộ canh luồng —
+nhịp khung qua `requestVideoFrameCallback` + `mute`/`ended` của track, ngưỡng và
+hai hàng rào chống báo nhầm (tab ẩn, luồng chính nghẽn) ghi ở chú thích đầu file;
+đứng thì tự dừng, KHÔNG lưu, báo con quay lại. Nút "quay bằng máy ảnh của hệ điều
+hành" đã BỎ HẲN theo captain, nên mở camera thất bại PHẢI ra câu con đọc được
+(`CAU_BAO_MO_CAMERA`) — đừng thêm lại đường `<input capture>`. Test
+`lib/phienQuay.test.ts` dùng MediaRecorder/luồng/đồng hồ giả; cú đứng THẬT chưa
+tái hiện được trên máy không camera.
+
 Điểm thưởng (+10 một ngày xong hết, +1 mỗi bài xong sớm hơn `duration_minutes`,
 +`stars` mỗi dòng nhiệm vụ hàng ngày tick xong, đổi thưởng có bố mẹ duyệt): luật
 là hàm thuần trong `lib/diem.ts` (đọc chú thích đầu file trước — nó giải thích vì

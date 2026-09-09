@@ -333,10 +333,18 @@ các con không vô tình mở được phần bố mẹ (PRD 4.5).
 thể dục/biểu diễn có trường `requires_video` — AI tự bật khi tách bài, bố mẹ
 bật/tắt lại được bằng chip 🎥 ở màn "Kiểm tra lại" / "Nhập tay" và ô tick 🎥 ở
 màn "Sửa bài tập". Ở màn của con, bài gắn cờ hiện khung quay ngay trong trang (`MediaRecorder`, mp4 trên
-Safari và webm trên Chrome cũ) kèm xem trước và quay lại; máy không quay được
-trong trang hoặc con từ chối quyền camera thì có đường lui mở máy quay của hệ
-điều hành (`capture="user"`). Quay tối đa 10 phút (`MAX_QUAY_GIAY`), máy tự dừng
-khi hết giờ. **Gửi video chính là "đã làm xong"** — bài gắn cờ không có nút tick
+Safari và webm trên Chrome cũ) kèm xem trước và quay lại. Đây là đường quay
+**duy nhất**: nút "quay bằng máy ảnh của hệ điều hành" đã bỏ (#51, con luôn dùng
+iPad hoặc MacBook có camera), nên mở camera thất bại thì app phải nói rõ cho con
+phải làm gì — quyền bị từ chối, không có camera, camera đang bị ứng dụng khác
+dùng — mỗi ca một câu (`CAU_BAO_MO_CAMERA` trong `lib/phienQuay.ts`). Quay tối
+đa 10 phút (`MAX_QUAY_GIAY`), máy tự dừng khi hết giờ. Vòng đời ghi nằm ở
+`lib/phienQuay.ts` kèm **bộ canh luồng đứng** (#51: trên MacBook Safari camera
+có thể ngừng sinh khung giữa buổi trong khi `MediaRecorder` vẫn chạy — phần sau
+mốc đứng không bao giờ được ghi, không vá metadata nào cứu được): app theo dõi
+khung có còn tới khung xem trước không (`requestVideoFrameCallback`) và sự kiện
+`mute`/`ended` của track; đứng quá 4 giây thì tự dừng, **không lưu**, báo con
+mở máy quay quay lại. **Gửi video chính là "đã làm xong"** — bài gắn cờ không có nút tick
 riêng và server cũng chặn tick xong khi chưa có video. Mỗi bài giữ **một video
 mới nhất** (quay lại là thay URL, không giữ lịch sử). Video đi qua route riêng
 `/api/nop-video` (xác thực bằng cookie thiết bị vì con không có PIN, chỉ nhận

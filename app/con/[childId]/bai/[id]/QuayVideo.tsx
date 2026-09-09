@@ -7,23 +7,32 @@ import {
   QUAY_VIDEO_BPS,
   uploadSubmissionVideo,
 } from '@/lib/media';
-import { fixVideoDuration } from '@/lib/videoDuration';
+import {
+  CAU_BAO_KET_THUC,
+  CAU_BAO_MO_CAMERA,
+  hoTroNhipKhung,
+  noiNhipKhung,
+  phanLoaiLoiMoCamera,
+  taoPhienQuay,
+  type PhienQuay,
+} from '@/lib/phienQuay';
 import { useT } from '@/lib/i18n/client';
 
 /**
  * Quay video nop bai — cho bai co requiresVideo (doc to, doc thuoc long, quay
- * gui co...). Hai duong quay, chon theo kha nang cua may:
+ * gui co...). MOT duong quay duy nhat: NGAY TRONG TRANG bang getUserMedia +
+ * MediaRecorder — co khung xem truoc, quay lai, roi moi gui. Safari tren
+ * iPadOS/macOS ghi ra video/mp4 (H.264 — KHONG ho tro webm), Chrome/Edge ghi ra
+ * video/webm; mimeType do isTypeSupported tung ung vien (lib/phienQuay.ts).
  *
- *   1. Quay NGAY TRONG TRANG bang getUserMedia + MediaRecorder — co khung xem
- *      truoc, quay lai, roi moi gui. Day la duong chinh: Safari tren iPadOS ho
- *      tro MediaRecorder tu 14.5 (ghi ra video/mp4, H.264 — KHONG ho tro webm),
- *      Chrome/Edge ghi ra video/webm. Vi the mimeType phai do isTypeSupported
- *      tung ung vien mp4 truoc webm sau, khong duoc ghi cung.
+ * Duong lui "quay bang may anh cua he dieu hanh" (<input capture>) DA BO theo
+ * quyet dinh cua captain (#51): con luon dung iPad hoac MacBook, khong co
+ * truong hop thieu camera. Vi the mo camera THAT BAI phai ra cau bao con doc
+ * duoc va noi ro phai lam gi (CAU_BAO_MO_CAMERA) — do la luoi an toan duy nhat.
  *
- *   2. May khong co MediaRecorder / con tu choi quyen camera -> <input
- *      type="file" accept="video/*" capture="user"> mo may quay CUA HE DIEU
- *      HANH (tren iPad la app Camera), quay xong tra tep ve. Duong nay gan nhu
- *      khong the hong nen luon hien song song lam loi thoat.
+ * Vong doi ghi (dong ho, dung/huy, ghep Blob, va thoi luong) va bo canh LUONG
+ * DUNG giua buoi quay (#51 — tu dung, KHONG luu, bao con quay lai) nam trong
+ * lib/phienQuay.ts, doc chu thich dau tep do truoc khi dung vao luong quay.
  *
  * Do dai chan o MAX_QUAY_GIAY (10 phut) va may TU DUNG quay khi het gio. Muc
  * nen di kem la QUAY_VIDEO_BPS + QUAY_AUDIO_BPS, hai so do chon cung nhau: 10
@@ -37,15 +46,6 @@ import { useT } from '@/lib/i18n/client';
  * moc MAX_QUAY_GIAY chi chay tu luc sang 'recording'.
  */
 type Phase = 'idle' | 'ready' | 'recording' | 'preview' | 'sending';
-
-/** mp4 truoc (Safari chi ghi duoc mp4), webm sau (Chrome/Firefox). */
-const MIME_UU_TIEN = [
-  'video/mp4;codecs=avc1',
-  'video/mp4',
-  'video/webm;codecs=vp9',
-  'video/webm;codecs=vp8',
-  'video/webm',
-];
 
 const mmss = (s: number) =>
   `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -65,8 +65,6 @@ export default function QuayVideo({
   const [phase, setPhase] = useState<Phase>('idle');
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState('');
-  // null = chua biet (truoc khi mount); tinh sau mount de SSR/khach khop nhau
-  const [canRecord, setCanRecord] = useState<boolean | null>(null);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [blobUrl, setBlobUrl] = useState('');
   // Dang xin quyen camera: nut phai mo ngay de con khong bam hai lan
@@ -77,23 +75,14 @@ export default function QuayVideo({
 
   const liveRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const discardRef = useRef(false);
-  const stoppingRef = useRef(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const elapsedRef = useRef(0);
+  /** Phien ghi dang chay (chi khac null o phase 'recording'). */
+  const phienRef = useRef<PhienQuay | null>(null);
+  /** Go nhip khung rVFC khoi khung xem truoc khi phien ket thuc. */
+  const goNhipKhungRef = useRef<() => void>(() => {});
   const blobUrlRef = useRef('');
   /** Ban da tai len xong roi (kem chinh Blob no den tu) — de gui lai khong tai lai. */
   const uploadedRef = useRef<{ blob: Blob; url: string } | null>(null);
   const startingRef = useRef(false);
-
-  useEffect(() => {
-    setCanRecord(
-      typeof MediaRecorder !== 'undefined' &&
-        Boolean(navigator.mediaDevices?.getUserMedia)
-    );
-  }, []);
 
   /**
    * Doi ban xem truoc, tha URL cu di. Phai giu qua ref: ban clip 10 phut nang
@@ -118,19 +107,16 @@ export default function QuayVideo({
   function stopStream() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
   }
 
   // Roi trang giua chung thi tat camera va tha bo nho cua ban xem truoc
   useEffect(() => () => {
     startingRef.current = false;   // getUserMedia dang cho se tu tat luong
-    // Tat het track la MediaRecorder tu chuyen inactive va ban onstop, nen phai
-    // danh dau BO truoc: khong thi onstop dung mot object URL sau khi don xong.
-    discardRef.current = true;
-    const r = recorderRef.current;
-    if (r && r.state !== 'inactive') r.stop();
-    recorderRef.current = null;
-    chunksRef.current = [];
+    // Phien dang ghi thi bo hang (khong goi onKetThuc): khong thi no dung mot
+    // object URL sau khi don xong.
+    phienRef.current?.boRoi();
+    phienRef.current = null;
+    goNhipKhungRef.current();
     stopStream();
     uploadedRef.current = null;
     if (blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = ''; }
@@ -170,6 +156,15 @@ export default function QuayVideo({
     setPreviewUrl('');
     setClip(null);
 
+    // Khong con duong lui nao khac, nen may thieu MediaRecorder/getUserMedia
+    // cung phai ra cau con doc duoc, khong duoc im.
+    if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      startingRef.current = false;
+      setStarting(false);
+      setError(T(CAU_BAO_KET_THUC['khong-ghi-duoc']));
+      return;
+    }
+
     let stream: MediaStream;
     try {
       // Camera truoc + do phan giai vua phai: con tu quay minh doc bai, khong
@@ -178,17 +173,17 @@ export default function QuayVideo({
         video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 720 } },
         audio: true,
       });
-    } catch {
-      // Con bam "Không cho phép" hoac camera dang bi app khac giu — chi con
-      // duong may quay cua he dieu hanh.
+    } catch (loi) {
+      // Con bam "Không cho phép", may khong co camera, hoac camera dang bi app
+      // khac giu — moi ca mot cau rieng noi ro phai lam gi (lib/phienQuay.ts).
       startingRef.current = false;
       setStarting(false);
-      setError(T('Chưa mở được máy quay. Con thử nút "Quay bằng máy ảnh" bên dưới nhé.'));
+      setError(T(CAU_BAO_MO_CAMERA[phanLoaiLoiMoCamera(loi)]));
       return;
     }
 
-    // Trong luc cho quyen, con da quay bang app Camera (onPickFile) hoac roi
-    // trang — bo luong vua mo, khong duoc de no de mat tep con vua chon.
+    // Trong luc cho quyen, con da roi trang — bo luong vua mo, khong de camera
+    // sang mai ma khong ai tat duoc.
     if (!startingRef.current) {
       stream.getTracks().forEach((t) => t.stop());
       return;
@@ -198,7 +193,6 @@ export default function QuayVideo({
 
     streamRef.current = stream;
     setElapsed(0);
-    elapsedRef.current = 0;
     setPhase('ready');   // useEffect [phase] o tren gan srcObject + cuon toi khung
   }
 
@@ -209,116 +203,49 @@ export default function QuayVideo({
   }
 
   /**
-   * Nhip 2: con bam "Bắt đầu quay" trong khung — gio moi tao MediaRecorder,
-   * ghi that va chay dong ho tu 0:00.
+   * Nhip 2: con bam "Bắt đầu quay" trong khung — gio moi tao phien ghi
+   * (MediaRecorder + dong ho + bo canh luong dung) va chay tu 0:00.
    */
   function batDauGhi() {
     const stream = streamRef.current;
     if (phase !== 'ready' || !stream) return;
 
-    chunksRef.current = [];
-    discardRef.current = false;
-    stoppingRef.current = false;
-
-    const mime = MIME_UU_TIEN.find((m) => MediaRecorder.isTypeSupported(m)) ?? '';
-    let recorder: MediaRecorder;
-    try {
-      recorder = new MediaRecorder(stream, {
-        ...(mime ? { mimeType: mime } : {}),
-        videoBitsPerSecond: QUAY_VIDEO_BPS,
-        audioBitsPerSecond: QUAY_AUDIO_BPS,
-      });
-    } catch {
-      // Hong o day thi KHONG duoc ket lai o 'ready' voi luong con song
-      stopStream();
-      setPhase('idle');
-      setError(T('Máy này chưa quay trong trang được. Con dùng nút "Quay bằng máy ảnh" nhé.'));
-      return;
-    }
-    recorderRef.current = recorder;
-
-    recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-    recorder.onstop = () => {
-      stoppingRef.current = false;
-      stopStream();
-      if (discardRef.current) { chunksRef.current = []; setPhase('idle'); return; }
-      const out = new Blob(chunksRef.current, { type: recorder.mimeType || mime || 'video/mp4' });
-      if (out.size === 0) {
-        setError(T('Chưa quay được gì, con thử lại nhé.'));
+    const phien = taoPhienQuay({
+      stream,
+      theoDoiKhung: hoTroNhipKhung(liveRef.current),
+      videoBitsPerSecond: QUAY_VIDEO_BPS,
+      audioBitsPerSecond: QUAY_AUDIO_BPS,
+      maxGiay: MAX_QUAY_GIAY,
+      onGiay: setElapsed,
+      onKetThuc: (kq) => {
+        goNhipKhungRef.current();
+        goNhipKhungRef.current = () => {};
+        phienRef.current = null;
+        streamRef.current = null; // phien da tat het track
+        if (kq.lyDo === 'xong') {
+          setClip(kq.clip);
+          setPreviewUrl(URL.createObjectURL(kq.clip));
+          setPhase('preview');
+          return;
+        }
+        // Huy: ve man cho, khong noi gi. Con lai (trong / gian doan / khong ghi
+        // duoc): ve man cho + cau bao — nut "Mở máy quay" van o do, con quay lai
+        // ngay khong phai tai lai trang.
+        if (kq.lyDo !== 'huy') setError(T(CAU_BAO_KET_THUC[kq.lyDo]));
         setPhase('idle');
-        return;
-      }
-      // Dong ho da dem duoc dung so giay THAT — dung no de va lai metadata
-      // duration cua container (issue #32: MediaRecorder ghi sai so nay, khong
-      // lam sai du lieu hinh/am, nhung cong cu doc metadata nhu "Save Video"
-      // vao Photos tren iOS se cat theo con so sai do). Voi mp4 phan manh
-      // (Safari/Chrome deu ghi kieu nay) fixVideoDuration ghi mdhd = 0 (Safari
-      // CONG mdhd voi mau fragment — ghi so that vao do la gap doi, xem chu
-      // thich dau lib/videoDuration.ts) va chen them hop mvex>mehd — Blob tra
-      // ve co the dai hon `out` 16 byte, khong con la cung mot buffer.
-      const daGhiGiay = elapsedRef.current;
-      fixVideoDuration(out, daGhiGiay).then((fixed) => {
-        if (discardRef.current) return; // huy/roi trang trong luc dang va
-        setClip(fixed);
-        setPreviewUrl(URL.createObjectURL(fixed));
-        setPhase('preview');
-      });
-    };
-
-    elapsedRef.current = 0;
+      },
+    });
+    phienRef.current = phien;
     setElapsed(0);
-
-    // start() co the nem du constructor da qua: isTypeSupported chi noi may BIET
-    // mimeType do, khong hua ma hoa duoc luong nay o bitrate nay (Safari/iPadOS).
-    // Phai thu XONG roi moi doi phase, khong thi man hinh quay ket lai.
-    try {
-      recorder.start();
-    } catch {
-      recorderRef.current = null;
-      stopStream();
-      setPhase('idle');
-      setError(T('Máy này chưa quay trong trang được. Con dùng nút "Quay bằng máy ảnh" nhé.'));
-      return;
-    }
-
+    // Phai start XONG roi moi doi phase, khong thi man hinh quay ket lai.
+    // That bai thi onKetThuc o tren da nhan 'khong-ghi-duoc' va ve 'idle'.
+    if (!phien.batDau()) return;
+    if (liveRef.current) goNhipKhungRef.current = noiNhipKhung(liveRef.current, phien);
     setPhase('recording');
-
-    timerRef.current = setInterval(() => {
-      elapsedRef.current += 1;
-      setElapsed(elapsedRef.current);
-      if (elapsedRef.current >= MAX_QUAY_GIAY) stopRecording(false); // het gio -> tu dung
-    }, 1000);
   }
 
   function stopRecording(discard: boolean) {
-    // stop() dat state = 'inactive' NGAY nhung chi xep hang onstop, con hai nut
-    // "Quay xong"/"Huỷ" van con tren man hinh trong cua so do. Bam lan hai ma
-    // khong chan thi no roi xuong nhanh du phong duoi va lam sai ket qua: bao
-    // "chua quay duoc gi" tren mot ban quay tot, hoac dat lai discard = false
-    // khien onstop hoi sinh ban con vua huy.
-    if (stoppingRef.current) return;
-    discardRef.current = discard;
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    const r = recorderRef.current;
-    if (r && r.state !== 'inactive') { stoppingRef.current = true; r.stop(); return; }
-    // Khong con may ghi nao se ban onstop nua, nen phai tu roi man hinh quay
-    stopStream();
-    if (!discard) setError(T('Chưa quay được gì, con thử lại nhé.'));
-    setPhase('idle');
-  }
-
-  /** Duong lui: video quay bang app Camera cua may (hoac chon tu thu vien). */
-  function onPickFile(files: FileList | null) {
-    const file = files?.[0];
-    if (!file) return;
-    setError('');
-    if (!file.type.startsWith('video/')) { setError(T('Tệp này không phải video.')); return; }
-    // Huy lan xin quyen camera dang cho (neu co) de no khong de mat tep nay
-    startingRef.current = false;
-    setStarting(false);
-    setClip(file);
-    setPreviewUrl(URL.createObjectURL(file));
-    setPhase('preview');
+    phienRef.current?.dung(discard);
   }
 
   async function send() {
@@ -332,10 +259,10 @@ export default function QuayVideo({
       // phia con khong co duong xoa.
       let url = uploadedRef.current?.blob === blob ? uploadedRef.current.url : '';
       if (!url) {
+        // Clip chi con den tu MediaRecorder (MIME_UU_TIEN: mp4 hoac webm), nen
+        // "khong phai webm thi la mp4" la dung, khong con tep .mov tu may anh.
         const duoi = blob.type.includes('webm') ? 'webm' : 'mp4';
-        const file = blob instanceof File
-          ? blob
-          : new File([blob], `quay-${Date.now()}.${duoi}`, { type: blob.type });
+        const file = new File([blob], `quay-${Date.now()}.${duoi}`, { type: blob.type });
         url = await uploadSubmissionVideo(file, blobEnabled, setPhanTram, T);
         uploadedRef.current = { blob, url };
       }
@@ -487,41 +414,17 @@ export default function QuayVideo({
             </div>
           )}
 
-          {canRecord && (
-            <button
-              onClick={moCamera}
-              disabled={starting}
-              className="btn-3d-primary bg-tertiary text-on-tertiary rounded-3xl flex items-center
-                         justify-center gap-4 px-6 h-20 w-full disabled:opacity-60"
-            >
-              <span className="material-symbols-outlined text-4xl icon-fill">videocam</span>
-              <span className="text-k-headline">
-                {starting ? T('Đang mở máy quay…') : existingUrl ? T('Quay video khác') : T('Mở máy quay')}
-              </span>
-            </button>
-          )}
-
-          {/* Loi thoat luon co mat: mo may quay cua he dieu hanh. Tren iPad
-              capture="user" mo thang app Camera voi camera truoc. May khong
-              quay trong trang duoc thi day thanh nut chinh. */}
-          {canRecord !== null && (
-            <label
-              className={`rounded-3xl flex items-center justify-center gap-4 px-6 h-20 w-full cursor-pointer
-                          ${canRecord
-                            ? 'border-4 border-dashed border-outline-variant text-on-surface-variant text-k-body'
-                            : 'btn-3d-primary bg-tertiary text-on-tertiary text-k-headline'}`}
-            >
-              <input
-                type="file"
-                accept="video/*"
-                capture="user"
-                className="hidden"
-                onChange={(e) => { onPickFile(e.target.files); e.target.value = ''; }}
-              />
-              <span className="material-symbols-outlined text-4xl icon-fill">photo_camera</span>
-              <span>{canRecord ? T('Hoặc quay bằng máy ảnh') : existingUrl ? T('Quay video khác') : T('Quay bằng máy ảnh')}</span>
-            </label>
-          )}
+          <button
+            onClick={moCamera}
+            disabled={starting}
+            className="btn-3d-primary bg-tertiary text-on-tertiary rounded-3xl flex items-center
+                       justify-center gap-4 px-6 h-20 w-full disabled:opacity-60"
+          >
+            <span className="material-symbols-outlined text-4xl icon-fill">videocam</span>
+            <span className="text-k-headline">
+              {starting ? T('Đang mở máy quay…') : existingUrl ? T('Quay video khác') : T('Mở máy quay')}
+            </span>
+          </button>
         </div>
       )}
 
