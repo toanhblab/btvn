@@ -282,6 +282,27 @@ Con mở lại bài đó, bấm **"Chưa làm xong"** là bài quay về chưa x
 **Con quay video nhưng muốn quay lại?**
 Bấm **"Quay video khác"** — app chỉ giữ video mới nhất. Quay tối đa 10 phút mỗi bài.
 
+**Đang quay mà app báo "Máy quay bị gián đoạn giữa chừng nên bản này chưa lưu"?**
+Máy quay của máy tính ngừng đưa hình giữa buổi (hay gặp trên MacBook). Phần con
+nói sau lúc đó không ghi được nên app không giữ bản đó, để con không nộp một
+video chỉ có nửa đầu. Con bấm **"Mở máy quay"** và quay lại là được, không cần
+tải lại trang.
+
+**App báo "Trang này chưa mở bằng địa chỉ https nên máy không cho dùng máy quay"?**
+Trình duyệt chỉ cho dùng máy quay khi trang mở bằng địa chỉ **https** (hoặc
+`localhost`). Mở lại app bằng địa chỉ https rồi bấm **"Mở máy quay"** lại là được.
+
+**App báo "Khung hình chưa chạy. Con chạm vào khung hình một lần nhé."?**
+Trình duyệt chưa cho khung hình tự chạy nên con không thấy mình trong khung. Con
+chạm một lần vào khung hình đen là nó chạy lại. Máy quay vẫn ghi bình thường
+trong lúc đó.
+
+**App báo "Máy chưa cho phép dùng máy quay" hoặc "Máy quay đang bận"?**
+Lần đầu máy hỏi quyền dùng máy quay và micro thì bấm **"Cho phép"**. Nếu đã từ
+chối nhầm, mở cài đặt của trình duyệt (Safari: menu Safari › Cài đặt cho trang
+web này) cho phép lại rồi tải lại trang. "Đang bận" là có ứng dụng khác đang
+dùng máy quay (Zoom, FaceTime, Photo Booth…) — tắt ứng dụng đó rồi bấm lại.
+
 **Hôm nay không giao bài thì con có nhiệm vụ hàng ngày không?**
 Có. Nhiệm vụ hiện mỗi ngày, kể cả cuối tuần và ngày bố mẹ không giao bài tập nào.
 Chỉ có điều ngày không có bài thì con chỉ được ⭐ của từng nhiệm vụ, không có +10.

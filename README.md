@@ -333,12 +333,40 @@ các con không vô tình mở được phần bố mẹ (PRD 4.5).
 thể dục/biểu diễn có trường `requires_video` — AI tự bật khi tách bài, bố mẹ
 bật/tắt lại được bằng chip 🎥 ở màn "Kiểm tra lại" / "Nhập tay" và ô tick 🎥 ở
 màn "Sửa bài tập". Ở màn của con, bài gắn cờ hiện khung quay ngay trong trang (`MediaRecorder`, mp4 trên
-Safari và webm trên Chrome cũ) kèm xem trước và quay lại; máy không quay được
-trong trang hoặc con từ chối quyền camera thì có đường lui mở máy quay của hệ
-điều hành (`capture="user"`). Quay tối đa 10 phút (`MAX_QUAY_GIAY`), máy tự dừng
-khi hết giờ. **Gửi video chính là "đã làm xong"** — bài gắn cờ không có nút tick
-riêng và server cũng chặn tick xong khi chưa có video. Mỗi bài giữ **một video
-mới nhất** (quay lại là thay URL, không giữ lịch sử). Video đi qua route riêng
+Safari và webm trên Chrome cũ) kèm xem trước và quay lại. Đây là đường quay
+**duy nhất**: nút "quay bằng máy ảnh của hệ điều hành" đã bỏ (#51, con luôn dùng
+iPad hoặc MacBook có camera), nên mở camera thất bại thì app phải nói rõ cho con
+phải làm gì: quyền bị từ chối, không có camera, camera đang bị ứng dụng khác dùng,
+và một câu chung cho các lỗi còn lại (`CAU_BAO_MO_CAMERA` trong `lib/phienQuay.ts`
+— chỉ `NotReadableError` mới là "đang bận"; `AbortError` không nói gì về việc máy
+bị ứng dụng khác chiếm nên đi vào câu chung). Quay tối đa 10 phút
+(`MAX_QUAY_GIAY`), máy tự dừng khi hết giờ. Vòng đời ghi nằm ở
+`lib/phienQuay.ts` kèm **bộ canh luồng đứng** (#51: trên MacBook Safari camera
+có thể ngừng sinh khung giữa buổi trong khi `MediaRecorder` vẫn chạy — phần sau
+mốc đứng không bao giờ được ghi, không vá metadata nào cứu được): app theo dõi
+khung có còn tới khung xem trước không (`requestVideoFrameCallback`) và sự kiện
+`mute`/`ended` của track; đứng quá 4 giây thì tự dừng, **không lưu**, báo con
+mở máy quay quay lại. Hai tín hiệu đó **không ngang nhau**: `mute`/`ended` đến
+từ chính track của camera nên luôn có hiệu lực, còn nhịp khung chỉ đo *khung xem
+trước* có chiếu được không — con cuộn khung ra khỏi vùng nhìn giữa buổi quay, hay
+khung bị dừng (`play()` bị từ chối, hoặc WebKit tự treo media nên `pause` bắn ra
+giữa buổi — app nghe `pause` để chạy lại và báo con chạm vào khung), là nhịp im
+lặng dù camera vẫn chạy. Vì thế bộ đếm khung tạm ngưng khi khung xem trước không
+chiếu (cùng với hai hàng rào cũ: tab ẩn và luồng chính bị nghẽn), để không vứt
+mất một bản quay tốt. Hàng rào khung cũng chỉ **bật sau nhịp đầu tiên**:
+`hoTroNhipKhung()` chỉ biết trình duyệt *có* hàm rVFC, không biết nó có bắn cho
+luồng xem trước hay không — máy không bao giờ bắn nhịp thì hàng rào đó im hẳn
+(lùi về `mute`/`ended`) chứ không vứt mọi bản quay của mọi máy; cú đứng giữa
+buổi vẫn bắt được vì nhịp đã chạy trước đó.
+
+Mở camera thất bại còn một ca tách riêng: trang mở bằng **http** trên mạng trong
+nhà thì `navigator.mediaDevices` không tồn tại, nên app nói đúng việc phải làm
+(mở lại bằng địa chỉ https) thay vì báo trình duyệt cũ — `allowedDevOrigins`
+trong `next.config.ts` đi qua đúng đường này.
+
+**Gửi video chính là "đã làm xong"** — bài gắn cờ không có nút tick riêng và
+server cũng chặn tick xong khi chưa có video. Mỗi bài giữ **một video mới nhất**
+(quay lại là thay URL, không giữ lịch sử). Video đi qua route riêng
 `/api/nop-video` (xác thực bằng cookie thiết bị vì con không có PIN, chỉ nhận
 video, trần 250MB vì máy quay của iPad ghi ~60MB/phút). Bố mẹ thấy badge
 🎥 "Đã nộp video" / "Chờ quay video" ở màn chi tiết theo con và phát lại video

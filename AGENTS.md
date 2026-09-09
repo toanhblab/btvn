@@ -59,14 +59,14 @@ máy chủ và chụp ảnh vẫn đẹp, nhưng React KHÔNG hydrate — mọi 
 nút của component khách đều chết lặng, không báo lỗi gì. Bằng chứng nằm ở nhật
 ký `next dev` ("Blocked cross-origin request to Next.js dev resource").
 
-Video con quay để nộp bài (`QuayVideo.tsx`, dùng `MediaRecorder`) là mp4 PHÂN MẢNH
-(`moov` không có mẫu, dữ liệu nằm trong `moof`/`mdat`) với metadata `duration`
-không dùng được: Safari ghi `mvhd`/`tkhd`/`mdhd` = 0, Chrome ghi `mdhd` sai đơn vị.
+Video con quay để nộp bài (`MediaRecorder`, vòng đời ở `lib/phienQuay.ts`) là
+mp4 PHÂN MẢNH (`moov` không có mẫu, dữ liệu nằm trong `moof`/`mdat`) với
+metadata `duration` không dùng được: Safari ghi `mvhd`/`tkhd`/`mdhd` = 0, Chrome ghi `mdhd` sai đơn vị.
 Công cụ dựa vào metadata (như "Save Video" vào Photos trên iOS) cắt theo số sai
-(issue #32). `lib/videoDuration.ts` sửa ngay sau khi `onstop` ghép xong Blob —
-đọc chú thích đầu file đó trước khi đụng vào luồng quay/nộp video. Điều đắt
-giá nhất, ĐÃ ĐO TRỰC TIẾP trên Safari 26.6.2 macOS và Safari 26.5/iOS 18.7
-(báo cáo `data/btvn-video-safari-that` trong home firstmate): **Safari/AVFoundation
+(issue #32). `lib/videoDuration.ts` sửa ngay sau khi `onstop` ghép xong Blob
+(trong `chotPhien`) — đọc chú thích đầu file đó trước khi đụng vào luồng
+quay/nộp video. Điều đắt giá nhất, ĐÃ ĐO TRỰC TIẾP trên Safari 26.6.2 macOS và
+Safari 26.5/iOS 18.7 (báo cáo `data/btvn-video-safari-that` trong home firstmate): **Safari/AVFoundation
 tính `duration` = max theo track của (`mdhd.duration` + tổng mẫu trong `trun`), và
 BỎ QUA `mvhd`, `tkhd`, `mehd`, `mfra`.** Vì thế với mp4 phân mảnh `mdhd` PHẢI = 0 —
 ghi thời lượng thật vào đó là Safari hiện GẤP ĐÔI (hai PR #37/#38 đi vòng qua
@@ -76,6 +76,24 @@ hại với WebKit và có thể cần cho bộ nhập Photos (chưa kiểm). Ch
 kích thước tệp nên phải dịch mọi offset tuyệt đối; gặp hộp lạ là TỪ CHỐI, giữ
 kết quả vá tại chỗ. Test `lib/videoDuration.test.ts` có bộ dựng mp4 phân mảnh
 giả, bộ duyệt cây kiểm từng offset, và hàm mô phỏng phép tính của Safari.
+
+Cùng luồng quay, issue #51 (MacBook Safari: "chỉ lưu một đoạn" + "thời lượng gấp
+đôi") là MỘT nguyên nhân KHÁC metadata: camera **ngừng sinh khung giữa buổi** trong
+khi track vẫn `live`, `MediaRecorder` vẫn chạy; phần sau mốc đứng CHƯA TỪNG được
+ghi nên không bản vá hộp nào cứu được (đo trên 10 video production, báo cáo
+`data/btvn-video-macbook-dieu-tra` trong home firstmate). Sửa ở LÚC QUAY:
+`lib/phienQuay.ts` giữ toàn bộ vòng đời ghi (React chỉ vẽ) kèm bộ canh luồng —
+`mute`/`ended` của track (tín hiệu từ camera, luôn có hiệu lực) + nhịp khung qua
+`requestVideoFrameCallback` (tín hiệu PHỤ: chỉ giá trị khi khung xem trước đang
+chiếu, và chỉ BẬT sau nhịp đầu tiên — máy có hàm rVFC mà không bao giờ bắn nhịp
+thì hàng rào đó im, không được vứt mọi bản quay), ngưỡng và ba hàng rào chống
+báo nhầm (tab ẩn, luồng chính nghẽn, khung xem trước không chiếu) ghi ở chú thích
+đầu file; đứng thì tự dừng, KHÔNG lưu, báo con quay lại. Nút "quay bằng máy ảnh
+của hệ điều hành" đã BỎ HẲN theo captain, nên mở camera thất bại PHẢI ra câu con
+đọc được (`CAU_BAO_MO_CAMERA`, riêng trang mở bằng http là
+`CAU_BAO_CHUA_AN_TOAN`) — đừng thêm lại đường `<input capture>`. Test
+`lib/phienQuay.test.ts` dùng MediaRecorder/luồng/đồng hồ giả; cú đứng THẬT chưa
+tái hiện được trên máy không camera.
 
 Điểm thưởng (+10 một ngày xong hết, +1 mỗi bài xong sớm hơn `duration_minutes`,
 +`stars` mỗi dòng nhiệm vụ hàng ngày tick xong, đổi thưởng có bố mẹ duyệt): luật

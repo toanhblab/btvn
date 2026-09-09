@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
     '192.168.1.*',
     '192.168.100.*',
     '10.0.0.*',
+    '172.16.20.*',   // mang van phong — captain kiem ban dev tu MacBook (#51)
     'Huys-MacBook-Pro.local',
   ],
 };
