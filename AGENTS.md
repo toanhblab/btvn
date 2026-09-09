@@ -84,9 +84,11 @@ ghi nên không bản vá hộp nào cứu được (đo trên 10 video producti
 `data/btvn-video-macbook-dieu-tra` trong home firstmate). Sửa ở LÚC QUAY:
 `lib/phienQuay.ts` giữ toàn bộ vòng đời ghi (React chỉ vẽ) kèm bộ canh luồng —
 `mute`/`ended` của track (tín hiệu từ camera, luôn có hiệu lực) + nhịp khung qua
-`requestVideoFrameCallback` (tín hiệu PHỤ, chỉ giá trị khi khung xem trước đang
-chiếu), ngưỡng và ba hàng rào chống báo nhầm (tab ẩn, luồng chính nghẽn, khung
-xem trước không chiếu) ghi ở chú thích đầu file;
+`requestVideoFrameCallback` (tín hiệu PHỤ: chỉ giá trị khi khung xem trước đang
+chiếu, và chỉ BẬT sau nhịp đầu tiên — máy có hàm rVFC mà không bao giờ bắn nhịp
+thì hàng rào đó im, không được vứt mọi bản quay), ngưỡng và ba hàng rào chống
+báo nhầm (tab ẩn, luồng chính nghẽn, khung xem trước không chiếu) ghi ở chú
+thích đầu file;
 đứng thì tự dừng, KHÔNG lưu, báo con quay lại. Nút "quay bằng máy ảnh của hệ điều
 hành" đã BỎ HẲN theo captain, nên mở camera thất bại PHẢI ra câu con đọc được
 (`CAU_BAO_MO_CAMERA`) — đừng thêm lại đường `<input capture>`. Test

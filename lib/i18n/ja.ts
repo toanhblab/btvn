@@ -160,6 +160,7 @@ export const JA: Record<Key, string> = {
   'Máy quay đang bận vì ứng dụng khác đang dùng. Con tắt ứng dụng đó rồi thử lại nhé.': 'ほかのアプリがカメラを使っています。そのアプリを閉じて、もう一度やってみよう。',
   'Chưa mở được máy quay. Con thử lại, hoặc nhờ bố mẹ giúp nhé.': 'カメラを開けませんでした。もう一度やるか、おうちの人に手伝ってもらってね。',
   'Khung hình chưa chạy. Con chạm vào khung hình một lần nhé.': 'プレビューが動いていません。画面を1回タップしてね。',
+  'Trang này chưa mở bằng địa chỉ https nên máy không cho dùng máy quay. Con nhờ bố mẹ mở lại trang bằng địa chỉ https nhé.': 'このページはhttpsで開いていないので、端末がカメラを使わせてくれません。おうちの人にhttpsのアドレスで開き直してもらってね。',
   'Quay video nộp bài': '動画を撮って提出',
   'Bắt đầu quay': '録画スタート',
   'Thoát': 'やめる',

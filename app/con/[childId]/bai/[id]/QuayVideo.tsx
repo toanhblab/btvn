@@ -10,6 +10,7 @@ import {
 import {
   CAU_BAO_KET_THUC,
   CAU_BAO_MO_CAMERA,
+  cauBaoKhongQuayDuocTrongTrang,
   hoTroNhipKhung,
   noiNhipKhung,
   phanLoaiLoiMoCamera,
@@ -143,6 +144,12 @@ export default function QuayVideo({
    * yen thi con khong thay minh, va bo canh luong dung mat nguon nhip rVFC
    * (theoDoiKhungChieu tra ve false nen no khong bao dung oan — xem chu thich
    * dau lib/phienQuay.ts). Bao con cham vao khung de chay lai.
+   *
+   * Cung la cho xu ly su kien `pause`: khong phai lan dung nao cung do ta —
+   * WebKit tu treo media khi ra nen hay o Low Power Mode. Nghe `pause` roi chay
+   * lai o day thi hang rao khung tu bat lai duoc; im lang thi con ngoi truoc mot
+   * khung dong cung ma app khong noi gi. Thu bac khong doi: mute/ended van la
+   * tin hieu chinh, day chi la khung XEM TRUOC.
    */
   function chayKhungXemTruoc() {
     liveRef.current?.play().then(
@@ -176,11 +183,13 @@ export default function QuayVideo({
     setClip(null);
 
     // Khong con duong lui nao khac, nen may thieu MediaRecorder/getUserMedia
-    // cung phai ra cau con doc duoc, khong duoc im.
+    // cung phai ra cau con doc duoc, khong duoc im. Hai nguyen nhan KHAC nhau va
+    // cach sua khac nhau — trang mo bang http tren mang trong nha khong phai may
+    // cu (lib/phienQuay.ts).
     if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       startingRef.current = false;
       setStarting(false);
-      setError(T(CAU_BAO_KET_THUC['khong-ghi-duoc']));
+      setError(T(cauBaoKhongQuayDuocTrongTrang(window.isSecureContext)));
       return;
     }
 
@@ -327,7 +336,9 @@ export default function QuayVideo({
               playsInline
               autoPlay
               onLoadedMetadata={() => { if (phase === 'ready') cuonToiKhung(); }}
+              onPlay={() => setKhungDung(false)}
               onPlaying={() => setKhungDung(false)}
+              onPause={chayKhungXemTruoc}
               onClick={chayKhungXemTruoc}
               className="w-full max-h-[50vh] rounded-3xl soft-shadow bg-black -scale-x-100"
             />

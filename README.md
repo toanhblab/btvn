@@ -349,7 +349,16 @@ từ chính track của camera nên luôn có hiệu lực, còn nhịp khung ch
 trước* có chiếu được không — con cuộn khung ra khỏi vùng nhìn giữa buổi quay, hay
 `play()` bị từ chối, là nhịp im lặng dù camera vẫn chạy. Vì thế bộ đếm khung tạm
 ngưng khi khung xem trước không chiếu (cùng với hai hàng rào cũ: tab ẩn và luồng
-chính bị nghẽn), để không vứt mất một bản quay tốt. **Gửi video chính là "đã làm xong"** — bài gắn cờ không có nút tick
+chính bị nghẽn), để không vứt mất một bản quay tốt. Hàng rào khung cũng chỉ **bật
+sau nhịp đầu tiên**: `hoTroNhipKhung()` chỉ biết trình duyệt *có* hàm rVFC, không
+biết nó có bắn cho luồng xem trước hay không — máy không bao giờ bắn nhịp thì
+hàng rào đó im hẳn (lùi về `mute`/`ended`) chứ không vứt mọi bản quay của mọi
+máy; cú đứng giữa buổi vẫn bắt được vì nhịp đã chạy trước đó.
+
+Mở camera thất bại còn một ca tách riêng: trang mở bằng **http** trên mạng trong
+nhà thì `navigator.mediaDevices` không tồn tại, nên app nói đúng việc phải làm
+(mở lại bằng địa chỉ https) thay vì báo trình duyệt cũ — `allowedDevOrigins`
+trong `next.config.ts` đi qua đúng đường này. **Gửi video chính là "đã làm xong"** — bài gắn cờ không có nút tick
 riêng và server cũng chặn tick xong khi chưa có video. Mỗi bài giữ **một video
 mới nhất** (quay lại là thay URL, không giữ lịch sử). Video đi qua route riêng
 `/api/nop-video` (xác thực bằng cookie thiết bị vì con không có PIN, chỉ nhận

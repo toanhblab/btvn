@@ -14,9 +14,11 @@
 import { test, mock, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  CAU_BAO_CHUA_AN_TOAN,
   CAU_BAO_KET_THUC,
   CAU_BAO_MO_CAMERA,
   NGUONG_LUONG_DUNG_MS,
+  cauBaoKhongQuayDuocTrongTrang,
   hoTroNhipKhung,
   noiNhipKhung,
   phanLoaiLoiMoCamera,
@@ -313,6 +315,49 @@ test('moc mute theo TUNG track: track nay unmute khong xoa moc cua track kia dan
   assert.equal(ketThuc[0]?.clip, null);
 });
 
+test('trinh duyet CO ham rVFC nhung KHONG BAO GIO ban nhip: quay binh thuong toi het va LUU DUOC', async () => {
+  // theoDoiKhung=true (hoTroNhipKhung() thay co ham rVFC) nhung khung xem truoc
+  // khong bao gio ban nhip nao — KHONG bom nhipKhung() bang tay o bai nay. Tab
+  // hien, tick dung gio, khung dang chieu: khong hang rao nao ap vao, nen neu
+  // hang rao khung bat san thi moi ban quay cua moi may deu bi vut.
+  const { phien, tracks, ketThuc, daVa, recorder } = taoPhien();
+  assert.equal(phien.batDau(), true);
+
+  troi(30_000);
+  assert.equal(ketThuc.length, 0, 'chua thay nhip nao thi hang rao khung phai im');
+  assert.equal(recorder().state, 'recording');
+  assert.ok(tracks.every((t) => t.readyState === 'live'));
+
+  phien.dung(false);
+  await choMicrotask();
+  assert.equal(ketThuc[0]?.lyDo, 'xong', 'con bam "Quay xong" thi ban quay duoc luu');
+  assert.ok(ketThuc[0].clip instanceof Blob);
+  assert.equal(daVa.length, 1);
+  assert.equal(ketThuc[0].giay, 30);
+});
+
+test('may khong ban nhip van bat mute/ended, va thay nhip roi thi hang rao khung bat len', () => {
+  {
+    const { phien, tracks, ketThuc } = taoPhien();
+    phien.batDau();
+    troi(10_000);                          // khong nhip nao
+    tracks[0].mute();
+    troi(NGUONG_LUONG_DUNG_MS + 1000);
+    assert.equal(ketThuc[0]?.lyDo, 'gian-doan', 'mute/ended khong phu thuoc nhip khung');
+  }
+  {
+    // Mot nhip DUY NHAT la du de hang rao khung co bang chung ma bat len.
+    const { phien, ketThuc } = taoPhien();
+    phien.batDau();
+    troi(100);
+    phien.nhipKhung();
+    troi(NGUONG_LUONG_DUNG_MS - 1000);
+    assert.equal(ketThuc.length, 0);
+    troi(1000);
+    assert.equal(ketThuc[0]?.lyDo, 'gian-doan', 'da co nhip roi thi im lang la dung');
+  }
+});
+
 test('trinh duyet khong co rVFC (theoDoiKhung=false): khong co nhip cung khong bao dung, van bat mute/ended', () => {
   const { phien, tracks, ketThuc } = taoPhien({ theoDoiKhung: false });
   phien.batDau();
@@ -523,4 +568,15 @@ test('theoDoiKhungChieu: may khong co IntersectionObserver thi coi nhu dang chie
   } finally {
     globalThis.IntersectionObserver = goc;
   }
+});
+
+test('khong quay duoc trong trang: ngu canh khong an toan ra cau khac "may khong ho tro"', () => {
+  assert.equal(cauBaoKhongQuayDuocTrongTrang(true), CAU_BAO_KET_THUC['khong-ghi-duoc']);
+  assert.equal(cauBaoKhongQuayDuocTrongTrang(false), CAU_BAO_CHUA_AN_TOAN);
+  assert.notEqual(CAU_BAO_CHUA_AN_TOAN, CAU_BAO_KET_THUC['khong-ghi-duoc']);
+  assert.equal(
+    T_VI(CAU_BAO_CHUA_AN_TOAN),
+    'Trang này chưa mở bằng địa chỉ https nên máy không cho dùng máy quay. Con nhờ bố mẹ mở lại trang bằng địa chỉ https nhé.'
+  );
+  for (const td of Object.values(TU_DIEN)) assert.ok(td[CAU_BAO_CHUA_AN_TOAN], 'thieu ban dich cau chua an toan');
 });

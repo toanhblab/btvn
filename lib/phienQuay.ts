@@ -33,6 +33,16 @@
  * xem truoc CHIEU duoc khung len man, khong do truc tiep camera sinh khung, nen
  * chi dung lam bang chung khi khung do vua hien vua dang chay.
  *
+ * Va no phai TU CHUNG MINH truoc khi duoc quyen phan xu: hang rao khung chi BAT
+ * sau nhip DAU TIEN (`daCoNhip`). `hoTroNhipKhung()` chi biet trinh duyet CO ham
+ * rVFC, khong biet no co ban cho luong xem truoc `srcObject` hay khong — ma
+ * Safari (dich duy nhat cua #51) thi chua do duoc. Neu no khong bao gio ban:
+ * tab van hien, tick van dung gio, khung van chieu, tuc KHONG hang rao nao o
+ * duoi ap vao, va tick thu 4 se vut MOI ban quay cua MOI may — nang hon chinh
+ * loi dang sua. Chua thay nhip nao thi lui ve chi dung mute/ended; con cu dung
+ * GIUA BUOI (ca 10 video that deu dung o giay 14-24, tuc nhip da chay truoc do)
+ * van bat duoc nguyen ven.
+ *
  * BA HANG RAO chong bao nham, vi mot khoang lang binh thuong KHONG duoc coi la
  * dung:
  *   - Tab an (document.hidden): trinh duyet KHONG chay "update the rendering"
@@ -115,6 +125,25 @@ export const CAU_BAO_MO_CAMERA: Record<'tu-choi' | 'khong-co' | 'dang-ban' | 'kh
   'dang-ban': 'Máy quay đang bận vì ứng dụng khác đang dùng. Con tắt ứng dụng đó rồi thử lại nhé.',
   'khac': 'Chưa mở được máy quay. Con thử lại, hoặc nhờ bố mẹ giúp nhé.',
 };
+
+/**
+ * Trang mo bang http tren mang trong nha (khong phai localhost): trinh duyet
+ * KHONG dung `navigator.mediaDevices` o ngu canh khong an toan, nen duong mo
+ * camera chet TRUOC khi xin quyen. Ke ca `MediaRecorder` cung khong duoc kiem
+ * tra tiep — day khong phai may cu, va bao "may cu" thi bo me di nang cap
+ * trinh duyet cho khong het (chinh duong `allowedDevOrigins` trong
+ * next.config.ts di qua day).
+ */
+export const CAU_BAO_CHUA_AN_TOAN: Key =
+  'Trang này chưa mở bằng địa chỉ https nên máy không cho dùng máy quay. Con nhờ bố mẹ mở lại trang bằng địa chỉ https nhé.';
+
+/**
+ * Cau con doc khi duong quay trong trang khong dung duoc: phan biet "ngu canh
+ * khong an toan" (sua duoc bang cach mo dung dia chi) voi "may khong ho tro".
+ */
+export function cauBaoKhongQuayDuocTrongTrang(anToan: boolean): Key {
+  return anToan ? CAU_BAO_KET_THUC['khong-ghi-duoc'] : CAU_BAO_CHUA_AN_TOAN;
+}
 
 export function phanLoaiLoiMoCamera(loi: unknown): keyof typeof CAU_BAO_MO_CAMERA {
   const ten = typeof loi === 'object' && loi !== null && 'name' in loi ? String((loi as { name: unknown }).name) : '';
@@ -215,6 +244,7 @@ export function taoPhienQuay(o: TuyChonPhien): PhienQuay {
   let daKetThuc = false;
   let daBoRoi = false;
   let mocKhung = 0;      // lan cuoi co khung moi (hoac moc dat lai)
+  let daCoNhip = false;  // da thay nhip khung nao chua — hang rao khung chi bat sau do
   let mocTick = 0;       // lan cuoi tick chay — do luong chinh co nghen khong
   // Moc mute cua TUNG track (khong co khoa = track do khong mute). Mot moc dung
   // chung cho ca luong thi track nay unmute la xoa luon moc cua track kia dang
@@ -309,7 +339,7 @@ export function taoPhienQuay(o: TuyChonPhien): PhienQuay {
     // Khung xem truoc khong chieu: bo dem khung tam ngung (hang rao thu ba),
     // nhung mute/ended la tin hieu tu camera nen van phan xu ngay duoi day.
     if (!khungDangChieu()) mocKhung = now;
-    else if (o.theoDoiKhung && now - mocKhung >= nguong) { boPhien('gian-doan'); return; }
+    else if (o.theoDoiKhung && daCoNhip && now - mocKhung >= nguong) { boPhien('gian-doan'); return; }
     for (const moc of mocMute.values()) {
       if (now - moc >= nguong) { boPhien('gian-doan'); return; }
     }
@@ -371,7 +401,9 @@ export function taoPhienQuay(o: TuyChonPhien): PhienQuay {
       else chotPhien();
     },
     nhipKhung() {
-      if (!daKetThuc) mocKhung = bayGio();
+      if (daKetThuc) return;
+      mocKhung = bayGio();
+      daCoNhip = true;
     },
     boRoi() {
       daBoRoi = true;

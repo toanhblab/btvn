@@ -288,6 +288,10 @@ nói sau lúc đó không ghi được nên app không giữ bản đó, để c
 video chỉ có nửa đầu. Con bấm **"Mở máy quay"** và quay lại là được, không cần
 tải lại trang.
 
+**App báo "Trang này chưa mở bằng địa chỉ https nên máy không cho dùng máy quay"?**
+Trình duyệt chỉ cho dùng máy quay khi trang mở bằng địa chỉ **https** (hoặc
+`localhost`). Mở lại app bằng địa chỉ https rồi bấm **"Mở máy quay"** lại là được.
+
 **App báo "Khung hình chưa chạy. Con chạm vào khung hình một lần nhé."?**
 Trình duyệt chưa cho khung hình tự chạy nên con không thấy mình trong khung. Con
 chạm một lần vào khung hình đen là nó chạy lại. Máy quay vẫn ghi bình thường

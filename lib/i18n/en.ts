@@ -170,6 +170,7 @@ export const EN = {
   'Máy quay đang bận vì ứng dụng khác đang dùng. Con tắt ứng dụng đó rồi thử lại nhé.': 'The camera is busy because another app is using it. Close that app and try again.',
   'Chưa mở được máy quay. Con thử lại, hoặc nhờ bố mẹ giúp nhé.': 'Could not open the camera. Try again, or ask a parent for help.',
   'Khung hình chưa chạy. Con chạm vào khung hình một lần nhé.': 'The preview is not playing. Tap the preview once.',
+  'Trang này chưa mở bằng địa chỉ https nên máy không cho dùng máy quay. Con nhờ bố mẹ mở lại trang bằng địa chỉ https nhé.': 'This page is not open over https, so the device will not allow the camera. Ask a parent to open the page again with an https address.',
   'Quay video nộp bài': 'Record a video to hand in',
   'Bắt đầu quay': 'Start recording',
   'Thoát': 'Exit',

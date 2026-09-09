@@ -160,6 +160,7 @@ export const KO: Record<Key, string> = {
   'Máy quay đang bận vì ứng dụng khác đang dùng. Con tắt ứng dụng đó rồi thử lại nhé.': '다른 앱이 카메라를 쓰고 있어서 바빠요. 그 앱을 닫고 다시 해 보세요.',
   'Chưa mở được máy quay. Con thử lại, hoặc nhờ bố mẹ giúp nhé.': '카메라를 열 수 없어요. 다시 해 보거나 부모님께 도와 달라고 해요.',
   'Khung hình chưa chạy. Con chạm vào khung hình một lần nhé.': '미리보기가 움직이지 않아요. 화면을 한 번 눌러 보세요.',
+  'Trang này chưa mở bằng địa chỉ https nên máy không cho dùng máy quay. Con nhờ bố mẹ mở lại trang bằng địa chỉ https nhé.': '이 페이지가 https로 열려 있지 않아서 기기가 카메라를 쓰게 해 주지 않아요. 부모님께 https 주소로 다시 열어 달라고 해요.',
   'Quay video nộp bài': '동영상 찍어 제출하기',
   'Bắt đầu quay': '녹화 시작',
   'Thoát': '나가기',
