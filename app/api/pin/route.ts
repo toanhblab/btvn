@@ -35,8 +35,9 @@ export async function POST(req: Request) {
  * PATCH { oldPin, newPin } — doi ma PIN cua nha.
  *
  * Khong dang xuat cac thiet bi khac: cookie phien ky theo id cua nha chu khong
- * theo PIN. Muon dong phan bo me tren mot may thi vao Cai dat cua may do bam
- * "Quen PIN tren thiet bi nay".
+ * theo PIN. Nut "Quen PIN tren thiet bi nay" da bo (issue #17) va khong duoc them
+ * lai, nen dong phan bo me tren mot may la dong trinh duyet (khi chua tick "Nho")
+ * hoac xoa du lieu site cua may do.
  */
 export async function PATCH(req: Request) {
   const T = await chu();

@@ -131,11 +131,13 @@ export async function ganMaySauKhiNhapPin(familyId: string, pin: string): Promis
 }
 
 /**
- * Quen PIN tren thiet bi nay.
+ * Dong phien bo me. KHONG xoa cookie thiet bi: man cua con phai mo len la chay,
+ * ke ca khi phan bo me da dong (iPad dung chung, PRD 4.5).
  *
- * KHONG xoa cookie thiet bi: dung nhat cua nut nay la bo me trot tick "nho" tren
- * iPad cua cac con: phai dong phan bo me lai, nhung man cua con thi van phai mo
- * len la chay.
+ * Hien KHONG giao dien nao goi: nut "Quen PIN tren thiet bi nay" da bo o issue #17
+ * va khong duoc them lai, nen `DELETE /api/pin` con nhung khong ai bam. Bo me dong
+ * phan cua minh bang cach dong trinh duyet (khi chua tick "Nho") hoac xoa du lieu
+ * site.
  */
 export async function signOut(): Promise<void> {
   (await cookies()).delete(PARENT_COOKIE);

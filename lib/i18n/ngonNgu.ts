@@ -38,5 +38,12 @@ export const PIN_DEMO: Readonly<Record<string, NgonNgu>> = {
   '3333': 'en',
 };
 
-export const pinDanhRieng = (pin: string): boolean => pin in PIN_DEMO;
+/**
+ * `Object.hasOwn` chu KHONG phai toan tu `in`: `in` di ca chuoi nguyen mau nen
+ * 'toString' / 'constructor' / 'valueOf' deu ra true. Vi tu nay dang gac bon cho
+ * nhay cam (`attemptPin`, `ganMaySauKhiNhapPin`, `createFamily`, `changePin`) —
+ * o `attemptPin` mot chuoi nhu vay se duoc coi la PIN demo nen lan nhap sai do
+ * khong vao bo dem chan mo PIN.
+ */
+export const pinDanhRieng = (pin: string): boolean => Object.hasOwn(PIN_DEMO, pin);
 
