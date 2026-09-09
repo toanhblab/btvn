@@ -328,7 +328,7 @@ export const KO: Record<Key, string> = {
   'Chưa có bài nào để lưu.': '저장할 숙제가 없습니다.',
   'Kiểm tra lại': '확인',
   '{n} bài cho {names} · hạn {date}': '{names}에게 {n}개 · 기한 {date}',
-  ' và ': '및',
+  ' và ': ' 및 ',
   'con': '아이',
   'Bài của': '출처',
   'AI đọc hộ nên có thể sót ý hoặc tách nhầm. Bố mẹ đối chiếu với ảnh gốc một lượt trước khi lưu nhé.': 'AI가 읽어 준 것이므로 빠지거나 잘못 나뉠 수 있습니다. 저장 전에 원본 사진과 한 번 비교해 주세요.',

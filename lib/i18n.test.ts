@@ -44,6 +44,23 @@ test('ba tu dien du khoa, khong rong, khong con tieng Viet, giu dung tham so', (
   }
   // Tieng Anh la ban goc cua khoa: khong duoc "dich" bang cach chep lai cau Viet
   for (const k of khoa) assert.ok(!DAU_TIENG_VIET.test(EN[k]), `EN con tieng Viet: ${k}`);
+
+  /* Khoa co khoang trang o MEP la TU NOI, ghep vao giua hai chuoi khac:
+     `chosenNames.join(T(' và '))`. Mat dau cach la ten cac con dinh lien nhau
+     (`민준및서연`). `trim().length > 0` o tren khong bat duoc.
+     MIEN TRU 'ja': tieng Nhat khong dat dau cach giua cac tu, nen 'と' dung. */
+  const MIEN_TRU_MEP = new Set(['ja']);
+  const mep = (v: string) => [/^\s*/.exec(v)![0], /\s*$/.exec(v)![0]];
+  for (const [ten, td] of Object.entries(TU_DIEN)) {
+    if (MIEN_TRU_MEP.has(ten)) continue;
+    for (const k of khoa) {
+      const [dauK, cuoiK] = mep(k);
+      if (!dauK && !cuoiK) continue;
+      const [dauV, cuoiV] = mep(td[k]);
+      assert.equal(dauV, dauK, `${ten}: mat khoang trang dau o ${JSON.stringify(k)} -> ${JSON.stringify(td[k])}`);
+      assert.equal(cuoiV, cuoiK, `${ten}: mat khoang trang cuoi o ${JSON.stringify(k)} -> ${JSON.stringify(td[k])}`);
+    }
+  }
   assert.equal(JA, TU_DIEN.ja);
   assert.equal(KO, TU_DIEN.ko);
 });

@@ -150,19 +150,59 @@ function thanCauLenh(s, mo) {
  *      de xay ra nhat trong repo nay (~60 cho `NextResponse.json({ error: T(…) })`).
  *   3. Ten mon / 'Việc nhà' — chi tren DONG noi ve mon hoc (DONG_NOI_VE_MON).
  */
+/** Vi tri dau `=` GAN GIA TRI o do sau 0 — bo qua `=>`, `==`, `!=`, `<=`, `>=`. */
+function viTriDauBang(than) {
+  let sau = 0;
+  for (let i = 0; i < than.length; i++) {
+    const c = than[i];
+    if (c === '(' || c === '[' || c === '{') sau++;
+    else if (c === ')' || c === ']' || c === '}') sau--;
+    else if (c === '=' && sau === 0 && than[i + 1] !== '=' && than[i + 1] !== '>'
+             && !'=!<>'.includes(than[i - 1])) return i;
+  }
+  return -1;
+}
+
+/**
+ * Cau lenh nay co phai mot BANG KHAI BAO KHOA khong?
+ *
+ * Chi nhan khi `Key` nam trong KIEU KHAI BAO cua chinh hang so — hoac o phan
+ * chu thich kieu truoc dau `=` (`const X: Key = …`, `Record<…, Key>`,
+ * `{ label: Key }[]`), hoac o duoi `satisfies` cua gia tri khoi tao
+ * (`] as const satisfies readonly Key[]`, `'…' satisfies Key`).
+ *
+ * KHONG nhan khi `Key` chi tinh co xuat hien trong CHU KY mot ham: truoc day
+ * `const f = (k: Key) => { const loi = 'Mã PIN không đúng.'; … }` duoc mien tru
+ * ca THAN HAM, tuc them mot cau tieng Viet tho vao bat ky helper nao co `Key`
+ * trong chu ky la lot im lang. Y dinh cua muc mien tru nay luon la cac BANG khai
+ * bao khoa, khong phai than ham.
+ */
+function laBangKhoa(than) {
+  const bang = viTriDauBang(than);
+  if (bang === -1) return false;
+
+  const khoiTao = than.slice(bang + 1).trim();
+  // Gia tri khoi tao la mot HAM thi khong bao gio la bang khoa, du kieu co Key
+  if (/^(?:async\s+)?(?:function\b|\()/.test(khoiTao) || /^[\w$]+\s*=>/.test(khoiTao)) return false;
+
+  if (/\bKey\b/.test(than.slice(0, bang))) return true;
+  const sat = khoiTao.lastIndexOf('satisfies');
+  return sat !== -1 && /\bKey\b/.test(khoiTao.slice(sat));
+}
+
 function boLiteralKhoaODungCho(s, tep) {
   const bo = (doan) => doan.replace(/'((?:[^'\\\n]|\\.)*)'/g, (m, noiDung) =>
     KHOA.has(noiDung.replace(/\\'/g, "'")) ? "''" : m
   );
 
-  // (1) cau lenh const co kieu nhac toi `Key`
+  // (1) cau lenh const KHAI BAO mot bang khoa
   let ra = '';
   let i = 0;
   for (const m of s.matchAll(/\b(?:export\s+)?const\s+\w+/g)) {
     if (m.index < i) continue;
     const [mo, dong] = thanCauLenh(s, m.index);
     const than = s.slice(mo, dong);
-    if (!/\bKey\b/.test(than)) continue;
+    if (!laBangKhoa(than)) continue;
     ra += s.slice(i, mo) + bo(than);
     i = dong;
   }

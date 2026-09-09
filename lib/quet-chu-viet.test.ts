@@ -138,3 +138,38 @@ const b = 1;`,
   assert.equal(lot.length, 1, JSON.stringify(lot));
   assert.match(lot[0], /Mã PIN không đúng/);
 });
+
+/**
+ * Mien tru "bang khai bao khoa" chi duoc ap cho BANG, khong cho THAN HAM. Truoc
+ * day mot cau `const f = (k: Key) => { … }` duoc mien tru ca than ham, nen them
+ * mot cau tieng Viet tho vao bat ky helper nao co `Key` trong chu ky la lot im
+ * lang (repo dang co dung mot ham nhu vay: `tenMonTheoNha` o lib/ai.ts).
+ */
+test('bao khoa tho trong than ham co Key o chu ky', () => {
+  const lot = kiemTep(
+    `import type { Key } from '@/lib/i18n/chu';
+export const f = (k: Key) => {
+  const loi = 'Mã PIN không đúng.';
+  return loi;
+};`,
+    'app/h.tsx'
+  );
+  assert.equal(lot.length, 1, JSON.stringify(lot));
+  assert.match(lot[0], /Mã PIN không đúng/);
+});
+
+test('KHONG bao ba dang bang khai bao khoa that', () => {
+  const bang = [
+    [`export const TEN_NGON_NGU: Record<NgonNgu, Key> = { vi: 'tiếng Việt' };`, 'lib/speech.ts'],
+    [`export const THU = [
+  'Chủ Nhật', 'Thứ Hai',
+] as const satisfies readonly Key[];`, 'lib/ngay.ts'],
+    [`export const LY_DO_TRU_TRONG = 'Con hỏi bố mẹ vì sao nhé' satisfies Key;`, 'lib/types.ts'],
+    [`export const HW_SOURCES: Record<HwSource, { label: Key; icon: string }> = {
+  other: { label: 'Khác', icon: '📚' },
+};`, 'lib/types.ts'],
+  ] as const;
+  for (const [src, tep] of bang) {
+    assert.deepEqual(kiemTep(src, tep), [], `${tep}: ${src.slice(0, 40)}`);
+  }
+});
