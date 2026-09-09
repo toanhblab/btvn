@@ -118,6 +118,12 @@ export const CAU_BAO_KET_THUC: Record<Exclude<LyDoKetThuc, 'xong' | 'huy'>, Key>
  * NHAT: moi cau phai noi ro con/bo me PHAI LAM GI, khong hien loi ky thuat.
  * Ten loi theo chuan MediaDevices.getUserMedia; ten cu (PermissionDenied…,
  * DevicesNotFound…, TrackStart…) la cua Chrome doi truoc, giu cho chac.
+ *
+ * `AbortError` CO Y khong nam trong 'dang-ban': theo dac ta no la "da duoc cap
+ * quyen, khong co loi doc thiet bi, nhung mot van de KHAC ngan khong dung
+ * duoc" — chinh ca "may dang bi app khac giu" la `NotReadableError` o ngay tren.
+ * Dan nham thi con di tat nhung app chua tung dung camera roi thu lai vao dung
+ * cai loi cu.
  */
 export const CAU_BAO_MO_CAMERA: Record<'tu-choi' | 'khong-co' | 'dang-ban' | 'khac', Key> = {
   'tu-choi': 'Máy chưa cho phép dùng máy quay. Con nhờ bố mẹ bấm "Cho phép" khi máy hỏi, rồi thử lại nhé.',
@@ -158,7 +164,6 @@ export function phanLoaiLoiMoCamera(loi: unknown): keyof typeof CAU_BAO_MO_CAMER
       return 'khong-co';
     case 'NotReadableError':
     case 'TrackStartError':
-    case 'AbortError':
       return 'dang-ban';
     default:
       return 'khac';

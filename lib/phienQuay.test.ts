@@ -525,6 +525,10 @@ test('mo camera that bai: moi ca mot cau con doc duoc, noi ro phai lam gi', () =
     [new DOMException('Could not start video source', 'NotReadableError'), 'dang-ban',
       'Máy quay đang bận vì ứng dụng khác đang dùng. Con tắt ứng dụng đó rồi thử lại nhé.'],
     [new TypeError('boom'), 'khac', 'Chưa mở được máy quay. Con thử lại, hoặc nhờ bố mẹ giúp nhé.'],
+    // AbortError = "da cap quyen, khong loi doc thiet bi, nhung van khong dung
+    // duoc" — KHONG phai may dang bi app khac giu (do la NotReadableError)
+    [new DOMException('Starting videoinput failed', 'AbortError'), 'khac',
+      'Chưa mở được máy quay. Con thử lại, hoặc nhờ bố mẹ giúp nhé.'],
     [undefined, 'khac', 'Chưa mở được máy quay. Con thử lại, hoặc nhờ bố mẹ giúp nhé.'],
   ];
   for (const [loi, loai, cau] of ca) {
