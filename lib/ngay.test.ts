@@ -52,9 +52,12 @@ test('gioi han so ket qua qua tham so limit', () => {
  */
 function ngayNhaVoiTZ(tz: string, iso: string): string {
   const nguon = JSON.stringify(new URL('./ngay.ts', import.meta.url).href);
+  // ngay.ts import lib/i18n/chu khong duoi -> tien trinh con cung can hook resolve nhu npm test
+  const hook = new URL('../scripts/test-hook.mjs', import.meta.url).pathname;
   return execFileSync(
     process.execPath,
     [
+      '--import', hook,
       '--input-type=module',
       '--eval',
       `const { ngayNha } = await import(${nguon});\n` +

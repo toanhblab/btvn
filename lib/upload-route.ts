@@ -35,6 +35,10 @@ export interface CauHinhTaiTep {
     saiLoai: string;
     quaNang: string;
     taiLoi: string;
+    /** Chua bat Vercel Blob (che do cap ve). */
+    chuaBatBlob: string;
+    /** Body cap ve khong doc duoc. */
+    duLieuHong: string;
   };
 }
 
@@ -81,12 +85,12 @@ export async function xuLyTaiTep(req: Request, cau: CauHinhTaiTep) {
 
   /* ---- Che do 1: cap ve cho client upload len Vercel Blob ---- */
   if (!hasBlob) {
-    return NextResponse.json({ error: 'Chưa bật Vercel Blob.' }, { status: 501 });
+    return NextResponse.json({ error: cau.loi.chuaBatBlob }, { status: 501 });
   }
 
   const body = (await req.json().catch(() => null)) as HandleUploadBody | null;
   if (!body) {
-    return NextResponse.json({ error: 'Dữ liệu gửi lên không đọc được.' }, { status: 400 });
+    return NextResponse.json({ error: cau.loi.duLieuHong }, { status: 400 });
   }
 
   // Chi buoc xac thuc o buoc xin ve (goi tu trinh duyet, co cookie). Su kien

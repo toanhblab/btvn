@@ -9,6 +9,8 @@ import type {
 import { DURATION_DEFAULT, HW_SOURCE_DEFAULT, hwSourceOf, nhomNhiemVuOf } from './types';
 import { veTrenManCuaCon } from './nhomNhiemVu';
 import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu';
+import { ngonNguOf, type NgonNgu } from './i18n/ngonNgu';
+import type { Key, Tham } from './i18n/chu';
 import {
   SQL_DUYET_DOI_THUONG, SQL_KHOA_TRU_DIEM, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON,
   SQL_TRANG_THAI_DOI_THUONG, SQL_TRU_DIEM, nhanhDuyet,
@@ -43,17 +45,26 @@ export interface Family {
    * migration chay cho nha dang co, nha moi = ngay tao.
    */
   scoreSince: string;
+  /**
+   * Ngon ngu GIAO DIEN cua nha (issue #46, migrations/018) — chu cua app hien
+   * theo day. Mac dinh 'vi'; chi ba nha demo (scripts/seed-demo.mjs) khac.
+   * KHONG lien quan assignments.lang (ngon ngu DE BAI).
+   */
+  ngonNgu: NgonNgu;
 }
 
-interface FamilyRow { id: string; name: string; slug: string; score_since: string | Date }
+interface FamilyRow {
+  id: string; name: string; slug: string; score_since: string | Date; ui_locale: string;
+}
 
-const FAMILY_COLS = 'id, name, slug, score_since';
+const FAMILY_COLS = 'id, name, slug, score_since, ui_locale';
 
 const toFamily = (r: FamilyRow): Family => ({
   id: r.id,
   name: r.name,
   slug: r.slug,
   scoreSince: dateStr(r.score_since),
+  ngonNgu: ngonNguOf(r.ui_locale),
 });
 
 export async function getFamilyById(id: string): Promise<Family | null> {
@@ -867,7 +878,7 @@ export async function xuLySauKhiDoiHanChot(
 export async function locChildIdsGiaoCho(
   familyId: string,
   v: unknown
-): Promise<{ childIds: string[] | null } | { error: string }> {
+): Promise<{ childIds: string[] | null } | { error: Key }> {
   if (v === undefined || v === null) return { childIds: null };
   if (!Array.isArray(v)) return { error: 'Danh sách con không hợp lệ.' };
   const mine = new Set((await listChildren(familyId)).map((c) => c.id));
@@ -1347,9 +1358,10 @@ export async function countPendingRedemptions(familyId: string): Promise<number>
   return Number(r?.n ?? 0);
 }
 
+/** `error` la KHOA dich (cau tieng Viet goc) + `tham` — route dich bang T(error, tham). */
 export type KetQuaDoiThuong =
   | { ok: true; redemption: Redemption }
-  | { ok: false; status: number; error: string };
+  | { ok: false; status: number; error: Key; tham?: Tham };
 
 /**
  * Con xin doi mot phan thuong (duong KHONG can PIN, xac thuc bang cookie thiet
@@ -1381,7 +1393,7 @@ export async function xinDoiThuong(
 
   const diem = await soDiem(familyId, childId);
   if (diem < reward.cost) {
-    return { ok: false, status: 400, error: `Con còn thiếu ${reward.cost - diem} điểm nữa.` };
+    return { ok: false, status: 400, error: 'Con còn thiếu {n} điểm nữa.', tham: { n: reward.cost - diem } };
   }
 
   const id = newId('rdm');
@@ -1445,7 +1457,8 @@ export async function duyetDoiThuong(
     const diem = Number(soDu[0]?.so_du ?? 0);
     return {
       ok: false, status: 400,
-      error: `Con chỉ còn ${diem} điểm, chưa đủ ${r.cost} điểm. Bố mẹ có thể từ chối để con chọn lại.`,
+      error: 'Con chỉ còn {n} điểm, chưa đủ {gia} điểm. Bố mẹ có thể từ chối để con chọn lại.',
+      tham: { n: diem, gia: r.cost },
     };
   }
   const rows = await query<RedemptionRow>(
@@ -1499,7 +1512,7 @@ export async function listPenalties(
 
 export type KetQuaTruDiem =
   | { ok: true; penalty: Penalty; conLai: number }
-  | { ok: false; status: number; error: string; conLai: number };
+  | { ok: false; status: number; error: Key; tham?: Tham; conLai: number };
 
 /**
  * Bo me tru ⭐ cua con (CAN PIN o route). `points` la con so TREN NHAN cua nut bo
@@ -1541,7 +1554,7 @@ export async function truDiem(
   ]);
   const conLai = Number(soDu[0]?.so_du ?? 0);
   if (ghi.length === 0) {
-    return { ok: false, status: 400, error: `${child.name} không còn ⭐ nào để trừ.`, conLai };
+    return { ok: false, status: 400, error: '{name} không còn ⭐ nào để trừ.', tham: { name: child.name }, conLai };
   }
   return { ok: true, penalty: toPenalty(ghi[0]), conLai };
 }

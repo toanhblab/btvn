@@ -15,6 +15,17 @@
 
 import type { DraftAssignment, HwSource, Lang } from './types';
 import { clampDuration, DURATION_DEFAULT, iconFor, SUBJECTS } from './types';
+import { T_VI, taoT, type Key, type T } from './i18n/chu';
+import { NGON_NGU_MAC_DINH, type NgonNgu } from './i18n/ngonNgu';
+
+/**
+ * Ten mon AI tra ve la TIENG VIET (enum trong luoc do). Nha demo (issue #46) luu
+ * ten mon theo ngon ngu cua nha nen dich nhan mon sau khi doc — CHI nhan mon;
+ * de bai (content/note) giu nguyen ngon ngu goc, captain chot KHONG dich de bai
+ * bang AI.
+ */
+const tenMonTheoNha = (subject: string, T: T): string =>
+  subject in SUBJECTS ? T(subject as Key) : subject;
 
 const BASE_URL = process.env.NOUS_BASE_URL || 'https://inference-api.nousresearch.com/v1';
 const MODEL = process.env.NOUS_MODEL || 'qwen/qwen3-vl-32b-instruct';
@@ -187,14 +198,14 @@ function langOf(content: string, declared?: string): Lang {
   return declared === 'en' ? 'en' : 'vi';
 }
 
-function normalize(items: RawDraft[]): DraftAssignment[] {
+function normalize(items: RawDraft[], T: T): DraftAssignment[] {
   return items
     .filter((d) => d.content && d.content.trim())
     .map((d) => {
-      const subject = d.subject && SUBJECTS[d.subject] ? d.subject : 'Khác';
+      const subject = d.subject && d.subject in SUBJECTS ? d.subject : 'Khác';
       const content = d.content!.trim();
       return {
-        subject,
+        subject: tenMonTheoNha(subject, T),
         icon: iconFor(subject),
         content,
         note: d.note?.trim() || null,
@@ -229,7 +240,8 @@ type Part =
 export async function extractAssignments(input: {
   text?: string;
   images?: { base64: string; mimeType: string }[];
-}): Promise<DraftAssignment[]> {
+}, ngonNgu: NgonNgu = NGON_NGU_MAC_DINH): Promise<DraftAssignment[]> {
+  const T = taoT(ngonNgu);
   if (!hasAI) throw new Error('NO_API_KEY');
 
   const parts: Part[] = [];
@@ -275,7 +287,7 @@ export async function extractAssignments(input: {
   const raw: string | undefined = data?.choices?.[0]?.message?.content;
   if (!raw) throw new Error('EMPTY_RESPONSE');
 
-  return normalize(parseDrafts(raw));
+  return normalize(parseDrafts(raw), T);
 }
 
 /**
@@ -292,7 +304,10 @@ export async function extractAssignments(input: {
  * con biet bai do that su tu dau. Dung "sua" ham nay cho phu voi HW_SOURCES.
  */
 export function inferSource(drafts: DraftAssignment[]): HwSource {
-  const en = drafts.filter((d) => d.lang === 'en' || d.subject === 'Tiếng Anh').length;
+  // `subject` da la ten mon THEO NGON NGU cua nha (tenMonTheoNha) nen khong so
+  // sanh voi chuoi tieng Viet duoc — icon la thu khong doi theo ngon ngu.
+  const iconTiengAnh = SUBJECTS['Tiếng Anh'];
+  const en = drafts.filter((d) => d.lang === 'en' || iconFor(d.subject) === iconTiengAnh).length;
   return en * 2 > drafts.length ? 'english_class' : 'primary_school';
 }
 
@@ -301,7 +316,7 @@ export function inferSource(drafts: DraftAssignment[]): HwSource {
  * van phai nhap duoc bai). Tach tho theo dong va doan mon theo tu khoa —
  * giao dien phai bao ro cho bo me biet day khong phai ket qua cua AI.
  */
-export function splitByRule(text: string): DraftAssignment[] {
+export function splitByRule(text: string, T: T = T_VI): DraftAssignment[] {
   const HINTS: [RegExp, string][] = [
     [/\btoán|phép tính|cộng|trừ|nhân|chia\b/i, 'Toán'],
     [/\btiếng việt|tập đọc|chính tả|tập viết\b/i, 'Tiếng Việt'],
@@ -319,7 +334,7 @@ export function splitByRule(text: string): DraftAssignment[] {
       // Chi coi la tieng Anh khi gan nhu khong co dau tieng Viet
       const viChars = (line.match(/[àáảãạăâđêôơưèéẻẽẹìíỉĩịòóỏõọùúủũụỳýỷỹỵ]/gi) ?? []).length;
       return {
-        subject,
+        subject: tenMonTheoNha(subject, T),
         icon: iconFor(subject),
         content: line,
         note: null,

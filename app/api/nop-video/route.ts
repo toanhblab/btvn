@@ -1,6 +1,7 @@
 import { viewingFamilyId } from '@/lib/auth';
 import { MAX_NOP_VIDEO_BYTES } from '@/lib/media';
 import { xuLyTaiTep } from '@/lib/upload-route';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -19,6 +20,7 @@ export const maxDuration = 60;
  * o day chi con tran dung luong lam chot cuoi.
  */
 export async function POST(req: Request) {
+  const T = await chu();
   return xuLyTaiTep(req, {
     auth: async () => Boolean(await viewingFamilyId()),
     // MediaRecorder tra blob khong ten hoac ten khong duoi -> suy duoi tu MIME.
@@ -28,13 +30,14 @@ export async function POST(req: Request) {
     maxBytes: MAX_NOP_VIDEO_BYTES,
     allowedContentTypes: ['video/*'],
     loi: {
-      chuaXacThuc: 'Máy này chưa gắn với nhà nào.',
-      chuaBatBlobTrenVercel:
-        'Chưa bật Vercel Blob nên chưa nộp video được. Vào Storage trên Vercel tạo Blob store rồi deploy lại.',
-      thieuTep: 'Chưa có video.',
-      saiLoai: 'Chỉ nhận video thôi.',
-      quaNang: 'Video hơi dài, con quay lại ngắn hơn nhé.',
-      taiLoi: 'Tải video lỗi.',
+      chuaXacThuc: T('Máy này chưa gắn với nhà nào.'),
+      chuaBatBlobTrenVercel: T('Chưa bật Vercel Blob nên chưa nộp video được. Vào Storage trên Vercel tạo Blob store rồi deploy lại.'),
+      thieuTep: T('Chưa có video.'),
+      saiLoai: T('Chỉ nhận video thôi.'),
+      quaNang: T('Video hơi dài, con quay lại ngắn hơn nhé.'),
+      taiLoi: T('Tải video lỗi.'),
+      chuaBatBlob: T('Chưa bật Vercel Blob.'),
+      duLieuHong: T('Dữ liệu gửi lên không đọc được.'),
     },
   });
 }

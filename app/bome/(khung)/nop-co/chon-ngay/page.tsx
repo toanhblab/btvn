@@ -4,6 +4,7 @@ import { parentFamilyId } from '@/lib/auth';
 import { SO_NGAY_QUET_GAN_DAY, ngayGanNhatCoBai, ngayTiengViet } from '@/lib/ngay';
 import { listAssignments, todayISO } from '@/lib/store';
 import { HW_SOURCES } from '@/lib/types';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,7 @@ const SO_NUT = 3;
 export default async function ChonNgayNopBai() {
   const familyId = await parentFamilyId();
   if (!familyId) redirect('/bome/pin');
+  const T = await chu();
 
   const homNay = todayISO();
   const items = await listAssignments(familyId, {
@@ -39,10 +41,9 @@ export default async function ChonNgayNopBai() {
           <span className="material-symbols-outlined text-3xl">arrow_back</span>
         </Link>
         <div className="flex-1 min-w-0">
-          <h1 className="text-p-headline text-primary">Nộp bài cho cô</h1>
+          <h1 className="text-p-headline text-primary">{T('Nộp bài cho cô')}</h1>
           <p className="text-p-body-sm text-on-surface-variant">
-            Xem lại hoặc nộp lại video bài {HW_SOURCES.english_class.icon}{' '}
-            {HW_SOURCES.english_class.label} những ngày gần đây
+            {T('Xem lại hoặc nộp lại video bài {icon} {lop} những ngày gần đây', { icon: HW_SOURCES.english_class.icon, lop: T(HW_SOURCES.english_class.label) })}
           </p>
         </div>
       </header>
@@ -50,10 +51,10 @@ export default async function ChonNgayNopBai() {
       {gopTheoNgay.length === 0 ? (
         <div className="bg-surface-container-lowest rounded-card card-shadow p-6 text-center xl:p-10">
           <p className="text-p-body text-on-surface mb-1">
-            Chưa có bài nào của lớp {HW_SOURCES.english_class.label}.
+            {T('Chưa có bài nào của lớp {lop}.', { lop: T(HW_SOURCES.english_class.label) })}
           </p>
           <p className="text-p-body-sm text-on-surface-variant mb-4">
-            Chỉ bài của lớp tiếng Anh mới phải nộp lại video cho cô.
+            {T('Chỉ bài của lớp tiếng Anh mới phải nộp lại video cho cô.')}
           </p>
           <Link
             href="/bome"
@@ -61,7 +62,7 @@ export default async function ChonNgayNopBai() {
                        rounded-card min-h-p-tap px-6 h-12 text-p-body font-bold"
           >
             <span className="material-symbols-outlined">home</span>
-            Về tổng quan
+            {T('Về tổng quan')}
           </Link>
         </div>
       ) : (
@@ -78,11 +79,11 @@ export default async function ChonNgayNopBai() {
               </span>
               <span className="flex-1 min-w-0">
                 <span className="block text-p-body text-on-surface font-bold">
-                  {ngayTiengViet(ngay)}
-                  {ngay === homNay && ' · Hôm nay'}
+                  {ngayTiengViet(ngay, T)}
+                  {ngay === homNay && ` · ${T('Hôm nay')}`}
                 </span>
                 <span className="block text-p-body-sm text-on-surface-variant">
-                  {soVideo}/{tong} video đã quay
+                  {T('{done}/{total} video đã quay', { done: soVideo, total: tong })}
                 </span>
               </span>
               <span className="material-symbols-outlined text-outline shrink-0">chevron_right</span>

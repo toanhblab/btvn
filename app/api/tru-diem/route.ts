@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server';
 import { parentFamilyId } from '@/lib/auth';
 import { listPenalties, truDiem } from '@/lib/store';
 import { lamSachDiemTru, lamSachLyDoTru } from '@/lib/types';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
 /** GET /api/tru-diem?childId= — nhung lan da tru cua nha nay, moi nhat truoc. CAN PIN. */
 export async function GET(req: Request) {
+  const T = await chu();
   const familyId = await parentFamilyId();
-  if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+  if (!familyId) return NextResponse.json({ error: T('Cần mã PIN của bố mẹ.') }, { status: 401 });
 
   const childId = new URL(req.url).searchParams.get('childId') ?? undefined;
   return NextResponse.json({ penalties: await listPenalties(familyId, { childId }) });
@@ -31,19 +33,20 @@ export async function GET(req: Request) {
  * theo con (truDiem).
  */
 export async function POST(req: Request) {
+  const T = await chu();
   const familyId = await parentFamilyId();
-  if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+  if (!familyId) return NextResponse.json({ error: T('Cần mã PIN của bố mẹ.') }, { status: 401 });
 
   const body = await req.json().catch(() => null);
   const childId = String(body?.childId ?? '');
-  if (!childId) return NextResponse.json({ error: 'Dữ liệu không đọc được.' }, { status: 400 });
+  if (!childId) return NextResponse.json({ error: T('Dữ liệu không đọc được.') }, { status: 400 });
 
   const points = lamSachDiemTru(body?.points);
   if (points === null) {
-    return NextResponse.json({ error: 'Số ⭐ trừ phải là một số lớn hơn 0.' }, { status: 400 });
+    return NextResponse.json({ error: T('Số ⭐ trừ phải là một số lớn hơn 0.') }, { status: 400 });
   }
 
   const kq = await truDiem(familyId, childId, points, lamSachLyDoTru(body?.reason));
-  if (!kq.ok) return NextResponse.json({ error: kq.error, conLai: kq.conLai }, { status: kq.status });
+  if (!kq.ok) return NextResponse.json({ error: T(kq.error, kq.tham), conLai: kq.conLai }, { status: kq.status });
   return NextResponse.json({ penalty: kq.penalty, conLai: kq.conLai });
 }

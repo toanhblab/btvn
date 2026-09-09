@@ -7,6 +7,7 @@ import {
   submitVideo, updateAssignment, xuLySauKhiDoiHanChot,
 } from '@/lib/store';
 import { hwSourceOf, sanitizeDuration, type DiemVuaCong } from '@/lib/types';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,9 +36,10 @@ type Ctx = { params: Promise<{ id: string }> };
  * ra id.
  */
 export async function PATCH(req: Request, { params }: Ctx) {
+  const T = await chu();
   const { id } = await params;
   const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: 'Dữ liệu không đọc được.' }, { status: 400 });
+  if (!body) return NextResponse.json({ error: T('Dữ liệu không đọc được.') }, { status: 400 });
 
   // Chi doi trang thai / nop video -> cho phep khong can PIN
   const keys = Object.keys(body);
@@ -45,27 +47,27 @@ export async function PATCH(req: Request, { params }: Ctx) {
   if (keys.length >= 1 && keys.every((k) => KEYS_CUA_CON.has(k))) {
     const familyId = await viewingFamilyId();
     if (!familyId) {
-      return NextResponse.json({ error: 'Máy này chưa gắn với nhà nào.' }, { status: 401 });
+      return NextResponse.json({ error: T('Máy này chưa gắn với nhà nào.') }, { status: 401 });
     }
     const current = await getAssignment(familyId, id);
     if (!current) {
-      return NextResponse.json({ error: 'Không tìm thấy bài tập.' }, { status: 404 });
+      return NextResponse.json({ error: T('Không tìm thấy bài tập.') }, { status: 404 });
     }
     if ('status' in body && body.status !== 'done' && body.status !== 'todo') {
-      return NextResponse.json({ error: 'Trạng thái không hợp lệ.' }, { status: 400 });
+      return NextResponse.json({ error: T('Trạng thái không hợp lệ.') }, { status: 400 });
     }
     // Chi nhan URL do chinh app cap (Blob hoac /api/tep/<ten>) — duong nay khong
     // doi PIN nen chuoi tu do se cho phep ghi mot video KHONG TON TAI vao bai roi
     // bao bo me la con da nop.
     if ('videoUrl' in body && !laUrlTepAppCap(body.videoUrl)) {
-      return NextResponse.json({ error: 'Video không hợp lệ.' }, { status: 400 });
+      return NextResponse.json({ error: T('Video không hợp lệ.') }, { status: 400 });
     }
     // Bai bat buoc quay video thi tick suong khong tinh: phai co video (moi gui
     // kem, hoac da nop tu truoc) thi moi cho chuyen sang done.
     if (body.status === 'done' && current.requiresVideo &&
         !body.videoUrl && !current.submittedVideoUrl) {
       return NextResponse.json(
-        { error: 'Bài này cần quay video trước khi xong nhé.' },
+        { error: T('Bài này cần quay video trước khi xong nhé.') },
         { status: 400 }
       );
     }
@@ -100,10 +102,10 @@ export async function PATCH(req: Request, { params }: Ctx) {
   }
 
   const familyId = await parentFamilyId();
-  if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+  if (!familyId) return NextResponse.json({ error: T('Cần mã PIN của bố mẹ.') }, { status: 401 });
   const truoc = await getAssignment(familyId, id);
   if (!truoc) {
-    return NextResponse.json({ error: 'Không tìm thấy bài tập.' }, { status: 404 });
+    return NextResponse.json({ error: T('Không tìm thấy bài tập.') }, { status: 404 });
   }
 
   // Noi giao chi nhan gia tri app biet — gia tri la ep ve nguon mac dinh (primary_school)
@@ -139,13 +141,14 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
 /** DELETE /api/assignments/:id — chi bo me, chi bai cua nha minh. */
 export async function DELETE(_req: Request, { params }: Ctx) {
+  const T = await chu();
   const familyId = await parentFamilyId();
-  if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+  if (!familyId) return NextResponse.json({ error: T('Cần mã PIN của bố mẹ.') }, { status: 401 });
 
   const { id } = await params;
   const bai = await getAssignment(familyId, id);
   if (!bai) {
-    return NextResponse.json({ error: 'Không tìm thấy bài tập.' }, { status: 404 });
+    return NextResponse.json({ error: T('Không tìm thấy bài tập.') }, { status: 404 });
   }
   await deleteAssignment(familyId, id);
 

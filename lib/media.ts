@@ -25,6 +25,7 @@
 
 import { upload } from '@vercel/blob/client';
 import type { AttachedMedia, MediaKind } from './types';
+import { T_VI, type T as TDich } from './i18n/chu';
 
 /** Video luyen phat am co giao gui qua Zalo thuong vai chuc MB, chan o 100MB. */
 export const MAX_MEDIA_BYTES = 100 * 1024 * 1024;
@@ -44,6 +45,59 @@ export const MEDIA_ACCEPT = 'video/*,audio/*,image/*';
  * tu dat. Vua la chot chong ".." lach ra ngoai thu muc, vua chan liet ke mo.
  */
 export const TEN_TEP_RE = /^([0-9a-f]{32})(\.[a-z0-9]{1,5})$/;
+
+/**
+ * Ten tep video nop cho co: `Be Na-Tieng Anh-2026-09-02.mp4` — co nhin ten la biet
+ * con nao, bai gi, ngay nao.
+ *
+ * BO DAU tieng Viet vi Zalo va may cua co doi khi lam hong ten tep co dau. Nhung
+ * KHONG loc theo kieu "chi giu A-Za-z0-9": lam vay thi ten tieng Nhat / tieng Han
+ * (nha demo, issue #46) bi xoa SACH, ra ten `--2026-09-02.mp4` — ma ten nay hien
+ * len man "Nop bai cho co" va la ten tep that gui qua navigator.share. Chi loai
+ * ky tu PHA ten tep va ky tu dieu khien, con lai giu nguyen.
+ */
+const KY_TU_PHA_TEN_TEP = /[/\\?%*:|"<>]/g;
+const KY_TU_DIEU_KHIEN = /[\u0000-\u0008\u000e-\u001f\u007f]/g;
+
+/**
+ * "Bé Na" -> "Be Na"; "さくら" -> "さくら"; "민준" -> "민준".
+ *
+ * Ghep lai NFC o cuoi: NFD tach mot chu Han (Hangul) thanh cac jamo roi, nhin thi
+ * y het nhung la chuoi khac — ten tep dang tach roi la thu hay lam hong cho nhan.
+ */
+function boDau(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .normalize('NFC');
+}
+
+/**
+ * Loai ky tu TRUOC roi moi gop khoang trang: xoa mot ky tu nam GIUA hai tu
+ * ("Be Na / Bi") de lai hai dau cach, gop sau moi don duoc.
+ *
+ * Doi lai, KY_TU_DIEU_KHIEN co y chua tab/xuong dong (\u0009-\u000d): chung vua
+ * la ky tu dieu khien vua la khoang trang, xoa han thi "Na\tHai" dinh lien thanh
+ * "NaHai" — de `\s+` o buoc sau doi chung thanh mot dau cach.
+ */
+function phanTen(s: string): string {
+  return boDau(s)
+    .replace(KY_TU_DIEU_KHIEN, '')
+    .replace(KY_TU_PHA_TEN_TEP, '')
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s.]+|[\s.]+$/g, '');
+}
+
+/**
+ * Phan nao rong thi BO HAN, khong de lai dau gach thua — `2026-09-02.mp4` doc
+ * duoc, `--2026-09-02.mp4` thi khong.
+ */
+export function tenTepNop(tenCon: string, mon: string, ngay: string, url: string): string {
+  const duoi = /\.[a-z0-9]{1,5}$/i.exec(url.split('?')[0])?.[0] ?? '.mp4';
+  return `${[phanTen(tenCon), phanTen(mon), ngay].filter(Boolean).join('-')}${duoi}`;
+}
 
 const TEP_PREFIX = '/api/tep/';
 
@@ -162,11 +216,12 @@ export const MAX_NOP_VIDEO_BYTES = 700 * 1024 * 1024;
 export async function uploadSubmissionVideo(
   file: File,
   blobEnabled: boolean,
-  onProgress?: (phanTram: number) => void
+  onProgress?: (phanTram: number) => void,
+  T: TDich = T_VI
 ): Promise<string> {
-  if (!file.type.startsWith('video/')) throw new Error('Tệp này không phải video.');
+  if (!file.type.startsWith('video/')) throw new Error(T('Tệp này không phải video.'));
   if (file.size > MAX_NOP_VIDEO_BYTES) {
-    throw new Error('Video hơi dài, con quay lại ngắn hơn nhé.');
+    throw new Error(T('Video hơi dài, con quay lại ngắn hơn nhé.'));
   }
 
   if (blobEnabled) {
@@ -186,15 +241,15 @@ export async function uploadSubmissionVideo(
   fd.append('file', file);
   const res = await fetch('/api/nop-video', { method: 'POST', body: fd });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error ?? 'Tải video lỗi.');
+  if (!res.ok) throw new Error(data.error ?? T('Tải video lỗi.'));
   return data.url as string;
 }
 
-export async function uploadMediaFile(file: File, blobEnabled: boolean): Promise<AttachedMedia> {
+export async function uploadMediaFile(file: File, blobEnabled: boolean, T: TDich = T_VI): Promise<AttachedMedia> {
   const kind = mediaKindOf(file.type);
-  if (!kind) throw new Error(`"${file.name}" không phải video, ghi âm hay ảnh.`);
+  if (!kind) throw new Error(T('"{name}" không phải video, ghi âm hay ảnh.', { name: file.name }));
   if (file.size > MAX_MEDIA_BYTES) {
-    throw new Error(`"${file.name}" nặng quá 100MB, bố mẹ cắt ngắn bớt nhé.`);
+    throw new Error(T('"{name}" nặng quá 100MB, bố mẹ cắt ngắn bớt nhé.', { name: file.name }));
   }
 
   if (blobEnabled) {
@@ -219,6 +274,6 @@ export async function uploadMediaFile(file: File, blobEnabled: boolean): Promise
   fd.append('file', file);
   const res = await fetch('/api/upload-media', { method: 'POST', body: fd });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error ?? 'Tải tệp lỗi.');
+  if (!res.ok) throw new Error(data.error ?? T('Tải tệp lỗi.'));
   return { url: data.url as string, name: file.name, kind };
 }

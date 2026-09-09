@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { TEN_TEP_RE } from '@/lib/media';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,11 +38,18 @@ const MIME: Record<string, string> = {
 export async function GET(req: Request, { params }: { params: Promise<{ ten: string }> }) {
   const { ten } = await params;
 
+  // `chu()` doc cookie + hoi DB, con route nay an ca loat Range moi lan Safari keo
+  // thanh thoi gian — nen chi dich khi that su phai tra loi bang chu (hai nhanh 404).
+  const khongCoTep = async () => {
+    const T = await chu();
+    return NextResponse.json({ error: T('Không có tệp này.') }, { status: 404 });
+  };
+
   // Ten hop le duy nhat la <32 hex><duoi> do lib/upload-route tu dat (TEN_TEP_RE
   // la hop dong dung chung) — vua la chot chong ".." lach ra ngoai thu muc, vua
   // chan liet ke mo.
   const m = TEN_TEP_RE.exec(ten);
-  if (!m) return NextResponse.json({ error: 'Không có tệp này.' }, { status: 404 });
+  if (!m) return khongCoTep();
 
   const { createReadStream, statSync } = await import('node:fs');
   const { Readable } = await import('node:stream');
@@ -55,7 +63,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ten: str
   try {
     kichThuoc = statSync(duongDan).size;
   } catch {
-    return NextResponse.json({ error: 'Không có tệp này.' }, { status: 404 });
+    return khongCoTep();
   }
 
   const doan = (start: number, end: number) =>

@@ -36,7 +36,8 @@ mock.module('@vercel/blob/client', {
   },
 });
 
-const { uploadMediaFile, uploadSubmissionVideo, mediaKindOf, driveFileIdTu } = await import('./media.ts');
+const { uploadMediaFile, uploadSubmissionVideo, mediaKindOf, driveFileIdTu, tenTepNop } =
+  await import('./media.ts');
 
 beforeEach(() => {
   daGoi.length = 0;
@@ -99,4 +100,66 @@ test('driveFileIdTu: tu choi domain/dang khac de khong nhet nham iframe src', ()
   assert.equal(driveFileIdTu('not a url'), null);
   assert.equal(driveFileIdTu(''), null);
   assert.equal(driveFileIdTu(undefined), null);
+});
+
+/**
+ * tenTepNop: ten tep video nop cho co. Hien LEN MAN "Nop bai cho co" va la ten
+ * that cua tep gui qua navigator.share, nen ten rong khong phai chuyen noi bo.
+ *
+ * Hoi quy issue #46: cach loc cu ("chi giu A-Za-z0-9") xoa sach chu Nhat/Han cua
+ * ba nha demo, ra `--2026-09-02.mp4`.
+ */
+test('tenTepNop: bo dau tieng Viet, giu nguyen chu Nhat / Han', () => {
+  assert.equal(
+    tenTepNop('Bé Na', 'Tiếng Anh', '2026-09-02', 'https://x/v.mp4'),
+    'Be Na-Tieng Anh-2026-09-02.mp4'
+  );
+  assert.equal(
+    tenTepNop('さくら', '英語', '2026-09-09', 'https://x/v.mp4'),
+    'さくら-英語-2026-09-09.mp4'
+  );
+  assert.equal(
+    tenTepNop('민준', '영어', '2026-09-09', 'https://x/v.mp4'),
+    '민준-영어-2026-09-09.mp4'
+  );
+  assert.equal(tenTepNop('Đức', 'Toán', '2026-09-02', 'https://x/v.mp4'), 'Duc-Toan-2026-09-02.mp4');
+});
+
+test('tenTepNop: loai ky tu pha ten tep va ky tu dieu khien, gop khoang trang', () => {
+  assert.equal(
+    tenTepNop('a/b\\c:d*e?f"g<h>i|j', 'Toán', '2026-09-02', 'https://x/v.mp4'),
+    'abcdefghij-Toan-2026-09-02.mp4'
+  );
+  assert.equal(
+    tenTepNop('Bé   Na\tHai', 'Tiếng  Anh', '2026-09-02', 'https://x/v.mp4'),
+    'Be Na Hai-Tieng Anh-2026-09-02.mp4'
+  );
+  assert.equal(
+    tenTepNop('Na\u0000Bi', 'Toán', '2026-09-02', 'https://x/v.mp4'),
+    'NaBi-Toan-2026-09-02.mp4'
+  );
+  // Ky tu bi loai nam GIUA hai tu: khong duoc de lai hai dau cach
+  assert.equal(
+    tenTepNop('Bé Na / Bi', 'Toán', '2026-09-02', 'https://x/v.mp4'),
+    'Be Na Bi-Toan-2026-09-02.mp4'
+  );
+  assert.equal(
+    tenTepNop('Na : Bi', 'Toán  |  Hai', '2026-09-02', 'https://x/v.mp4'),
+    'Na Bi-Toan Hai-2026-09-02.mp4'
+  );
+});
+
+test('tenTepNop: phan rong thi bo han, khong de lai dau gach thua', () => {
+  assert.equal(tenTepNop('', '', '2026-09-02', 'https://x/v.mp4'), '2026-09-02.mp4');
+  assert.equal(tenTepNop('...', 'Toán', '2026-09-02', 'https://x/v.mp4'), 'Toan-2026-09-02.mp4');
+  assert.equal(tenTepNop('Na', '   ', '2026-09-02', 'https://x/v.mp4'), 'Na-2026-09-02.mp4');
+});
+
+test('tenTepNop: duoi tep lay tu url, bo query, khong co thi .mp4', () => {
+  assert.equal(tenTepNop('Na', 'Toán', '2026-09-02', 'https://x/v.mov'), 'Na-Toan-2026-09-02.mov');
+  assert.equal(
+    tenTepNop('Na', 'Toán', '2026-09-02', 'https://x/v.webm?tai=1'),
+    'Na-Toan-2026-09-02.webm'
+  );
+  assert.equal(tenTepNop('Na', 'Toán', '2026-09-02', 'https://x/khong-duoi'), 'Na-Toan-2026-09-02.mp4');
 });

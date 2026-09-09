@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { TABS, tabDangChon } from './tabs';
+import { useT } from '@/lib/i18n/client';
 
 /**
  * Thanh dieu huong duoi cung — nen tu stitch-parent 02/04/05.
@@ -13,6 +14,7 @@ import { TABS, tabDangChon } from './tabs';
  */
 
 export default function ThanhDuoi() {
+  const T = useT();
   const path = usePathname();
 
   return (
@@ -32,7 +34,7 @@ export default function ThanhDuoi() {
             <span className={`material-symbols-outlined text-2xl ${active ? 'icon-fill' : ''}`}>
               {t.icon}
             </span>
-            <span className="text-p-label">{t.label}</span>
+            <span className="text-p-label">{T(t.label)}</span>
           </Link>
         );
       })}

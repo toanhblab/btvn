@@ -6,6 +6,7 @@ import {
   countPendingRedemptions, getFamilyById, listAssignments, progressUpcoming, todayISO,
 } from '@/lib/store';
 import { HW_SOURCES } from '@/lib/types';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,7 @@ export const dynamic = 'force-dynamic';
 export default async function BangDieuKhien() {
   const familyId = await parentFamilyId();
   if (!familyId) redirect('/bome/pin');
+  const T = await chu();
 
   const today = todayISO();
   const [family, rows, homNay, ganDay, choDuyet] = await Promise.all([
@@ -63,7 +65,7 @@ export default async function BangDieuKhien() {
           <p className="hidden xl:block text-p-label uppercase tracking-wider text-on-surface-variant mb-1">
             {family?.name}
           </p>
-          <h1 className="text-p-headline text-on-background">Tổng quan</h1>
+          <h1 className="text-p-headline text-on-background">{T('Tổng quan')}</h1>
           <p className="text-p-body-sm text-on-surface-variant truncate xl:hidden">{family?.name}</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -73,7 +75,7 @@ export default async function BangDieuKhien() {
                        rounded-full bg-primary-fixed xl:px-6"
           >
             <span className="material-symbols-outlined text-xl">tablet_android</span>
-            Màn hình của con
+            {T('Màn hình của con')}
           </Link>
           {/* Tren Macbook nut chinh nam o goc tren; ban dien thoai van giu nut
               rong ca hang o cuoi trang (o duoi) vi ngon cai voi toi day de hon */}
@@ -84,7 +86,7 @@ export default async function BangDieuKhien() {
                          min-h-p-tap px-6 rounded-full bg-primary card-shadow"
             >
               <span className="material-symbols-outlined text-xl">add</span>
-              Thêm bài tập
+              {T('Thêm bài tập')}
             </Link>
           )}
         </div>
@@ -95,14 +97,14 @@ export default async function BangDieuKhien() {
           ghi ro "tu hom nay tro di" de khoi doc nham la rieng hom nay. */}
       <div className="flex items-center gap-4 mb-2 xl:mb-4">
         <span className="hidden xl:block h-px flex-1 bg-outline-variant/40" />
-        <p className="text-p-body-sm text-on-surface-variant xl:text-p-label">Việc từ hôm nay trở đi</p>
+        <p className="text-p-body-sm text-on-surface-variant xl:text-p-label">{T('Việc từ hôm nay trở đi')}</p>
         <span className="hidden xl:block h-px flex-1 bg-outline-variant/40" />
       </div>
       <section className="grid grid-cols-3 gap-p-card mb-6 xl:gap-6 xl:mb-10">
         {[
-          { n: totalDone, label: 'Hoàn thành', color: 'text-primary', ring: 'border-primary/30' },
-          { n: totalTodo, label: 'Đang chờ', color: 'text-tertiary', ring: 'border-tertiary/30' },
-          { n: totalOverdue, label: 'Quá hạn', color: 'text-error', ring: 'border-error/30' },
+          { n: totalDone, label: T('Hoàn thành'), color: 'text-primary', ring: 'border-primary/30' },
+          { n: totalTodo, label: T('Đang chờ'), color: 'text-tertiary', ring: 'border-tertiary/30' },
+          { n: totalOverdue, label: T('Quá hạn'), color: 'text-error', ring: 'border-error/30' },
         ].map((o) => (
           <div
             key={o.label}
@@ -130,12 +132,12 @@ export default async function BangDieuKhien() {
             <span className="material-symbols-outlined text-on-tertiary-fixed">send</span>
           </span>
           <span className="flex-1 min-w-0">
-            <span className="block text-p-body text-on-surface font-bold">Nộp bài cho cô</span>
+            <span className="block text-p-body text-on-surface font-bold">{T('Nộp bài cho cô')}</span>
             <span className="block text-p-body-sm text-on-surface-variant">
               {baiTiengAnh.length > 0
-                ? `${videoDaQuay}/${baiTiengAnh.length} video đã quay · `
-                : 'Xem lại những ngày gần đây · '}
-              {HW_SOURCES.english_class.icon} {HW_SOURCES.english_class.label}
+                ? `${T('{done}/{total} video đã quay', { done: videoDaQuay, total: baiTiengAnh.length })} · `
+                : `${T('Xem lại những ngày gần đây')} · `}
+              {HW_SOURCES.english_class.icon} {T(HW_SOURCES.english_class.label)}
             </span>
           </span>
           <span className="material-symbols-outlined text-outline shrink-0">chevron_right</span>
@@ -156,25 +158,25 @@ export default async function BangDieuKhien() {
           </span>
           <span className="flex-1 min-w-0">
             <span className="block text-p-body text-on-tertiary-fixed font-bold">
-              {choDuyet} yêu cầu đổi thưởng chờ duyệt
+              {T('{n} yêu cầu đổi thưởng chờ duyệt', { n: choDuyet })}
             </span>
             <span className="block text-p-body-sm text-on-tertiary-fixed-variant">
-              Duyệt thì điểm của con mới bị trừ
+              {T('Duyệt thì điểm của con mới bị trừ')}
             </span>
           </span>
           <span className="material-symbols-outlined text-on-tertiary-fixed-variant shrink-0">chevron_right</span>
         </Link>
       )}
 
-      <h2 className="text-p-headline-md text-on-background mb-3 xl:mb-4">Các con</h2>
+      <h2 className="text-p-headline-md text-on-background mb-3 xl:mb-4">{T('Các con')}</h2>
 
       {/* Nha moi tao chua co con nao: nhap bai luc nay se khong giao duoc cho ai,
           nen day han bo me sang buoc them con truoc */}
       {rows.length === 0 && (
         <div className="bg-primary-fixed rounded-card p-3 mb-6 xl:p-6 xl:max-w-lg">
-          <p className="text-p-body text-on-primary-fixed font-bold mb-0.5">Chưa có con nào</p>
+          <p className="text-p-body text-on-primary-fixed font-bold mb-0.5">{T('Chưa có con nào')}</p>
           <p className="text-p-body-sm text-on-primary-fixed mb-3">
-            Thêm hồ sơ cho các con trước, rồi mới nhập được bài tập.
+            {T('Thêm hồ sơ cho các con trước, rồi mới nhập được bài tập.')}
           </p>
           <Link
             href="/bome/them-con"
@@ -182,7 +184,7 @@ export default async function BangDieuKhien() {
                        min-h-p-tap h-12 text-p-body font-bold"
           >
             <span className="material-symbols-outlined">person_add</span>
-            Thêm con
+            {T('Thêm con')}
           </Link>
         </div>
       )}
@@ -219,7 +221,7 @@ export default async function BangDieuKhien() {
             </span>
             <span className="flex items-center gap-2 shrink-0 xl:flex-col xl:items-stretch xl:gap-2 xl:w-full">
               <span className="flex items-center gap-2 xl:w-full xl:justify-between">
-                <span className="hidden xl:inline text-p-label text-on-surface-variant">Tiến độ</span>
+                <span className="hidden xl:inline text-p-label text-on-surface-variant">{T('Tiến độ')}</span>
                 <span className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1 text-p-body-sm text-on-surface-variant">
                     <span className="material-symbols-outlined text-base text-success icon-fill">check_circle</span>
@@ -254,16 +256,16 @@ export default async function BangDieuKhien() {
       {rows.length > 0 && (
         <section className="hidden xl:block">
           <div className="flex items-end justify-between mb-4">
-            <h2 className="text-p-headline-md text-on-background">Bài hôm nay</h2>
+            <h2 className="text-p-headline-md text-on-background">{T('Bài hôm nay')}</h2>
             <Link href="/bome/nhiem-vu" className="text-p-body-sm font-bold text-primary">
-              Xem cả danh sách
+              {T('Xem cả danh sách')}
             </Link>
           </div>
 
           {homNay.length === 0 ? (
             <p className="bg-surface-container-lowest rounded-card card-shadow p-6 text-p-body
                           text-on-surface-variant text-center">
-              Hôm nay chưa có bài nào.
+              {T('Hôm nay chưa có bài nào.')}
             </p>
           ) : (
             <div className="flex flex-col gap-p-tight">
@@ -313,7 +315,7 @@ export default async function BangDieuKhien() {
                      min-h-p-tap h-14 text-p-body font-bold card-shadow xl:hidden"
         >
           <span className="material-symbols-outlined">add</span>
-          Thêm bài tập
+          {T('Thêm bài tập')}
         </Link>
       )}
     </main>

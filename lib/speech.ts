@@ -16,6 +16,64 @@
  */
 
 import type { Lang } from './types';
+import type { NgonNgu } from './i18n/ngonNgu';
+import type { Key, T as TDich } from './i18n/chu';
+
+/**
+ * Ma BCP-47 cho giong doc theo ngon ngu GIAO DIEN cua nha (issue #46): loi nhac
+ * cua dong ho va doan de bai "khong phai tieng Anh" doc bang giong nay. en-GB
+ * de khi khong tim duoc giong cu the, engine van nghieng ve giong Anh-Anh.
+ */
+export const GIONG_DOC: Record<NgonNgu, string> = {
+  vi: 'vi-VN', en: 'en-GB', ja: 'ja-JP', ko: 'ko-KR',
+};
+
+/**
+ * TEN de NGUOI DOC cua mot ngon ngu, va co cua no.
+ *
+ * Khoa dich rieng, CO Y khong dung lai 'Tiếng Việt'/'Tiếng Anh' cua bang mon hoc
+ * (lib/types.ts SUBJECTS): hai thu do trung chu tieng Viet nhung khac nghia, nen
+ * o nha Nhat khoa mon hoc dich ra '国語' (mon Quoc ngu) — dat vao o "Giong doc"
+ * la sai nghia. Chu thuong de ghep duoc vao cau "Máy chưa có giọng {giong}".
+ */
+export const TEN_NGON_NGU: Record<NgonNgu, Key> = {
+  vi: 'tiếng Việt', en: 'tiếng Anh', ja: 'tiếng Nhật', ko: 'tiếng Hàn',
+};
+
+export const CO_NGON_NGU: Record<NgonNgu, string> = {
+  vi: '🇻🇳', en: '🇬🇧', ja: '🇯🇵', ko: '🇰🇷',
+};
+
+export interface LuaChonGiong {
+  value: Lang;
+  nhan: string;
+}
+
+/**
+ * Hai lua chon cua o "Giong doc" ma bo me thay — MOT ban duy nhat cho ca ba man
+ * (Kiem tra lai, Nhap tay, Sua bai).
+ *
+ * `assignments.lang` chi co hai gia tri, va 'vi' KHONG con nghia "tieng Viet":
+ * man cua con doc `seg.lang === 'en' ? 'en' : ngonNgu` (ChiTietBai), tuc 'vi'
+ * nghia la "giong CUA NHA". Nen nhan va co phai theo ngon ngu THAT cua nha —
+ * nha 1111 chon 'vi' la may doc ja-JP, dan nhan "🇻🇳 doc giong Viet" la noi sai
+ * han voi khach hang.
+ *
+ * Nha noi tieng Anh thi hai lua chon trung nhau (ca hai deu ra en-GB), nen chi
+ * hien MOT — hai dong y het nhau trong mot o chon trong nhu loi.
+ */
+export function luaChonGiong(ngonNgu: NgonNgu, T: TDich): LuaChonGiong[] {
+  const muc = (cua: NgonNgu, value: Lang): LuaChonGiong => ({
+    value,
+    nhan: `${CO_NGON_NGU[cua]} ${T('Đọc giọng {ngonNgu}', { ngonNgu: T(TEN_NGON_NGU[cua]) })}`,
+  });
+  return ngonNgu === 'en' ? [muc('en', 'en')] : [muc(ngonNgu, 'vi'), muc('en', 'en')];
+}
+
+/** Gia tri o chon dang hien — nha noi tieng Anh chi co mot lua chon nen ep ve no. */
+export function giaTriGiong(ngonNgu: NgonNgu, lang: Lang): Lang {
+  return ngonNgu === 'en' ? 'en' : lang;
+}
 
 export interface SpeechSegment {
   text: string;
@@ -68,7 +126,7 @@ function diemGiongNu(name: string): number {
  */
 export function pickVoice(
   voices: SpeechSynthesisVoice[],
-  lang: Lang
+  lang: Lang | NgonNgu
 ): SpeechSynthesisVoice | undefined {
   // Android co the tra "en_GB" dung gach duoi thay vi gach ngang
   const tag = (v: SpeechSynthesisVoice) => v.lang.toLowerCase().replace('_', '-');

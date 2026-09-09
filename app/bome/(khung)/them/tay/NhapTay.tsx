@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { AttachedMedia, Child, HwSource } from '@/lib/types';
-import { DURATION_DEFAULT, HW_SOURCES, HW_SOURCE_DEFAULT, SUBJECTS, iconFor } from '@/lib/types';
+import { DURATION_DEFAULT, HW_SOURCES, HW_SOURCE_DEFAULT, iconFor, subjectsFor } from '@/lib/types';
+import { useNgonNgu, useT } from '@/lib/i18n/client';
+import { giaTriGiong, luaChonGiong } from '@/lib/speech';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 /**
@@ -19,6 +21,8 @@ export default function NhapTay({
   children: Child[];
   blobEnabled: boolean;
 }) {
+  const T = useT();
+  const ngonNgu = useNgonNgu();
   const router = useRouter();
   // Tick san nhung con hoc cung lop voi con dau tien (PRD 4.2 — sinh doi cung
   // lop la truong hop dung nhieu nhat). Khong do chu ten lop cua nha nao ca.
@@ -27,7 +31,8 @@ export default function NhapTay({
   const [chosen, setChosen] = useState<string[]>(
     cungLop.length > 1 ? cungLop : kids.map((c) => c.id)
   );
-  const [subject, setSubject] = useState('Toán');
+  // Ten mon LUU VAO DB la chu bo me thay (theo ngon ngu cua nha) — xem subjectsFor
+  const [subject, setSubject] = useState(() => T('Toán'));
   const [content, setContent] = useState('');
   const [note, setNote] = useState('');
   const [lang, setLang] = useState<'vi' | 'en'>('vi');
@@ -55,19 +60,19 @@ export default function NhapTay({
     setError('');
     try {
       for (const file of Array.from(files)) {
-        const m = await uploadMediaFile(file, blobEnabled);
+        const m = await uploadMediaFile(file, blobEnabled, T);
         setMedia((prev) => [...prev, m]);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không tải được tệp.');
+      setError(e instanceof Error ? e.message : T('Không tải được tệp.'));
     } finally {
       setUploading(false);
     }
   }
 
   async function save(themNua: boolean) {
-    if (!content.trim()) return setError('Chưa nhập đề bài.');
-    if (chosen.length === 0) return setError('Chọn ít nhất một con đã.');
+    if (!content.trim()) return setError(T('Chưa nhập đề bài.'));
+    if (chosen.length === 0) return setError(T('Chọn ít nhất một con đã.'));
 
     setBusy(true);
     setError('');
@@ -87,7 +92,7 @@ export default function NhapTay({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Lưu lỗi');
+      if (!res.ok) throw new Error(data.error ?? T('Lưu lỗi'));
 
       setSaved((n) => n + 1);
       if (themNua) {
@@ -100,7 +105,7 @@ export default function NhapTay({
         router.refresh();
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không lưu được.');
+      setError(e instanceof Error ? e.message : T('Không lưu được.'));
     } finally {
       setBusy(false);
     }
@@ -114,23 +119,23 @@ export default function NhapTay({
         <Link href="/bome/them" className="min-h-p-tap flex items-center text-on-surface-variant pr-1">
           <span className="material-symbols-outlined text-3xl">arrow_back</span>
         </Link>
-        <h1 className="text-p-headline text-on-background">Nhập tay</h1>
+        <h1 className="text-p-headline text-on-background">{T('Nhập tay')}</h1>
       </header>
 
       {saved > 0 && (
         <p className="text-p-body-sm text-on-success-container bg-success-container rounded-card p-3 mb-3">
-          Đã lưu {saved} bài. Nhập tiếp hoặc bấm Xong.
+          {T('Đã lưu {n} bài. Nhập tiếp hoặc bấm Xong.', { n: saved })}
         </p>
       )}
 
       <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4 flex flex-col gap-3">
         <div>
-          <label className="text-p-label uppercase text-on-surface-variant block mb-1">Đề bài</label>
+          <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Đề bài')}</label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={3}
-            placeholder="Ví dụ: Làm bài 3 trang 34, viết vào vở ô ly."
+            placeholder={T('Ví dụ: Làm bài 3 trang 34, viết vào vở ô ly.')}
             className="w-full rounded-lg border border-outline-variant p-2 text-p-body resize-y
                        placeholder:text-outline bg-surface-container-lowest"
           />
@@ -138,20 +143,20 @@ export default function NhapTay({
 
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="text-p-label uppercase text-on-surface-variant block mb-1">Môn học</label>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Môn học')}</label>
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               className="w-full rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
                          bg-surface-container-lowest"
             >
-              {Object.keys(SUBJECTS).map((s) => (
-                <option key={s} value={s}>{SUBJECTS[s]} {s}</option>
+              {Object.entries(subjectsFor(T)).map(([s, icon]) => (
+                <option key={s} value={s}>{icon} {s}</option>
               ))}
             </select>
           </div>
           <div className="flex-1">
-            <label className="text-p-label uppercase text-on-surface-variant block mb-1">Hạn chót</label>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Hạn chót')}</label>
             <input
               type="date"
               value={dueDate}
@@ -164,25 +169,26 @@ export default function NhapTay({
 
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="text-p-label uppercase text-on-surface-variant block mb-1">Sách / trang</label>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Sách / trang')}</label>
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Vở ô ly — bài 3 trang 34"
+              placeholder={T('Vở ô ly — bài 3 trang 34')}
               className="w-full rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
                          placeholder:text-outline bg-surface-container-lowest"
             />
           </div>
           <div className="flex-1">
-            <label className="text-p-label uppercase text-on-surface-variant block mb-1">Giọng đọc</label>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Giọng đọc')}</label>
             <select
-              value={lang}
+              value={giaTriGiong(ngonNgu, lang)}
               onChange={(e) => setLang(e.target.value as 'vi' | 'en')}
               className="w-full rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
                          bg-surface-container-lowest"
             >
-              <option value="vi">🇻🇳 Tiếng Việt</option>
-              <option value="en">🇬🇧 Tiếng Anh</option>
+              {luaChonGiong(ngonNgu, T).map((o) => (
+                <option key={o.value} value={o.value}>{o.nhan}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -200,12 +206,12 @@ export default function NhapTay({
                 : 'bg-surface-container text-on-surface-variant border-transparent'
             }`}
           >
-            🎥 {requiresVideo ? 'Cần quay video' : 'Không cần video'}
+            🎥 {requiresVideo ? T('Cần quay video') : T('Không cần video')}
           </button>
         </div>
 
         <div>
-          <label className="text-p-label uppercase text-on-surface-variant block mb-1">Bài của lớp nào</label>
+          <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Bài của lớp nào')}</label>
           <div className="flex gap-2 flex-wrap">
             {(Object.keys(HW_SOURCES) as HwSource[]).map((s) => (
               <button
@@ -216,7 +222,7 @@ export default function NhapTay({
                               ? 'bg-primary text-on-primary border-primary'
                               : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-high'}`}
               >
-                {HW_SOURCES[s].icon} {HW_SOURCES[s].label}
+                {HW_SOURCES[s].icon} {T(HW_SOURCES[s].label)}
               </button>
             ))}
           </div>
@@ -224,7 +230,7 @@ export default function NhapTay({
 
         <div>
           <label className="text-p-label uppercase text-on-surface-variant block mb-1">
-            Thời lượng làm bài (phút)
+            {T('Thời lượng làm bài (phút)')}
           </label>
           {/* Dong ho o man cua con dem nguoc tu so nay */}
           <input
@@ -241,7 +247,7 @@ export default function NhapTay({
 
         <div>
           <label className="text-p-label uppercase text-on-surface-variant block mb-1">
-            Đính kèm — video, ghi âm, ảnh (nếu có)
+            {T('Đính kèm — video, ghi âm, ảnh (nếu có)')}
           </label>
           <label
             className="flex items-center gap-2 border border-dashed border-outline-variant rounded-lg
@@ -259,7 +265,7 @@ export default function NhapTay({
             />
             <span className="material-symbols-outlined text-xl text-primary">attach_file</span>
             <span className="text-p-body-sm">
-              {uploading ? 'Đang tải lên…' : 'Ví dụ: video luyện phát âm, ghi âm cô đọc mẫu'}
+              {uploading ? T('Đang tải lên…') : T('Ví dụ: video luyện phát âm, ghi âm cô đọc mẫu')}
             </span>
           </label>
           {media.length > 0 && (
@@ -271,7 +277,7 @@ export default function NhapTay({
                   <button
                     onClick={() => setMedia((p) => p.filter((_, j) => j !== i))}
                     className="text-outline hover:text-error min-h-p-tap px-1 shrink-0"
-                    aria-label={`Bỏ tệp ${m.name}`}
+                    aria-label={T('Bỏ tệp {name}', { name: m.name })}
                   >
                     <span className="material-symbols-outlined text-lg">close</span>
                   </button>
@@ -282,7 +288,7 @@ export default function NhapTay({
         </div>
 
         <div>
-          <label className="text-p-label uppercase text-on-surface-variant block mb-1">Giao cho</label>
+          <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Giao cho')}</label>
           <div className="flex gap-2">
             {kids.map((c) => {
               const on = chosen.includes(c.id);
@@ -312,7 +318,7 @@ export default function NhapTay({
           className="flex-1 rounded-card h-14 min-h-p-tap border-2 border-primary text-primary
                      text-p-body font-bold disabled:opacity-60"
         >
-          Lưu và thêm nữa
+          {T('Lưu và thêm nữa')}
         </button>
         <button
           onClick={() => save(false)}
@@ -320,7 +326,7 @@ export default function NhapTay({
           className="flex-1 rounded-card h-14 min-h-p-tap bg-primary text-on-primary
                      text-p-body font-bold card-shadow disabled:opacity-60"
         >
-          {busy ? 'Đang lưu…' : 'Lưu và xong'}
+          {busy ? T('Đang lưu…') : T('Lưu và xong')}
         </button>
       </div>
     </main>

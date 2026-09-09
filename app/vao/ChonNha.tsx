@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import BanPhimPin from '../_components/BanPhimPin';
+import { useT } from '@/lib/i18n/client';
 
 /**
  * Gan may nay vao mot nha bang ma PIN.
@@ -15,6 +16,7 @@ import BanPhimPin from '../_components/BanPhimPin';
  * Thuong thi bo me khong can man nay: mo link /nha/<slug> mot lan la xong.
  */
 export default function ChonNha({ loiLink }: { loiLink: string }) {
+  const T = useT();
   const router = useRouter();
   const [pin, setPin] = useState('');
   const [error, setError] = useState(loiLink);
@@ -31,14 +33,14 @@ export default function ChonNha({ loiLink }: { loiLink: string }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? 'Mã PIN không đúng.');
+        setError(data.error ?? T('Mã PIN không đúng.'));
         setPin('');
         return;
       }
       router.push('/con');
       router.refresh();
     } catch {
-      setError('Không kết nối được. Thử lại nhé.');
+      setError(T('Không kết nối được. Thử lại nhé.'));
       setPin('');
     } finally {
       setBusy(false);
@@ -51,10 +53,9 @@ export default function ChonNha({ loiLink }: { loiLink: string }) {
         <span className="material-symbols-outlined text-primary text-3xl icon-fill">home</span>
       </div>
 
-      <h1 className="text-p-headline text-on-background mb-1 text-center">Đây là máy của nhà nào?</h1>
+      <h1 className="text-p-headline text-on-background mb-1 text-center">{T('Đây là máy của nhà nào?')}</h1>
       <p className="text-p-body-sm text-on-surface-variant mb-6 text-center max-w-xs">
-        Nhập mã PIN của nhà mình. Máy sẽ nhớ, các con mở lên là dùng được luôn
-        mà không phải nhập gì.
+        {T('Nhập mã PIN của nhà mình. Máy sẽ nhớ, các con mở lên là dùng được luôn mà không phải nhập gì.')}
       </p>
 
       <BanPhimPin value={pin} onChange={setPin} onFull={submit} disabled={busy} />
@@ -66,13 +67,13 @@ export default function ChonNha({ loiLink }: { loiLink: string }) {
           href="/bome/tao-nha"
           className="text-p-body text-primary font-bold min-h-p-tap flex items-center px-3"
         >
-          Nhà mình chưa có — tạo nhà mới
+          {T('Nhà mình chưa có — tạo nhà mới')}
         </Link>
         <Link
           href="/bome/pin"
           className="text-p-body-sm text-on-surface-variant min-h-p-tap flex items-center px-3"
         >
-          Vào phần của bố mẹ
+          {T('Vào phần của bố mẹ')}
         </Link>
       </div>
     </main>

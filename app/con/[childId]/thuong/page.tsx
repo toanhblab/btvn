@@ -5,6 +5,7 @@ import { ngayNha } from '@/lib/ngay';
 import { getChild, listPenalties, listRedemptions, listRewards, soDiem } from '@/lib/store';
 import { LY_DO_TRU_TRONG } from '@/lib/types';
 import DoiThuong from './DoiThuong';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,7 @@ export default async function CuaHangPhanThuong({ params }: { params: Promise<{ 
   const { childId } = await params;
   const familyId = await viewingFamilyId();
   if (!familyId) redirect('/vao');
+  const T = await chu();
 
   const [child, rewards, diem, lichSu, biTru] = await Promise.all([
     getChild(familyId, childId),
@@ -60,13 +62,13 @@ export default async function CuaHangPhanThuong({ params }: { params: Promise<{ 
           alt=""
           className="w-16 h-16 rounded-full object-cover border-4 border-surface-container shrink-0"
         />
-        <h1 className="text-k-hero text-primary flex-1 min-w-0">Phần thưởng của {child.name}</h1>
+        <h1 className="text-k-hero text-primary flex-1 min-w-0">{T('Phần thưởng của {name}', { name: child.name })}</h1>
 
         {/* So ⭐ dang co — to va o goc tren, con nhin vao day roi so voi gia tren
             tung the de biet doi duoc cai nao */}
         <div className="flex items-center shrink-0 bg-tertiary-fixed text-on-tertiary-fixed
                         text-k-headline px-8 py-4 rounded-full soft-shadow whitespace-nowrap">
-          Con có {diem} ⭐
+          {T('Con có {n} ⭐', { n: diem })}
         </div>
       </header>
 
@@ -76,7 +78,7 @@ export default async function CuaHangPhanThuong({ params }: { params: Promise<{ 
           it chu: mot dong mot lan. */}
       {daXuLy.length > 0 && (
         <section className="mt-k-stack">
-          <h2 className="text-k-headline text-on-surface-variant mb-4">Đã đổi gần đây</h2>
+          <h2 className="text-k-headline text-on-surface-variant mb-4">{T('Đã đổi gần đây')}</h2>
           <ul className="flex flex-col gap-3">
             {daXuLy.map((r) => (
               <li
@@ -101,7 +103,7 @@ export default async function CuaHangPhanThuong({ params }: { params: Promise<{ 
                       : 'bg-surface-container-highest text-on-surface-variant'
                   }`}
                 >
-                  {r.status === 'approved' ? '✅ Bố mẹ đồng ý' : '❌ Chưa được'}
+                  {r.status === 'approved' ? T('✅ Bố mẹ đồng ý') : T('❌ Chưa được')}
                 </span>
               </li>
             ))}
@@ -112,7 +114,7 @@ export default async function CuaHangPhanThuong({ params }: { params: Promise<{ 
       {/* Nhung lan bo me tru ⭐ — con thay minh bi tru bao nhieu va vi sao */}
       {biTru.length > 0 && (
         <section className="mt-k-stack">
-          <h2 className="text-k-headline text-on-surface-variant mb-4">Bố mẹ đã trừ ⭐</h2>
+          <h2 className="text-k-headline text-on-surface-variant mb-4">{T('Bố mẹ đã trừ ⭐')}</h2>
           <ul className="flex flex-col gap-3">
             {biTru.map((p) => (
               <li
@@ -123,7 +125,7 @@ export default async function CuaHangPhanThuong({ params }: { params: Promise<{ 
                   −{p.points} ⭐
                 </span>
                 <span className="flex-1 min-w-0 text-k-body font-bold text-on-surface truncate">
-                  {p.reason || LY_DO_TRU_TRONG}
+                  {p.reason || T(LY_DO_TRU_TRONG)}
                 </span>
                 <span className="text-k-label text-on-surface-variant whitespace-nowrap">
                   {ngayNha(p.createdAt)}

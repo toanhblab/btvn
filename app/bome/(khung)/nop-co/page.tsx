@@ -4,28 +4,13 @@ import { parentFamilyId } from '@/lib/auth';
 import { lechNgay, ngayTiengViet } from '@/lib/ngay';
 import { listAssignments, listChildren, todayISO } from '@/lib/store';
 import { HW_SOURCES } from '@/lib/types';
+import { tenTepNop } from '@/lib/media';
 import ChiaSeVideo, { type NhomNop } from './ChiaSeVideo';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
 const NGAY_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-/** "Bé Na" -> "BeNa". Ten tep gui cho co nen bo dau: Zalo va may cua co doi khi
-    lam hong ten tep co dau, con so o cuoi thi luon doc duoc. */
-function khongDau(s: string): string {
-  return s
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .replace(/[^A-Za-z0-9]/g, '');
-}
-
-/** An-TiengAnh-2026-09-02.mp4 — co nhin ten tep la biet con nao, bai gi, ngay nao. */
-function tenTepNop(tenCon: string, mon: string, ngay: string, url: string): string {
-  const duoi = /\.[a-z0-9]{1,5}$/i.exec(url.split('?')[0])?.[0] ?? '.mp4';
-  return `${khongDau(tenCon)}-${khongDau(mon)}-${ngay}${duoi}`;
-}
 
 const BAR: Record<string, string> = {
   primary: 'bg-primary',
@@ -50,6 +35,7 @@ export default async function NopBaiChoCo({
 }) {
   const familyId = await parentFamilyId();
   if (!familyId) redirect('/bome/pin');
+  const T = await chu();
 
   const { ngay } = await searchParams;
   const homNay = todayISO();
@@ -84,7 +70,7 @@ export default async function NopBaiChoCo({
     .filter((n) => n.mucs.length > 0);
 
   const soVideo = items.filter((a) => a.submittedVideoUrl).length;
-  const nhan = ngayTiengViet(dangXem);
+  const nhan = ngayTiengViet(dangXem, T);
 
   return (
     <main className="px-p-page pt-4 xl:max-w-[1080px] xl:mx-auto xl:px-12 xl:py-12">
@@ -93,20 +79,19 @@ export default async function NopBaiChoCo({
           <span className="material-symbols-outlined text-3xl">arrow_back</span>
         </Link>
         <div className="flex-1 min-w-0">
-          <h1 className="text-p-headline text-on-background">Nộp bài cho cô</h1>
+          <h1 className="text-p-headline text-on-background">{T('Nộp bài cho cô')}</h1>
           <p className="text-p-body-sm text-on-surface-variant">
-            Video bài {HW_SOURCES.english_class.icon} {HW_SOURCES.english_class.label} — bố mẹ tự gửi
-            vào Zalo cho cô
+            {T('Video bài {icon} {lop} — bố mẹ tự gửi vào Zalo cho cô', { icon: HW_SOURCES.english_class.icon, lop: T(HW_SOURCES.english_class.label) })}
           </p>
         </div>
       </header>
 
       {/* Chon ngay: lui / tien mot ngay. Khong dung lich day du — captain chi can
           "theo ngay", va bai lop tieng Anh thi bo me xem quanh hom nay la chinh. */}
-      <nav className="flex items-center gap-2 mb-4 xl:mb-8" aria-label="Chọn ngày">
+      <nav className="flex items-center gap-2 mb-4 xl:mb-8" aria-label={T('Chọn ngày')}>
         <Link
           href={`/bome/nop-co?ngay=${lechNgay(dangXem, -1)}`}
-          aria-label="Ngày trước"
+          aria-label={T('Ngày trước')}
           className="flex items-center justify-center w-12 h-12 min-h-p-tap rounded-full
                      bg-surface-container-lowest card-shadow text-on-surface-variant"
         >
@@ -115,12 +100,12 @@ export default async function NopBaiChoCo({
         <div className="flex-1 text-center">
           <p className="text-p-headline-md text-on-surface">{nhan}</p>
           <p className="text-p-body-sm text-on-surface-variant">
-            {dangXem === homNay ? 'Hôm nay' : dangXem}
+            {dangXem === homNay ? T('Hôm nay') : dangXem}
           </p>
         </div>
         <Link
           href={`/bome/nop-co?ngay=${lechNgay(dangXem, 1)}`}
-          aria-label="Ngày sau"
+          aria-label={T('Ngày sau')}
           className="flex items-center justify-center w-12 h-12 min-h-p-tap rounded-full
                      bg-surface-container-lowest card-shadow text-on-surface-variant"
         >
@@ -131,24 +116,24 @@ export default async function NopBaiChoCo({
       <div className="flex items-center justify-center gap-4 mb-4">
         {dangXem !== homNay && (
           <Link href="/bome/nop-co" className="text-p-body-sm font-bold text-primary">
-            Về hôm nay
+            {T('Về hôm nay')}
           </Link>
         )}
         {/* Loi thoat khac ngoai lui/tien tung ngay: nhay thang toi 3 ngay gan
             nhat CO bai (issue #31) — bo me sang ngay moi khong con thay nut o
             trang tong quan van tim lai duoc bai cu qua day. */}
         <Link href="/bome/nop-co/chon-ngay" className="text-p-body-sm font-bold text-primary">
-          Chọn ngày gần đây
+          {T('Chọn ngày gần đây')}
         </Link>
       </div>
 
       {nhom.length === 0 ? (
         <div className="bg-surface-container-lowest rounded-card card-shadow p-6 text-center xl:p-10">
           <p className="text-p-body text-on-surface mb-1">
-            {nhan} không có bài nào của lớp {HW_SOURCES.english_class.label}.
+            {T('{date} không có bài nào của lớp {lop}.', { date: nhan, lop: T(HW_SOURCES.english_class.label) })}
           </p>
           <p className="text-p-body-sm text-on-surface-variant mb-4">
-            Chỉ bài của lớp tiếng Anh mới phải nộp lại video cho cô.
+            {T('Chỉ bài của lớp tiếng Anh mới phải nộp lại video cho cô.')}
           </p>
           <Link
             href="/bome"
@@ -156,13 +141,13 @@ export default async function NopBaiChoCo({
                        rounded-card min-h-p-tap px-6 h-12 text-p-body font-bold"
           >
             <span className="material-symbols-outlined">home</span>
-            Về tổng quan
+            {T('Về tổng quan')}
           </Link>
         </div>
       ) : (
         <>
           <p className="text-p-body-sm text-on-surface-variant mb-3">
-            {soVideo}/{items.length} video đã quay
+            {T('{done}/{total} video đã quay', { done: soVideo, total: items.length })}
           </p>
           <ChiaSeVideo nhom={nhom} ngayVN={nhan} />
         </>

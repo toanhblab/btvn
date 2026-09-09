@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Child, HwSource } from '@/lib/types';
 import { HW_SOURCES, HW_SOURCE_DEFAULT } from '@/lib/types';
+import { useT } from '@/lib/i18n/client';
 
 type Han = 'today' | 'tomorrow' | 'custom';
 
@@ -13,6 +14,7 @@ type Han = 'today' | 'tomorrow' | 'custom';
  * stitch-parent-macbook 03 (Macbook).
  */
 export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
+  const T = useT();
   const router = useRouter();
 
   // PRD 4.2: hai be sinh doi hoc cung lop nen mac dinh tick san CA HAI. Truoc day
@@ -47,7 +49,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
 
   async function onPickFiles(files: FileList | null) {
     if (!files?.length) return;
-    setBusy('Đang tải ảnh lên…');
+    setBusy(T('Đang tải ảnh lên…'));
     setError('');
     try {
       for (const file of Array.from(files)) {
@@ -55,11 +57,11 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
         fd.append('file', file);
         const res = await fetch('/api/upload', { method: 'POST', body: fd });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? 'Tải ảnh lỗi');
+        if (!res.ok) throw new Error(data.error ?? T('Tải ảnh lỗi'));
         setImages((prev) => [...prev, { url: data.url, name: file.name }]);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không tải được ảnh.');
+      setError(e instanceof Error ? e.message : T('Không tải được ảnh.'));
     } finally {
       setBusy(null);
     }
@@ -67,10 +69,10 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
 
   /** Goi AI tach bai roi chuyen sang man "Kiem tra lai" cho bo me duyet. */
   async function tachBai() {
-    if (chosen.length === 0) return setError('Chọn ít nhất một con đã.');
-    if (!text.trim() && images.length === 0) return setError('Chụp ảnh hoặc dán nội dung bài tập vào.');
+    if (chosen.length === 0) return setError(T('Chọn ít nhất một con đã.'));
+    if (!text.trim() && images.length === 0) return setError(T('Chụp ảnh hoặc dán nội dung bài tập vào.'));
 
-    setBusy('Đang đọc bài tập…');
+    setBusy(T('Đang đọc bài tập…'));
     setError('');
     try {
       // Anh dang data URL thi tach lay phan base64 gui cho AI doc
@@ -87,7 +89,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
         body: JSON.stringify({ text, images: payloadImages }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Tách bài lỗi');
+      if (!res.ok) throw new Error(data.error ?? T('Tách bài lỗi'));
 
       sessionStorage.setItem(
         'btvn:draft',
@@ -105,7 +107,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
       );
       router.push('/bome/kiem-tra');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không tách được bài.');
+      setError(e instanceof Error ? e.message : T('Không tách được bài.'));
     } finally {
       setBusy(null);
     }
@@ -122,9 +124,9 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
         >
           <span className="material-symbols-outlined text-3xl">arrow_back</span>
         </Link>
-        <h1 className="text-p-headline text-primary">Thêm bài tập</h1>
+        <h1 className="text-p-headline text-primary">{T('Thêm bài tập')}</h1>
         <p className="hidden xl:block text-p-body text-on-surface-variant mt-1">
-          Chụp lại tin nhắn của cô rồi để máy tách thành từng bài.
+          {T('Chụp lại tin nhắn của cô rồi để máy tách thành từng bài.')}
         </p>
       </header>
 
@@ -136,7 +138,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
 
       {/* ---- Anh bai tap ---- */}
       <section className="mb-5">
-        <p className="text-p-label uppercase text-on-surface-variant mb-2">Ảnh bài tập</p>
+        <p className="text-p-label uppercase text-on-surface-variant mb-2">{T('Ảnh bài tập')}</p>
         <label
           className="block border-2 border-dashed border-outline-variant rounded-card p-6 text-center
                      bg-surface-container-lowest cursor-pointer xl:py-16"
@@ -150,7 +152,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
           />
           <span className="material-symbols-outlined text-4xl text-primary">photo_camera</span>
           <p className="text-p-body-sm text-on-surface-variant mt-1">
-            Chụp ảnh hoặc chọn ảnh từ Zalo
+            {T('Chụp ảnh hoặc chọn ảnh từ Zalo')}
           </p>
         </label>
 
@@ -164,7 +166,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
                   onClick={() => setImages((p) => p.filter((_, j) => j !== i))}
                   className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-inverse-surface text-white
                              flex items-center justify-center"
-                  aria-label="Bỏ ảnh"
+                  aria-label={T('Bỏ ảnh')}
                 >
                   <span className="material-symbols-outlined text-base">close</span>
                 </button>
@@ -176,12 +178,12 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
 
       {/* ---- Dan text ---- */}
       <section className="mb-5">
-        <p className="text-p-label uppercase text-on-surface-variant mb-2">Hoặc dán nội dung</p>
+        <p className="text-p-label uppercase text-on-surface-variant mb-2">{T('Hoặc dán nội dung')}</p>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={4}
-          placeholder="Dán tin nhắn của cô giáo vào đây…"
+          placeholder={T('Dán tin nhắn của cô giáo vào đây…')}
           className="w-full rounded-card border border-outline-variant bg-surface-container-lowest
                      p-3 text-p-body text-on-surface placeholder:text-outline resize-y xl:min-h-64"
         />
@@ -192,7 +194,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
 
       {/* ---- Chon con ---- */}
       <section className="mb-5 xl:bg-surface-container-low xl:rounded-card xl:p-5 xl:mb-4">
-        <p className="text-p-label uppercase text-on-surface-variant mb-2">Giao cho con nào</p>
+        <p className="text-p-label uppercase text-on-surface-variant mb-2">{T('Giao cho con nào')}</p>
         <div className="flex gap-2">
           {kids.map((c) => {
             const on = chosen.includes(c.id);
@@ -222,15 +224,14 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
         </div>
         {cungLop.length > 1 && (
           <p className="text-p-body-sm text-on-surface-variant bg-surface-container rounded-lg p-2 mt-2">
-            Các con học cùng {kids[0]?.grade} được chọn sẵn. Mỗi con vẫn có bài
-            riêng để tự tick.
+            {T('Các con học cùng {grade} được chọn sẵn. Mỗi con vẫn có bài riêng để tự tick.', { grade: kids[0]?.grade ?? '' })}
           </p>
         )}
       </section>
 
       {/* ---- Noi giao bai: mot nut cho moi ma trong HW_SOURCES ---- */}
       <section className="mb-5 xl:bg-surface-container-low xl:rounded-card xl:p-5 xl:mb-4">
-        <p className="text-p-label uppercase text-on-surface-variant mb-2">Bài của lớp nào</p>
+        <p className="text-p-label uppercase text-on-surface-variant mb-2">{T('Bài của lớp nào')}</p>
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setHwSource(null)}
@@ -239,7 +240,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
                           ? 'bg-primary text-on-primary border-primary'
                           : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-high'}`}
           >
-            ✨ Tự đoán
+            ✨ {T('Tự đoán')}
           </button>
           {(Object.keys(HW_SOURCES) as HwSource[]).map((s) => (
             <button
@@ -250,23 +251,22 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
                             ? 'bg-primary text-on-primary border-primary'
                             : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-high'}`}
             >
-              {HW_SOURCES[s].icon} {HW_SOURCES[s].label}
+              {HW_SOURCES[s].icon} {T(HW_SOURCES[s].label)}
             </button>
           ))}
         </div>
         {hwSource === null && (
           <p className="text-p-body-sm text-on-surface-variant mt-2">
-            Đề tiếng Anh sẽ tự xếp vào “Smartkid”, còn lại vào “Nguyễn Siêu”. Chọn “Khác” nếu bài không của hai nơi này.
-            Bố mẹ vẫn sửa được ở bước kiểm tra lại.
+            {T('Đề tiếng Anh sẽ tự xếp vào “{en}”, còn lại vào “{school}”. Chọn “{other}” nếu bài không của hai nơi này. Bố mẹ vẫn sửa được ở bước kiểm tra lại.', { en: T(HW_SOURCES.english_class.label), school: T(HW_SOURCES.primary_school.label), other: T(HW_SOURCES.other.label) })}
           </p>
         )}
       </section>
 
       {/* ---- Han hoan thanh ---- */}
       <section className="mb-6 xl:bg-surface-container-low xl:rounded-card xl:p-5 xl:mb-4">
-        <p className="text-p-label uppercase text-on-surface-variant mb-2">Hạn hoàn thành</p>
+        <p className="text-p-label uppercase text-on-surface-variant mb-2">{T('Hạn hoàn thành')}</p>
         <div className="flex gap-2 items-center flex-wrap">
-          {([['today', 'Hôm nay'], ['tomorrow', 'Mai'], ['custom', 'Chọn ngày']] as [Han, string][]).map(
+          {([['today', T('Hôm nay')], ['tomorrow', T('Mai')], ['custom', T('Chọn ngày')]] as [Han, string][]).map(
             ([v, label]) => (
               <button
                 key={v}
@@ -303,7 +303,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
                      h-14 min-h-p-tap text-p-body font-bold card-shadow disabled:opacity-60"
         >
           <span className="material-symbols-outlined">auto_awesome</span>
-          {busy ?? 'Tách bài tập'}
+          {busy ?? T('Tách bài tập')}
         </button>
 
         {/* Duong lui bat buoc khi AI hong hoac het quota (PRD muc 10) */}
@@ -313,7 +313,7 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
                      border-2 border-primary text-primary text-p-body-sm font-bold"
         >
           <span className="material-symbols-outlined text-xl">edit_note</span>
-          Nhập tay từng bài
+          {T('Nhập tay từng bài')}
         </Link>
       </div>
 

@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Child, DraftAssignment, HwSource } from '@/lib/types';
-import { DURATION_DEFAULT, HW_SOURCES, HW_SOURCE_DEFAULT, SUBJECTS, hwSourceOf, iconFor } from '@/lib/types';
+import { DURATION_DEFAULT, HW_SOURCES, HW_SOURCE_DEFAULT, SUBJECTS, hwSourceOf, iconFor, subjectsFor } from '@/lib/types';
+import { useNgonNgu, useT } from '@/lib/i18n/client';
+import { giaTriGiong, luaChonGiong } from '@/lib/speech';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
 
 interface Payload {
@@ -30,6 +32,8 @@ export default function KiemTraLai({
   children: Child[];
   blobEnabled: boolean;
 }) {
+  const T = useT();
+  const ngonNgu = useNgonNgu();
   const router = useRouter();
   const [payload, setPayload] = useState<Payload | null>(null);
   const [drafts, setDrafts] = useState<Draft[]>([]);
@@ -70,7 +74,7 @@ export default function KiemTraLai({
     setDrafts((ds) => [
       ...ds,
       {
-        subject: 'Khác', icon: iconFor('Khác'), content: '', note: null, lang: 'vi',
+        subject: T('Khác'), icon: iconFor('Khác'), content: '', note: null, lang: 'vi',
         confidence: 1, media: [], durationStr: String(DURATION_DEFAULT),
         requiresVideo: false,
       },
@@ -83,13 +87,13 @@ export default function KiemTraLai({
     setError('');
     try {
       for (const file of Array.from(files)) {
-        const m = await uploadMediaFile(file, blobEnabled);
+        const m = await uploadMediaFile(file, blobEnabled, T);
         setDrafts((ds) =>
           ds.map((d, j) => (j === i ? { ...d, media: [...(d.media ?? []), m] } : d))
         );
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không tải được tệp.');
+      setError(e instanceof Error ? e.message : T('Không tải được tệp.'));
     } finally {
       setUploadingIdx(null);
     }
@@ -131,7 +135,7 @@ export default function KiemTraLai({
         ...d,
         durationMinutes: durationStr === '' ? DURATION_DEFAULT : Number(durationStr),
       }));
-    if (clean.length === 0) return setError('Chưa có bài nào để lưu.');
+    if (clean.length === 0) return setError(T('Chưa có bài nào để lưu.'));
 
     setBusy(true);
     setError('');
@@ -149,21 +153,23 @@ export default function KiemTraLai({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Lưu lỗi');
+      if (!res.ok) throw new Error(data.error ?? T('Lưu lỗi'));
       sessionStorage.removeItem('btvn:draft');
       router.push('/bome');
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không lưu được.');
+      setError(e instanceof Error ? e.message : T('Không lưu được.'));
     } finally {
       setBusy(false);
     }
   }
 
+  // Mau vach theo ICON cua mon (iconFor nhan ten mon o moi ngon ngu), khong theo
+  // ten — ten mon trong DB cua nha demo la ban dich.
   const BAR: Record<string, string> = {
-    'Toán': 'bg-primary', 'Tiếng Việt': 'bg-secondary-container',
-    'Tiếng Anh': 'bg-tertiary-container', 'Vẽ': 'bg-success',
-    'Tự nhiên': 'bg-secondary', 'Khác': 'bg-outline',
+    [SUBJECTS['Toán']]: 'bg-primary', [SUBJECTS['Tiếng Việt']]: 'bg-secondary-container',
+    [SUBJECTS['Tiếng Anh']]: 'bg-tertiary-container', [SUBJECTS['Vẽ']]: 'bg-success',
+    [SUBJECTS['Tự nhiên']]: 'bg-secondary', [SUBJECTS['Khác']]: 'bg-outline',
   };
 
   // Man nay chua co ban thiet ke Macbook (issue #15 de lai): tu 1280px giu
@@ -175,9 +181,9 @@ export default function KiemTraLai({
           <span className="material-symbols-outlined text-3xl">arrow_back</span>
         </Link>
         <div>
-          <h1 className="text-p-headline text-on-background">Kiểm tra lại</h1>
+          <h1 className="text-p-headline text-on-background">{T('Kiểm tra lại')}</h1>
           <p className="text-p-body-sm text-on-surface-variant">
-            {drafts.length} bài cho {chosenNames.join(' và ') || 'con'} · hạn {payload.dueDate}
+            {T('{n} bài cho {names} · hạn {date}', { n: drafts.length, names: chosenNames.join(T(' và ')) || T('con'), date: payload.dueDate })}
           </p>
         </div>
       </header>
@@ -185,7 +191,7 @@ export default function KiemTraLai({
       {/* Noi giao cua CA dot bai — AI chi goi y, chon o day moi la quyet dinh.
           Sau khi luu van sua duoc tung bai mot o man Sua bai tap. */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <span className="text-p-label uppercase text-on-surface-variant">Bài của</span>
+        <span className="text-p-label uppercase text-on-surface-variant">{T('Bài của')}</span>
         {(Object.keys(HW_SOURCES) as HwSource[]).map((s) => (
           <button
             key={s}
@@ -195,7 +201,7 @@ export default function KiemTraLai({
                           ? 'bg-primary text-on-primary border-primary'
                           : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-high'}`}
           >
-            {HW_SOURCES[s].icon} {HW_SOURCES[s].label}
+            {HW_SOURCES[s].icon} {T(HW_SOURCES[s].label)}
           </button>
         ))}
       </div>
@@ -213,8 +219,7 @@ export default function KiemTraLai({
           AI doc ho thi bo me phai doi chieu, khong co ngoai le. */}
       {payload.source === 'ai' && (
         <p className="text-p-body-sm text-on-surface-variant bg-surface-container rounded-card p-3 mb-3">
-          AI đọc hộ nên có thể sót ý hoặc tách nhầm. Bố mẹ đối chiếu với ảnh gốc
-          một lượt trước khi lưu nhé.
+          {T('AI đọc hộ nên có thể sót ý hoặc tách nhầm. Bố mẹ đối chiếu với ảnh gốc một lượt trước khi lưu nhé.')}
         </p>
       )}
 
@@ -226,25 +231,25 @@ export default function KiemTraLai({
                 onClick={() => mergeUp(i)}
                 className="text-p-body-sm text-primary py-1 px-2 min-h-p-tap w-full text-left"
               >
-                + Gộp với bài trên
+                + {T('Gộp với bài trên')}
               </button>
             )}
             <div className="bg-surface-container-lowest rounded-card card-shadow relative overflow-hidden p-3 pl-4">
-              <div className={`absolute left-0 inset-y-0 w-1 ${BAR[d.subject] ?? BAR['Khác']}`} />
+              <div className={`absolute left-0 inset-y-0 w-1 ${BAR[iconFor(d.subject)] ?? 'bg-outline'}`} />
 
               <div className="flex items-start gap-2">
                 <textarea
                   value={d.content}
                   onChange={(e) => patch(i, 'content', e.target.value)}
                   rows={2}
-                  placeholder="Đề bài…"
+                  placeholder={T('Đề bài…')}
                   className="flex-1 bg-transparent text-p-body text-on-surface resize-y outline-none
                              border-b border-dashed border-outline-variant pb-1"
                 />
                 <button
                   onClick={() => remove(i)}
                   className="text-outline hover:text-error min-h-p-tap px-1"
-                  aria-label="Xoá bài"
+                  aria-label={T('Xoá bài')}
                 >
                   <span className="material-symbols-outlined">delete</span>
                 </button>
@@ -259,19 +264,20 @@ export default function KiemTraLai({
                   }}
                   className="text-p-body-sm rounded-full bg-surface-container px-3 py-1.5 text-on-surface"
                 >
-                  {Object.keys(SUBJECTS).map((s) => (
-                    <option key={s} value={s}>{SUBJECTS[s]} {s}</option>
+                  {Object.entries(subjectsFor(T)).map(([s, icon]) => (
+                    <option key={s} value={s}>{icon} {s}</option>
                   ))}
                 </select>
 
                 {/* Ngon ngu quyet dinh giong doc o man cua con — phai sua duoc (PRD 4.2) */}
                 <select
-                  value={d.lang}
+                  value={giaTriGiong(ngonNgu, d.lang)}
                   onChange={(e) => patch(i, 'lang', e.target.value)}
                   className="text-p-body-sm rounded-full bg-surface-container px-3 py-1.5 text-on-surface"
                 >
-                  <option value="vi">🇻🇳 Đọc giọng Việt</option>
-                  <option value="en">🇬🇧 Đọc giọng Anh</option>
+                  {luaChonGiong(ngonNgu, T).map((o) => (
+                    <option key={o.value} value={o.value}>{o.nhan}</option>
+                  ))}
                 </select>
 
                 {/* Dong ho o man cua con dem nguoc tu so nay. AI uoc 5-15 phut;
@@ -286,9 +292,9 @@ export default function KiemTraLai({
                     value={d.durationStr}
                     onChange={(e) => patch(i, 'durationStr', e.target.value)}
                     className="w-12 bg-transparent outline-none text-right"
-                    aria-label="Thời lượng (phút)"
+                    aria-label={T('Thời lượng (phút)')}
                   />
-                  phút
+                  {T('phút')}
                 </label>
 
                 {/* Ten sach hien tren the bai tap o man cua con nen o nay phai du
@@ -296,7 +302,7 @@ export default function KiemTraLai({
                 <input
                   value={d.note ?? ''}
                   onChange={(e) => patch(i, 'note', e.target.value || null)}
-                  placeholder="sách, trang…"
+                  placeholder={T('sách, trang…')}
                   className="text-p-body-sm rounded-full bg-surface-container px-3 py-1.5 text-on-surface
                              placeholder:text-outline flex-1 min-w-[10rem]"
                 />
@@ -312,14 +318,14 @@ export default function KiemTraLai({
                       : 'bg-surface-container text-on-surface-variant border-transparent'
                   }`}
                 >
-                  🎥 {d.requiresVideo ? 'Cần quay video' : 'Không cần video'}
+                  🎥 {d.requiresVideo ? T('Cần quay video') : T('Không cần video')}
                 </button>
 
                 {/* Chi con ban tach tho theo dong (0.3) moi roi xuong duoi nguong */}
                 {d.confidence < 0.6 && (
                   <span className="inline-flex items-center gap-1 text-p-body-sm text-error">
                     <span className="material-symbols-outlined text-base">warning</span>
-                    Tách tạm, chưa qua AI
+                    {T('Tách tạm, chưa qua AI')}
                   </span>
                 )}
               </div>
@@ -339,7 +345,7 @@ export default function KiemTraLai({
                     <button
                       onClick={() => removeMedia(i, m.url)}
                       className="min-h-p-tap px-1 flex items-center"
-                      aria-label={`Bỏ tệp ${m.name}`}
+                      aria-label={T('Bỏ tệp {name}', { name: m.name })}
                     >
                       <span className="material-symbols-outlined text-base">close</span>
                     </button>
@@ -360,7 +366,7 @@ export default function KiemTraLai({
                     }}
                   />
                   <span className="material-symbols-outlined text-base">attach_file</span>
-                  {uploadingIdx === i ? 'Đang tải…' : 'Video / ghi âm / ảnh'}
+                  {uploadingIdx === i ? T('Đang tải…') : T('Video / ghi âm / ảnh')}
                 </label>
               </div>
             </div>
@@ -373,7 +379,7 @@ export default function KiemTraLai({
         className="w-full border-2 border-dashed border-outline-variant rounded-card
                    min-h-p-tap text-p-body-sm text-primary mb-4"
       >
-        + Thêm bài mới
+        + {T('Thêm bài mới')}
       </button>
 
       {error && <p className="text-p-body text-error bg-error-container rounded-card p-3 mb-3">{error}</p>}
@@ -384,7 +390,7 @@ export default function KiemTraLai({
           className="flex-1 flex items-center justify-center rounded-card h-14 min-h-p-tap
                      border-2 border-outline-variant text-on-surface-variant text-p-body"
         >
-          Huỷ
+          {T('Huỷ')}
         </Link>
         <button
           onClick={save}
@@ -392,7 +398,7 @@ export default function KiemTraLai({
           className="flex-[2] flex items-center justify-center gap-2 bg-success text-white rounded-card
                      h-14 min-h-p-tap text-p-body font-bold card-shadow disabled:opacity-60"
         >
-          {busy ? 'Đang lưu…' : `Lưu ${drafts.length} bài tập`}
+          {busy ? T('Đang lưu…') : T('Lưu {n} bài tập', { n: drafts.length })}
         </button>
       </div>
     </main>

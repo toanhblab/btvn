@@ -23,6 +23,7 @@ tính của nhà: nhập PIN ra đúng một nhà, nên hai nhà không được
 ```bash
 npm install
 npm run db:seed      # tạo bảng + 1 nhà + 3 con + bài tập mẫu + 5 nhiệm vụ hàng ngày + 4 phần thưởng mẫu, PIN mặc định 1234
+npm run db:seed:demo # (tuỳ chọn) thêm 3 nhà demo tiếng Nhật / Hàn / Anh — PIN 1111 / 2222 / 3333
 npm run dev
 ```
 
@@ -58,6 +59,106 @@ Không có link thì trên iPad mở web → "Đây là máy của nhà nào?" �
 lần. Đường này **chỉ** gắn máy vào nhà, không mở phần bố mẹ, nên nhập PIN ở đây
 trên iPad của các con vẫn an toàn.
 
+## Đa ngôn ngữ (issue #46)
+
+Chữ của app (nút, tiêu đề, thông báo) hiện theo **ngôn ngữ của nhà** — cột
+`families.ui_locale` (`vi` | `en` | `ja` | `ko`, migration 018), mặc định tiếng Việt
+cho mọi nhà đang có. Máy nhập PIN nhà nào thì thấy chữ của nhà đó; **không có nút
+đổi ngôn ngữ**, và **không dịch chữ bố mẹ tự gõ** (đề bài, tên nhiệm vụ, tên phần
+thưởng). Đừng nhầm với `assignments.lang`: cột đó là ngôn ngữ của *đề bài* (chọn
+giọng đọc), có từ migration 001.
+
+Tiếng Nhật, Hàn, Anh tồn tại để **demo cho khách hàng**: ba nhà demo với dữ liệu
+mẫu đầy đủ (con, bài hôm qua/hôm nay/mai, nhiệm vụ cả hai nhóm, phần thưởng,
+lịch sử ⭐, một yêu cầu chờ duyệt, một lần bị trừ ⭐):
+
+| PIN | Ngôn ngữ | Link iPad |
+| --- | --- | --- |
+| `1111` | 日本語 | `/nha/demo-ja` |
+| `2222` | 한국어 | `/nha/demo-ko` |
+| `3333` | English | `/nha/demo-en` |
+
+Nhảy giữa ba nhà demo (và về nhà thật) bằng cách mở link `/nha/<slug>` tương ứng:
+mở một lần là máy gắn sang nhà đó và vào thẳng màn chọn con, không phải nhập gì
+(`app/nha/[slug]/route.ts`).
+
+Gắn máy sang **nhà khác** thì phiên bố mẹ đang mở bị gỡ, không chỉ đổi cookie thiết
+bị. Bắt buộc phải thế: `viewingFamilyId` ưu tiên `btvn_parent`, nên nếu giữ phiên cũ
+thì sang nhà B xong màn của con vẫn hiện nhà A — mà màn nhập PIN tự chuyển hướng đi
+khi đã có phiên, và nút "Quên PIN trên thiết bị này" đã bỏ (issue #17), nên sẽ không
+còn đường nào đổi nhà trong app. Gắn **lại chính nhà đang ở** thì giữ nguyên phiên.
+
+Luật nằm trong `lib/auth.ts`, không ở từng route, vì có hai đường gắn máy:
+`setDeviceFamily` (POST `/api/nha`, màn "Đây là máy của nhà nào?") và
+`attachFamilyLink` (link `/nha/<slug>` — cần bản riêng vì đặt cookie trên một
+response redirect đã tạo sẵn). `signIn` cũng đi qua `setDeviceFamily`, không tự đặt
+cookie thiết bị. Hồi quy cho cả hai ở `lib/nha-link.test.ts`.
+
+Đường về nhà thật chắc chắn nhất là mở lại link `/nha/<slug>` của nhà đó —
+`attachFamilyLink` gỡ phiên bố mẹ của nhà khác. Màn `/vao` KHÔNG tới được khi đang
+có phiên bố mẹ (`/bome/pin`, `/bome/tao-nha` và `/` đều chuyển hướng đi), nên đi
+demo thì **lưu sẵn link của nhà thật vào dấu trang trước**.
+
+Riêng **PIN demo thì chỉ mở phiên bố mẹ, không gắn máy**: gắn máy kéo dài một năm,
+mà ba mã 1111/2222/3333 ai cũng biết và hay được nhập ngay trên máy nhà thật — hết
+phiên là `viewingFamilyId` rơi về cookie thiết bị và màn của con sẽ hiện nhà demo.
+PIN thật giữ nguyên hành vi cũ (mở phiên và gắn máy).
+
+Ba mã PIN này **giữ chỗ vĩnh viễn** (`PIN_DEMO` trong `lib/i18n/ngonNgu.ts`):
+tạo nhà / đổi PIN trùng bị từ chối ngay. Nhà demo dùng PIN dễ đoán nên chỉ chứa
+dữ liệu mẫu, và `lib/nha-demo.test.ts` khẳng định không có đường nào từ nhà demo
+nhìn sang nhà khác.
+
+`npm run db:seed:demo` (`scripts/seed-demo.mjs`) nạp / nạp lại ba nhà này — chạy
+được trên DB thật đang có nhà, chạy lại bao nhiêu lần cũng không sinh bản trùng
+(id cố định, bên trong nhà demo xoá-nạp lại trong một transaction, chỉ lọc theo
+`family_id` của nhà demo). Nó nằm trong `npm run build` sau migrate nên mỗi lần
+deploy bản demo lại mới theo ngày hôm đó; lỗi ở bước này không làm hỏng build.
+Nếu PIN demo đang là của một nhà thật (đăng ký trước khi giữ chỗ) thì nhà demo đó
+bị bỏ qua và in cảnh báo.
+
+**Chạy lại `npm run db:seed:demo` ngay trước mỗi buổi demo.** Ngày của dữ liệu mẫu
+(hôm qua / hôm nay / mai) tính theo lúc CHẠY, mà lệnh này chỉ tự chạy lúc build —
+nên vài ngày sau lần deploy, mọi bài của nhà demo đã thành quá khứ và màn của con
+không còn thẻ bài nào (nó lọc từ hôm nay trở đi). Cố ý không thêm cron và cố ý
+không đặc biệt hoá đường đọc cho nhà demo: một lệnh chạy tay trước buổi demo là đủ,
+và nó chạy được bất cứ lúc nào trên DB đang chạy mà không đụng nhà thật
+(`DATABASE_URL=... npm run db:seed:demo`; `lib/nha-demo.test.ts` chụp nhà thật
+trước/sau để khẳng định).
+
+Lớp dịch ở `lib/i18n/`: khoá là **chính câu tiếng Việt** trong mã nguồn —
+`T('Hôm nay con là ai?')` — nên không phải đặt tên khoá; `en.ts` là danh sách khoá
+(TypeScript báo lỗi khi gọi câu chưa có), `ja.ts`/`ko.ts` là `Record<Key, string>`
+(thiếu câu nào cũng báo lỗi). Server component / route: `const T = await chu()`
+(`lib/i18n/server.ts`); client component: `const T = useT()` (`lib/i18n/client.tsx`);
+hàm thuần nhận `T` làm tham số. Tham số dạng `{n}`.
+
+Hai lớp bảo vệ, chạy bằng hai lệnh khác nhau: `npm test` (`lib/i18n.test.ts`) kiểm
+**hành vi** — ba từ điển đủ khoá, không rỗng, giữ đúng tham số, `dich`/`dienTham`
+chạy đúng; còn `npm run quet:chu-viet` (`scripts/quet-chu-viet.mjs`) **quét mã
+nguồn** mọi tệp giao diện để không còn câu tiếng Việt nào nằm ngoài `T(...)`. Phép
+quét đứng riêng vì bằng chứng của nó là ký tự trong mã nguồn chứ không phải app
+chạy ra gì — đó là việc của một bước kiểm mã nguồn, không phải của bộ kiểm thử.
+Danh sách miễn trừ ở `MIEN_TRU` trong tệp đó, mỗi mục kèm một dòng lý do. Bản thân
+logic của phép quét (nhận diện, miễn trừ) có hồi quy riêng ở
+`lib/quet-chu-viet.test.ts` — nó gọi thẳng `kiemTep(...)` với chuỗi dựng sẵn, nên
+chạy trong `npm test` mà không cần quét cả cây.
+
+Phép quét chỉ bỏ qua literal nằm **ngay sau `T(`**, không bỏ qua mọi literal trùng
+khoá dịch: một câu đã có trong từ điển mà dùng THÔ (`setError('Mã PIN không đúng.')`,
+thiếu `T`) vẫn biên dịch được nên phải bị bắt. Vì thế các **bảng khai báo** khoá
+(`SUBJECTS`, `THU`, `TABS`…) đi vào `MIEN_TRU` hoặc được nhận ra qua kiểu khai báo
+`Key` của chính hằng số đó.
+
+Ba phép đo, vì đo theo dấu thôi thì không đủ — "xong", "Giao cho", "Quay xong"
+không có dấu nào: (1) còn dấu tiếng Việt ngoài `T(...)`; (2) trong `app/**`, đoạn
+chữ tràn trong JSX (`>Chữ<`, và `{n} chữ</span>`); (3) trong `app/**`, giá trị
+chuỗi của `placeholder`/`aria-label`/`title`/`alt`. Hai phép sau báo oan nhiều hơn
+— đó là chủ ý, cái nào oan thật thì thêm vào `MIEN_TRU` kèm lý do.
+
+Phép quét chạy trong `npm run lint` (`tsc --noEmit` + `npm run quet:chu-viet`), nên
+không phải nhớ gọi tay.
+
 Mọi truy vấn trong `lib/store.ts` đều nhận `familyId` và tự lọc theo nó — kể cả
 đường con tick bài xong (việc nhà cũng đi đúng đường này), con nộp video và con
 xin đổi thưởng (ba việc duy nhất không cần PIN, cùng xác thực bằng cookie thiết
@@ -73,9 +174,11 @@ migrations/001_khoi_tao.sql        5 bảng đầu tiên
 migrations/002_moi_nha_mot_pin.sql unique index "mỗi nhà một PIN"
 ```
 
-**Vercel tự chạy mỗi lần deploy** — `build` là `node scripts/migrate.mjs && next
-build`, nên push code lên GitHub là migration chạy trước khi build. Migration lỗi
-thì build dừng, không deploy code mới lên DB cũ.
+**Vercel tự chạy mỗi lần deploy** — `build` là `node scripts/migrate.mjs && node
+scripts/seed-demo.mjs && next build`, nên push code lên GitHub là migration chạy
+trước khi build. Migration lỗi thì build dừng, không deploy code mới lên DB cũ.
+(Bước `seed-demo` nạp lại ba nhà demo và **không** làm hỏng build nếu lỗi — xem
+mục [Đa ngôn ngữ](#đa-ngôn-ngữ-issue-46).)
 
 Chạy tay khi cần: `npm run db:migrate` (không có `DATABASE_URL` thì chạy trên DB
 local).
@@ -125,6 +228,7 @@ bằng AI là chưa hoạt động. Đặt vào `.env.local`:
 | `NOUS_API_KEY` | Tách bài tạm theo dòng, có cảnh báo rõ cho bố mẹ | portal.nousresearch.com |
 | `NOUS_MODEL` | Dùng `qwen/qwen3-vl-32b-instruct` — **phải là model có vision** | Danh sách ở `/v1/models` |
 | `PIN_SECRET` | Dùng chuỗi mặc định — **phải đổi trước khi deploy** | Tự đặt |
+| `BTVN_PGLITE_DIR` | PGlite ở `.data/pg` | Chỉ để test / thử trên DB tạm (`memory://` = trong RAM) |
 
 `PIN_SECRET` là gốc của cả hash PIN lẫn chữ ký cookie: **đặt một lần rồi không
 đổi nữa**. Đổi nó là PIN của mọi nhà thành vô hiệu (hash trong DB không khớp
@@ -154,6 +258,8 @@ app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 PIN; bố mẹ duyệt — cần PIN), tep (đọc tệp đã ghi ở
                 .data/uploads khi dev)
 app/_components/ BanPhimPin — bàn phím số dùng chung cho 4 chỗ nhập PIN
+lib/i18n/       lớp dịch: ngonNgu (bộ ngôn ngữ + PIN demo), chu (T), en/ja/ko (từ
+                điển, khoá = câu tiếng Việt), server (chu()), client (useT)
 lib/            db (Neon|PGlite), store (truy vấn theo familyId), auth (PIN +
                 cookie có chữ ký), pin (PIN_LEN dùng cả hai phía), diem (luật
                 tính điểm, hàm thuần), nhomNhiemVu (dòng nào nằm trên màn của
@@ -165,7 +271,11 @@ lib/            db (Neon|PGlite), store (truy vấn theo familyId), auth (PIN +
 proxy.ts        chặn /bome/* khi chưa nhập PIN
 migrations/     từng bước thay đổi lược đồ, chạy theo thứ tự tên tệp (bám PRD mục 7)
 scripts/        db.mjs (kết nối + bộ chạy migration), migrate.mjs (CLI, chạy khi
-                build), seed.mjs (dữ liệu mẫu để dev — xoá sạch trước khi nạp)
+                build), seed.mjs (dữ liệu mẫu để dev — xoá sạch trước khi nạp),
+                seed-demo.mjs + demo-data.mjs (ba nhà demo, chạy khi build —
+                nạp `.ts` bằng import() động để lỗi demo không hỏng build),
+                quet-chu-viet.mjs (`npm run quet:chu-viet`, quét mã nguồn),
+                test-hook.mjs (node --test resolve import không đuôi)
 stitch/         bản Stitch gốc của phần trẻ (đối chiếu)
 stitch-parent/  bản Stitch gốc của phần bố mẹ + design system
 legacy-static/  bản HTML/JS thuần đầu tiên của phần trẻ, giữ để tham chiếu
@@ -353,16 +463,20 @@ hơn giá và nếu chỉ đọc số dư thì app sẽ mời bố mẹ đi từ
 tách tạm theo dòng kèm cảnh báo, và luôn có đường "Nhập tay từng bài".
 
 **PIN trên iPad.** Ô "Nhớ trên thiết bị này" mặc định **không** tick. iPad là máy
-dùng chung của các con — nhớ PIN ở đó thì PIN mất tác dụng. Trót tick rồi thì
-vào Cài đặt → "Quên PIN trên thiết bị này".
+dùng chung của các con — nhớ PIN ở đó thì PIN mất tác dụng. Không tick thì phiên bố
+mẹ hết ngay khi đóng trình duyệt. Trót tick rồi thì xoá dữ liệu site của trình duyệt
+trên đúng máy đó: nút "Quên PIN trên thiết bị này" đã bỏ theo yêu cầu của captain ở
+issue #17 và **không được thêm lại** (đường `DELETE /api/pin` vẫn còn nhưng không
+giao diện nào gọi).
 
 **Riêng tư.** App chạy trên internet công khai còn màn của con không đăng nhập,
 nên toàn site đặt `noindex`, và mỗi gia đình có `slug` ngẫu nhiên làm đường dẫn
 khó đoán.
 
 **Đổi PIN không đăng xuất máy khác.** Cookie phiên ký theo id của nhà, không theo
-PIN. Muốn đóng phần bố mẹ trên một máy thì vào Cài đặt trên đúng máy đó bấm "Quên
-PIN trên thiết bị này" — nút đó **giữ** phần màn hình của con, đúng cho iPad dùng
+PIN. Vì không còn nút "Quên PIN trên thiết bị này" (issue #17), cách đóng phần bố mẹ
+trên một máy là đóng trình duyệt (khi chưa tick "Nhớ") hoặc xoá dữ liệu site. Màn
+hình của con không phụ thuộc phiên bố mẹ nên vẫn mở lên là chạy — đúng cho iPad dùng
 chung.
 
 ## Trước khi deploy

@@ -21,6 +21,8 @@
 import { cookies } from 'next/headers';
 import type { NextResponse } from 'next/server';
 import { PIN_LEN } from './pin';
+import { pinDanhRieng } from './i18n/ngonNgu';
+import type { Key, Tham } from './i18n/chu';
 import {
   findFamilyByPinHash,
   insertFamily,
@@ -91,26 +93,51 @@ const DEVICE_MAX_AGE = 60 * 60 * 24 * 365;
  * @param remember  Bo me tu chon "Nho tren thiet bi nay".
  *   Mac dinh FALSE — PRD 4.5 noi khong duoc nho PIN tren iPad cua con vi day la
  *   may dung chung; nho o do thi PIN mat tac dung. Chi nho khi bo me chu dong tick.
+ * @param pin  Chinh ma vua nhap — chi de biet co phai PIN demo khong.
  *
- * Dat luon cookie thiet bi: bo me vua nhap PIN thi may nay ro rang la cua nha do,
- * nho vay bam "Man hinh cua con" la xem duoc ngay.
+ * Gan luon may vao nha: bo me vua nhap PIN thi may nay ro rang la cua nha do, nho
+ * vay bam "Man hinh cua con" la xem duoc ngay. Di qua `setDeviceFamily` nhu moi
+ * duong gan may khac, khong tu `jar.set` — o day nha cua phien va nha gan may la
+ * MOT nen no khong go phien vua dat.
+ *
+ * TRU PIN DEMO: ba ma 1111/2222/3333 ai cung biet va captain nhap chung ngay tren
+ * may cua minh de demo. Gan may la gan MOT NAM, nen het phien bo me (dong trinh
+ * duyet, khong tick "nho") thi `viewingFamilyId` roi ve cookie thiet bi va man cua
+ * con hien nha demo tieng Nhat — dung ngay tren may nha minh. Nhap PIN demo chi mo
+ * PHIEN bo me; het phien la may tro lai nha cu.
  */
-export async function signIn(familyId: string, remember: boolean): Promise<void> {
+export async function signIn(familyId: string, remember: boolean, pin: string): Promise<void> {
   const jar = await cookies();
-  const value = await seal(familyId);
-  jar.set(PARENT_COOKIE, value, {
+  jar.set(PARENT_COOKIE, await seal(familyId), {
     ...baseOpts,
     maxAge: remember ? 60 * 60 * 24 * 30 : undefined, // undefined = het khi dong trinh duyet
   });
-  jar.set(DEVICE_COOKIE, value, { ...baseOpts, maxAge: DEVICE_MAX_AGE });
+  await ganMaySauKhiNhapPin(familyId, pin);
 }
 
 /**
- * Quen PIN tren thiet bi nay.
+ * Gan may sau khi NHAP PIN — tra ve false neu KHONG gan vi day la PIN demo.
  *
- * KHONG xoa cookie thiet bi: dung nhat cua nut nay la bo me trot tick "nho" tren
- * iPad cua cac con: phai dong phan bo me lai, nhung man cua con thi van phai mo
- * len la chay.
+ * Luat o MOT cho cho ca hai duong nhap PIN (`signIn` mo phan bo me, POST
+ * /api/nha gan may o man "Day la may cua nha nao?"): ba ma demo ai cung biet,
+ * ma gan may la gan MOT NAM — go 1111 mot lan tren iPad cua cac con la tu do
+ * man cua con hien nha Nhat. Muon may vao han nha demo thi mo link
+ * /nha/demo-ja, duong do CO Y giu nguyen.
+ */
+export async function ganMaySauKhiNhapPin(familyId: string, pin: string): Promise<boolean> {
+  if (pinDanhRieng(pin)) return false;
+  await setDeviceFamily(familyId);
+  return true;
+}
+
+/**
+ * Dong phien bo me. KHONG xoa cookie thiet bi: man cua con phai mo len la chay,
+ * ke ca khi phan bo me da dong (iPad dung chung, PRD 4.5).
+ *
+ * Hien KHONG giao dien nao goi: nut "Quen PIN tren thiet bi nay" da bo o issue #17
+ * va khong duoc them lai, nen `DELETE /api/pin` con nhung khong ai bam. Bo me dong
+ * phan cua minh bang cach dong trinh duyet (khi chua tick "Nho") hoac xoa du lieu
+ * site.
  */
 export async function signOut(): Promise<void> {
   (await cookies()).delete(PARENT_COOKIE);
@@ -131,17 +158,49 @@ export async function deviceFamilyId(): Promise<string | null> {
   return unseal((await cookies()).get(DEVICE_COOKIE)?.value);
 }
 
-/** Gan thiet bi nay vao mot nha (goi trong route handler). */
-export async function setDeviceFamily(familyId: string): Promise<void> {
-  (await cookies()).set(DEVICE_COOKIE, await seal(familyId), {
-    ...baseOpts,
-    maxAge: DEVICE_MAX_AGE,
-  });
+/**
+ * GAN MAY VAO MOT NHA phai GO phien bo me neu phien do la CUA NHA KHAC — luat
+ * nay o day, khong o tung route, de MOI duong gan may deu thua huong.
+ *
+ * Vi sao phai go: `viewingFamilyId` uu tien phien bo me, nen neu chi doi cookie
+ * thiet bi thi gan may sang nha khac xong man cua con van hien nha cu — ma man
+ * nhap PIN tu chuyen huong di khi da co phien, va nut "Quen PIN tren thiet bi
+ * nay" da bo (issue #17), nen se khong con duong nao doi nha trong app.
+ *
+ * Gan LAI chinh nha dang o thi GIU nguyen phien: bo me dang lam viec o phan cua
+ * minh ma bi dang xuat chi vi bam link cua chinh nha minh la vo ly.
+ *
+ * Hai duong gan may, cung mot luat: POST /api/nha (man "Day la may cua nha
+ * nao?") di qua `setDeviceFamily`, con link /nha/<slug> di qua
+ * `attachFamilyLink` vi no dat cookie tren mot response redirect da tao san.
+ */
+async function laPhienCuaNhaKhac(familyId: string): Promise<boolean> {
+  const phienBoMe = await parentFamilyId();
+  return phienBoMe !== null && phienBoMe !== familyId;
 }
 
-/** Gan thiet bi khi tra ve mot response da tao san (vi du redirect). */
-export async function attachDeviceFamily(res: NextResponse, familyId: string): Promise<void> {
+/** Gan thiet bi nay vao mot nha (goi trong route handler). */
+export async function setDeviceFamily(familyId: string): Promise<void> {
+  const doiNha = await laPhienCuaNhaKhac(familyId);
+  const jar = await cookies();
+  jar.set(DEVICE_COOKIE, await seal(familyId), { ...baseOpts, maxAge: DEVICE_MAX_AGE });
+  if (doiNha) jar.delete(PARENT_COOKIE);
+}
+
+/**
+ * Gan thiet bi khi tra ve mot response da tao san (vi du redirect). KHONG export:
+ * no dat cookie thiet bi ma khong kiem phien bo me, tuc dung la duong gan may thu
+ * ba ma luat tren cam. Ngoai tep nay chi co `setDeviceFamily` / `attachFamilyLink`.
+ */
+async function attachDeviceFamily(res: NextResponse, familyId: string): Promise<void> {
   res.cookies.set(DEVICE_COOKIE, await seal(familyId), { ...baseOpts, maxAge: DEVICE_MAX_AGE });
+}
+
+/** `setDeviceFamily` cho mot response da tao san — cung luat go phien bo me. */
+export async function attachFamilyLink(res: NextResponse, familyId: string): Promise<void> {
+  const doiNha = await laPhienCuaNhaKhac(familyId);
+  await attachDeviceFamily(res, familyId);
+  if (doiNha) res.cookies.set(PARENT_COOKIE, '', { ...baseOpts, maxAge: 0 });
 }
 
 /**
@@ -154,14 +213,29 @@ export async function viewingFamilyId(): Promise<string | null> {
   return (await parentFamilyId()) ?? (await deviceFamilyId());
 }
 
-/* ---------------- Tao nha / doi PIN ---------------- */
+/* ---------------- Tao nha / doi PIN ----------------
+ *
+ * Loi tra ve la KHOA dich (cau tieng Viet goc, lib/i18n/chu.ts) + tham so, de
+ * route handler dich sang ngon ngu cua nha dang mo (`T(loi, tham)`) — tep nay
+ * khong tu dich vi lib/i18n/server.ts import nguoc lai tep nay.
+ */
+
+export interface LoiPin { ok: false; error: Key; tham?: Tham }
 
 export type CreateResult =
   | { ok: true; family: Family }
-  | { ok: false; error: string };
+  | LoiPin;
+
+/**
+ * Ba ma PIN demo (PIN_DEMO) bi giu cho vinh vien — chan o ca tao nha lan doi PIN
+ * de khong ai dang ky trung roi gap loi "co nha khac dung" kho hieu (nha demo
+ * co the chua duoc nap tren DB nay, nen kiem theo DANH SACH, khong theo DB).
+ */
+const LOI_PIN_DEMO: LoiPin = { ok: false, error: 'Mã PIN này dành riêng cho bản demo, chọn mã khác nhé.' };
 
 export async function createFamily(name: string, pin: string): Promise<CreateResult> {
-  if (!pinOk(pin)) return { ok: false, error: `Mã PIN phải là ${PIN_LEN} chữ số.` };
+  if (!pinOk(pin)) return { ok: false, error: 'Mã PIN phải là {n} chữ số.', tham: { n: PIN_LEN } };
+  if (pinDanhRieng(pin)) return LOI_PIN_DEMO;
   const hash = await hashPin(pin);
   if (await pinHashTaken(hash)) {
     return { ok: false, error: 'Mã PIN này có nhà khác dùng rồi, chọn mã khác nhé.' };
@@ -173,12 +247,13 @@ export async function changePin(
   familyId: string,
   oldPin: string,
   newPin: string
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true } | LoiPin> {
   const current = await findFamilyByPin(oldPin);
   if (!current || current.id !== familyId) {
     return { ok: false, error: 'Mã PIN cũ không đúng.' };
   }
-  if (!pinOk(newPin)) return { ok: false, error: `Mã PIN mới phải là ${PIN_LEN} chữ số.` };
+  if (!pinOk(newPin)) return { ok: false, error: 'Mã PIN mới phải là {n} chữ số.', tham: { n: PIN_LEN } };
+  if (pinDanhRieng(newPin)) return LOI_PIN_DEMO;
 
   const hash = await hashPin(newPin);
   if (await pinHashTaken(hash, familyId)) {
@@ -223,23 +298,31 @@ export function recordSuccess(key: string): void {
  * hai duong khong the co gioi han khac nhau — bo qua mot duong la coi nhu khong
  * co gioi han nao.
  *
+ * BA MA DEMO LA TRUNG TINH: khong recordSuccess ma cung khong recordFail, bo dem
+ * giu nguyen. Chung tra ra mot nha THAT (seed-demo chay trong `npm run build`) va
+ * duoc in cong khai o README + HUONG-DAN-BO-ME, nen neu chung xoa bo dem nhu mot
+ * lan nhap dung thi bo chan mo PIN het tac dung: sai 4 lan -> go 1111 -> bo dem ve
+ * 0 -> lap lai vo han, khong bao gio cham khoa 60 giay, va phan thuong cua nguoi
+ * mo la phan bo me cua mot nha THAT.
+ *
  * @param ipKey  Khoa dem, thuong la IP. Cung IP thi dung chung han muc.
  */
 export async function attemptPin(
   pin: string,
   ipKey: string
-): Promise<{ ok: true; family: Family } | { ok: false; status: number; error: string }> {
+): Promise<{ ok: true; family: Family } | (LoiPin & { status: number })> {
   const wait = isLocked(ipKey);
   if (wait > 0) {
-    return { ok: false, status: 429, error: `Sai nhiều lần quá. Thử lại sau ${wait} giây.` };
+    return { ok: false, status: 429, error: 'Sai nhiều lần quá. Thử lại sau {n} giây.', tham: { n: wait } };
   }
 
   const family = await findFamilyByPin(pin);
+  const demo = pinDanhRieng(pin);
   if (!family) {
-    recordFail(ipKey);
+    if (!demo) recordFail(ipKey);
     return { ok: false, status: 401, error: 'Mã PIN không đúng.' };
   }
 
-  recordSuccess(ipKey);
+  if (!demo) recordSuccess(ipKey);
   return { ok: true, family };
 }

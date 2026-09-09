@@ -4,9 +4,11 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Child, ChildColor } from '@/lib/types';
+import { useT } from '@/lib/i18n/client';
+import type { Key } from '@/lib/i18n/chu';
 import { anhTam } from '@/lib/avatar';
 
-const MAU: { value: ChildColor; ten: string; swatch: string }[] = [
+const MAU: { value: ChildColor; ten: Key; swatch: string }[] = [
   { value: 'primary',   ten: 'Xanh', swatch: 'bg-primary' },
   { value: 'secondary', ten: 'Cam',  swatch: 'bg-secondary-container' },
   { value: 'tertiary',  ten: 'Vàng', swatch: 'bg-tertiary-fixed-dim' },
@@ -19,6 +21,7 @@ const MAU: { value: ChildColor; ten: string; swatch: string }[] = [
  * @param dauTien  Nha con trong: doi loi chao va bo nut "Huy" (chua co gi de ve).
  */
 export default function ThemCon({ others, dauTien }: { others: Child[]; dauTien: boolean }) {
+  const T = useT();
   const router = useRouter();
 
   // Goi san mau chua con nao dung: hai con trung mau la mat cach tu nhan ra minh
@@ -37,26 +40,26 @@ export default function ThemCon({ others, dauTien }: { others: Child[]; dauTien:
 
   async function doiAnh(file: File | undefined) {
     if (!file) return;
-    setBusy('Đang tải ảnh lên…');
+    setBusy(T('Đang tải ảnh lên…'));
     setError('');
     try {
       const fd = new FormData();
       fd.append('file', file);
       const res = await fetch('/api/upload', { method: 'POST', body: fd });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Tải ảnh lỗi');
+      if (!res.ok) throw new Error(data.error ?? T('Tải ảnh lỗi'));
       setAvatarUrl(data.url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không tải được ảnh.');
+      setError(e instanceof Error ? e.message : T('Không tải được ảnh.'));
     } finally {
       setBusy(null);
     }
   }
 
   async function luu(themNua: boolean) {
-    if (!name.trim()) return setError('Nhập tên của con đã.');
+    if (!name.trim()) return setError(T('Nhập tên của con đã.'));
 
-    setBusy('Đang lưu…');
+    setBusy(T('Đang lưu…'));
     setError('');
     try {
       const res = await fetch('/api/children', {
@@ -71,7 +74,7 @@ export default function ThemCon({ others, dauTien }: { others: Child[]; dauTien:
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Lưu không được');
+      if (!res.ok) throw new Error(data.error ?? T('Lưu không được'));
 
       if (themNua) {
         setName('');
@@ -84,7 +87,7 @@ export default function ThemCon({ others, dauTien }: { others: Child[]; dauTien:
         router.refresh();
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không lưu được.');
+      setError(e instanceof Error ? e.message : T('Không lưu được.'));
       setBusy(null);
     }
   }
@@ -100,13 +103,13 @@ export default function ThemCon({ others, dauTien }: { others: Child[]; dauTien:
           </Link>
         )}
         <h1 className="text-p-headline-md text-on-background">
-          {dauTien ? 'Thêm con đầu tiên' : 'Thêm con'}
+          {dauTien ? T('Thêm con đầu tiên') : T('Thêm con')}
         </h1>
       </header>
       <p className="text-p-body-sm text-on-surface-variant mb-4">
         {dauTien
-          ? 'Xong bước này là nhập bài tập được rồi.'
-          : 'Mỗi con một màu riêng để các con tự nhận ra mình.'}
+          ? T('Xong bước này là nhập bài tập được rồi.')
+          : T('Mỗi con một màu riêng để các con tự nhận ra mình.')}
       </p>
 
       <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4 flex flex-col gap-3">
@@ -118,13 +121,13 @@ export default function ThemCon({ others, dauTien }: { others: Child[]; dauTien:
             className="w-20 h-20 rounded-full object-cover bg-surface-container-high shrink-0"
           />
           <div className="flex-1">
-            <label className="text-p-label uppercase text-on-surface-variant block mb-1">Ảnh của con</label>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Ảnh của con')}</label>
             <label
               className="inline-flex items-center gap-1.5 rounded-full px-4 min-h-p-tap border-2
                          border-primary text-primary text-p-body-sm font-bold cursor-pointer"
             >
               <span className="material-symbols-outlined text-xl">photo_camera</span>
-              Chọn ảnh
+              {T('Chọn ảnh')}
               <input
                 type="file"
                 accept="image/*"
@@ -134,7 +137,7 @@ export default function ThemCon({ others, dauTien }: { others: Child[]; dauTien:
             </label>
             {!avatarUrl && (
               <p className="text-p-body-sm text-on-surface-variant mt-1">
-                Chưa có thì để tạm chữ cái đầu, thay ảnh thật sau cũng được.
+                {T('Chưa có thì để tạm chữ cái đầu, thay ảnh thật sau cũng được.')}
               </p>
             )}
           </div>
@@ -142,22 +145,22 @@ export default function ThemCon({ others, dauTien }: { others: Child[]; dauTien:
 
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="text-p-label uppercase text-on-surface-variant block mb-1">Tên</label>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Tên')}</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Minh"
+              placeholder={T('Minh')}
               maxLength={40}
               className="w-full rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
                          placeholder:text-outline bg-surface-container-lowest"
             />
           </div>
           <div className="flex-1">
-            <label className="text-p-label uppercase text-on-surface-variant block mb-1">Lớp</label>
+            <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Lớp')}</label>
             <input
               value={grade}
               onChange={(e) => setGrade(e.target.value)}
-              placeholder="Lớp 1"
+              placeholder={T('Lớp 1')}
               className="w-full rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
                          placeholder:text-outline bg-surface-container-lowest"
             />
@@ -165,7 +168,7 @@ export default function ThemCon({ others, dauTien }: { others: Child[]; dauTien:
         </div>
 
         <div>
-          <label className="text-p-label uppercase text-on-surface-variant block mb-1">Màu riêng</label>
+          <label className="text-p-label uppercase text-on-surface-variant block mb-1">{T('Màu riêng')}</label>
           <div className="flex gap-2">
             {MAU.map((m) => {
               const on = color === m.value;
@@ -179,14 +182,14 @@ export default function ThemCon({ others, dauTien }: { others: Child[]; dauTien:
                                 : 'bg-surface-container-lowest border-surface-container-high text-on-surface'}`}
                 >
                   <span className={`w-7 h-7 rounded-full ${m.swatch}`} />
-                  <span className="text-p-body-sm font-bold">{m.ten}</span>
+                  <span className="text-p-body-sm font-bold">{T(m.ten)}</span>
                 </button>
               );
             })}
           </div>
           {trungMau && (
             <p className="text-p-body-sm text-on-surface-variant mt-1.5">
-              {trungMau.name} cũng đang dùng màu này — các con sẽ khó tự nhận ra mình.
+              {T('{name} cũng đang dùng màu này — các con sẽ khó tự nhận ra mình.', { name: trungMau.name })}
             </p>
           )}
         </div>
@@ -201,7 +204,7 @@ export default function ThemCon({ others, dauTien }: { others: Child[]; dauTien:
           className="flex-1 rounded-card h-14 min-h-p-tap border-2 border-primary text-primary
                      text-p-body font-bold disabled:opacity-60"
         >
-          Lưu và thêm con nữa
+          {T('Lưu và thêm con nữa')}
         </button>
         <button
           onClick={() => luu(false)}
@@ -209,7 +212,7 @@ export default function ThemCon({ others, dauTien }: { others: Child[]; dauTien:
           className="flex-1 rounded-card h-14 min-h-p-tap bg-primary text-on-primary
                      text-p-body font-bold card-shadow disabled:opacity-60"
         >
-          {busy ?? 'Lưu và xong'}
+          {busy ?? T('Lưu và xong')}
         </button>
       </div>
     </main>

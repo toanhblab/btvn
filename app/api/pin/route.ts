@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { attemptPin, changePin, parentFamilyId, signIn, signOut } from '@/lib/auth';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,10 +21,13 @@ export async function POST(req: Request) {
   const key = req.headers.get('x-forwarded-for') ?? 'local';
 
   const tried = await attemptPin(pin, key);
-  if (!tried.ok) return NextResponse.json({ error: tried.error }, { status: tried.status });
+  if (!tried.ok) {
+    const T = await chu();
+    return NextResponse.json({ error: T(tried.error, tried.tham) }, { status: tried.status });
+  }
 
   // remember mac dinh false — PRD 4.5: KHONG nho PIN tren iPad dung chung cua cac con.
-  await signIn(tried.family.id, body?.remember === true);
+  await signIn(tried.family.id, body?.remember === true, pin);
   return NextResponse.json({ ok: true, family: tried.family });
 }
 
@@ -31,16 +35,18 @@ export async function POST(req: Request) {
  * PATCH { oldPin, newPin } — doi ma PIN cua nha.
  *
  * Khong dang xuat cac thiet bi khac: cookie phien ky theo id cua nha chu khong
- * theo PIN. Muon dong phan bo me tren mot may thi vao Cai dat cua may do bam
- * "Quen PIN tren thiet bi nay".
+ * theo PIN. Nut "Quen PIN tren thiet bi nay" da bo (issue #17) va khong duoc them
+ * lai, nen dong phan bo me tren mot may la dong trinh duyet (khi chua tick "Nho")
+ * hoac xoa du lieu site cua may do.
  */
 export async function PATCH(req: Request) {
+  const T = await chu();
   const familyId = await parentFamilyId();
-  if (!familyId) return NextResponse.json({ error: 'Cần mã PIN của bố mẹ.' }, { status: 401 });
+  if (!familyId) return NextResponse.json({ error: T('Cần mã PIN của bố mẹ.') }, { status: 401 });
 
   const body = await req.json().catch(() => null);
   const result = await changePin(familyId, String(body?.oldPin ?? ''), String(body?.newPin ?? ''));
-  if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+  if (!result.ok) return NextResponse.json({ error: T(result.error, result.tham) }, { status: 400 });
 
   return NextResponse.json({ ok: true });
 }

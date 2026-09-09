@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PIN_LEN } from '@/lib/pin';
 import Link from 'next/link';
 import type { Family } from '@/lib/store';
+import { useT } from '@/lib/i18n/client';
 
 /** Khung the trang o co Macbook — duoi 1280px khong doi gi so voi ban cu. */
 const THE =
@@ -22,6 +23,7 @@ export default function CaiDat({
   hasAI: boolean;
   hasBlob: boolean;
 }) {
+  const T = useT();
   const router = useRouter();
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
@@ -41,11 +43,11 @@ export default function CaiDat({
         body: JSON.stringify({ name }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Không lưu được');
-      setMsg('Đã đổi tên nhà.');
+      if (!res.ok) throw new Error(data.error ?? T('Không lưu được'));
+      setMsg(T('Đã đổi tên nhà.'));
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không lưu được.');
+      setError(e instanceof Error ? e.message : T('Không lưu được.'));
     } finally {
       setSavingName(false);
     }
@@ -61,7 +63,7 @@ export default function CaiDat({
   async function doiPin() {
     setMsg('');
     setError('');
-    if (newPin !== newPin2) return setError('Hai lần nhập mã mới chưa giống nhau.');
+    if (newPin !== newPin2) return setError(T('Hai lần nhập mã mới chưa giống nhau.'));
 
     setSavingPin(true);
     try {
@@ -71,14 +73,14 @@ export default function CaiDat({
         body: JSON.stringify({ oldPin, newPin }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Không đổi được');
-      setMsg('Đã đổi mã PIN. Lần sau bố mẹ nhập mã mới.');
+      if (!res.ok) throw new Error(data.error ?? T('Không đổi được'));
+      setMsg(T('Đã đổi mã PIN. Lần sau bố mẹ nhập mã mới.'));
       setMoPin(false);
       setOldPin('');
       setNewPin('');
       setNewPin2('');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không đổi được mã PIN.');
+      setError(e instanceof Error ? e.message : T('Không đổi được mã PIN.'));
     } finally {
       setSavingPin(false);
     }
@@ -94,8 +96,8 @@ export default function CaiDat({
       {(!hasAI || !hasBlob) && (
         <section className="bg-error-container rounded-card p-3 mb-4">
           <p className="text-p-body-sm text-on-error-container">
-            {!hasAI && 'Chưa cài NOUS_API_KEY nên nút "Tách bài tập" chỉ tách tạm theo dòng. '}
-            {!hasBlob && 'Chưa bật Vercel Blob nên ảnh đang lưu tạm trong trang.'}
+            {!hasAI && T('Chưa cài NOUS_API_KEY nên nút "Tách bài tập" chỉ tách tạm theo dòng.') + ' '}
+            {!hasBlob && T('Chưa bật Vercel Blob nên ảnh đang lưu tạm trong trang.')}
           </p>
         </section>
       )}
@@ -106,7 +108,7 @@ export default function CaiDat({
 
       {/* ---- Ten nha ---- */}
       <section className={THE}>
-      <h2 className="text-p-label uppercase text-on-surface-variant mb-2">Tên nhà</h2>
+      <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Tên nhà')}</h2>
       <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4 flex gap-2
                       xl:shadow-none xl:p-0 xl:mb-0">
         <input
@@ -122,7 +124,7 @@ export default function CaiDat({
           className="rounded-card min-h-p-tap px-4 bg-primary text-on-primary text-p-body font-bold
                      disabled:opacity-40"
         >
-          Lưu
+          {T('Lưu')}
         </button>
       </div>
 
@@ -130,7 +132,7 @@ export default function CaiDat({
 
       {/* ---- Doi ma PIN ---- */}
       <section className={THE}>
-      <h2 className="text-p-label uppercase text-on-surface-variant mb-2">Mã PIN</h2>
+      <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Mã PIN')}</h2>
       {!moPin ? (
         <button
           onClick={() => { setMoPin(true); setMsg(''); setError(''); }}
@@ -141,9 +143,9 @@ export default function CaiDat({
             <span className="material-symbols-outlined text-primary">password</span>
           </span>
           <span className="flex-1">
-            <span className="block text-p-body text-on-surface font-bold">Đổi mã PIN</span>
+            <span className="block text-p-body text-on-surface font-bold">{T('Đổi mã PIN')}</span>
             <span className="block text-p-body-sm text-on-surface-variant">
-              Dùng khi các con đã nhìn thấy mã cũ
+              {T('Dùng khi các con đã nhìn thấy mã cũ')}
             </span>
           </span>
           <span className="material-symbols-outlined text-outline">chevron_right</span>
@@ -151,7 +153,7 @@ export default function CaiDat({
       ) : (
         <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4 flex flex-col gap-2
                         xl:shadow-none xl:p-0 xl:mb-0">
-          <label className="text-p-label uppercase text-on-surface-variant">Mã PIN hiện tại</label>
+          <label className="text-p-label uppercase text-on-surface-variant">{T('Mã PIN hiện tại')}</label>
           <input
             value={oldPin}
             onChange={(e) => setOldPin(e.target.value.replace(/\D/g, '').slice(0, PIN_LEN))}
@@ -160,7 +162,7 @@ export default function CaiDat({
             className={oPin}
           />
 
-          <label className="text-p-label uppercase text-on-surface-variant mt-1">Mã PIN mới</label>
+          <label className="text-p-label uppercase text-on-surface-variant mt-1">{T('Mã PIN mới')}</label>
           <input
             value={newPin}
             onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, PIN_LEN))}
@@ -169,7 +171,7 @@ export default function CaiDat({
             className={oPin}
           />
 
-          <label className="text-p-label uppercase text-on-surface-variant mt-1">Nhập lại mã mới</label>
+          <label className="text-p-label uppercase text-on-surface-variant mt-1">{T('Nhập lại mã mới')}</label>
           <input
             value={newPin2}
             onChange={(e) => setNewPin2(e.target.value.replace(/\D/g, '').slice(0, PIN_LEN))}
@@ -179,9 +181,7 @@ export default function CaiDat({
           />
 
           <p className="text-p-body-sm text-on-surface-variant mt-1">
-            Mã PIN cũng là thứ phân biệt nhà mình với nhà khác, nên nếu mã mới đã
-            có nhà khác dùng thì phải chọn mã khác. Các thiết bị đang mở sẵn phần
-            bố mẹ thì vẫn mở tiếp, mã mới chỉ cần cho những lần mở sau.
+            {T('Mã PIN cũng là thứ phân biệt nhà mình với nhà khác, nên nếu mã mới đã có nhà khác dùng thì phải chọn mã khác. Các thiết bị đang mở sẵn phần bố mẹ thì vẫn mở tiếp, mã mới chỉ cần cho những lần mở sau.')}
           </p>
 
           <div className="flex gap-2 mt-1">
@@ -191,7 +191,7 @@ export default function CaiDat({
               className="flex-1 rounded-card min-h-p-tap h-12 border-2 border-outline-variant
                          text-on-surface-variant text-p-body font-bold disabled:opacity-60"
             >
-              Thôi
+              {T('Thôi')}
             </button>
             <button
               onClick={doiPin}
@@ -199,7 +199,7 @@ export default function CaiDat({
               className="flex-1 rounded-card min-h-p-tap h-12 bg-primary text-on-primary
                          text-p-body font-bold disabled:opacity-40"
             >
-              {savingPin ? 'Đang đổi…' : 'Đổi mã PIN'}
+              {savingPin ? T('Đang đổi…') : T('Đổi mã PIN')}
             </button>
           </div>
         </div>
@@ -211,7 +211,7 @@ export default function CaiDat({
           giao cho tung con nen the o day se dai gap doi) — the nay chi con la
           dong dan, cung khuon voi "Doi ma PIN" o tren. ---- */}
       <section className={THE}>
-      <h2 className="text-p-label uppercase text-on-surface-variant mb-2">Nhiệm vụ hàng ngày</h2>
+      <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Nhiệm vụ hàng ngày')}</h2>
       <Link
         href="/bome/nhiem-vu-hang-ngay"
         className="w-full bg-surface-container-lowest rounded-card card-shadow p-3 flex items-center gap-3
@@ -221,9 +221,9 @@ export default function CaiDat({
           <span className="material-symbols-outlined text-primary">checklist</span>
         </span>
         <span className="flex-1">
-          <span className="block text-p-body text-on-surface font-bold">Cài nhiệm vụ hàng ngày</span>
+          <span className="block text-p-body text-on-surface font-bold">{T('Cài nhiệm vụ hàng ngày')}</span>
           <span className="block text-p-body-sm text-on-surface-variant">
-            {soNhiemVu > 0 ? `${soNhiemVu} nhiệm vụ` : 'Chưa có nhiệm vụ nào'} · giao cho con nào, mấy ⭐, thuộc nhóm nào
+            {soNhiemVu > 0 ? T('{n} nhiệm vụ', { n: soNhiemVu }) : T('Chưa có nhiệm vụ nào')} · {T('giao cho con nào, mấy ⭐, thuộc nhóm nào')}
           </span>
         </span>
         <span className="material-symbols-outlined text-outline">chevron_right</span>

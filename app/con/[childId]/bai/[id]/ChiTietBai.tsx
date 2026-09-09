@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Assignment, DiemVuaCong, Lang } from '@/lib/types';
 import { driveFileIdTu, drivePreviewUrl } from '@/lib/media';
-import { pickVoice, splitSpeech } from '@/lib/speech';
+import { GIONG_DOC, TEN_NGON_NGU, pickVoice, splitSpeech } from '@/lib/speech';
+import { useNgonNgu, useT } from '@/lib/i18n/client';
 import Confetti from '../../xong/Confetti';
 import DongHoLamBai, { conThoiGian, docMocBatDau, noi, xoaDongHo } from './DongHoLamBai';
 import QuayVideo from './QuayVideo';
@@ -28,6 +29,10 @@ export default function ChiTietBai({
   celebrate: boolean;
   blobEnabled: boolean;
 }) {
+  const T = useT();
+  // Ngon ngu cua nha: doan de bai khong phai tieng Anh doc bang giong nay (nha
+  // demo tieng Nhat thi de bai tieng Nhat), loi khen cung vay.
+  const ngonNgu = useNgonNgu();
   const router = useRouter();
   const [done, setDone] = useState(assignment.status === 'done');
   const [videoUrl, setVideoUrl] = useState(assignment.submittedVideoUrl);
@@ -56,26 +61,27 @@ export default function ChiTietBai({
   /* Safari tra danh sach giong rong o lan goi dau -> nghe them su kien voiceschanged */
   useEffect(() => {
     if (!('speechSynthesis' in window)) {
-      setVoiceWarning('Thiết bị này không đọc được đề bài thành tiếng.');
+      setVoiceWarning(T('Thiết bị này không đọc được đề bài thành tiếng.'));
       return;
     }
     const check = () => {
       const voices = speechSynthesis.getVoices();
-      const missing = neededLangs.filter(
-        (lang) => !voices.some((v) => v.lang.toLowerCase().startsWith(lang))
-      );
+      // 'vi' trong segments nghia la "khong phai tieng Anh" -> giong cua nha
+      const missing = neededLangs
+        .map((lang) => (lang === 'en' ? 'en' : ngonNgu))
+        .filter((lang) => !voices.some((v) => v.lang.toLowerCase().startsWith(lang)));
       setVoiceWarning(
         missing.length === 0
           ? ''
-          : missing.includes('en')
-            ? 'Máy chưa có giọng tiếng Anh. Bố mẹ vào Cài đặt → Trợ năng → Nội dung đọc để tải thêm giọng.'
-            : 'Máy chưa có giọng tiếng Việt. Bố mẹ vào Cài đặt → Trợ năng → Nội dung đọc để tải giọng vi-VN.'
+          : T('Máy chưa có giọng {giong}. Bố mẹ vào Cài đặt → Trợ năng → Nội dung đọc để tải thêm giọng.', {
+              giong: [...new Set(missing)].map((lang) => T(TEN_NGON_NGU[lang])).join(', '),
+            })
       );
     };
     check();
     speechSynthesis.addEventListener('voiceschanged', check);
     return () => speechSynthesis.removeEventListener('voiceschanged', check);
-  }, [neededLangs]);
+  }, [neededLangs, ngonNgu, T]);
 
   // Dung doc khi roi man, khong thi giong con vang theo sang trang khac
   useEffect(() => () => window.speechSynthesis?.cancel(), []);
@@ -86,10 +92,10 @@ export default function ChiTietBai({
     const voices = speechSynthesis.getVoices();
     for (const seg of segments) {
       const u = new SpeechSynthesisUtterance(seg.text);
-      // en-GB de khi khong tim duoc giong cu the, engine van nghieng ve giong Anh-Anh
-      u.lang = seg.lang === 'en' ? 'en-GB' : 'vi-VN';
+      const lang = seg.lang === 'en' ? 'en' : ngonNgu;
+      u.lang = GIONG_DOC[lang];
       u.rate = 0.85;                      // cham lai cho tre nghe kip
-      const v = pickVoice(voices, seg.lang);
+      const v = pickVoice(voices, lang);
       if (v) u.voice = v;
       speechSynthesis.speak(u);           // hang doi tu dong doc noi tiep nhau
     }
@@ -131,12 +137,12 @@ export default function ChiTietBai({
         setXongSom(som);
         if (som) {
           window.speechSynthesis?.cancel();   // cat cau nhac dang doc do, uu tien loi khen
-          noi('Giỏi quá! Con làm xong sớm luôn!');
+          noi(T('Giỏi quá! Con làm xong sớm luôn!'), ngonNgu);
         }
         setShowSuccess(true);
       } else router.push(`/con/${childId}`);
     } catch {
-      alert('Chưa lưu được. Con thử lại nhé!');
+      alert(T('Chưa lưu được. Con thử lại nhé!'));
     } finally {
       setSaving(false);
     }
@@ -155,7 +161,7 @@ export default function ChiTietBai({
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      throw new Error(data.error ?? 'Chưa gửi được video. Con thử lại nhé!');
+      throw new Error(data.error ?? T('Chưa gửi được video. Con thử lại nhé!'));
     }
     setVideoUrl(url);
     setDone(true);
@@ -167,7 +173,7 @@ export default function ChiTietBai({
     setXongSom(som);
     if (som) {
       window.speechSynthesis?.cancel();
-      noi('Giỏi quá! Con làm xong sớm luôn!');
+      noi(T('Giỏi quá! Con làm xong sớm luôn!'), ngonNgu);
     }
     setShowSuccess(true);
   }
@@ -197,7 +203,7 @@ export default function ChiTietBai({
                      rounded-full px-4 py-2 min-h-k-tap min-w-k-tap"
         >
           <span className="material-symbols-outlined text-4xl icon-fill">arrow_back_ios_new</span>
-          <span className="text-k-headline">Quay lại</span>
+          <span className="text-k-headline">{T('Quay lại')}</span>
         </Link>
       </div>
 
@@ -241,7 +247,7 @@ export default function ChiTietBai({
                          justify-center gap-4 px-6 h-20 w-full mt-2"
             >
               <span className="material-symbols-outlined text-4xl">volume_up</span>
-              <span className="text-k-headline">Nghe đề bài</span>
+              <span className="text-k-headline">{T('Nghe đề bài')}</span>
             </button>
             {voiceWarning && <p className="text-k-body-sm text-error">{voiceWarning}</p>}
 
@@ -267,7 +273,7 @@ export default function ChiTietBai({
                     <span className="material-symbols-outlined text-4xl text-tertiary icon-fill">
                       attach_file
                     </span>
-                    Cô gửi kèm bài này
+                    {T('Cô gửi kèm bài này')}
                   </p>
                   {assignment.media.map((m) => {
                     if (m.kind === 'image') {
@@ -334,7 +340,7 @@ export default function ChiTietBai({
             // hoan thanh bai nay (server cung chan tick suong).
             <p className="flex items-center gap-2 text-k-body-sm text-on-surface-variant text-center">
               <span className="material-symbols-outlined text-2xl">videocam</span>
-              Quay video xong là hoàn thành bài này
+              {T('Quay video xong là hoàn thành bài này')}
             </p>
           ) : !done ? (
             <button
@@ -344,7 +350,7 @@ export default function ChiTietBai({
                          gap-4 px-8 h-24 w-full xl:w-[560px] disabled:opacity-60"
             >
               <span className="material-symbols-outlined text-5xl icon-fill">check_circle</span>
-              <span className="text-k-headline whitespace-nowrap">Đã làm xong</span>
+              <span className="text-k-headline whitespace-nowrap">{T('Đã làm xong')}</span>
             </button>
           ) : (
             // Tick nham phai bo duoc (PRD 4.3)
@@ -353,7 +359,7 @@ export default function ChiTietBai({
               disabled={saving}
               className="text-k-body text-outline hover:text-on-surface-variant p-4 min-h-k-tap disabled:opacity-60"
             >
-              Chưa làm xong
+              {T('Chưa làm xong')}
             </button>
           )}
         </div>
@@ -368,7 +374,7 @@ export default function ChiTietBai({
             <span className="material-symbols-outlined text-[120px] text-success icon-fill animate-bounce">
               star
             </span>
-            <h2 className="text-k-hero text-on-background">Giỏi quá!</h2>
+            <h2 className="text-k-hero text-on-background">{T('Giỏi quá!')}</h2>
 
             {/* +1 "xong som" cua CHINH bai vua lam. Khong xong som thi tam nay y
                 nhu cu; +10 cua ca ngay do man /xong bao (mot lan thoi). Chu ngan
@@ -376,11 +382,11 @@ export default function ChiTietBai({
             {diemVuaCong && diemVuaCong.xongSom > 0 && (
               <div className="flex flex-col items-center gap-3">
                 <span className="text-k-headline bg-tertiary-fixed text-on-tertiary-fixed px-8 py-3 rounded-full">
-                  ⭐ +{diemVuaCong.xongSom} điểm xong sớm!
+                  {T('⭐ +{n} điểm xong sớm!', { n: diemVuaCong.xongSom })}
                 </span>
                 {diemVuaCong.tong !== undefined && (
                   <span className="text-k-body text-on-surface-variant">
-                    Con đang có {diemVuaCong.tong} ⭐
+                    {T('Con đang có {n} ⭐', { n: diemVuaCong.tong })}
                   </span>
                 )}
               </div>
@@ -390,7 +396,7 @@ export default function ChiTietBai({
               onClick={afterSuccess}
               className="btn-3d-primary bg-primary text-on-primary rounded-3xl px-12 h-20 text-k-headline"
             >
-              Tiếp tục
+              {T('Tiếp tục')}
             </button>
           </div>
         </div>

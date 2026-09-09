@@ -39,6 +39,9 @@ Mã PIN 4 số vừa là **mật khẩu** vừa là **tên gọi riêng của nh
   của con **không** mở phần của bố mẹ, nên vẫn an toàn.
 - Nhiều nhà cùng dùng chung một app, nên **hai nhà không được trùng mã PIN**.
   Nếu mã đã có nhà khác dùng, app sẽ báo để chọn mã khác.
+- Ba mã **1111**, **2222**, **3333** là của ba nhà mẫu (app hiện tiếng Nhật, tiếng
+  Hàn, tiếng Anh, dùng để giới thiệu app cho người khác) — không chọn được ba mã
+  này, app sẽ báo *"dành riêng cho bản demo"*.
 
 > Ở màn nhập PIN của bố mẹ có ô **"Nhớ trên thiết bị này"** — mặc định không tick.
 > **Đừng tick nếu đó là máy của các con.**
@@ -292,6 +295,40 @@ và ⭐ đã cộng đều giữ nguyên.
 **Con nhìn thấy mã PIN rồi, sợ con tự vào phần bố mẹ?**
 Vào **Cài đặt → Đổi mã PIN** (cần mã hiện tại). Đổi xong máy của các con vẫn dùng
 bình thường, không phải cài lại gì.
+
+**App hiện tiếng nước ngoài, không phải tiếng Việt?**
+Máy đang mở nhà mẫu (mã 1111 tiếng Nhật, 2222 tiếng Hàn, 3333 tiếng Anh). Chữ của
+app đi theo **nhà** chứ không theo máy.
+
+Cách chắc chắn được, dùng cả khi đang mở dở nhà mẫu: **mở lại link `/nha/<mã nhà>`
+của nhà mình.** Mở link là máy về nhà mình và tiếng Việt ngay, app tự đóng phần bố
+mẹ của nhà mẫu đang mở. Mã nhà xem ở **Cài đặt** trên điện thoại, còn trên máy tính
+thì nó nằm sẵn ở đầu thanh bên trái, ngay dưới tên nhà.
+
+Màn **"Đây là máy của nhà nào?"** cũng đổi được, nhưng chỉ khi **chưa** nhập mã nhà
+mẫu trong lần dùng này — đã nhập rồi thì app luôn đưa thẳng vào phần bố mẹ, không
+qua màn đó nữa; lúc ấy phải đóng hẳn trình duyệt rồi mở lại trước.
+
+**Muốn cho người khác xem app bằng tiếng Nhật / Hàn / Anh?**
+**Trước khi mở nhà mẫu lần đầu, lưu sẵn link `/nha/<mã nhà>` của nhà mình vào dấu
+trang** — đó là đường về chắc chắn nhất, và lưu trước thì không phải đi tìm mã nhà
+giữa lúc màn hình đang toàn tiếng Nhật.
+
+Mở một trong ba link `/nha/demo-ja` (tiếng Nhật), `/nha/demo-ko` (tiếng Hàn),
+`/nha/demo-en` (tiếng Anh) — mở link nào là máy sang nhà mẫu đó ngay, không phải
+nhập gì; muốn xem phần của bố mẹ thì nhập mã 1111 / 2222 / 3333. Nhảy sang nhà khác
+cũng chỉ bằng cách mở link khác: mở link của nhà khác là app đóng phần bố mẹ đang mở
+lại, nên nhập được mã của nhà mới ngay. Mở lại link của **chính nhà đang mở** thì
+không phải nhập lại gì. Ba nhà này là dữ liệu mẫu, không phải nhà thật.
+
+Bài tập trong ba nhà mẫu được xếp theo ngày nạp, nên để lâu là hết bài của "hôm
+nay" và màn của con trông trống. **Trước mỗi lần đem đi cho người khác xem, nhờ
+người làm app nạp lại dữ liệu mẫu một lượt** — chỉ đụng ba nhà mẫu, không ảnh
+hưởng gì tới nhà mình.
+
+Ba mã 1111 / 2222 / 3333 chỉ mở được **phần bố mẹ** để xem thử. Gõ chúng ở màn
+"Đây là máy của nhà nào?" thì app từ chối — máy sẽ không bị gắn vào nhà mẫu. Muốn
+một máy vào hẳn nhà mẫu thì mở link `/nha/demo-ja`, `/nha/demo-ko`, `/nha/demo-en`.
 
 **Xoá hết bài cũ đi được không?**
 Được. Vào **Nhiệm vụ → "Xoá tất cả bài tập và việc nhà"** — app hỏi lại hai nhịp

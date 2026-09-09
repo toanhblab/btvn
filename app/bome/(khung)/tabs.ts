@@ -9,7 +9,10 @@
  * cam). Lay APP lam chuan: y cac muc + icon cua ThanhDuoi, mau dang chon la
  * primary. Muc "Thuong" (/bome/thuong) them sau, khong co trong ban thiet ke nao.
  */
-export const TABS = [
+import type { Key } from '@/lib/i18n/chu';
+
+/** `label` la khoa dich — hai thanh ve `T(label)`. */
+export const TABS: { href: string; icon: string; label: Key }[] = [
   { href: '/bome', icon: 'home', label: 'Trang chủ' },
   { href: '/bome/them', icon: 'photo_camera', label: 'Thêm bài' },
   { href: '/bome/nhiem-vu', icon: 'checklist', label: 'Nhiệm vụ' },

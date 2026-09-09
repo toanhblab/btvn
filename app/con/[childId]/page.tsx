@@ -9,20 +9,21 @@ import {
 } from '@/lib/nhomNhiemVu';
 import TickHomNay from './TickHomNay';
 import ViecNhaBai from './ViecNhaBai';
+import { chu } from '@/lib/i18n/server';
+import type { T } from '@/lib/i18n/chu';
+import { THU } from '@/lib/ngay';
 
 export const dynamic = 'force-dynamic';
-
-const THU = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
 
 /**
  * "Hôm nay" / "Ngày mai" thay vì ngày tháng: tre 4 tuoi chua doc duoc lich,
  * cac ngay xa hon moi kem so de bo me liec biet la hom nao.
  */
-function nhanNgay(date: string, today: string, tomorrow: string): string {
-  if (date === today) return 'Hôm nay';
-  if (date === tomorrow) return 'Ngày mai';
+function nhanNgay(T: T, date: string, today: string, tomorrow: string): string {
+  if (date === today) return T('Hôm nay');
+  if (date === tomorrow) return T('Ngày mai');
   const [y, m, d] = date.split('-').map(Number);
-  return `${THU[new Date(y, m - 1, d).getDay()]}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
+  return `${T(THU[new Date(y, m - 1, d).getDay()])}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
 }
 
 /** Bai tap tu hom nay tro di cua mot con — nen tu Stitch 06, kem man trong tu Stitch 08. */
@@ -31,6 +32,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   const familyId = await viewingFamilyId();
   if (!familyId) redirect('/vao');
 
+  const T = await chu();
   const today = todayISO();
   const tomorrow = todayISO(1);
 
@@ -77,7 +79,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                  px-6 min-h-k-tap interactive-shadow shrink-0 whitespace-nowrap"
     >
       <span className="text-k-headline">⭐ {diem}</span>
-      <span className="text-k-label">🎁 Đổi thưởng</span>
+      <span className="text-k-label">🎁 {T('Đổi thưởng')}</span>
     </Link>
   );
   const todayItems = items.filter((a) => a.dueDate === today);
@@ -126,7 +128,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
       .map(({ source, items: mine }): NhomHien => ({
         key: source,
         icon: HW_SOURCES[source].icon,
-        label: HW_SOURCES[source].label,
+        label: T(HW_SOURCES[source].label),
         isChores: false,
         byDate: gomTheoNgay(mine),
         ...tienDoNhom(mine),
@@ -140,7 +142,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
     sourceGroups.push({
       key: `nhiem-vu-${nhom}`,
       icon: NHOM_NHIEM_VU[nhom].icon,
-      label: NHOM_NHIEM_VU[nhom].label,
+      label: T(NHOM_NHIEM_VU[nhom].label),
       isChores: true,
       choreItems,
       ...tienDoNhom(choreItems),
@@ -168,8 +170,8 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
         {/* max-w-3xl (bo Macbook 06): o 1440px thi tieu de 56px chay het mot dong
             dai ngoang; gioi han khung lai de no xuong hai dong nhu ban thiet ke. */}
         <div className="flex flex-col items-center max-w-3xl">
-          <h1 className="text-k-hero text-on-background mb-3">Hôm nay không có bài tập hay nhiệm vụ 🎉</h1>
-          <p className="text-k-headline text-on-surface-variant mb-8">{child.name} đi chơi thôi!</p>
+          <h1 className="text-k-hero text-on-background mb-3">{T('Hôm nay không có bài tập hay nhiệm vụ 🎉')}</h1>
+          <p className="text-k-headline text-on-surface-variant mb-8">{T('{name} đi chơi thôi!', { name: child.name })}</p>
 
           <div className="flex flex-wrap items-center justify-center gap-6">
             <Link
@@ -177,7 +179,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
               className="h-k-tap min-w-[280px] xl:min-w-[320px] rounded-3xl border-4 border-primary text-primary
                          flex items-center justify-center px-12 text-k-label hover:bg-primary-fixed transition-colors"
             >
-              <span className="material-symbols-outlined mr-3">home</span>Về trang chính
+              <span className="material-symbols-outlined mr-3">home</span>{T('Về trang chính')}
             </Link>
             {nutDoiThuong}
           </div>
@@ -205,7 +207,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
             alt=""
             className="w-16 h-16 rounded-full object-cover border-4 border-surface-container shrink-0"
           />
-          <h1 className="text-k-hero text-primary">Bài tập của {child.name}</h1>
+          <h1 className="text-k-hero text-primary">{T('Bài tập của {name}', { name: child.name })}</h1>
         </div>
 
         <div className="flex items-center gap-4 shrink-0 ml-auto">
@@ -215,7 +217,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
           {todayItems.length > 0 && (
             <div className="hidden xl:flex items-center shrink-0 bg-primary-container text-on-primary-container
                             text-k-headline px-8 py-4 rounded-full soft-shadow whitespace-nowrap">
-              {done}/{todayItems.length} xong hôm nay
+              {T('{done}/{total} xong hôm nay', { done, total: todayItems.length })}
             </div>
           )}
         </div>
@@ -242,7 +244,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
             ))}
           </div>
           <div className="text-k-headline text-on-surface xl:hidden">
-            {done}/{todayItems.length} xong hôm nay
+            {T('{done}/{total} xong hôm nay', { done, total: todayItems.length })}
           </div>
         </section>
       )}
@@ -272,7 +274,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                 sg.xongHet ? 'bg-success text-white' : 'bg-surface-container-highest text-on-surface'
               }`}
             >
-              {sg.xongHet ? '🎉 ' : ''}{sg.done}/{sg.total} {sg.isChores ? 'việc' : 'bài'} xong
+              {sg.xongHet ? '🎉 ' : ''}{sg.isChores ? T('{done}/{total} việc xong', { done: sg.done, total: sg.total }) : T('{done}/{total} bài xong', { done: sg.done, total: sg.total })}
             </span>
           </div>
 
@@ -286,7 +288,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
             sg.byDate.map((g) => (
             <div key={g.date} className="mb-6 last:mb-0">
               <h3 className="text-k-headline text-on-surface-variant mb-4">
-                {nhanNgay(g.date, today, tomorrow)}
+                {nhanNgay(T, g.date, today, tomorrow)}
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-k-gutter">
@@ -295,9 +297,9 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
               // "video, ghi âm" chu khong chi dem so tep: con chua doc duoc so,
               // nhung bo me liec qua biet ngay bai nay co gi cho con
               const coGi = [
-                a.media.some((m) => m.kind === 'video') && 'video',
-                a.media.some((m) => m.kind === 'audio') && 'ghi âm',
-                a.media.some((m) => m.kind === 'image') && 'ảnh',
+                a.media.some((m) => m.kind === 'video') && T('video'),
+                a.media.some((m) => m.kind === 'audio') && T('ghi âm'),
+                a.media.some((m) => m.kind === 'image') && T('ảnh'),
               ].filter(Boolean).join(', ');
               return (
                 <Link
@@ -358,7 +360,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                           <span className="material-symbols-outlined text-2xl icon-fill shrink-0">
                             videocam
                           </span>
-                          <span className="text-k-body-sm font-bold">Bài này quay video</span>
+                          <span className="text-k-body-sm font-bold">{T('Bài này quay video')}</span>
                         </div>
                       )}
 
@@ -372,7 +374,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
                           <span className="material-symbols-outlined text-2xl icon-fill shrink-0">
                             attach_file
                           </span>
-                          <span className="text-k-body-sm font-bold">Có {coGi} cô gửi</span>
+                          <span className="text-k-body-sm font-bold">{T('Có {gi} cô gửi', { gi: coGi })}</span>
                         </div>
                       )}
                     </div>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useT } from '@/lib/i18n/client';
 
 /**
  * Xoa sach bai tap ca nha.
@@ -17,6 +18,7 @@ import { useRouter } from 'next/navigation';
  *               xoa ca chung, nen chu phai noi ro chu khong duoc dem it di.
  */
 export default function XoaTatCa({ total }: { total: number }) {
+  const T = useT();
   const router = useRouter();
   const [hoi, setHoi] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -30,11 +32,11 @@ export default function XoaTatCa({ total }: { total: number }) {
     try {
       const res = await fetch('/api/assignments', { method: 'DELETE' });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Xoá không được');
+      if (!res.ok) throw new Error(data.error ?? T('Xoá không được'));
       setHoi(false);
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không xoá được. Thử lại nhé.');
+      setError(e instanceof Error ? e.message : T('Không xoá được. Thử lại nhé.'));
     } finally {
       setBusy(false);
     }
@@ -48,7 +50,7 @@ export default function XoaTatCa({ total }: { total: number }) {
                    text-p-body-sm font-bold flex items-center justify-center gap-1.5 mb-3"
       >
         <span className="material-symbols-outlined text-xl">delete_sweep</span>
-        Xoá tất cả bài tập và việc nhà
+        {T('Xoá tất cả bài tập và việc nhà')}
       </button>
     );
   }
@@ -56,11 +58,10 @@ export default function XoaTatCa({ total }: { total: number }) {
   return (
     <div className="bg-error-container rounded-card p-3 mb-3">
       <p className="text-p-body text-on-error-container font-bold mb-0.5">
-        Xoá tất cả {total} mục của cả nhà?
+        {T('Xoá tất cả {n} mục của cả nhà?', { n: total })}
       </p>
       <p className="text-p-body-sm text-on-error-container mb-3">
-        {total} mục này gồm cả <b>việc nhà</b> đã tạo cho từng ngày, cả bài đã xong
-        và bài ngoài 7 ngày đang hiện ở đây. Không lấy lại được.
+        {T('{n} mục này gồm cả việc nhà đã tạo cho từng ngày, cả bài đã xong và bài ngoài 7 ngày đang hiện ở đây. Không lấy lại được.', { n: total })}
       </p>
 
       {error && <p className="text-p-body-sm text-error mb-2">{error}</p>}
@@ -72,7 +73,7 @@ export default function XoaTatCa({ total }: { total: number }) {
           className="flex-1 rounded-card min-h-p-tap bg-surface-container-lowest text-on-surface
                      text-p-body-sm font-bold disabled:opacity-60"
         >
-          Thôi, giữ lại
+          {T('Thôi, giữ lại')}
         </button>
         <button
           onClick={xoa}
@@ -80,7 +81,7 @@ export default function XoaTatCa({ total }: { total: number }) {
           className="flex-1 rounded-card min-h-p-tap bg-error text-white
                      text-p-body-sm font-bold disabled:opacity-60"
         >
-          {busy ? 'Đang xoá…' : `Xoá ${total} mục`}
+          {busy ? T('Đang xoá…') : T('Xoá {n} mục', { n: total })}
         </button>
       </div>
     </div>

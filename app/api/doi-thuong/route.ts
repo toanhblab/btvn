@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { viewingFamilyId } from '@/lib/auth';
 import { xinDoiThuong } from '@/lib/store';
+import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,17 +15,18 @@ export const dynamic = 'force-dynamic';
  * thi may nha nay xin doi thuong bang diem cua con nha khac neu doan ra id.
  */
 export async function POST(req: Request) {
+  const T = await chu();
   const familyId = await viewingFamilyId();
-  if (!familyId) return NextResponse.json({ error: 'Máy này chưa gắn với nhà nào.' }, { status: 401 });
+  if (!familyId) return NextResponse.json({ error: T('Máy này chưa gắn với nhà nào.') }, { status: 401 });
 
   const body = await req.json().catch(() => null);
   const childId = String(body?.childId ?? '');
   const rewardId = String(body?.rewardId ?? '');
   if (!childId || !rewardId) {
-    return NextResponse.json({ error: 'Dữ liệu không đọc được.' }, { status: 400 });
+    return NextResponse.json({ error: T('Dữ liệu không đọc được.') }, { status: 400 });
   }
 
   const kq = await xinDoiThuong(familyId, childId, rewardId);
-  if (!kq.ok) return NextResponse.json({ error: kq.error }, { status: kq.status });
+  if (!kq.ok) return NextResponse.json({ error: T(kq.error, kq.tham) }, { status: kq.status });
   return NextResponse.json({ redemption: kq.redemption });
 }

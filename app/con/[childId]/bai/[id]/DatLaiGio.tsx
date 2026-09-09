@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import BanPhimPin from '@/app/_components/BanPhimPin';
+import { useT } from '@/lib/i18n/client';
 
 /**
  * "Bố mẹ đặt lại giờ" — con lo tay bam "Bắt đầu làm" thi bo me xoa moc bat dau
@@ -17,6 +18,7 @@ import BanPhimPin from '@/app/_components/BanPhimPin';
  * nay: day thuong la iPad dung chung cua cac con (PRD 4.5).
  */
 export default function DatLaiGio({ onDatLai }: { onDatLai: () => void }) {
+  const T = useT();
   const [mo, setMo] = useState(false);
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
@@ -39,14 +41,14 @@ export default function DatLaiGio({ onDatLai }: { onDatLai: () => void }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? 'Mã PIN không đúng.');
+        setError(data.error ?? T('Mã PIN không đúng.'));
         setPin('');
         return;
       }
       dong();
       onDatLai();
     } catch {
-      setError('Không kết nối được. Thử lại nhé.');
+      setError(T('Không kết nối được. Thử lại nhé.'));
       setPin('');
     } finally {
       setBusy(false);
@@ -61,7 +63,7 @@ export default function DatLaiGio({ onDatLai }: { onDatLai: () => void }) {
         className="text-k-body-sm text-outline hover:text-on-surface-variant
                    px-4 py-2 min-h-k-tap"
       >
-        Bố mẹ đặt lại giờ
+        {T('Bố mẹ đặt lại giờ')}
       </button>
 
       {mo && (
@@ -80,11 +82,10 @@ export default function DatLaiGio({ onDatLai }: { onDatLai: () => void }) {
             </div>
 
             <h2 className="text-p-headline text-on-background text-center mb-1">
-              Đặt lại giờ bài này
+              {T('Đặt lại giờ bài này')}
             </h2>
             <p className="text-p-body-sm text-on-surface-variant text-center mb-6 max-w-xs">
-              Bố mẹ nhập mã PIN để xoá giờ đã bấm. Bài quay về &ldquo;Bắt đầu làm&rdquo;, con bấm
-              lại từ đầu.
+              {T('Bố mẹ nhập mã PIN để xoá giờ đã bấm. Bài quay về “Bắt đầu làm”, con bấm lại từ đầu.')}
             </p>
 
             <BanPhimPin value={pin} onChange={setPin} onFull={kiemTra} disabled={busy} />
@@ -95,7 +96,7 @@ export default function DatLaiGio({ onDatLai }: { onDatLai: () => void }) {
               onClick={dong}
               className="text-p-body text-on-surface-variant mt-6 px-4 py-2 min-h-p-tap"
             >
-              Đóng
+              {T('Đóng')}
             </button>
           </div>
         </div>

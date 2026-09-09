@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ChildColor, Redemption } from '@/lib/types';
+import { useT } from '@/lib/i18n/client';
 
 export interface YeuCauChoDuyet {
   redemption: Redemption;
@@ -39,6 +40,7 @@ export interface YeuCauChoDuyet {
  * roi". Id nao may chu khong con liet ke nua thi bo khoi tap cho do rac.
  */
 export default function DuyetThuong({ initial }: { initial: YeuCauChoDuyet[] }) {
+  const T = useT();
   const router = useRouter();
   const daQuyetDinh = useRef<Set<string>>(new Set());
   const [list, setList] = useState(initial);
@@ -70,12 +72,12 @@ export default function DuyetThuong({ initial }: { initial: YeuCauChoDuyet[] }) 
       });
       const data = await res.json().catch(() => ({}));
       router.refresh();
-      if (!res.ok) throw new Error(data.error ?? 'Không lưu được');
+      if (!res.ok) throw new Error(data.error ?? T('Không lưu được'));
       daQuyetDinh.current.add(id);
       setList((ds) => ds.filter((y) => y.redemption.id !== id));
       setHoi(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không lưu được. Thử lại nhé.');
+      setError(e instanceof Error ? e.message : T('Không lưu được. Thử lại nhé.'));
     } finally {
       setBusy(null);
     }
@@ -84,7 +86,7 @@ export default function DuyetThuong({ initial }: { initial: YeuCauChoDuyet[] }) 
   if (list.length === 0) {
     return (
       <p className="bg-surface-container-lowest rounded-card card-shadow p-3 text-p-body-sm text-on-surface-variant">
-        Chưa có yêu cầu nào. Con xin đổi thưởng ở màn của con thì hiện ở đây.
+        {T('Chưa có yêu cầu nào. Con xin đổi thưởng ở màn của con thì hiện ở đây.')}
       </p>
     );
   }
@@ -105,11 +107,11 @@ export default function DuyetThuong({ initial }: { initial: YeuCauChoDuyet[] }) 
               <img src={childAvatar} alt="" className="w-11 h-11 rounded-full object-cover shrink-0" />
               <span className="flex-1 min-w-0">
                 <span className="block text-p-body text-on-surface">
-                  <b>{childName}</b> xin đổi <b>{r.rewardName}</b>
+                  <b>{childName}</b> {T('xin đổi')} <b>{r.rewardName}</b>
                 </span>
                 <span className={`block text-p-body-sm ${duDiem ? 'text-on-surface-variant' : 'text-error'}`}>
-                  Giá {r.cost} ⭐ · con đang có {diem} ⭐
-                  {!duDiem && ' — chưa đủ'}
+                  {T('Giá {n} ⭐ · con đang có {diem} ⭐', { n: r.cost, diem })}
+                  {!duDiem && ` — ${T('chưa đủ')}`}
                 </span>
               </span>
               <span className="text-3xl shrink-0">{r.rewardIcon}</span>
@@ -123,7 +125,7 @@ export default function DuyetThuong({ initial }: { initial: YeuCauChoDuyet[] }) 
                   className="flex-1 rounded-card min-h-p-tap border-2 border-outline-variant
                              text-on-surface-variant text-p-body-sm font-bold disabled:opacity-60"
                 >
-                  Thôi
+                  {T('Thôi')}
                 </button>
                 <button
                   onClick={() => quyetDinh(r.id, 'approve')}
@@ -131,7 +133,7 @@ export default function DuyetThuong({ initial }: { initial: YeuCauChoDuyet[] }) 
                   className="flex-1 rounded-card min-h-p-tap bg-success text-white text-p-body-sm font-bold
                              disabled:opacity-60"
                 >
-                  {busy === r.id ? 'Đang lưu…' : `Duyệt, trừ ${r.cost} ⭐`}
+                  {busy === r.id ? T('Đang lưu…') : T('Duyệt, trừ {n} ⭐', { n: r.cost })}
                 </button>
               </div>
             ) : (
@@ -142,7 +144,7 @@ export default function DuyetThuong({ initial }: { initial: YeuCauChoDuyet[] }) 
                   className="flex-1 rounded-card min-h-p-tap border-2 border-outline-variant
                              text-on-surface-variant text-p-body-sm font-bold disabled:opacity-60"
                 >
-                  Từ chối
+                  {T('Từ chối')}
                 </button>
                 <button
                   onClick={() => { setHoi(r.id); setError(''); }}
@@ -150,7 +152,7 @@ export default function DuyetThuong({ initial }: { initial: YeuCauChoDuyet[] }) 
                   className="flex-1 rounded-card min-h-p-tap bg-primary text-on-primary text-p-body-sm font-bold
                              disabled:opacity-40"
                 >
-                  Duyệt
+                  {T('Duyệt')}
                 </button>
               </div>
             )}

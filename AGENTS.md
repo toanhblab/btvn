@@ -140,7 +140,11 @@ dòng không ai tick được (màn của con liệt kê từ hôm nay) là kho�
 đó. Best-effort (nuốt lỗi để không 500 một lần ghi đã thành công); ba nhánh đều có
 test ở `lib/tinh-diem.test.ts`.
 
-`stars`/`icon`/`content` CHÉP vào dòng lúc tạo (sửa cấu hình chỉ ảnh hưởng dòng
+`subject` của dòng nhiệm vụ là `VIEC_NHA_SUBJECT` — **khoá phân loại, không phải
+chữ hiện lên màn**, nên giữ nguyên tiếng Việt ở MỌI nhà kể cả nhà demo (cần dịch
+thì dịch LÚC HIỆN THỊ, đừng dịch lúc ghi: ghi bản dịch vào đó thì một nhà có hai
+giá trị cho cùng một thứ — seed ghi bản dịch, `taoNhiemVuNgay` của hôm sau ghi hằng
+số). `stars`/`icon`/`content` CHÉP vào dòng lúc tạo (sửa cấu hình chỉ ảnh hưởng dòng
 tạo sau, và **tắt công tắc chỉ ngăn dòng tạo SAU** — dòng của hôm nay đã tạo vẫn
 hiện, vẫn tick được, vẫn ăn ⭐), riêng nhóm đọc LIVE qua `LEFT JOIN daily_chores`
 trong `ASSIGNMENT_SELECT` — giống `sort_order`. Xoá nhiệm vụ là `archived_at`,
@@ -186,6 +190,51 @@ WebDriver làm user gesture. Mẫu Safari THẬT của con lấy từ URL Vercel
 trẻ em, phân tích xong phải xoá ngay. File Safari: `tfhd` flags `0x2001a`/`0x20038`
 là `default-base-is-moof` (offset tương đối), một `moof`, không `mfra`, AAC; file
 Chrome có nhiều `moof`, `mfra>tfra` (offset tuyệt đối), Opus, `mvhd`/`tkhd` version 1.
+
+Đa ngôn ngữ (issue #46) — chi tiết ở mục "Đa ngôn ngữ" của `README.md`; ở đây chỉ
+những điều phải biết TRƯỚC khi đụng vào mã:
+
+- Chữ của app hiện theo **ngôn ngữ của nhà** (`families.ui_locale`), KHÔNG phải
+  `assignments.lang` — cột đó là ngôn ngữ ĐỀ BÀI. Chữ bố mẹ tự gõ (đề bài, tên
+  nhiệm vụ, phần thưởng) không dịch, kể cả tên nhà mặc định "Nhà mình" vì nhà mới
+  luôn bắt đầu ở `vi`.
+- **Mọi chữ mới trên màn hình phải qua `T(...)`** và phải có ở cả ba từ điển; khoá
+  là CHÍNH câu tiếng Việt. Đọc chú thích đầu `lib/i18n/chu.ts` trước.
+- Hàng rào của luật trên là `npm run lint` (`tsc --noEmit` + `npm run
+  quet:chu-viet`), KHÔNG phải `npm test`. Luật nhận diện và các vị trí miễn trừ ghi
+  ngay trên `boLiteralKhoaODungCho` / `MIEN_TRU` trong `scripts/quet-chu-viet.mjs`,
+  hồi quy ở `lib/quet-chu-viet.test.ts`. Icon Material Symbols nhận ra bằng CHÍNH
+  THẺ chứa nó, đừng đoán theo hình dạng chữ: `add` là tên icon thật, mà "xong"
+  cũng vậy.
+- Phép quét chỉ bắt chữ CHƯA dịch, không bắt chữ dịch rồi mà SAI NGHĨA: ô "Giọng
+  đọc" từng dán nhãn "🇻🇳 đọc giọng Việt" cho một lựa chọn thực ra đọc bằng tiếng
+  Nhật, và từng mượn khoá tên MÔN học ('Tiếng Việt' → '国語') làm tên NGÔN NGỮ. Tên
+  + cờ của ngôn ngữ có khoá dịch RIÊNG (`TEN_NGON_NGU` / `CO_NGON_NGU` trong
+  `lib/speech.ts`, chữ thường để ghép được vào câu "Máy chưa có giọng {giong}"), và
+  hai lựa chọn của ô đó do `luaChonGiong` dựng — một bản cho cả ba màn.
+- **Gắn máy sang nhà KHÁC thì gỡ luôn phiên bố mẹ**, và **nhập PIN demo thì KHÔNG
+  gắn máy**. Hai luật này nằm trong `lib/auth.ts` chứ không ở từng route, vì mỗi
+  luật có nhiều đường đi qua (`setDeviceFamily` + `attachFamilyLink`;
+  `ganMaySauKhiNhapPin`). Thêm đường gắn máy hay đường nhập PIN thứ ba thì đi qua
+  đúng hàm đó, đừng tự `cookies().set`. Link `/nha/<slug>` CỐ Ý nằm ngoài luật PIN
+  demo — nó là đường duy nhất gắn hẳn một máy vào nhà demo.
+- **Ba mã demo TRUNG TÍNH với bộ chặn mò mã** (`attemptPin`): không chạm bộ đếm
+  theo bất kỳ hướng nào — không `recordSuccess`, không `recordFail`. Chúng là mã
+  công khai mà lại tra ra một nhà thật, nên tính như một lần nhập đúng là chúng xoá
+  bộ đếm và ai cũng dò được PIN của nhà THẬT không giới hạn (sai 4 lần → gõ 1111 →
+  lặp lại). Thêm mã công khai nào nữa thì phải giữ đúng tính trung tính này.
+- Dữ liệu ba nhà demo cũ dần theo ngày, phải chạy lại `npm run db:seed:demo` trước
+  mỗi buổi demo (cố ý không thêm cron, không đặc biệt hoá đường đọc).
+  `scripts/seed-demo.mjs` chạy trong `npm run build` nên nó nạp mọi `.ts` bằng
+  `import()` ĐỘNG trong try/catch: import tĩnh được phân giải TRƯỚC khối bắt lỗi
+  nên một bản Node không tự bỏ kiểu sẽ làm hỏng cả bản deploy.
+- Test PGlite import thẳng `lib/store.ts` được nhờ `scripts/test-hook.mjs` (resolve
+  import không đuôi, `npm test` nạp qua `--import`) + `BTVN_PGLITE_DIR=memory://`.
+
+**Gỡ một hàng rào ra khỏi chỗ cũ thì phải nối nó vào chỗ mới TRONG CÙNG một lần
+sửa** — đổi chỗ một hàng rào mà chưa lệnh nào gọi nó thì coi như đã bỏ hàng rào.
+Tiền lệ là phép quét chữ Việt: nó chạy bằng `npm run lint`, hồi quy ở
+`lib/quet-chu-viet.test.ts`.
 
 Tài liệu có hai người đọc khác nhau: `README.md` cho người phát triển, còn
 `HUONG-DAN-BO-ME.md` (kèm ảnh trong `huong-dan-anh/`) cho bố mẹ dùng app thật —
