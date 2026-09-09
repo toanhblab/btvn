@@ -40,8 +40,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ ten: str
 
   // `chu()` doc cookie + hoi DB, con route nay an ca loat Range moi lan Safari keo
   // thanh thoi gian — nen chi dich khi that su phai tra loi bang chu (hai nhanh 404).
-  const khongCoTep = async () =>
-    NextResponse.json({ error: (await chu())('Không có tệp này.') }, { status: 404 });
+  const khongCoTep = async () => {
+    const T = await chu();
+    return NextResponse.json({ error: T('Không có tệp này.') }, { status: 404 });
+  };
 
   // Ten hop le duy nhat la <32 hex><duoi> do lib/upload-route tu dat (TEN_TEP_RE
   // la hop dong dung chung) — vua la chot chong ".." lach ra ngoai thu muc, vua

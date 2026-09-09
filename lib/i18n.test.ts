@@ -73,4 +73,9 @@ test('ngon ngu hop le va ba ma PIN demo', () => {
   assert.deepEqual(PIN_DEMO, { '1111': 'ja', '2222': 'ko', '3333': 'en' });
   assert.ok(pinDanhRieng('1111') && pinDanhRieng('2222') && pinDanhRieng('3333'));
   assert.ok(!pinDanhRieng('1234') && !pinDanhRieng('4444') && !pinDanhRieng(''));
+  // Khoa cua nguyen mau Object: toan tu `in` tra true cho ca ba, `Object.hasOwn` thi khong.
+  // Vi tu nay gac attemptPin / ganMaySauKhiNhapPin / createFamily / changePin.
+  for (const k of ['toString', 'constructor', 'valueOf', 'hasOwnProperty', '__proto__']) {
+    assert.equal(pinDanhRieng(k), false, k);
+  }
 });

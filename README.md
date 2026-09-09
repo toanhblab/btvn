@@ -94,6 +94,11 @@ Luật nằm trong `lib/auth.ts`, không ở từng route, vì có hai đường
 response redirect đã tạo sẵn). `signIn` cũng đi qua `setDeviceFamily`, không tự đặt
 cookie thiết bị. Hồi quy cho cả hai ở `lib/nha-link.test.ts`.
 
+Đường về nhà thật chắc chắn nhất là mở lại link `/nha/<slug>` của nhà đó —
+`attachFamilyLink` gỡ phiên bố mẹ của nhà khác. Màn `/vao` KHÔNG tới được khi đang
+có phiên bố mẹ (`/bome/pin`, `/bome/tao-nha` và `/` đều chuyển hướng đi), nên đi
+demo thì **lưu sẵn link của nhà thật vào dấu trang trước**.
+
 Riêng **PIN demo thì chỉ mở phiên bố mẹ, không gắn máy**: gắn máy kéo dài một năm,
 mà ba mã 1111/2222/3333 ai cũng biết và hay được nhập ngay trên máy nhà thật — hết
 phiên là `viewingFamilyId` rơi về cookie thiết bị và màn của con sẽ hiện nhà demo.

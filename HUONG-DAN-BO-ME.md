@@ -298,13 +298,22 @@ bình thường, không phải cài lại gì.
 
 **App hiện tiếng nước ngoài, không phải tiếng Việt?**
 Máy đang mở nhà mẫu (mã 1111 tiếng Nhật, 2222 tiếng Hàn, 3333 tiếng Anh). Chữ của
-app đi theo **nhà** chứ không theo máy. Có hai cách quay về, cách nào cũng được:
-mở lại link `/nha/<mã nhà>` của nhà mình (bố mẹ copy ở Cài đặt), hoặc vào màn
-**"Đây là máy của nhà nào?"** rồi nhập mã PIN của nhà mình. Cả hai đều đưa máy về
-nhà mình và tiếng Việt ngay — kể cả khi trước đó đã nhập mã của nhà mẫu, vì chuyển
-máy sang một nhà khác thì app tự đóng phần bố mẹ đang mở lại.
+app đi theo **nhà** chứ không theo máy.
+
+Cách chắc chắn được, dùng cả khi đang mở dở nhà mẫu: **mở lại link `/nha/<mã nhà>`
+của nhà mình.** Mở link là máy về nhà mình và tiếng Việt ngay, app tự đóng phần bố
+mẹ của nhà mẫu đang mở. Mã nhà xem ở **Cài đặt** trên điện thoại, còn trên máy tính
+thì nó nằm sẵn ở đầu thanh bên trái, ngay dưới tên nhà.
+
+Màn **"Đây là máy của nhà nào?"** cũng đổi được, nhưng chỉ khi **chưa** nhập mã nhà
+mẫu trong lần dùng này — đã nhập rồi thì app luôn đưa thẳng vào phần bố mẹ, không
+qua màn đó nữa; lúc ấy phải đóng hẳn trình duyệt rồi mở lại trước.
 
 **Muốn cho người khác xem app bằng tiếng Nhật / Hàn / Anh?**
+**Trước khi mở nhà mẫu lần đầu, lưu sẵn link `/nha/<mã nhà>` của nhà mình vào dấu
+trang** — đó là đường về chắc chắn nhất, và lưu trước thì không phải đi tìm mã nhà
+giữa lúc màn hình đang toàn tiếng Nhật.
+
 Mở một trong ba link `/nha/demo-ja` (tiếng Nhật), `/nha/demo-ko` (tiếng Hàn),
 `/nha/demo-en` (tiếng Anh) — mở link nào là máy sang nhà mẫu đó ngay, không phải
 nhập gì; muốn xem phần của bố mẹ thì nhập mã 1111 / 2222 / 3333. Nhảy sang nhà khác
