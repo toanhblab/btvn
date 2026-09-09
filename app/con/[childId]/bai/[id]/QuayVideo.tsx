@@ -14,6 +14,7 @@ import {
   noiNhipKhung,
   phanLoaiLoiMoCamera,
   taoPhienQuay,
+  theoDoiKhungChieu,
   type PhienQuay,
 } from '@/lib/phienQuay';
 import { useT } from '@/lib/i18n/client';
@@ -69,6 +70,8 @@ export default function QuayVideo({
   const [blobUrl, setBlobUrl] = useState('');
   // Dang xin quyen camera: nut phai mo ngay de con khong bam hai lan
   const [starting, setStarting] = useState(false);
+  // Khung xem truoc khong chay duoc (play() bi tu choi) — con phai cham vao no
+  const [khungDung, setKhungDung] = useState(false);
   // null = chua/khong do duoc tien do (duong dev, hoac dang lam lai PATCH) ->
   // chi hien vong xoay, TUYET DOI khong bia so phan tram cho con doc
   const [phanTram, setPhanTram] = useState<number | null>(null);
@@ -130,10 +133,25 @@ export default function QuayVideo({
   useEffect(() => {
     if ((phase === 'ready' || phase === 'recording') && liveRef.current && streamRef.current) {
       liveRef.current.srcObject = streamRef.current;
-      liveRef.current.play().catch(() => {}); // autoPlay+muted thuong tu chay, day chi la day them
+      chayKhungXemTruoc();   // autoPlay+muted thuong tu chay, day chi la day them
       if (phase === 'ready') cuonToiKhung();
     }
   }, [phase]);
+
+  /**
+   * Chay khung xem truoc, va KHONG nuot loi khi play() bi tu choi: khung dung
+   * yen thi con khong thay minh, va bo canh luong dung mat nguon nhip rVFC
+   * (theoDoiKhungChieu tra ve false nen no khong bao dung oan — xem chu thich
+   * dau lib/phienQuay.ts). Bao con cham vao khung de chay lai.
+   */
+  function chayKhungXemTruoc() {
+    liveRef.current?.play().then(
+      () => setKhungDung(false),
+      // Doc lai `paused`: play() cung bi tu choi khi mot lenh play() sau no cat
+      // ngang (AbortError) — luc do khung VAN chay, khong duoc bao oan cho con.
+      () => setKhungDung(!!liveRef.current?.paused),
+    );
+  }
 
   /* Cuon lan hai o onLoadedMetadata la CAN, khong phai cho chac: luc effect
      tren chay, the <video> chua biet kich thuoc luong nen con thap; cuon xong
@@ -153,6 +171,7 @@ export default function QuayVideo({
     startingRef.current = true;
     setStarting(true);
     setError('');
+    setKhungDung(false);
     setPreviewUrl('');
     setClip(null);
 
@@ -210,9 +229,15 @@ export default function QuayVideo({
     const stream = streamRef.current;
     if (phase !== 'ready' || !stream) return;
 
+    // Bo canh khung xem truoc phai dung TRUOC khi phien chay: tick dau tien da
+    // doc khungDangChieu() roi.
+    const video = liveRef.current;
+    const canhKhung = video ? theoDoiKhungChieu(video) : null;
+
     const phien = taoPhienQuay({
       stream,
-      theoDoiKhung: hoTroNhipKhung(liveRef.current),
+      theoDoiKhung: hoTroNhipKhung(video),
+      khungDangChieu: canhKhung?.dangChieu,
       videoBitsPerSecond: QUAY_VIDEO_BPS,
       audioBitsPerSecond: QUAY_AUDIO_BPS,
       maxGiay: MAX_QUAY_GIAY,
@@ -237,10 +262,16 @@ export default function QuayVideo({
     });
     phienRef.current = phien;
     setElapsed(0);
+    // Dat truoc batDau(): that bai thi onKetThuc chay NGAY trong do va no la cho
+    // duy nhat go bo canh khung ra.
+    goNhipKhungRef.current = () => canhKhung?.go();
     // Phai start XONG roi moi doi phase, khong thi man hinh quay ket lai.
     // That bai thi onKetThuc o tren da nhan 'khong-ghi-duoc' va ve 'idle'.
     if (!phien.batDau()) return;
-    if (liveRef.current) goNhipKhungRef.current = noiNhipKhung(liveRef.current, phien);
+    if (video) {
+      const goNhip = noiNhipKhung(video, phien);
+      goNhipKhungRef.current = () => { goNhip(); canhKhung?.go(); };
+    }
     setPhase('recording');
   }
 
@@ -296,6 +327,8 @@ export default function QuayVideo({
               playsInline
               autoPlay
               onLoadedMetadata={() => { if (phase === 'ready') cuonToiKhung(); }}
+              onPlaying={() => setKhungDung(false)}
+              onClick={chayKhungXemTruoc}
               className="w-full max-h-[50vh] rounded-3xl soft-shadow bg-black -scale-x-100"
             />
             {phase === 'recording' && (
@@ -306,6 +339,12 @@ export default function QuayVideo({
               </span>
             )}
           </div>
+
+          {khungDung && (
+            <p className="text-k-body-sm text-error">
+              {T('Khung hình chưa chạy. Con chạm vào khung hình một lần nhé.')}
+            </p>
+          )}
 
           {phase === 'ready' ? (
             <div className="flex gap-3">

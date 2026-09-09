@@ -28,14 +28,26 @@
  *      dung ngay; `mute` keo dai qua nguong cung la dung (mute ngan — vd iPadOS
  *      tam ngat khi ra nen roi vao lai — thi bo qua).
  *
- * HAI HANG RAO chong bao nham, vi mot khoang lang binh thuong KHONG duoc coi la
+ * THU BAC HAI NGUON — khong ngang nhau: `mute`/`ended` den tu CHINH track cua
+ * camera nen LUON co hieu luc. Nhip rVFC chi la tin hieu PHU: no do the <video>
+ * xem truoc CHIEU duoc khung len man, khong do truc tiep camera sinh khung, nen
+ * chi dung lam bang chung khi khung do vua hien vua dang chay.
+ *
+ * BA HANG RAO chong bao nham, vi mot khoang lang binh thuong KHONG duoc coi la
  * dung:
  *   - Tab an (document.hidden): trinh duyet KHONG chay "update the rendering"
  *     cho tai lieu an, nen rVFC im lang du camera van chay. Trong luc an ta
- *     khong phan xu; hien lai thi tinh nguong tu dau.
+ *     khong phan xu (ke ca mute: iPadOS tam ngat nguon khi ra nen); hien lai thi
+ *     tinh nguong tu dau.
  *   - Luong chinh bi nghen (tick den muon qua NGUONG_TICK_MUON_MS): rVFC va
  *     setInterval deu xep hang tren luong chinh, ca hai cung muon nen "khong co
  *     nhip" khong noi gi ve camera. Tick do chi dat lai moc, khong phan xu.
+ *   - Khung xem truoc khong chieu (`khungDangChieu()` false): rVFC ban theo buoc
+ *     "update the rendering" cho phan tu duoc COMPOSITE, nen the <video> cuon ra
+ *     khoi vung nhin (con cuon len doc lai de bai giua buoi quay) hoac play() bi
+ *     tu choi la rVFC im lang du camera van sinh khung — bat o day thi vut mat
+ *     mot ban quay tot. Chi tam ngung BO DEM KHUNG; theo thu bac tren, mute va
+ *     ended van phan xu binh thuong. Noi vao DOM bang theoDoiKhungChieu().
  *
  * NGUONG 4 giay — chon than trong: camera 15-30 fps cach khung 33-67 ms, thieu
  * sang xuong ~7 fps cung chi ~140 ms, tuc 4 s la gap ~30 lan khoang cach xau
@@ -157,6 +169,12 @@ export interface TuyChonPhien {
   maxGiay: number;
   /** Tab co dang hien khong — mac dinh doc document.visibilityState. */
   dangHien?: () => boolean;
+  /**
+   * Khung xem truoc co dang chieu khung len man khong (trong vung nhin + dang
+   * chay). false = nhip rVFC mat gia tri lam bang chung, tam ngung bo dem khung.
+   * Mac dinh true — dung theoDoiKhungChieu() de noi vao the <video> that.
+   */
+  khungDangChieu?: () => boolean;
   // ---- Cho test tiem vao ----
   LopBoGhi?: LopBoGhi;
   bayGio?: () => number;
@@ -182,6 +200,7 @@ export function taoPhienQuay(o: TuyChonPhien): PhienQuay {
   const Lop: LopBoGhi = o.LopBoGhi ?? (MediaRecorder as unknown as LopBoGhi);
   const bayGio = o.bayGio ?? (() => performance.now());
   const dangHien = o.dangHien ?? docDangHien;
+  const khungDangChieu = o.khungDangChieu ?? (() => true);
   const nguong = o.nguongDungMs ?? NGUONG_LUONG_DUNG_MS;
   const vaThoiLuong = o.vaThoiLuong ?? fixVideoDuration;
 
@@ -197,7 +216,11 @@ export function taoPhienQuay(o: TuyChonPhien): PhienQuay {
   let daBoRoi = false;
   let mocKhung = 0;      // lan cuoi co khung moi (hoac moc dat lai)
   let mocTick = 0;       // lan cuoi tick chay — do luong chinh co nghen khong
-  let mocMute: number | null = null;  // tu luc mot track bi mute (null = khong)
+  // Moc mute cua TUNG track (khong co khoa = track do khong mute). Mot moc dung
+  // chung cho ca luong thi track nay unmute la xoa luon moc cua track kia dang
+  // con mute — mic chet tu dau buoi ma hinh chi ngat mot nhip la du de bo hieu
+  // luc hang rao, va con nop mot ban khong co tieng.
+  const mocMute = new Map<MediaStreamTrack, number>();
   const goSuKien: (() => void)[] = [];
 
   function tatLuong() {
@@ -253,7 +276,15 @@ export function taoPhienQuay(o: TuyChonPhien): PhienQuay {
       // mdhd = 0 va chen mvex>mehd — Blob tra ve co the dai hon `out` 16 byte,
       // xem chu thich dau lib/videoDuration.ts). Chi va khi phien con song, vi
       // luong dung da bi boPhien() chan tu truoc — toi day la ban ghi lanh.
-      vaThoiLuong(out, giay).then((fixed) => baoKetThuc({ lyDo: 'xong', clip: fixed, giay }));
+      // Va that bai (mp4 la lam DataView doc qua bien, arrayBuffer loi…) thi ban
+      // ghi VAN lanh — chi metadata duration chua sua. Giao ban GOC ra: de loi
+      // roi ra ngoai la phien ket thuc ma khong ai goi onKetThuc, man hinh ket o
+      // 'recording' voi dong ho dong bang va hai nut chet (daKetThuc da bat), con
+      // mat ca ban quay.
+      vaThoiLuong(out, giay).then(
+        (fixed) => baoKetThuc({ lyDo: 'xong', clip: fixed, giay }),
+        () => baoKetThuc({ lyDo: 'xong', clip: out, giay }),
+      );
     };
     r.stop();
   }
@@ -272,16 +303,21 @@ export function taoPhienQuay(o: TuyChonPhien): PhienQuay {
       // Tab an hoac luong chinh vua nghen: khong co nhip khong noi gi ve camera.
       // Dat lai moc — nguong tinh lai tu luc quan sat duoc.
       mocKhung = now;
-      if (mocMute !== null) mocMute = now;
+      for (const t of mocMute.keys()) mocMute.set(t, now);
       return;
     }
-    if (o.theoDoiKhung && now - mocKhung >= nguong) { boPhien('gian-doan'); return; }
-    if (mocMute !== null && now - mocMute >= nguong) { boPhien('gian-doan'); return; }
+    // Khung xem truoc khong chieu: bo dem khung tam ngung (hang rao thu ba),
+    // nhung mute/ended la tin hieu tu camera nen van phan xu ngay duoi day.
+    if (!khungDangChieu()) mocKhung = now;
+    else if (o.theoDoiKhung && now - mocKhung >= nguong) { boPhien('gian-doan'); return; }
+    for (const moc of mocMute.values()) {
+      if (now - moc >= nguong) { boPhien('gian-doan'); return; }
+    }
   }
 
   function nghe(track: MediaStreamTrack) {
-    const onMute = () => { if (mocMute === null) mocMute = bayGio(); };
-    const onUnmute = () => { mocMute = null; };
+    const onMute = () => { if (!mocMute.has(track)) mocMute.set(track, bayGio()); };
+    const onUnmute = () => { mocMute.delete(track); };
     const onEnded = () => boPhien('gian-doan');
     track.addEventListener('mute', onMute);
     track.addEventListener('unmute', onUnmute);
@@ -291,7 +327,7 @@ export function taoPhienQuay(o: TuyChonPhien): PhienQuay {
       track.removeEventListener('unmute', onUnmute);
       track.removeEventListener('ended', onEnded);
     });
-    if (track.muted) mocMute = bayGio();
+    if (track.muted) mocMute.set(track, bayGio());
   }
 
   return {
@@ -351,6 +387,41 @@ export function taoPhienQuay(o: TuyChonPhien): PhienQuay {
  */
 export function hoTroNhipKhung(video: HTMLVideoElement | null): boolean {
   return !!video && typeof video.requestVideoFrameCallback === 'function';
+}
+
+export interface CanhKhungChieu {
+  /** Khung xem truoc dang chieu khung len man (trong vung nhin + dang chay). */
+  dangChieu(): boolean;
+  go(): void;
+}
+
+/**
+ * Do xem the <video> xem truoc co dang CHIEU khung khong — nguon cho
+ * `khungDangChieu` (hang rao thu ba, xem chu thich dau tep).
+ *
+ * Hai dieu kien, thieu mot la nhip rVFC im lang du camera van chay:
+ *   - trong vung nhin: IntersectionObserver (nguong mac dinh — che mot phan van
+ *     duoc composite nen van co nhip). May khong co IntersectionObserver thi coi
+ *     nhu dang hien, de khong tat luon hang rao chinh.
+ *   - dang chay: `paused`/`ended` cua the <video> — play() bi tu choi (chinh
+ *     sach autoplay) la khung dung mai, khong phai camera dung.
+ */
+export function theoDoiKhungChieu(video: HTMLVideoElement): CanhKhungChieu {
+  // Chua co bao cao nao thi coi nhu dang hien: IntersectionObserver ban ban ghi
+  // dau TIEN sau khi observe(), ma buoi quay bat dau ngay truoc do.
+  let trongVungNhin = true;
+  const obs =
+    typeof IntersectionObserver === 'function'
+      ? new IntersectionObserver((ds) => {
+          const cuoi = ds.at(-1);
+          if (cuoi) trongVungNhin = cuoi.isIntersecting;
+        })
+      : null;
+  obs?.observe(video);
+  return {
+    dangChieu: () => trongVungNhin && !video.paused && !video.ended,
+    go: () => obs?.disconnect(),
+  };
 }
 
 export function noiNhipKhung(video: HTMLVideoElement, phien: Pick<PhienQuay, 'nhipKhung'>): () => void {

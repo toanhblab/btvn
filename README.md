@@ -344,7 +344,12 @@ có thể ngừng sinh khung giữa buổi trong khi `MediaRecorder` vẫn chạ
 mốc đứng không bao giờ được ghi, không vá metadata nào cứu được): app theo dõi
 khung có còn tới khung xem trước không (`requestVideoFrameCallback`) và sự kiện
 `mute`/`ended` của track; đứng quá 4 giây thì tự dừng, **không lưu**, báo con
-mở máy quay quay lại. **Gửi video chính là "đã làm xong"** — bài gắn cờ không có nút tick
+mở máy quay quay lại. Hai tín hiệu đó **không ngang nhau**: `mute`/`ended` đến
+từ chính track của camera nên luôn có hiệu lực, còn nhịp khung chỉ đo *khung xem
+trước* có chiếu được không — con cuộn khung ra khỏi vùng nhìn giữa buổi quay, hay
+`play()` bị từ chối, là nhịp im lặng dù camera vẫn chạy. Vì thế bộ đếm khung tạm
+ngưng khi khung xem trước không chiếu (cùng với hai hàng rào cũ: tab ẩn và luồng
+chính bị nghẽn), để không vứt mất một bản quay tốt. **Gửi video chính là "đã làm xong"** — bài gắn cờ không có nút tick
 riêng và server cũng chặn tick xong khi chưa có video. Mỗi bài giữ **một video
 mới nhất** (quay lại là thay URL, không giữ lịch sử). Video đi qua route riêng
 `/api/nop-video` (xác thực bằng cookie thiết bị vì con không có PIN, chỉ nhận

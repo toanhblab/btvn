@@ -288,6 +288,11 @@ nói sau lúc đó không ghi được nên app không giữ bản đó, để c
 video chỉ có nửa đầu. Con bấm **"Mở máy quay"** và quay lại là được, không cần
 tải lại trang.
 
+**App báo "Khung hình chưa chạy. Con chạm vào khung hình một lần nhé."?**
+Trình duyệt chưa cho khung hình tự chạy nên con không thấy mình trong khung. Con
+chạm một lần vào khung hình đen là nó chạy lại. Máy quay vẫn ghi bình thường
+trong lúc đó.
+
 **App báo "Máy chưa cho phép dùng máy quay" hoặc "Máy quay đang bận"?**
 Lần đầu máy hỏi quyền dùng máy quay và micro thì bấm **"Cho phép"**. Nếu đã từ
 chối nhầm, mở cài đặt của trình duyệt (Safari: menu Safari › Cài đặt cho trang

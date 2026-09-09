@@ -83,8 +83,10 @@ khi track vẫn `live`, `MediaRecorder` vẫn chạy; phần sau mốc đứng C
 ghi nên không bản vá hộp nào cứu được (đo trên 10 video production, báo cáo
 `data/btvn-video-macbook-dieu-tra` trong home firstmate). Sửa ở LÚC QUAY:
 `lib/phienQuay.ts` giữ toàn bộ vòng đời ghi (React chỉ vẽ) kèm bộ canh luồng —
-nhịp khung qua `requestVideoFrameCallback` + `mute`/`ended` của track, ngưỡng và
-hai hàng rào chống báo nhầm (tab ẩn, luồng chính nghẽn) ghi ở chú thích đầu file;
+`mute`/`ended` của track (tín hiệu từ camera, luôn có hiệu lực) + nhịp khung qua
+`requestVideoFrameCallback` (tín hiệu PHỤ, chỉ giá trị khi khung xem trước đang
+chiếu), ngưỡng và ba hàng rào chống báo nhầm (tab ẩn, luồng chính nghẽn, khung
+xem trước không chiếu) ghi ở chú thích đầu file;
 đứng thì tự dừng, KHÔNG lưu, báo con quay lại. Nút "quay bằng máy ảnh của hệ điều
 hành" đã BỎ HẲN theo captain, nên mở camera thất bại PHẢI ra câu con đọc được
 (`CAU_BAO_MO_CAMERA`) — đừng thêm lại đường `<input capture>`. Test

@@ -21,6 +21,7 @@ import {
   noiNhipKhung,
   phanLoaiLoiMoCamera,
   taoPhienQuay,
+  theoDoiKhungChieu,
   type BoGhi,
   type KetQuaPhien,
   type LopBoGhi,
@@ -255,6 +256,63 @@ test('track mute keo dai qua nguong: gian doan; mute ngan roi unmute: bo qua', (
   }
 });
 
+test('khung xem truoc khong chieu (cuon ra khoi vung nhin / play() bi tu choi): KHONG dung, KHONG vut ban quay', () => {
+  let chieu = true;
+  const { phien, tracks, ketThuc, daVa, recorder } = taoPhien({ khungDangChieu: () => chieu });
+  phien.batDau();
+  camChay(phien, 3);
+
+  // Con cuon len doc lai de bai: the <video> ra khoi vung nhin nen rVFC im lang,
+  // nhung camera VAN sinh khung — tab van hien, tick van dung gio.
+  chieu = false;
+  troi(30_000);
+  assert.equal(ketThuc.length, 0, 'khung khong chieu thi khong co nhip khong noi gi ve camera');
+  assert.equal(recorder().state, 'recording', 'van dang quay');
+  assert.ok(tracks.every((t) => t.readyState === 'live'), 'khong tat camera');
+  assert.deepEqual(daVa, []);
+
+  // Cuon xuong lai: nguong tinh tu luc quan sat duoc, va cu dung THAT van bat.
+  chieu = true;
+  camChay(phien, 3);
+  assert.equal(ketThuc.length, 0);
+  troi(NGUONG_LUONG_DUNG_MS);
+  assert.equal(ketThuc[0]?.lyDo, 'gian-doan', 'khung dang chieu ma khong co nhip -> dung that');
+});
+
+test('khung xem truoc khong chieu: mute/ended cua track VAN phan xu (tin hieu tu camera)', () => {
+  {
+    const { phien, tracks, ketThuc } = taoPhien({ khungDangChieu: () => false });
+    phien.batDau();
+    troi(3000);
+    tracks[0].mute();
+    troi(NGUONG_LUONG_DUNG_MS + 1000);
+    assert.equal(ketThuc[0]?.lyDo, 'gian-doan', 'mute qua nguong khong phu thuoc khung xem truoc');
+  }
+  {
+    const { phien, tracks, ketThuc } = taoPhien({ khungDangChieu: () => false });
+    phien.batDau();
+    troi(3000);
+    tracks[0].end();
+    assert.equal(ketThuc[0]?.lyDo, 'gian-doan');
+  }
+});
+
+test('moc mute theo TUNG track: track nay unmute khong xoa moc cua track kia dang con mute', () => {
+  const { phien, tracks, ketThuc } = taoPhien();
+  phien.batDau();
+  camChay(phien, 2);
+  tracks[1].mute();                        // mic chet o t=0, khong bao gio tro lai
+  camChay(phien, 1);
+  tracks[0].mute();                        // hinh ngat o t=1
+  camChay(phien, 1);
+  tracks[0].unmute();                      // hinh tro lai o t=2 — mic VAN mute
+  camChay(phien, 1);
+  assert.equal(ketThuc.length, 0, 'chua du nguong tu luc mic mute');
+  camChay(phien, 1);
+  assert.equal(ketThuc[0]?.lyDo, 'gian-doan', 'mic mute qua nguong van la gian doan');
+  assert.equal(ketThuc[0]?.clip, null);
+});
+
 test('trinh duyet khong co rVFC (theoDoiKhung=false): khong co nhip cung khong bao dung, van bat mute/ended', () => {
   const { phien, tracks, ketThuc } = taoPhien({ theoDoiKhung: false });
   phien.batDau();
@@ -311,6 +369,21 @@ test('het gio (maxGiay): tu chot nhu bam "Quay xong"', async () => {
   await choMicrotask();
   assert.equal(ketThuc[0]?.lyDo, 'xong');
   assert.equal(ketThuc[0]?.giay, 5);
+});
+
+test('va thoi luong hong: van goi onKetThuc, giao clip GOC voi ly do "xong" (khong mat ban ghi, khong treo phien)', async () => {
+  const { phien, ketThuc } = taoPhien({
+    vaThoiLuong: async () => { throw new RangeError('mp4 la: doc qua bien'); },
+  });
+  phien.batDau();
+  camChay(phien, 4);
+  phien.dung(false);
+  await choMicrotask();
+  assert.equal(ketThuc.length, 1, 'khong bao gio de phien ket thuc ma khong goi onKetThuc');
+  assert.equal(ketThuc[0].lyDo, 'xong');
+  assert.ok(ketThuc[0].clip instanceof Blob, 'ban ghi goc duoc giao ra');
+  assert.equal(ketThuc[0].clip!.size, 16);
+  assert.equal(ketThuc[0].giay, 4);
 });
 
 test('dung binh thuong ma khong co byte nao: "trong"', async () => {
@@ -404,4 +477,50 @@ test('noiNhipKhung: moi khung mot nhip va dang ky lai; go thi thoi', () => {
   assert.equal(daHuy, 4);
   cb!();
   assert.equal(nhip, 3, 'da go thi khung toi cung khong tinh');
+});
+
+test('theoDoiKhungChieu: dang chieu = vua trong vung nhin vua dang chay', () => {
+  const goc = globalThis.IntersectionObserver;
+  let bao: ((ds: { isIntersecting: boolean }[]) => void) | null = null;
+  let daQuanSat: unknown = null;
+  let daNgat = false;
+  globalThis.IntersectionObserver = class {
+    constructor(f: (ds: { isIntersecting: boolean }[]) => void) { bao = f; }
+    observe(el: unknown) { daQuanSat = el; }
+    disconnect() { daNgat = true; }
+  } as unknown as typeof IntersectionObserver;
+  try {
+    const video = { paused: false, ended: false } as HTMLVideoElement;
+    const canh = theoDoiKhungChieu(video);
+    assert.equal(daQuanSat, video);
+    assert.equal(canh.dangChieu(), true, 'chua co bao cao nao thi coi nhu dang chieu');
+
+    bao!([{ isIntersecting: false }]);
+    assert.equal(canh.dangChieu(), false, 'ra khoi vung nhin');
+    bao!([{ isIntersecting: true }]);
+    assert.equal(canh.dangChieu(), true);
+
+    (video as { paused: boolean }).paused = true;   // play() bi tu choi
+    assert.equal(canh.dangChieu(), false, 'khung khong chay thi rVFC im mai mai');
+    (video as { paused: boolean }).paused = false;
+    (video as { ended: boolean }).ended = true;
+    assert.equal(canh.dangChieu(), false);
+
+    canh.go();
+    assert.equal(daNgat, true);
+  } finally {
+    globalThis.IntersectionObserver = goc;
+  }
+});
+
+test('theoDoiKhungChieu: may khong co IntersectionObserver thi coi nhu dang chieu (khong tat hang rao)', () => {
+  const goc = globalThis.IntersectionObserver;
+  Reflect.deleteProperty(globalThis, 'IntersectionObserver');   // may khong ho tro
+  try {
+    const canh = theoDoiKhungChieu({ paused: false, ended: false } as HTMLVideoElement);
+    assert.equal(canh.dangChieu(), true);
+    canh.go();
+  } finally {
+    globalThis.IntersectionObserver = goc;
+  }
 });

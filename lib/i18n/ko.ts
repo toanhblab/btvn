@@ -159,6 +159,7 @@ export const KO: Record<Key, string> = {
   'Không tìm thấy máy quay trên máy này. Con dùng iPad hoặc máy có máy quay nhé.': '이 기기에서 카메라를 찾을 수 없어요. iPad나 카메라가 있는 기기를 사용해요.',
   'Máy quay đang bận vì ứng dụng khác đang dùng. Con tắt ứng dụng đó rồi thử lại nhé.': '다른 앱이 카메라를 쓰고 있어서 바빠요. 그 앱을 닫고 다시 해 보세요.',
   'Chưa mở được máy quay. Con thử lại, hoặc nhờ bố mẹ giúp nhé.': '카메라를 열 수 없어요. 다시 해 보거나 부모님께 도와 달라고 해요.',
+  'Khung hình chưa chạy. Con chạm vào khung hình một lần nhé.': '미리보기가 움직이지 않아요. 화면을 한 번 눌러 보세요.',
   'Quay video nộp bài': '동영상 찍어 제출하기',
   'Bắt đầu quay': '녹화 시작',
   'Thoát': '나가기',

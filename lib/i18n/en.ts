@@ -169,6 +169,7 @@ export const EN = {
   'Không tìm thấy máy quay trên máy này. Con dùng iPad hoặc máy có máy quay nhé.': 'No camera was found on this device. Use an iPad or a device with a camera.',
   'Máy quay đang bận vì ứng dụng khác đang dùng. Con tắt ứng dụng đó rồi thử lại nhé.': 'The camera is busy because another app is using it. Close that app and try again.',
   'Chưa mở được máy quay. Con thử lại, hoặc nhờ bố mẹ giúp nhé.': 'Could not open the camera. Try again, or ask a parent for help.',
+  'Khung hình chưa chạy. Con chạm vào khung hình một lần nhé.': 'The preview is not playing. Tap the preview once.',
   'Quay video nộp bài': 'Record a video to hand in',
   'Bắt đầu quay': 'Start recording',
   'Thoát': 'Exit',

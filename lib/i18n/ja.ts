@@ -159,6 +159,7 @@ export const JA: Record<Key, string> = {
   'Không tìm thấy máy quay trên máy này. Con dùng iPad hoặc máy có máy quay nhé.': 'この端末にはカメラが見つかりません。iPadかカメラのある端末を使ってね。',
   'Máy quay đang bận vì ứng dụng khác đang dùng. Con tắt ứng dụng đó rồi thử lại nhé.': 'ほかのアプリがカメラを使っています。そのアプリを閉じて、もう一度やってみよう。',
   'Chưa mở được máy quay. Con thử lại, hoặc nhờ bố mẹ giúp nhé.': 'カメラを開けませんでした。もう一度やるか、おうちの人に手伝ってもらってね。',
+  'Khung hình chưa chạy. Con chạm vào khung hình một lần nhé.': 'プレビューが動いていません。画面を1回タップしてね。',
   'Quay video nộp bài': '動画を撮って提出',
   'Bắt đầu quay': '録画スタート',
   'Thoát': 'やめる',
