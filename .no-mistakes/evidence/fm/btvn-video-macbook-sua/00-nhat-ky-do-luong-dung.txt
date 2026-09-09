@@ -1,0 +1,36 @@
+Kiem thu tay tren app that (next dev + Chrome, man cua con o 1180x820)
+Bai co requires_video: /con/minh/bai/asg_9a41278d80c54b0f
+Camera gia: canvas.captureStream(30) + AudioContext (ghi de navigator.mediaDevices.getUserMedia),
+"ngung sinh khung" = ngung ve vao canvas -> track VAN live, KHONG mute, KHONG ended.
+Day dung la dau hieu #51 do duoc tren 10 video that: recorder van recording, dong ho van dem.
+
+=== A1. Luong camera DUNG giua buoi quay (trieu chung #51) ===
+t+0ms      dongHo=0:39/10:00  soKhung=1161  video=live muted=false   <- NGUNG SINH KHUNG tai day
+t+257ms    dongHo=0:39/10:00  soKhung=1161  video=live muted=false   loi=-
+t+1255ms   dongHo=0:40/10:00  soKhung=1161  video=live muted=false   loi=-
+t+2264ms   dongHo=0:41/10:00  soKhung=1161  video=live muted=false   loi=-   (anh 04: van dang quay, khung dong cung)
+t+3300ms   dongHo=0:42/10:00  soKhung=1161  video=live muted=false   loi=-
+t+4260ms   dongHo=0:43/10:00  soKhung=1161  video=live muted=false   loi=-
+t+4776ms   dongHo=(mat)       soKhung=1161  video=ended              loi=CO
+           "May quay bi gian doan giua chung nen ban nay chua luu. Con mo may quay va quay lai nhe."
+           -> tu dung, camera tat (ca hai track ended), KHONG co ban xem lai (khong luu),
+              nut "Mo may quay" con day de con quay lai ngay (anh 05).
+
+=== A2. Mic chet giua buoi (track mute) trong khi HINH van chay ===
+bam mute cho track audio o giay ~4 -> t+5027ms hien dung cau tren, khong luu ban quay moi
+(tren man chi con video da nop truoc do: /api/tep/1bdd...mp4) (anh 14)
+
+=== B1. Khong bao nham: luong chay deu thi VAN LUU ===
+quay 30 giay, khung toi lien tuc, khong co canh bao nao;
+bam "Quay xong" -> co ban xem lai, video.duration = 30.200 s (dong ho dem 0:30 — khong gap doi)
+gui bai -> "Gioi qua!" (anh 06/07/08)
+tep da nop (.data/uploads, duong dev): mp4 h264+opus, format duration = 30.200438 s
+
+=== B2. May CO ham requestVideoFrameCallback nhung KHONG BAO GIO ban nhip ===
+(hang rao khung chi bat sau nhip dau tien — daCoNhip)
+dang ky rVFC: 1 lan, nhip nhan duoc: 0
+quay lien 22 giay: khong he bao "gian doan"; bam "Quay xong" -> LUU DUOC, duration 22.396 s (anh 13)
+
+=== C. Luoi an toan duy nhat sau khi bo nut "quay bang may anh" ===
+getUserMedia nem NotAllowedError -> "May chua cho phep dung may quay. Con nho bo me bam
+"Cho phep" khi may hoi, roi thu lai nhe." (anh 12)
