@@ -264,11 +264,11 @@ export function taoPhienQuay(o: TuyChonPhien): PhienQuay {
     if (!daBoRoi) o.onKetThuc(kq);
   }
 
-  /** Ket thuc ma KHONG giu gi: huy / gian doan / khong ghi duoc. */
-  function boPhien(lyDo: Exclude<LyDoKetThuc, 'xong' | 'trong'>) {
-    if (daKetThuc) return;
-    daKetThuc = true;
-    donDep();
+  /**
+   * Ket thuc TAY KHONG: bo may ghi, tat luong, giao ly do. KHONG tu kiem
+   * `daKetThuc` — nguoi goi lo (chotPhien goi khi da bat co roi ma stop() nem).
+   */
+  function ketThucTayKhong(lyDo: Exclude<LyDoKetThuc, 'xong' | 'trong'>) {
     const r = recorder;
     recorder = null;
     chunks.length = 0;
@@ -281,6 +281,14 @@ export function taoPhienQuay(o: TuyChonPhien): PhienQuay {
     }
     tatLuong();
     baoKetThuc({ lyDo, clip: null, giay });
+  }
+
+  /** Ket thuc ma KHONG giu gi: huy / gian doan / khong ghi duoc. */
+  function boPhien(lyDo: Exclude<LyDoKetThuc, 'xong' | 'trong'>) {
+    if (daKetThuc) return;
+    daKetThuc = true;
+    donDep();
+    ketThucTayKhong(lyDo);
   }
 
   /** Ket thuc GIU ban ghi: cho recorder day het du lieu roi ghep + va thoi luong. */
@@ -316,7 +324,15 @@ export function taoPhienQuay(o: TuyChonPhien): PhienQuay {
         () => baoKetThuc({ lyDo: 'xong', clip: out, giay }),
       );
     };
-    r.stop();
+    try {
+      r.stop();
+    } catch {
+      // Nguon da chet ma `state` van doc ra 'recording' (dung y nhu cu dung cua
+      // #51) thi stop() nem, va o day co da bat, don xong, onstop moi da gan:
+      // de loi roi ra ngoai la man hinh ket o 'recording' voi hai nut chet. Khong
+      // con ai ban onstop nua nen phai tu ket thuc — tay khong, khong luu.
+      ketThucTayKhong('gian-doan');
+    }
   }
 
   /** Moi giay: dem gio, het gio thi chot, roi kiem luong. */

@@ -61,6 +61,7 @@ class BoGhiGia implements BoGhi {
   static daTao: BoGhiGia[] = [];
   static nemLucTao = false;
   static nemLucStart = false;
+  static nemLucStop = false;
   static isTypeSupported(m: string) { return m === 'video/mp4;codecs=avc1'; }
   state: 'inactive' | 'recording' | 'paused' = 'inactive';
   mimeType = 'video/mp4';
@@ -78,6 +79,7 @@ class BoGhiGia implements BoGhi {
     this.state = 'recording';
   }
   stop() {
+    if (BoGhiGia.nemLucStop) throw new DOMException('x', 'InvalidStateError');
     this.state = 'inactive';
     queueMicrotask(() => {
       this.ondataavailable?.({ data: new Blob([new Uint8Array(16)]) });
@@ -96,6 +98,7 @@ beforeEach(() => {
   BoGhiGia.daTao = [];
   BoGhiGia.nemLucTao = false;
   BoGhiGia.nemLucStart = false;
+  BoGhiGia.nemLucStop = false;
   mock.timers.enable({ apis: ['setInterval'] });
 });
 afterEach(() => mock.timers.reset());
@@ -429,6 +432,42 @@ test('va thoi luong hong: van goi onKetThuc, giao clip GOC voi ly do "xong" (kho
   assert.ok(ketThuc[0].clip instanceof Blob, 'ban ghi goc duoc giao ra');
   assert.equal(ketThuc[0].clip!.size, 16);
   assert.equal(ketThuc[0].giay, 4);
+});
+
+test('stop() nem luc chot phien: van ket thuc (gian-doan), khong bao gio ket man hinh', async () => {
+  // Nguon da chet ma `state` van doc ra 'recording' — con bam "Quay xong" va
+  // stop() nem. Phien da bat co ket thuc + don dong ho, nen khong ai ban onstop.
+  {
+    const { phien, tracks, ketThuc, daVa, recorder } = taoPhien();
+    phien.batDau();
+    camChay(phien, 3);
+    BoGhiGia.nemLucStop = true;
+    assert.equal(recorder().state, 'recording');
+
+    phien.dung(false);
+    await choMicrotask();
+    assert.equal(ketThuc.length, 1, 'onKetThuc van duoc goi dung mot lan');
+    assert.equal(ketThuc[0].lyDo, 'gian-doan');
+    assert.equal(ketThuc[0].clip, null, 'khong luu ban ghi nua vo');
+    assert.deepEqual(daVa, []);
+    assert.ok(tracks.every((t) => t.readyState === 'ended'), 'camera da tat');
+
+    // Nut "Huỷ" bam sau do khong sinh ket qua thu hai
+    phien.dung(true);
+    troi(3000);
+    assert.equal(ketThuc.length, 1);
+  }
+  // Cung the qua duong het gio (throw roi vao callback cua setInterval)
+  {
+    const { phien, tracks, ketThuc } = taoPhien({ maxGiay: 5 });
+    phien.batDau();
+    BoGhiGia.nemLucStop = true;
+    camChay(phien, 5);
+    await choMicrotask();
+    assert.equal(ketThuc.length, 1);
+    assert.equal(ketThuc[0].lyDo, 'gian-doan');
+    assert.ok(tracks.every((t) => t.readyState === 'ended'));
+  }
 });
 
 test('dung binh thuong ma khong co byte nao: "trong"', async () => {

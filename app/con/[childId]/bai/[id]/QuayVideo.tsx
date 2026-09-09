@@ -133,7 +133,14 @@ export default function QuayVideo({
      iPad ngang khung nam duoi de bai nen con khong thay minh neu khong cuon. */
   useEffect(() => {
     if ((phase === 'ready' || phase === 'recording') && liveRef.current && streamRef.current) {
-      liveRef.current.srcObject = streamRef.current;
+      // Chi gan khi KHAC luong dang co: setter cua srcObject khong so sanh gia
+      // tri cu, gan lai cung mot MediaStream la chay lai "media element load
+      // algorithm" — `emptied`, readyState ve HAVE_NOTHING, `paused` bat len. O
+      // buoc ready -> recording thi do dung la luc hang rao khung dang duoc noi
+      // vao, khong duoc nap lai the <video> ngay luc do.
+      if (liveRef.current.srcObject !== streamRef.current) {
+        liveRef.current.srcObject = streamRef.current;
+      }
       chayKhungXemTruoc();   // autoPlay+muted thuong tu chay, day chi la day them
       if (phase === 'ready') cuonToiKhung();
     }
@@ -336,7 +343,6 @@ export default function QuayVideo({
               playsInline
               autoPlay
               onLoadedMetadata={() => { if (phase === 'ready') cuonToiKhung(); }}
-              onPlay={() => setKhungDung(false)}
               onPlaying={() => setKhungDung(false)}
               onPause={chayKhungXemTruoc}
               onClick={chayKhungXemTruoc}
