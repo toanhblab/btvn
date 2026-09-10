@@ -255,7 +255,7 @@ xoá gì bao giờ. Luật: xoá khi **cả hai** đúng — quá `SO_NGAY_GIU_V
 kể từ `submitted_video_at`, VÀ ngoài `SO_VIDEO_MOI_NHAT_GIU_LAI` (3) video mới
 nhất **của chính con đó** (`ROW_NUMBER() … PARTITION BY child_id`, xếp hạng trên
 TOÀN BỘ video của con rồi mới lọc theo ngày). Đọc khối chú thích đầu
-`lib/donVideo.ts` trước khi đụng vào: nó liệt kê tám hàng rào, và ba cái dễ tháo
+`lib/donVideo.ts` trước khi đụng vào: nó liệt kê chín hàng rào, và ba cái dễ tháo
 nhầm nhất là (1) **chạy thử là mặc định** — `DON_VIDEO_CHAY_THAT=1` mới xoá thật;
 (2) **sổ cái `video_cleanups` ghi CÙNG MỘT CÂU SQL với lúc gỡ URL** rồi mới
 `del()`, vì sau khi tệp biến mất thì sổ cái là bản sao duy nhất của đường dẫn;
@@ -263,8 +263,9 @@ nhầm nhất là (1) **chạy thử là mặc định** — `DON_VIDEO_CHAY_THA
 thư mục `nop-bai/`) — bỏ sót chỉ là không dọn được, nới ra là xoá nhầm link
 Drive / ảnh / nhà demo. Chống cron gọi trùng nằm ở **chỉ mục UNIQUE từng phần**
 `(run_date) WHERE che_do = 'that'`, không ở code. `lib/donVideo.test.ts` ghim cả
-luật lẫn tám hàng rào; bài "sổ cái ghi trước khi phá" kiểm bằng cách cho `del()`
-giả đọc thẳng CSDL ngay lúc nó bị gọi — sửa thứ tự là test đỏ.
+luật lẫn chín hàng rào, tên bài mang đúng số của hàng rào; bài "sổ cái ghi trước
+khi phá" kiểm bằng cách cho `del()` giả đọc thẳng CSDL ngay lúc nó bị gọi — sửa
+thứ tự là test đỏ.
 
 **Gỡ một hàng rào ra khỏi chỗ cũ thì phải nối nó vào chỗ mới TRONG CÙNG một lần
 sửa** — đổi chỗ một hàng rào mà chưa lệnh nào gọi nó thì coi như đã bỏ hàng rào.

@@ -9,10 +9,12 @@
  *   A. LUAT: xoa khi CA HAI dung — qua SO_NGAY_GIU_VIDEO ngay, VA khong nam
  *      trong SO_VIDEO_MOI_NHAT_GIU_LAI video moi nhat CUA CHINH CON DO. Moi
  *      nhanh cua chu "VA" va cua chu "chinh con do" deu co mot bai rieng.
- *   B. TAM HANG RAO: chay thu la mac dinh, tran moi luot (MOT tui chung cho ca
- *      phan don not lan phan chon viec moi), danh sach trang host va thu muc,
- *      hai dong ho, so cai ghi TRUOC khi pha, cau dao ngat khi kho tu choi xoa,
- *      chan chay trung, loai nha demo.
+ *   B. CHIN HANG RAO, danh so nhu o dau lib/donVideo.ts va ten bai o day mang
+ *      dung so do: 1 chay thu la mac dinh, 2 tran moi luot (MOT tui chung cho ca
+ *      phan don not lan phan chon viec moi), 3 danh sach trang host va thu muc,
+ *      4 hai dong ho, 5 so cai ghi TRUOC khi pha, 6 cau dao ngat khi kho tu choi
+ *      xoa, 7 chan chay trung, 9 loai nha demo. Rieng hang rao 8 (captain bam tay
+ *      lan chay that dau tien) la buoc NGUOI nen khong co bai nao o day.
  *
  * Bai dat nhat o day la "so cai ghi truoc khi pha": no khong kiem duoc bang
  * cach nhin ket qua cuoi cung, nen ham del() gia se DOC THANG CSDL ngay tai
@@ -345,7 +347,7 @@ test('hang rao 5: so cai giu lai duong dan da mat — ban sao duy nhat con lai',
   assert.equal(so[0].child_id, 'con_a');
 });
 
-test('hang rao 6: hai luot xoa that trong cung mot ngay — luot sau bi chan', async () => {
+test('hang rao 7: hai luot xoa that trong cung mot ngay — luot sau bi chan', async () => {
   const mot = await donVideo.donVideoQuaHan({ that: true });
   assert.equal(mot.boQua, undefined);
 
@@ -355,7 +357,7 @@ test('hang rao 6: hai luot xoa that trong cung mot ngay — luot sau bi chan', a
   assert.equal(daGoiDel.length, 1, 'luot bi chan khong duoc goi del() them lan nao');
 });
 
-test('hang rao 6: chay thu khong bi chan, va khong chiem cho cua luot that', async () => {
+test('hang rao 7: chay thu khong bi chan, va khong chiem cho cua luot that', async () => {
   await donVideo.donVideoQuaHan();
   await donVideo.donVideoQuaHan();
   const that = await donVideo.donVideoQuaHan({ that: true });
@@ -363,7 +365,7 @@ test('hang rao 6: chay thu khong bi chan, va khong chiem cho cua luot that', asy
   assert.ok(that.daXoa.length > 0);
 });
 
-test('hang rao 7: ba nha demo khong bao gio bi dong toi', async () => {
+test('hang rao 9: ba nha demo khong bao gio bi dong toi', async () => {
   await donVideo.donVideoQuaHan({ that: true });
   const con = await conLai();
   for (const id of ['d1', 'd2', 'd3', 'd4', 'd5']) {
@@ -373,7 +375,7 @@ test('hang rao 7: ba nha demo khong bao gio bi dong toi', async () => {
   assert.ok(!moiUrl.some((u) => u.includes('example.com')));
 });
 
-test('hang rao 7: dau gach duoi cua LIKE duoc thoat — nha that ten gan giong demo van duoc don', async () => {
+test('hang rao 9: dau gach duoi cua LIKE duoc thoat — nha that ten gan giong demo van duoc don', async () => {
   const ra = await donVideo.donVideoQuaHan({ that: true });
   assert.ok(ra.daXoa.includes('x4'),
     "'fam_demo_%' khong thoat se bat ca 'famxdemoy' va bo qua mot nha THAT mai mai");

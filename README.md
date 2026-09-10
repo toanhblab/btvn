@@ -244,7 +244,7 @@ các migration chạy được trên cả hai.
 
 Kho tệp Vercel Blob của gói Hobby chỉ có **1 GB** và app trước giờ không xoá tệp
 nào. Một cron mỗi ngày (`vercel.json` → `/api/don-video`, `0 19 * * *` UTC ≈ 2 giờ
-sáng giờ VN) dọn bớt video con nộp. Luật và tám hàng rào an toàn ghi ở đầu
+sáng giờ VN) dọn bớt video con nộp. Luật và chín hàng rào an toàn ghi ở đầu
 `lib/donVideo.ts`; đọc chỗ đó trước khi sửa.
 
 **Luật:** xoá một video khi **cả hai** đúng — đã quá `SO_NGAY_GIU_VIDEO` (5) ngày
@@ -275,8 +275,8 @@ hỏng để lại tệp **không còn ai trỏ tới** — nên mỗi lượt �
 dọn nốt ăn **cùng một trần** với phần chọn việc mới, và nếu nó vẫn hỏng thì cả
 lượt **dừng ngay** — kho đang từ chối xoá thì gỡ thêm URL chỉ làm đống tồn lớn
 dần mà không thu về byte nào. Bảng `video_cleanup_runs` có chỉ mục
-UNIQUE từng phần trên `(run_date) WHERE che_do = 'that'` — đó là hàng rào chống
-cron gọi trùng một lượt, và nó nằm ở CSDL chứ không ở code.
+UNIQUE từng phần trên `(run_date) WHERE che_do = 'that'` — đó là hàng rào 7,
+chống cron gọi trùng một lượt, và nó nằm ở CSDL chứ không ở code.
 
 Bố mẹ thấy việc này chạy hay không ở **Cài đặt → "Dọn video cũ"**.
 

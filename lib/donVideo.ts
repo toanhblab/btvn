@@ -20,7 +20,8 @@
  * nop it ra ngoai, khong phai y captain.
  *
  * XOA TEP TREN KHO KHONG LUI DUOC. Ca tep nay duoc viet quanh mot cau do:
- * moi hang rao deu nam TRUOC luc pha, khong cai nao la duong lui. TAM cai:
+ * moi hang rao deu nam TRUOC luc pha, khong cai nao la duong lui. CHIN cai, xep
+ * theo dung thu tu mot luot di qua chung:
  *
  *   1. CHAY THU LA MAC DINH. `that` phai duoc nguoi goi bat tuong minh
  *      (route doc DON_VIDEO_CHAY_THAT === '1'). Khong bat thi chi liet ke.
@@ -50,21 +51,25 @@
  *      `max` video mat cho xem va mat nut "Chia se", ma khong doi lay mot byte
  *      nao. Co cau dao ngat thi kho hong chi lam viec don DUNG LAI, khong lam no
  *      pha them.
- *   7. Lan chay THAT dau tien do captain bam tay, sau khi doc danh sach cua mot
- *      lan chay thu (scripts/don-video.mjs).
- *   8. Nha demo bi loai ngay trong cau SELECT (`fam\_demo\_%`).
+ *   7. CHONG CHAY TRUNG: mot luot 'that' moi ngay, chan bang CHI MUC UNIQUE TUNG
+ *      PHAN `(run_date) WHERE che_do = 'that'` chu khong bang code — tai lieu cua
+ *      Vercel noi thang cron "co the goi cung mot luot hon mot lan". Luot 'thu'
+ *      khong bi chan vi no khong pha gi.
+ *   8. Lan chay THAT dau tien do captain bam tay, sau khi doc danh sach cua mot
+ *      lan chay thu (scripts/don-video.mjs). Day la buoc NGUOI, khong co test.
+ *   9. Nha demo bi loai ngay trong cau SELECT (`fam\_demo\_%`).
  *
  * `submitted_video_at` thi GIU LAI (chi URL bi go) — xem SQL_GO_VA_GHI_SO. Cap
  * "URL rong ma moc nop con" la trang thai 'da-don' cua `trangThaiVideo`
  * (lib/types.ts): moi man cua bo me doc trang thai video deu di qua ham do, dung
  * tu viet lai dieu kien o man moi.
  *
- * VI SAO GO URL TRONG CSDL LA BAT BUOC, khong phai tuy chon: moi cho ve video
- * deu kiem rong san (`coVideo` trong ChiaSeVideo, `{submittedVideoUrl && …}`
- * trong SuaBai, `{existingUrl && …}` trong QuayVideo) nen URL = NULL la man hinh
- * tu thu gon lai. Nguoc lai, de nguyen URL ma xoa tep thi bo me thay trinh phat
- * den, va te nhat: nut "Chia se" o man nop bai cho co tut xuong nhanh du phong
- * va gui cho co mot DUONG LIEN KET CHET.
+ * VI SAO GO URL TRONG CSDL LA BAT BUOC, khong phai tuy chon: moi cho PHAT hay
+ * CHIA SE tep deu kiem rong san (`{submittedVideoUrl && …}` trong SuaBai,
+ * `{existingUrl && …}` trong QuayVideo, `coVideo` trong ChiaSeVideo) nen
+ * URL = NULL la khung phat va nut chia se tu thu gon lai. Nguoc lai, de nguyen
+ * URL ma xoa tep thi bo me thay trinh phat den, va te nhat: nut "Chia se" o man
+ * nop bai cho co tut xuong nhanh du phong va gui cho co mot DUONG LIEN KET CHET.
  */
 
 import { del, head } from '@vercel/blob';
@@ -285,8 +290,8 @@ export async function donVideoQuaHan(
     return ra;
   }
 
-  // Gianh cho cua ngay — hang rao chong chay trung (chi muc UNIQUE tung phan chi
-  // ap cho luot 'that'; luot 'thu' khong bao gio dung nhau).
+  // Gianh cho cua ngay — hang rao 7, chong chay trung (chi muc UNIQUE tung phan
+  // chi ap cho luot 'that'; luot 'thu' khong bao gio dung nhau).
   const runId = newId('vcr');
   const claim = await query<{ id: string }>(
     `INSERT INTO video_cleanup_runs (id, run_date, che_do) VALUES ($1, CURRENT_DATE, $2)

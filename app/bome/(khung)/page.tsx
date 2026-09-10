@@ -5,7 +5,7 @@ import { SO_NGAY_QUET_GAN_DAY, ngayGanNhatCoBai } from '@/lib/ngay';
 import {
   countPendingRedemptions, getFamilyById, listAssignments, progressUpcoming, todayISO,
 } from '@/lib/store';
-import { HW_SOURCES } from '@/lib/types';
+import { HW_SOURCES, trangThaiVideo } from '@/lib/types';
 import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
@@ -40,7 +40,9 @@ export default async function BangDieuKhien() {
   ]);
 
   const baiTiengAnh = homNay.filter((a) => a.source === 'english_class');
-  const videoDaQuay = baiTiengAnh.filter((a) => a.submittedVideoUrl).length;
+  // Cung khoa dich "{done}/{total} video da quay" voi /bome/nop-co, nen phai
+  // cung mot bo loc: video da don van la video con DA quay (lib/types.ts).
+  const videoDaQuay = baiTiengAnh.filter((a) => trangThaiVideo(a) !== 'chua-quay').length;
   const coBaiGanDay = ngayGanNhatCoBai(ganDay.map((a) => a.dueDate), today, 1).length > 0;
 
   const totalDone = rows.reduce((s, r) => s + r.done, 0);
