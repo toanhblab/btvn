@@ -231,7 +231,7 @@ bằng AI là chưa hoạt động. Đặt vào `.env.local`:
 | `BTVN_PGLITE_DIR` | PGlite ở `.data/pg` | Chỉ để test / thử trên DB tạm (`memory://` = trong RAM) |
 | `CRON_SECRET` | `/api/don-video` trả 401 cho mọi request, tức **việc dọn video không chạy** | Tự đặt, ≥16 ký tự; Vercel tự gửi nó trong header `Authorization` khi gọi cron |
 | `DON_VIDEO_CHAY_THAT` | Việc dọn video **chỉ chạy thử**: liệt kê ra log, không xoá gì | Đặt `1` để bật xoá thật — xem "Dọn video quá hạn" |
-| `DON_VIDEO_MAX_MOI_LUOT` | Tối đa 20 tệp mỗi lượt | Hạ xuống được, không nâng lên được |
+| `DON_VIDEO_MAX_MOI_LUOT` | Tối đa 20 tệp mỗi lượt | Hạ xuống được, không nâng lên được; đặt mà không phải số nguyên dương thì `/api/don-video` trả **400 và không dọn gì** (đọc không ra thì từ chối, không lùi về trần mặc định) |
 
 `PIN_SECRET` là gốc của cả hash PIN lẫn chữ ký cookie: **đặt một lần rồi không
 đổi nữa**. Đổi nó là PIN của mọi nhà thành vô hiệu (hash trong DB không khớp
@@ -299,7 +299,8 @@ app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 phan-thuong (bố mẹ đặt phần thưởng, cần PIN), tru-diem (bố mẹ
                 trừ ⭐ của con, cần PIN), doi-thuong (con xin đổi — không cần
                 PIN; bố mẹ duyệt — cần PIN), tep (đọc tệp đã ghi ở
-                .data/uploads khi dev)
+                .data/uploads khi dev), don-video (cron dọn video quá hạn, xác
+                thực bằng CRON_SECRET)
 app/_components/ BanPhimPin — bàn phím số dùng chung cho 4 chỗ nhập PIN
 lib/i18n/       lớp dịch: ngonNgu (bộ ngôn ngữ + PIN demo), chu (T), en/ja/ko (từ
                 điển, khoá = câu tiếng Việt), server (chu()), client (useT)
@@ -309,8 +310,9 @@ lib/            db (Neon|PGlite), store (truy vấn theo familyId), auth (PIN +
                 con + hai nhóm nhiệm vụ), sqlNhiemVu (câu SQL tạo dòng nhiệm vụ
                 của ngày, dùng chung với seed và test), sqlDiem (câu SQL số dư ⭐
                 + trừ điểm + duyệt đổi thưởng, dùng chung với test), ngay (mốc
-                ngày + múi giờ nhà), media + upload-route (giới hạn tệp, tên/URL
-                tệp, thân chung hai route tải lên), avatar, ai, types
+                ngày + múi giờ nhà), donVideo (luật + hàng rào dọn video quá
+                hạn), media + upload-route (giới hạn tệp, tên/URL tệp, thân
+                chung hai route tải lên), avatar, ai, types
 proxy.ts        chặn /bome/* khi chưa nhập PIN
 migrations/     từng bước thay đổi lược đồ, chạy theo thứ tự tên tệp (bám PRD mục 7)
 scripts/        db.mjs (kết nối + bộ chạy migration), migrate.mjs (CLI, chạy khi
@@ -318,7 +320,9 @@ scripts/        db.mjs (kết nối + bộ chạy migration), migrate.mjs (CLI, 
                 seed-demo.mjs + demo-data.mjs (ba nhà demo, chạy khi build —
                 nạp `.ts` bằng import() động để lỗi demo không hỏng build),
                 quet-chu-viet.mjs (`npm run quet:chu-viet`, quét mã nguồn),
-                test-hook.mjs (node --test resolve import không đuôi)
+                don-video.mjs (gọi tay một lượt dọn video qua chính route của
+                cron, mặc định chạy thử), test-hook.mjs (node --test resolve
+                import không đuôi)
 stitch/         bản Stitch gốc của phần trẻ (đối chiếu)
 stitch-parent/  bản Stitch gốc của phần bố mẹ + design system
 legacy-static/  bản HTML/JS thuần đầu tiên của phần trẻ, giữ để tham chiếu
@@ -412,8 +416,11 @@ server cũng chặn tick xong khi chưa có video. Mỗi bài giữ **một vide
 (quay lại là thay URL, không giữ lịch sử). Video đi qua route riêng
 `/api/nop-video` (xác thực bằng cookie thiết bị vì con không có PIN, chỉ nhận
 video, trần 250MB vì máy quay của iPad ghi ~60MB/phút). Bố mẹ thấy badge
-🎥 "Đã nộp video" / "Chờ quay video" ở màn chi tiết theo con và phát lại video
-trong màn "Sửa bài tập".
+🎥 "Đã nộp video" / "Đã nộp, video đã dọn" / "Chờ quay video" ở màn chi tiết theo
+con và phát lại video trong màn "Sửa bài tập". **Ba** trạng thái chứ không hai:
+video đã bị dọn (xem "Dọn video quá hạn") thì URL bị gỡ nhưng mốc nộp còn — mọi
+chỗ hỏi trạng thái video đều đi qua `trangThaiVideo` trong `lib/types.ts`, đừng
+tự viết lại điều kiện bằng `submittedVideoUrl`.
 
 **Quét mã QR trên tờ bài tập.** Nhiều tờ bài tập giấy in mã QR dẫn tới đoạn nghe
 của nhà xuất bản. Màn chi tiết bài của con có nút **"Quét mã QR"** mở khung quét
