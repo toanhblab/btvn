@@ -250,7 +250,11 @@ sáng giờ VN) dọn bớt video con nộp. Luật và chín hàng rào an toà
 **Luật:** xoá một video khi **cả hai** đúng — đã quá `SO_NGAY_GIU_VIDEO` (5) ngày
 kể từ `submitted_video_at`, **và** không nằm trong `SO_VIDEO_MOI_NHAT_GIU_LAI` (3)
 video mới nhất **của chính đứa con đó**. Hai hằng số ở `lib/donVideo.ts`, mỗi cái
-một chỗ duy nhất. Trần dung lượng suy ra được: số con × 3 × cỡ video.
+một chỗ duy nhất. Phần dung lượng **do việc nộp bài sinh ra** có trần đoán được:
+số con × 3 × cỡ video. Đó **không** phải trần của cả kho tệp — lượt dọn chỉ đi theo
+`assignments.submitted_video_url`, nên hai đường sinh tệp mồ côi vẫn phình chậm: con
+bấm "Quay video khác" sau khi đã nộp, và xoá bài bằng `DELETE /api/assignments/:id`.
+Cả hai có từ trước lần giao này; việc riêng `btvn-quet-tep-mo-coi` theo dõi.
 
 **Bật xoá thật lần đầu** (mặc định là chạy thử, deploy xong vẫn chưa xoá gì):
 

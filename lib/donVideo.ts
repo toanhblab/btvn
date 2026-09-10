@@ -13,8 +13,16 @@
  * VA chu khong phai HOAC, va do la ca thiet ke: dieu kien (a) mot minh se xoa
  * het video cu du con lau roi khong nop them cai nao — con (b) mot minh co the
  * xoa mot video vua nop SANG NAY neu hom do con nop sau bai. Hai cai cung luc
- * thi khong bao gio mat video moi, ma dung luong van co tran doan duoc:
- * so con x SO_VIDEO_MOI_NHAT_GIU_LAI (3) video.
+ * thi khong bao gio mat video moi, ma phan dung luong DO VIEC NOP BAI sinh ra
+ * co tran doan duoc: so con x SO_VIDEO_MOI_NHAT_GIU_LAI (3) video.
+ *
+ * KHONG phai tran cua CA KHO TEP. Luot don chi di theo
+ * `assignments.submitted_video_url`, nen hai duong sinh tep mo coi nam ngoai
+ * tam voi cua no va van phinh cham: con bam "Quay video khac" sau khi da nop
+ * (URL cu bi ghi de, tep cu khong ai tro toi), va DELETE /api/assignments/:id
+ * (xoa dong, khong dong toi tep). Ca hai co TU TRUOC lan giao nay; viec rieng
+ * `btvn-quet-tep-mo-coi` theo doi. Dung doc cong thuc tren nhu mot bao dam
+ * rang kho tep khong bao gio day.
  *
  * Dem theo TUNG CON chu khong gop ca nha: con nop nhieu se day video cua con
  * nop it ra ngoai, khong phai y captain.
@@ -147,11 +155,18 @@ export function lauKhongDon(ngayLuotGanNhat: string, homNay: string): boolean {
  *
  * PHAI NHO HON tran cua luot (MAX_MOI_LUOT_MAC_DINH = 20), khong thi viec chia
  * lo chi la chu tren giay: de 100 thi moi luot luon gon trong DUNG MOT lo, va
- * mot URL hong keo ca luot hong theo. Luc do mot URL khong bao gio xoa duoc lam
- * viec don DUNG HAN: dem nao sweep cung doc lai dung mot dong so cai do, cung
- * hong o do, cau dao ngat (hang rao 6) dung ca luot, va khong video nao duoc don
- * nua. De 5 thi doi lay chung ba lan goi del() moi dem — cai gia phai chang cho
- * viec mot URL doc chi lam hong lo cua no.
+ * mot URL hong keo ca luot hong theo. De 5 thi doi lay chung ba lan goi del()
+ * moi dem, va trong CUNG MOT DEM mot URL doc chi lam hong lo cua no — cac lo
+ * con lai van xoa duoc.
+ *
+ * NOI RO CAI NO KHONG LAM DUOC: chia lo KHONG cuu duoc mot duong dan hong DAI
+ * QUA NHIEU DEM. Dong so cai do nam lai, dem sau sweep doc lai dung no, no lai
+ * hop thanh dung mot lo nhu cu, lo do lai hong, cau dao ngat (hang rao 6) dung
+ * ca luot — va viec don dung han. Huong sua la ngat cau dao chi khi KHONG lo
+ * nao thanh cong, cong mot bo dem so lan truot de cach ly dong doc sau N dem;
+ * CO Y de lai cho lan giao sau, viec rieng `btvn-don-video-cach-ly-url-hong`
+ * theo doi. Huong hong o day la NGUNG DON chu khong bao gio xoa nham, va co
+ * bao ra (route 500 + dong do o man Cai dat).
  */
 const CO_LO_XOA = 5;
 
