@@ -1568,7 +1568,7 @@ export interface LanDonVideo {
   coLoi: boolean;
   /** Luot chua ghi `finished_at`: no dut giua chung (hoac dang chay ngay luc nay). */
   chuaXong: boolean;
-  /** So video CUA NHA NAY da bi don o luot do. Luot chay thu luon la 0 (khong xoa gi). */
+  /** So video CUA NHA NAY chinh luot do DA XOA. Luot chay thu luon la 0 (khong xoa gi). */
   soCuaNha: number;
 }
 
@@ -1586,6 +1586,12 @@ export async function lanDonVideoGanNhat(familyId: string): Promise<LanDonVideo 
     run_date: string | Date; che_do: string; loi: string | null;
     finished_at: string | Date | null; so_cua_nha: number | string;
   }>(
+    // Dem theo `deleted_run_id` (luot DA PHA) chu khong theo `run_id` (luot da
+    // DINH pha): del() hong thi dong so cai nam lai va luot HOM SAU moi don not
+    // duoc no, nen dem theo run_id la bao "0 video cua nha minh" dung vao dem ma
+    // video cua nha do vua that su mat. Cot do chi duoc ghi cung luc voi
+    // `deleted_at` nen no da ham y "da xoa xong" (migration 020).
+    //
     // Luot THAT duoc uu tien hon MOI luot thu, du luot thu moi hon: mot lan
     // `node scripts/don-video.mjs` de xem truoc ghi mot dong 'thu' vao hom nay,
     // va neu chi lay dong moi nhat thi man Cai dat doi thanh "chua xoa gi ca" —
@@ -1594,7 +1600,7 @@ export async function lanDonVideoGanNhat(familyId: string): Promise<LanDonVideo 
     `SELECT r.run_date, r.che_do, r.loi, r.finished_at,
             (SELECT COUNT(*) FROM video_cleanups v
                JOIN children c ON c.id = v.child_id
-              WHERE v.run_id = r.id AND c.family_id = $1 AND v.deleted_at IS NOT NULL) AS so_cua_nha
+              WHERE v.deleted_run_id = r.id AND c.family_id = $1) AS so_cua_nha
        FROM video_cleanup_runs r
       ORDER BY (r.che_do = 'that') DESC, r.started_at DESC
       LIMIT 1`,

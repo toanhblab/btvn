@@ -25,7 +25,9 @@
  *   1. CHAY THU LA MAC DINH. `that` phai duoc nguoi goi bat tuong minh
  *      (route doc DON_VIDEO_CHAY_THAT === '1'). Khong bat thi chi liet ke.
  *   2. TRAN SO TEP MOI LUOT (MAX_MOI_LUOT_MAC_DINH). Mot loi logic te nhat cung
- *      chi mat chung do tep mot dem, khong mat ca kho.
+ *      chi mat chung do tep mot dem, khong mat ca kho. Tran nay la MOT tui chung
+ *      cho ca luot: phan don not so cai tieu truoc, phan chon viec moi chi duoc
+ *      dung cho con lai. Hai tui rieng la tran doi len gap doi ma van tuong la mot.
  *   3. DANH SACH TRANG CUNG (`laUrlVideoConNop`) kiem NGAY TRUOC khi goi del():
  *      chi https, chi host Vercel Blob, chi thu muc `nop-bai/`. No chan mot luot
  *      link Google Drive bo me dan vao (assignment_media), duong `/api/tep/...`
@@ -42,6 +44,12 @@
  *      del() hong la de lai mot tep KHONG con ai tro toi, va luot sau khong
  *      nhin thay no qua `assignments` nua: moi luot phai doc lai dong so cai
  *      `deleted_at IS NULL` va don not (`donSoCaiMoCoi`) truoc khi chon viec moi.
+ *   8. CAU DAO NGAT: don not ma del() van hong thi DUNG CA LUOT ngay, khong chon
+ *      viec moi. Kho vua tu choi xoa, ma go URL di truoc del() nen chon them viec
+ *      la bien mot dong ton bi chan thanh mot dong ton LON DAN: moi dem them
+ *      `max` video mat cho xem va mat nut "Chia se", ma khong doi lay mot byte
+ *      nao. Co cau dao ngat thi kho hong chi lam viec don DUNG LAI, khong lam no
+ *      pha them.
  *   6. Lan chay THAT dau tien do captain bam tay, sau khi doc danh sach cua mot
  *      lan chay thu (scripts/don-video.mjs).
  *   7. Nha demo bi loai ngay trong cau SELECT (`fam\_demo\_%`).
@@ -198,7 +206,7 @@ export const SQL_GO_VA_GHI_SO = `
  * $1 = so dong toi da moi luot.
  */
 export const SQL_SO_CAI_CHUA_XOA = `
-  SELECT id, assignment_id, url FROM video_cleanups
+  SELECT id, assignment_id, url, bytes FROM video_cleanups
    WHERE deleted_at IS NULL
    ORDER BY planned_at
    LIMIT $1::int`;
@@ -265,6 +273,7 @@ export async function donVideoQuaHan(
     cheDo: that ? 'that' : 'thu', runId: null,
     ungVien: [], boSot: [], canhBao: [], daXoa: [], daXoaLai: [], soBytes: 0, loi: null,
   };
+  let byteDaXoa = 0;
 
   // Xoa that ma khong co token thi khong the goi del() — dung lai thay vi go URL
   // trong CSDL roi de tep nam lai (vua hong man hinh vua khong tiet kiem duoc gi).
@@ -290,10 +299,25 @@ export async function donVideoQuaHan(
   try {
     // Don not so cai con so TRUOC khi chon viec moi: nhung tep do da khong con
     // ai tro toi, khong luot nao sau nay nhin thay chung qua assignments nua.
-    await donSoCaiMoCoi(ra, that, max);
+    // No tieu vao CUNG tui tran voi phan chon viec moi (hang rao 2).
+    byteDaXoa += await donSoCaiMoCoi(runId, ra, that, max);
+
+    // Hang rao 8 — cau dao ngat. Kho vua tu choi xoa thi dung chon viec moi:
+    // go URL cua chung di la chi lam dong ton phinh ra ma khong thu ve byte nao.
+    if (ra.loi) {
+      ra.canhBao.push('dung-vi-kho-dang-tu-choi-xoa');
+      return await ketLuot(runId, ra, that, byteDaXoa);
+    }
+
+    const conLaiTrongTran = max - ra.daXoaLai.length;
+    if (conLaiTrongTran <= 0) {
+      ra.canhBao.push('het-tran-o-luot-don-not');
+      return await ketLuot(runId, ra, that, byteDaXoa);
+    }
 
     const dong = await query<DongChon>(SQL_CHON_VIDEO_QUA_HAN, [
-      SO_VIDEO_MOI_NHAT_GIU_LAI, SO_NGAY_GIU_VIDEO, Math.min(max * HE_SO_QUET, TRAN_QUET),
+      SO_VIDEO_MOI_NHAT_GIU_LAI, SO_NGAY_GIU_VIDEO,
+      Math.min(conLaiTrongTran * HE_SO_QUET, TRAN_QUET),
     ]);
 
     // Khong co token thi khong hoi duoc kho. Chi xay ra o luot CHAY THU (nhanh
@@ -303,8 +327,9 @@ export async function donVideoQuaHan(
 
     const hanCu = Date.now() - SO_NGAY_GIU_VIDEO * 86_400_000;
     for (const d of dong) {
-      // Hang rao 2 — tran cua luot, dem SAU cac hang rao khac (xem HE_SO_QUET).
-      if (ra.ungVien.length >= max) {
+      // Hang rao 2 — cho con lai cua tui tran chung, dem SAU cac hang rao khac
+      // (xem HE_SO_QUET).
+      if (ra.ungVien.length >= conLaiTrongTran) {
         ra.canhBao.push('dung-o-tran-moi-luot');
         break;
       }
@@ -346,11 +371,26 @@ export async function donVideoQuaHan(
       ra.soBytes += bytes ?? 0;
     }
 
-    if (that && ra.ungVien.length > 0) await xoaThat(runId, ra);
+    if (that && ra.ungVien.length > 0) byteDaXoa += await xoaThat(runId, ra);
   } catch (e) {
     ra.loi = e instanceof Error ? e.message : String(e);
   }
 
+  return await ketLuot(runId, ra, that, byteDaXoa);
+}
+
+/**
+ * Dong so cua luot va tra ket qua ve.
+ *
+ * Chay THAT thi `soBytes` la so byte THAT SU mat, khong phai so du kien: dong
+ * nao thua cuoc dua "con vua quay lai", dong nao nam trong lo del() hong, deu
+ * khong duoc tinh — nen con so nay luon di doi voi so tep in ngay canh no. Chay
+ * thu thi khong co gi mat, `soBytes` giu nguyen nghia "se xoa chung nay".
+ */
+async function ketLuot(
+  runId: string, ra: KetQuaDon, that: boolean, byteDaXoa: number
+): Promise<KetQuaDon> {
+  if (that) ra.soBytes = byteDaXoa;
   await query(
     `UPDATE video_cleanup_runs SET finished_at = now(), so_tep = $2, so_bytes = $3, loi = $4 WHERE id = $1`,
     [runId, that ? ra.daXoa.length + ra.daXoaLai.length : ra.ungVien.length, ra.soBytes, ra.loi]
@@ -359,7 +399,7 @@ export async function donVideoQuaHan(
 }
 
 /** Hang rao 5: ghi so cai + go URL trong mot cau, xong het roi moi del(). */
-async function xoaThat(runId: string, ra: KetQuaDon): Promise<void> {
+async function xoaThat(runId: string, ra: KetQuaDon): Promise<number> {
   const cau: CauSQL[] = ra.ungVien.map((m) => ({
     sql: SQL_GO_VA_GHI_SO,
     params: [newId('vcl'), runId, m.assignmentId, m.url, m.bytes, m.submittedVideoAt],
@@ -372,15 +412,17 @@ async function xoaThat(runId: string, ra: KetQuaDon): Promise<void> {
   for (const m of ra.ungVien) {
     if (!daGo.some((g) => g.assignment_id === m.assignmentId)) {
       ra.boSot.push({ assignmentId: m.assignmentId, url: m.url, vi: 'video-vua-doi-giua-chung' });
-      ra.soBytes -= m.bytes ?? 0;
     }
   }
-  if (daGo.length === 0) return;
+  if (daGo.length === 0) return 0;
 
-  await xoaTheoLo(ra, daGo, ra.daXoa);
+  const byteCua = new Map(ra.ungVien.map((m) => [m.assignmentId, m.bytes]));
+  return await xoaTheoLo(runId, ra, daGo.map((g) => ({
+    ...g, bytes: byteCua.get(g.assignment_id) ?? null,
+  })), ra.daXoa);
 }
 
-interface DongSoCai { id: string; assignment_id: string; url: string }
+interface DongSoCai { id: string; assignment_id: string; url: string; bytes: number | string | null }
 
 /**
  * Goi del() theo lo, dong dau so cai NGAY SAU moi lo, va CHIU DUOC mot lo hong.
@@ -391,22 +433,30 @@ interface DongSoCai { id: string; assignment_id: string; url: string }
  * (donSoCaiMoCoi), nhung `ra.loi` van duoc dat nen route tra 500 va man Cai dat
  * bao "bi loi giua chung" — hong ma bao thanh cong moi la cai nguy hiem.
  */
-async function xoaTheoLo(ra: KetQuaDon, dong: DongSoCai[], vao: string[]): Promise<void> {
+async function xoaTheoLo(
+  runId: string, ra: KetQuaDon, dong: DongSoCai[], vao: string[]
+): Promise<number> {
+  let byte = 0;
   for (let i = 0; i < dong.length; i += CO_LO_XOA) {
     const lo = dong.slice(i, i + CO_LO_XOA);
     try {
       await del(lo.map((g) => g.url));
-      await query(`UPDATE video_cleanups SET deleted_at = now() WHERE id = ANY($1::text[])`,
-        [lo.map((g) => g.id)]);
+      // `deleted_run_id` ghi CUNG LUC voi `deleted_at`: dong "Don video cu" o man
+      // Cai dat dem theo luot DA PHA chu khong theo luot da dinh pha (migration 020).
+      await query(
+        `UPDATE video_cleanups SET deleted_at = now(), deleted_run_id = $2 WHERE id = ANY($1::text[])`,
+        [lo.map((g) => g.id), runId]
+      );
       vao.push(...lo.map((g) => g.assignment_id));
+      for (const g of lo) byte += Number(g.bytes ?? 0);
     } catch (e) {
       ra.loi = ra.loi ?? (e instanceof Error ? e.message : String(e));
       for (const g of lo) {
         ra.boSot.push({ assignmentId: g.assignment_id, url: g.url, vi: 'kho-khong-xoa-duoc' });
-        ra.soBytes -= ra.ungVien.find((m) => m.assignmentId === g.assignment_id)?.bytes ?? 0;
       }
     }
   }
+  return byte;
 }
 
 /**
@@ -418,12 +468,18 @@ async function xoaTheoLo(ra: KetQuaDon, dong: DongSoCai[], vao: string[]): Promi
  * nhin thay chung nua; dong so cai `deleted_at IS NULL` la ban ghi duy nhat con
  * lai, nen moi luot phai doc lai chung truoc khi chon viec moi.
  *
- * Van qua danh sach trang (hang rao 3) truoc khi goi del(), va van an trong tran
- * cua luot (hang rao 2). Luot chay THU khong xoa gi, chi bao ra con bao nhieu dong.
+ * Van qua danh sach trang (hang rao 3) truoc khi goi del(). Tieu vao CUNG tui
+ * tran voi phan chon viec moi (hang rao 2): no chay truoc nen no tieu truoc, va
+ * nguoi goi chi duoc dung cho con lai. Luot chay THU khong xoa gi, chi bao ra
+ * con bao nhieu dong.
+ *
+ * Tra ve so byte that su lay lai duoc.
  */
-async function donSoCaiMoCoi(ra: KetQuaDon, that: boolean, max: number): Promise<void> {
+async function donSoCaiMoCoi(
+  runId: string, ra: KetQuaDon, that: boolean, max: number
+): Promise<number> {
   const dong = await query<DongSoCai>(SQL_SO_CAI_CHUA_XOA, [max]);
-  if (dong.length === 0) return;
+  if (dong.length === 0) return 0;
 
   const xoaDuoc = dong.filter((d) => {
     if (laUrlVideoConNop(d.url)) return true;
@@ -432,11 +488,11 @@ async function donSoCaiMoCoi(ra: KetQuaDon, that: boolean, max: number): Promise
     });
     return false;
   });
-  if (xoaDuoc.length === 0) return;
+  if (xoaDuoc.length === 0) return 0;
 
   if (!that) {
     ra.canhBao.push(`so-cai-con-${xoaDuoc.length}-dong-chua-xoa`);
-    return;
+    return 0;
   }
-  await xoaTheoLo(ra, xoaDuoc, ra.daXoaLai);
+  return await xoaTheoLo(runId, ra, xoaDuoc, ra.daXoaLai);
 }
