@@ -50,7 +50,12 @@ export default async function Page() {
   // hoi no cho ca dong thu hai thi ra hai cau "lan gan nhat" voi hai ngay khac
   // nhau. Va cau tra loi noi ve LAN CHAY, khong noi ve lan don — dong moi nhat
   // co the la mot luot chay thu, ma luot do khong xoa gi.
-  const lauKhongChay = Boolean(lanDon.moiNhat && lauKhongDon(lanDon.moiNhat.ngay, todayISO()));
+  //
+  // KHONG CO dong nao cung la mot cau tra loi, va la cau dang lo nhat: do dung
+  // la thu mot ban deploy thieu CRON_SECRET de lai — route tra 401 moi dem nen
+  // khong dong nao duoc ghi bao gio. Coi no la "van on" thi cai hong de xay ra
+  // nhat lai thanh cai duy nhat khong bao gio to do.
+  const lauKhongChay = !lanDon.moiNhat || lauKhongDon(lanDon.moiNhat.ngay, todayISO());
 
   return (
     <main className="px-p-page pt-4 xl:max-w-[1080px] xl:mx-auto xl:px-12 xl:py-12">
