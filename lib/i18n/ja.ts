@@ -296,7 +296,7 @@ export const JA: Record<Key, string> = {
   'Chưa chạy lần nào.': 'まだ一度も実行されていません。',
   'Lần chạy ngày {date} bị lỗi giữa chừng.': '{date}の実行は途中でエラーになりました。',
   'Lần chạy ngày {date} chưa chạy xong.': '{date}の実行は最後まで終わりませんでした。',
-  'Lâu rồi chưa dọn lần nào — lần gần nhất là ngày {date}.': 'しばらく整理が実行されていません — 直近は{date}です。',
+  'Lâu rồi việc dọn chưa chạy lại — lần chạy gần nhất là ngày {date}.': 'しばらく整理が再実行されていません — 直近の実行は{date}です。',
   'Đã chạy thử ngày {date} — chưa xoá gì cả.': '{date}にお試し実行しました — 何も削除していません。',
   'Đã dọn ngày {date} — {n} video của nhà mình.': '{date}に整理しました — このご家庭の動画{n}本。',
   'Chọn ít nhất một con đã.': '子どもを1人以上選んでください。',

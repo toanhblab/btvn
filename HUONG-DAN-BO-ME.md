@@ -195,9 +195,9 @@ ngày nào và xoá mấy video của nhà mình. Nếu đêm qua app chỉ **ch
 trước, không xoá gì) thì dòng đó nói rõ, và dòng ngay dưới cho biết lần xoá thật
 gần nhất là ngày nào.
 
-Nếu mấy ngày liền không có lần dọn nào, dòng đó ghi **"Lâu rồi chưa dọn lần
-nào"** kèm ngày gần nhất. Không có gì hỏng ngay, nhưng nhắn cho người dựng app
-biết để xem lại giúp.
+Nếu mấy ngày liền app không chạy việc dọn, dòng đó ghi **"Lâu rồi việc dọn chưa
+chạy lại"** kèm ngày chạy gần nhất. Không có gì hỏng ngay, nhưng nhắn cho người
+dựng app biết để xem lại giúp.
 
 Bài nào có video đã bị dọn thì cả trong màn của con (bên bố mẹ) lẫn màn
 **"Nộp bài cho cô"** đều ghi **"Đã nộp, video đã dọn"** — con đã nộp xong rồi,

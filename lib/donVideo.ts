@@ -164,6 +164,18 @@ export function laUrlVideoConNop(url: unknown): url is string {
 }
 
 /**
+ * Nha demo — hang rao 9, va cau hoi nay co HAI cho hoi.
+ *
+ * Cau SELECT loai chung bang `c.family_id NOT LIKE 'fam\\_demo\\_%'`, con man
+ * Cai dat phai biet de KHONG hua voi nha demo mot viec khong bao gio chay cho
+ * ho. Cung mot luat thi dung mot dinh nghia; id ba nha do co dinh, do
+ * `idNhaDemo` trong scripts/seed-demo.mjs dat ra.
+ */
+export function laNhaDemo(familyId: string): boolean {
+  return familyId.startsWith('fam_demo_');
+}
+
+/**
  * Chon video du CA HAI dieu kien xoa.
  *
  * `hang` duoc danh TRONG PHAM VI MOT CON (`PARTITION BY a.child_id`) va tren
@@ -310,7 +322,21 @@ export async function donVideoQuaHan(
   tuyChon: { that?: boolean; max?: number } = {}
 ): Promise<KetQuaDon> {
   const that = tuyChon.that === true;
-  const max = Math.max(1, Math.min(tuyChon.max ?? MAX_MOI_LUOT_MAC_DINH, MAX_MOI_LUOT_MAC_DINH));
+  // Lam tron XUONG va kep NGAY DAY, truoc khi luot nay gianh suat cua ngay.
+  //
+  // `max` di thang vao `$3::int` cua cau chon, nen mot so le (`?max=2.5` tren
+  // dia chi) lam Postgres nem loi — ma luc do dong `video_cleanup_runs` da ghi
+  // roi, nen hang rao 7 bien moi lan thu lai trong ngay thanh 'da-chay-hom-nay':
+  // mot ky tu go nham mat ca dem don. Day la cho chung cua route, cua script va
+  // cua test nen kep o day la kep cho tat ca.
+  //
+  // Moi huong lam tron deu ve phia HEP: 2.5 -> 2, 0.5 -> 1, -3 -> 1. Chi khi
+  // nguoi goi khong xin gi (undefined) hay xin mot thu khong phai so thi moi lay
+  // tran mac dinh.
+  const xin = Number(tuyChon.max);
+  const max = Number.isFinite(xin)
+    ? Math.max(1, Math.min(Math.floor(xin), MAX_MOI_LUOT_MAC_DINH))
+    : MAX_MOI_LUOT_MAC_DINH;
   const ra: KetQuaDon = {
     cheDo: that ? 'that' : 'thu', runId: null,
     ungVien: [], boSot: [], canhBao: [], daXoa: [], daXoaLai: [], soBytes: 0, loi: null,

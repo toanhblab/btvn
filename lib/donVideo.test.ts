@@ -303,6 +303,40 @@ test('hang rao 2: nguoi goi khong nang tran len qua mac dinh duoc', async () => 
   assert.ok(xin.canhBao.includes('dung-o-tran-moi-luot'));
 });
 
+test('hang rao 2: tran le duoc lam tron TRUOC khi luot gianh suat cua ngay', async () => {
+  // `max` di thang vao `$3::int`, nen 2.5 lam Postgres nem loi — ma luc do dong
+  // video_cleanup_runs da ghi roi, va hang rao 7 bien moi lan thu lai trong ngay
+  // thanh 'da-chay-hom-nay': mot ky tu go nham mat ca dem don.
+  const ra = await donVideo.donVideoQuaHan({ that: true, max: 2.5 });
+
+  assert.equal(ra.loi, null, 'so le khong duoc lam vo ca luot');
+  assert.equal(ra.daXoa.length, 2, 'lam tron XUONG: 2.5 nghia la 2, khong phai 3');
+  const luot = await query<{ n: number | string }>(
+    `SELECT COUNT(*) AS n FROM video_cleanup_runs WHERE che_do = 'that'`
+  );
+  assert.equal(Number(luot[0].n), 1, 'suat cua ngay bi tieu ma khong xoa duoc gi la mat ca dem');
+});
+
+test('hang rao 2: so vo ly ve phia HEP, khong ve phia rong nhat', async () => {
+  const khong = await donVideo.donVideoQuaHan({ that: false, max: 0 });
+  assert.equal(khong.ungVien.length, 1, 'xin 0 thi duoc 1 — hep nhat, khong phai tran mac dinh');
+
+  const am = await donVideo.donVideoQuaHan({ that: false, max: -3 });
+  assert.equal(am.ungVien.length, 1);
+
+  const nho = await donVideo.donVideoQuaHan({ that: false, max: 0.5 });
+  assert.equal(nho.ungVien.length, 1);
+});
+
+test('hang rao 9: nha demo bi loai o CA cau SQL lan man Cai dat', () => {
+  assert.equal(donVideo.laNhaDemo('fam_demo_ja'), true);
+  assert.equal(donVideo.laNhaDemo('fam_demo_ko'), true);
+  assert.equal(donVideo.laNhaDemo('fam_demo_en'), true);
+  assert.equal(donVideo.laNhaDemo('fam_that'), false);
+  assert.equal(donVideo.laNhaDemo('famxdemoy'), false,
+    'cung mot moc voi dau thoat cua LIKE trong cau chon');
+});
+
 test('hang rao 3: danh sach trang — URL ngoai kho khong bao gio di vao del()', async () => {
   // Dung URL cua che do dev (/api/tep/...) cho mot dong vua qua han vua ngoai top 3.
   await query(`UPDATE assignments SET submitted_video_url = $1 WHERE id = 'a5'`,

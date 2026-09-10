@@ -4,7 +4,7 @@ import { parentFamilyId } from '@/lib/auth';
 import { getFamilyById, listChildren, listChores, todayISO, trangThaiDonVideo } from '@/lib/store';
 import type { LanDonVideo } from '@/lib/store';
 import { hasNeon } from '@/lib/db';
-import { SO_NGAY_GIU_VIDEO, SO_VIDEO_MOI_NHAT_GIU_LAI, lauKhongDon } from '@/lib/donVideo';
+import { SO_NGAY_GIU_VIDEO, SO_VIDEO_MOI_NHAT_GIU_LAI, laNhaDemo, lauKhongDon } from '@/lib/donVideo';
 import CaiDat from './CaiDat';
 import { chu } from '@/lib/i18n/server';
 
@@ -34,10 +34,10 @@ export default async function Page() {
 
   /** Luot nao chua ket thuc tu te thi to do — chay xong ma sai cung vay. */
   const hong = (l: LanDonVideo | null) => Boolean(l && (l.coLoi || l.chuaXong));
+
+  // Ham nay noi MOT luot da chay ra sao, va che do luon duoc xet: mot luot chay
+  // THU khong xoa gi nen khong bao gio duoc goi la "da don".
   const dongTrangThai = (l: LanDonVideo) =>
-    lauKhongDon(l.ngay, todayISO())
-      ? T('Lâu rồi chưa dọn lần nào — lần gần nhất là ngày {date}.', { date: l.ngay })
-      :
     l.coLoi
       ? T('Lần chạy ngày {date} bị lỗi giữa chừng.', { date: l.ngay })
       : l.chuaXong
@@ -45,6 +45,12 @@ export default async function Page() {
         : l.cheDo === 'thu'
           ? T('Đã chạy thử ngày {date} — chưa xoá gì cả.', { date: l.ngay })
           : T('Đã dọn ngày {date} — {n} video của nhà mình.', { date: l.ngay, n: l.soCuaNha });
+
+  // "Lau khong co luot nao" la cau hoi ve DONG MOI NHAT, khong phai ve tung luot:
+  // hoi no cho ca dong thu hai thi ra hai cau "lan gan nhat" voi hai ngay khac
+  // nhau. Va cau tra loi noi ve LAN CHAY, khong noi ve lan don — dong moi nhat
+  // co the la mot luot chay thu, ma luot do khong xoa gi.
+  const lauKhongChay = Boolean(lanDon.moiNhat && lauKhongDon(lanDon.moiNhat.ngay, todayISO()));
 
   return (
     <main className="px-p-page pt-4 xl:max-w-[1080px] xl:mx-auto xl:px-12 xl:py-12">
@@ -138,7 +144,12 @@ export default async function Page() {
               nao, va keu len khi da lau khong co luot nao (`lauKhongDon`).
               Khong co gi o day hoi cron xem no con song hay khong — thu duy nhat
               biet duoc la "dong moi nhat cu den muc dang ngo". Hien o MOI co
-              man, khac khoi "He thong" o tren. */}
+              man, khac khoi "He thong" o tren.
+
+              Nha demo khong hien khoi nay: hang rao 9 loai chung ra khoi viec
+              don, nen moi cau o day deu la loi hua khong ap dung cho ho — ma nha
+              demo lai chinh la nha nguoi ngoai duoc xem. */}
+          {!laNhaDemo(familyId) && (
           <section className="mt-4 xl:mt-6">
             <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Dọn video cũ')}</h2>
             <div className="bg-surface-container-lowest rounded-card card-shadow p-3 xl:p-4">
@@ -148,18 +159,25 @@ export default async function Page() {
                 })}
               </p>
               <p className={`text-p-body-sm ${hong(lanDon.moiNhat) ? 'text-error' : 'text-on-surface'}`}>
-                {lanDon.moiNhat ? dongTrangThai(lanDon.moiNhat) : T('Chưa chạy lần nào.')}
+                {!lanDon.moiNhat
+                  ? T('Chưa chạy lần nào.')
+                  : lauKhongChay
+                    ? T('Lâu rồi việc dọn chưa chạy lại — lần chạy gần nhất là ngày {date}.', { date: lanDon.moiNhat.ngay })
+                    : dongTrangThai(lanDon.moiNhat)}
               </p>
               {/* Luot moi nhat chi la chay thu thi no KHONG tra loi duoc "lan
                   cuoi that su xoa la khi nao" — in them dong do. Hai cau hoi
-                  khac nhau, khong don duoc vao mot dong (lib/store.ts). */}
-              {lanDon.moiNhat?.cheDo === 'thu' && lanDon.donThatGanNhat && (
+                  khac nhau, khong don duoc vao mot dong (lib/store.ts). Nhung khi
+                  da lau khong co luot nao thi chi MOT cau: cau canh bao o tren da
+                  noi het, them dong nua chi lam hai ngay chong nhau. */}
+              {!lauKhongChay && lanDon.moiNhat?.cheDo === 'thu' && lanDon.donThatGanNhat && (
                 <p className={`text-p-body-sm ${hong(lanDon.donThatGanNhat) ? 'text-error' : 'text-on-surface-variant'}`}>
                   {dongTrangThai(lanDon.donThatGanNhat)}
                 </p>
               )}
             </div>
           </section>
+          )}
         </div>
 
         <div>

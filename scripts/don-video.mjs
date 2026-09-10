@@ -34,8 +34,26 @@ if (!goc || !secret) {
 
 const q = new URLSearchParams();
 if (!co('--that')) q.set('thu', '1');
-const max = so('--max');
-if (max !== null && Number.isFinite(max) && max > 0) q.set('max', String(max));
+
+// `--max` hong thi DUNG HAN o day, khong bo qua no.
+//
+// Bo qua la huong sai nguy hiem nhat co the co tren duong xoa khong lui duoc:
+// khong co `max=` tren dia chi thi may chu lay MAX_MOI_LUOT_MAC_DINH — tuc TRAN
+// RONG NHAT. Nguoi go `--max 5` roi go nham mot ky tu ('--max 5x', '--max five',
+// hay vo tinh de trong) se xoa toi 20 tep trong khi tin la minh vua cho phep 5,
+// va hang rao 7 (mot luot that moi ngay) khien khong co lan thu hai de nhan ra.
+// Xin hep ma duoc rong la dieu KHONG BAO GIO duoc phep xay ra.
+const i = args.indexOf('--max');
+if (i !== -1) {
+  const tho = args[i + 1];
+  const max = Number(tho);
+  if (tho === undefined || tho.startsWith('--') || !Number.isInteger(max) || max <= 0) {
+    console.error(`✗ --max phai la so nguyen duong. Nhan duoc: ${tho === undefined ? '(khong co gi)' : tho}`);
+    console.error('  Khong goi may chu, khong xoa gi ca.');
+    process.exit(1);
+  }
+  q.set('max', String(max));
+}
 
 const url = `${goc}/api/don-video${q.size ? `?${q}` : ''}`;
 console.log(`→ ${url}`);
