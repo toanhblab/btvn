@@ -1,0 +1,88 @@
+Don video qua han — chay tren app dang chay (next dev + PGlite). Du lieu mau:
+minh 6 video, an 4 video, be na 4 video (cai thu 4 cua be Na moi 4 ngay tuoi).
+Kho tep Vercel Blob la thu DUY NHAT duoc gia lap (may nay khong goi duoc kho
+that); moi cau SQL, moi hang rao, route va script deu la ma that.
+
+================ 1. CHAY THU qua dung route ma cron goi ================
+$ BTVN_URL=http://localhost:3111 CRON_SECRET=*** node scripts/don-video.mjs
+→ http://localhost:3111/api/don-video?thu=1
+
+Che do: chay thu (khong xoa gi)
+Luot:   vcr_1da8c72c7dc044ec
+!  canh bao: chua-kiem-dong-ho-thu-hai
+
+SE xoa: 4 tep, chua ro dung luong
+  · 2026-08-21 16:24  con=minh  thu 6  english_class  ?
+      https://demo123.public.blob.vercel-storage.com/nop-bai/quay-1757000006-minh-20.mp4
+  · 2026-08-29 16:24  con=minh  thu 5  primary_school  ?
+      https://demo123.public.blob.vercel-storage.com/nop-bai/quay-1757000005-minh-12.mp4
+  · 2026-09-01 16:24  con=an  thu 4  primary_school  ?
+      https://demo123.public.blob.vercel-storage.com/nop-bai/quay-1757000010-an-9.mp4
+  · 2026-09-02 16:24  con=minh  thu 4  english_class  ?
+      https://demo123.public.blob.vercel-storage.com/nop-bai/quay-1757000004-minh-8.mp4
+
+(Doc ket qua: minh giu 3 video moi nhat 09-09 / 09-07 / 09-04, ba cai con lai deu
+ qua 5 ngay nen vao danh sach. An giu 3 cai moi nhat, cai thu 4 (09-01) bi don.
+ Be Na co 4 video nhung cai thu 4 moi 4 ngay tuoi -> KHONG co trong danh sach:
+ dieu kien la VA chu khong phai HOAC.)
+
+================ 2. --max / ?max hong thi TU CHOI, khong xoa gi ========
+$ node scripts/don-video.mjs --max 5x
+✗ --max phai la so nguyen duong. Nhan duoc: 5x
+  Khong goi may chu, khong xoa gi ca.
+(ma thoat: 1)
+
+$ curl ".../api/don-video?max=5x"
+{"error":"max-khong-hop-le","chiTiet":"max","canLa":"so nguyen duong"}
+(HTTP 400)
+
+$ curl ".../api/don-video?max=0"
+{"error":"max-khong-hop-le","chiTiet":"max","canLa":"so nguyen duong"}
+(HTTP 400)
+
+$ curl ".../api/don-video?max=2.5"
+{"error":"max-khong-hop-le","chiTiet":"max","canLa":"so nguyen duong"}
+(HTTP 400)
+
+================ 3. LUOT XOA THAT (lib/donVideo.ts, del() gia lap) ====
+— video_cleanup_runs TRUOC luot that (xem 3 lan ?max hong co ghi dong nao khong):
+    vcr_1da8c72c7dc044ec Thu Sep 10 thu
+
+— Ket qua luot that:
+   che do : that | runId: vcr_e56146eae39f490b | loi: null
+   da xoa : 4 tep, 312.8 MB
+     · del() https://demo123.public.blob.vercel-storage.com/nop-bai/quay-1757000006-minh-20.mp4
+     · del() https://demo123.public.blob.vercel-storage.com/nop-bai/quay-1757000005-minh-12.mp4
+     · del() https://demo123.public.blob.vercel-storage.com/nop-bai/quay-1757000010-an-9.mp4
+     · del() https://demo123.public.blob.vercel-storage.com/nop-bai/quay-1757000004-minh-8.mp4
+   bo sot : 0
+
+— assignments sau luot don (URL da go, moc nop GIU LAI):
+    an    2026-09-08 con video
+    an    2026-09-06 con video
+    an    2026-09-03 con video
+    an    2026-09-01 (da go)  <- da don
+    bena  2026-09-09 con video
+    bena  2026-09-08 con video
+    bena  2026-09-07 con video
+    bena  2026-09-06 con video
+    minh  2026-09-09 con video
+    minh  2026-09-07 con video
+    minh  2026-09-04 con video
+    minh  2026-09-02 (da go)  <- da don
+    minh  2026-08-29 (da go)  <- da don
+    minh  2026-08-21 (da go)  <- da don
+
+— so cai video_cleanups:
+    minh asg_video_minh_20 82000000 bytes da xoa xong: true 
+        https://demo123.public.blob.vercel-storage.com/nop-bai/quay-1757000006-minh-20.mp4
+    minh asg_video_minh_12 82000000 bytes da xoa xong: true 
+        https://demo123.public.blob.vercel-storage.com/nop-bai/quay-1757000005-minh-12.mp4
+    an asg_video_an_9 82000000 bytes da xoa xong: true 
+        https://demo123.public.blob.vercel-storage.com/nop-bai/quay-1757000010-an-9.mp4
+    minh asg_video_minh_8 82000000 bytes da xoa xong: true 
+        https://demo123.public.blob.vercel-storage.com/nop-bai/quay-1757000004-minh-8.mp4
+
+================ 4. Goi luot that lan hai trong ngay — hang rao 7 =====
+→ http://localhost:3111/api/don-video
+↷ Hom nay da co mot luot xoa that roi — chi muc UNIQUE chan chay trung.
