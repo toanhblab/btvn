@@ -229,6 +229,9 @@ bằng AI là chưa hoạt động. Đặt vào `.env.local`:
 | `NOUS_MODEL` | Dùng `qwen/qwen3-vl-32b-instruct` — **phải là model có vision** | Danh sách ở `/v1/models` |
 | `PIN_SECRET` | Dùng chuỗi mặc định — **phải đổi trước khi deploy** | Tự đặt |
 | `BTVN_PGLITE_DIR` | PGlite ở `.data/pg` | Chỉ để test / thử trên DB tạm (`memory://` = trong RAM) |
+| `CRON_SECRET` | `/api/don-video` trả 401 cho mọi request, tức **việc dọn video không chạy** | Tự đặt, ≥16 ký tự; Vercel tự gửi nó trong header `Authorization` khi gọi cron |
+| `DON_VIDEO_CHAY_THAT` | Việc dọn video **chỉ chạy thử**: liệt kê ra log, không xoá gì | Đặt `1` để bật xoá thật — xem "Dọn video quá hạn" |
+| `DON_VIDEO_MAX_MOI_LUOT` | Tối đa 20 tệp mỗi lượt | Hạ xuống được, không nâng lên được |
 
 `PIN_SECRET` là gốc của cả hash PIN lẫn chữ ký cookie: **đặt một lần rồi không
 đổi nữa**. Đổi nó là PIN của mọi nhà thành vô hiệu (hash trong DB không khớp
@@ -236,6 +239,41 @@ nữa) và mọi thiết bị bị đăng xuất.
 
 Đổi `DATABASE_URL` là chuyển hẳn sang Neon, không phải sửa dòng code nào —
 các migration chạy được trên cả hai.
+
+## Dọn video quá hạn
+
+Kho tệp Vercel Blob của gói Hobby chỉ có **1 GB** và app trước giờ không xoá tệp
+nào. Một cron mỗi ngày (`vercel.json` → `/api/don-video`, `0 19 * * *` UTC ≈ 2 giờ
+sáng giờ VN) dọn bớt video con nộp. Luật và bảy hàng rào an toàn ghi ở đầu
+`lib/donVideo.ts`; đọc chỗ đó trước khi sửa.
+
+**Luật:** xoá một video khi **cả hai** đúng — đã quá `SO_NGAY_GIU_VIDEO` (5) ngày
+kể từ `submitted_video_at`, **và** không nằm trong `SO_VIDEO_MOI_NHAT_GIU_LAI` (3)
+video mới nhất **của chính đứa con đó**. Hai hằng số ở `lib/donVideo.ts`, mỗi cái
+một chỗ duy nhất. Trần dung lượng suy ra được: số con × 3 × cỡ video.
+
+**Bật xoá thật lần đầu** (mặc định là chạy thử, deploy xong vẫn chưa xoá gì):
+
+```bash
+# 1. Xem trước bằng chế độ chạy thử — không xoá gì, kể cả khi đã bật biến ở dưới
+BTVN_URL=https://<app> CRON_SECRET=<secret> node scripts/don-video.mjs --max 5
+
+# 2. Đọc danh sách. Ưng thì đặt DON_VIDEO_CHAY_THAT=1 (và DON_VIDEO_MAX_MOI_LUOT=5
+#    cho lượt đầu) trên Vercel rồi Redeploy.
+# 3. Chạy thật, vẫn bằng tay:
+BTVN_URL=https://<app> CRON_SECRET=<secret> node scripts/don-video.mjs --that --max 5
+```
+
+`--that` chỉ **bỏ** tham số ép chạy thử; nó không tự bật được xoá thật — quyền đó
+nằm ở biến môi trường trên máy chủ. Hai khoá, hai nơi.
+
+**Xoá tệp trên kho không lùi được.** Đường lùi duy nhất là sổ cái `video_cleanups`
+(migration 019): mỗi tệp một dòng, ghi **cùng lúc** với lúc gỡ URL khỏi
+`assignments` và **trước** khi gọi `del()`. Bảng `video_cleanup_runs` có chỉ mục
+UNIQUE từng phần trên `(run_date) WHERE che_do = 'that'` — đó là hàng rào chống
+cron gọi trùng một lượt, và nó nằm ở CSDL chứ không ở code.
+
+Bố mẹ thấy việc này chạy hay không ở **Cài đặt → "Dọn video cũ"**.
 
 ## Cấu trúc
 

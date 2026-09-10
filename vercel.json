@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/don-video",
+      "schedule": "0 19 * * *"
+    }
+  ]
+}

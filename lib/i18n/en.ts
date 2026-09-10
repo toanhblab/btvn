@@ -302,6 +302,14 @@ export const EN = {
   'Dữ liệu': 'Data',
   'PGlite (máy này)': 'PGlite (this device)',
   'Mã nhà': 'Family code',
+
+  /* ---- Don video cu (lib/donVideo.ts) ---- */
+  'Dọn video cũ': 'Cleaning up old videos',
+  'Mỗi con luôn giữ {n} video mới nhất. Video cũ hơn thế và đã quá {d} ngày thì tự xoá để kho không bị đầy.': 'Each child always keeps their {n} newest videos. Older ones that are also more than {d} days old are deleted automatically so storage does not fill up.',
+  'Chưa chạy lần nào.': 'Has not run yet.',
+  'Lần chạy ngày {date} bị lỗi giữa chừng.': 'The run on {date} failed part way through.',
+  'Đã chạy thử ngày {date} — chưa xoá gì cả.': 'Trial run on {date} — nothing was deleted.',
+  'Đã dọn ngày {date} — {n} video của nhà mình.': 'Cleaned up on {date} — {n} of your family videos.',
   /* ---- Them bai (chup anh / dan) ---- */
   'Chọn ít nhất một con đã.': 'Pick at least one child first.',
   'Chụp ảnh hoặc dán nội dung bài tập vào.': 'Take a photo or paste the homework text.',

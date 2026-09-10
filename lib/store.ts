@@ -1558,3 +1558,45 @@ export async function truDiem(
   }
   return { ok: true, penalty: toPenalty(ghi[0]), conLai };
 }
+
+/* ---------------- Don video qua han (lib/donVideo.ts) ---------------- */
+
+export interface LanDonVideo {
+  /** Ngay chay, YYYY-MM-DD. */
+  ngay: string;
+  cheDo: 'thu' | 'that';
+  coLoi: boolean;
+  /** So video CUA NHA NAY da bi don o luot do. Luot chay thu luon la 0 (khong xoa gi). */
+  soCuaNha: number;
+}
+
+/**
+ * Luot don video gan nhat — cho dong trang thai o man Cai dat, de bo me biet
+ * viec don co chay hay khong ma khong phai mo bang dieu khien cua Vercel.
+ *
+ * Ngay/che do/loi la TINH TRANG CUA MAY, cung loai voi dong "Du lieu: Neon
+ * Postgres" da co san o man do — khong phai du lieu cua nha nao. Con so dem thi
+ * CO loc theo nha (`c.family_id = $1`), dung luat chung cua tep nay: khong ham
+ * nao tra ve so dem gop ca CSDL.
+ */
+export async function lanDonVideoGanNhat(familyId: string): Promise<LanDonVideo | null> {
+  const r = await queryOne<{
+    run_date: string | Date; che_do: string; loi: string | null; so_cua_nha: number | string;
+  }>(
+    `SELECT r.run_date, r.che_do, r.loi,
+            (SELECT COUNT(*) FROM video_cleanups v
+               JOIN children c ON c.id = v.child_id
+              WHERE v.run_id = r.id AND c.family_id = $1 AND v.deleted_at IS NOT NULL) AS so_cua_nha
+       FROM video_cleanup_runs r
+      ORDER BY r.started_at DESC
+      LIMIT 1`,
+    [familyId]
+  );
+  if (!r) return null;
+  return {
+    ngay: dateStr(r.run_date),
+    cheDo: r.che_do === 'that' ? 'that' : 'thu',
+    coLoi: r.loi !== null,
+    soCuaNha: Number(r.so_cua_nha ?? 0),
+  };
+}

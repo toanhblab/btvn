@@ -288,6 +288,14 @@ export const KO: Record<Key, string> = {
   'Dữ liệu': '데이터',
   'PGlite (máy này)': 'PGlite (이 기기)',
   'Mã nhà': '가족 코드',
+
+  /* ---- Don video cu (lib/donVideo.ts) ---- */
+  'Dọn video cũ': '오래된 영상 정리',
+  'Mỗi con luôn giữ {n} video mới nhất. Video cũ hơn thế và đã quá {d} ngày thì tự xoá để kho không bị đầy.': '아이마다 최신 영상 {n}개는 항상 남습니다. 그보다 오래되고 {d}일이 지난 영상은 저장 공간이 차지 않도록 자동으로 삭제됩니다.',
+  'Chưa chạy lần nào.': '아직 한 번도 실행되지 않았습니다.',
+  'Lần chạy ngày {date} bị lỗi giữa chừng.': '{date} 실행이 도중에 실패했습니다.',
+  'Đã chạy thử ngày {date} — chưa xoá gì cả.': '{date}에 시험 실행했습니다 — 아무것도 삭제하지 않았습니다.',
+  'Đã dọn ngày {date} — {n} video của nhà mình.': '{date}에 정리했습니다 — 우리 가족 영상 {n}개.',
   'Chọn ít nhất một con đã.': '아이를 한 명 이상 선택해 주세요.',
   'Chụp ảnh hoặc dán nội dung bài tập vào.': '사진을 찍거나 숙제 내용을 붙여 넣어 주세요.',
   'Đang đọc bài tập…': '숙제를 읽는 중…',

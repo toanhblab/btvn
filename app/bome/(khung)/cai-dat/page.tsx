@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
-import { getFamilyById, listChildren, listChores } from '@/lib/store';
+import { getFamilyById, lanDonVideoGanNhat, listChildren, listChores } from '@/lib/store';
 import { hasNeon } from '@/lib/db';
+import { SO_NGAY_GIU_VIDEO, SO_VIDEO_MOI_NHAT_GIU_LAI } from '@/lib/donVideo';
 import CaiDat from './CaiDat';
 import { chu } from '@/lib/i18n/server';
 
@@ -21,10 +22,11 @@ export default async function Page() {
   const familyId = await parentFamilyId();
   if (!familyId) redirect('/bome/pin');
 
-  const [children, family, chores] = await Promise.all([
+  const [children, family, chores, lanDon] = await Promise.all([
     listChildren(familyId),
     getFamilyById(familyId),
     listChores(familyId),
+    lanDonVideoGanNhat(familyId),
   ]);
   if (!family) redirect('/bome/pin');
   const T = await chu();
@@ -113,6 +115,29 @@ export default async function Page() {
                   <dd className="text-on-surface font-mono text-xs break-all">{family.slug}</dd>
                 </div>
               </dl>
+            </div>
+          </section>
+
+          {/* Don video cu (lib/donVideo.ts) — dong nay la cach DUY NHAT bo me
+              biet viec don co chay hay khong ma khong phai mo bang dieu khien
+              cua Vercel. Hien o MOI co man, khac khoi "He thong" o tren. */}
+          <section className="mt-4 xl:mt-6">
+            <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Dọn video cũ')}</h2>
+            <div className="bg-surface-container-lowest rounded-card card-shadow p-3 xl:p-4">
+              <p className="text-p-body-sm text-on-surface-variant mb-1">
+                {T('Mỗi con luôn giữ {n} video mới nhất. Video cũ hơn thế và đã quá {d} ngày thì tự xoá để kho không bị đầy.', {
+                  n: SO_VIDEO_MOI_NHAT_GIU_LAI, d: SO_NGAY_GIU_VIDEO,
+                })}
+              </p>
+              <p className={`text-p-body-sm ${lanDon?.coLoi ? 'text-error' : 'text-on-surface'}`}>
+                {!lanDon
+                  ? T('Chưa chạy lần nào.')
+                  : lanDon.coLoi
+                    ? T('Lần chạy ngày {date} bị lỗi giữa chừng.', { date: lanDon.ngay })
+                    : lanDon.cheDo === 'thu'
+                      ? T('Đã chạy thử ngày {date} — chưa xoá gì cả.', { date: lanDon.ngay })
+                      : T('Đã dọn ngày {date} — {n} video của nhà mình.', { date: lanDon.ngay, n: lanDon.soCuaNha })}
+              </p>
             </div>
           </section>
         </div>

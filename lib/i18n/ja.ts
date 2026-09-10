@@ -288,6 +288,14 @@ export const JA: Record<Key, string> = {
   'Dữ liệu': 'データ',
   'PGlite (máy này)': 'PGlite（この端末）',
   'Mã nhà': '家族コード',
+
+  /* ---- Don video cu (lib/donVideo.ts) ---- */
+  'Dọn video cũ': '古い動画の整理',
+  'Mỗi con luôn giữ {n} video mới nhất. Video cũ hơn thế và đã quá {d} ngày thì tự xoá để kho không bị đầy.': 'お子さんごとに最新の{n}本は必ず残ります。それより古く、かつ{d}日を過ぎた動画は保存容量がいっぱいにならないよう自動で削除されます。',
+  'Chưa chạy lần nào.': 'まだ一度も実行されていません。',
+  'Lần chạy ngày {date} bị lỗi giữa chừng.': '{date}の実行は途中でエラーになりました。',
+  'Đã chạy thử ngày {date} — chưa xoá gì cả.': '{date}にお試し実行しました — 何も削除していません。',
+  'Đã dọn ngày {date} — {n} video của nhà mình.': '{date}に整理しました — このご家庭の動画{n}本。',
   'Chọn ít nhất một con đã.': '子どもを1人以上選んでください。',
   'Chụp ảnh hoặc dán nội dung bài tập vào.': '写真を撮るか、宿題の内容を貼り付けてください。',
   'Đang đọc bài tập…': '宿題を読み取り中…',
