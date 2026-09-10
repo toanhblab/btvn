@@ -1566,6 +1566,8 @@ export interface LanDonVideo {
   ngay: string;
   cheDo: 'thu' | 'that';
   coLoi: boolean;
+  /** Luot chua ghi `finished_at`: no dut giua chung (hoac dang chay ngay luc nay). */
+  chuaXong: boolean;
   /** So video CUA NHA NAY da bi don o luot do. Luot chay thu luon la 0 (khong xoa gi). */
   soCuaNha: number;
 }
@@ -1581,14 +1583,20 @@ export interface LanDonVideo {
  */
 export async function lanDonVideoGanNhat(familyId: string): Promise<LanDonVideo | null> {
   const r = await queryOne<{
-    run_date: string | Date; che_do: string; loi: string | null; so_cua_nha: number | string;
+    run_date: string | Date; che_do: string; loi: string | null;
+    finished_at: string | Date | null; so_cua_nha: number | string;
   }>(
-    `SELECT r.run_date, r.che_do, r.loi,
+    // Luot THAT duoc uu tien hon MOI luot thu, du luot thu moi hon: mot lan
+    // `node scripts/don-video.mjs` de xem truoc ghi mot dong 'thu' vao hom nay,
+    // va neu chi lay dong moi nhat thi man Cai dat doi thanh "chua xoa gi ca" —
+    // bo me ket luan viec don chua bao gio chay, trong khi dem qua no vua xoa
+    // that. Chi khi CHUA co luot that nao thi luot thu moi la thu dang bao.
+    `SELECT r.run_date, r.che_do, r.loi, r.finished_at,
             (SELECT COUNT(*) FROM video_cleanups v
                JOIN children c ON c.id = v.child_id
               WHERE v.run_id = r.id AND c.family_id = $1 AND v.deleted_at IS NOT NULL) AS so_cua_nha
        FROM video_cleanup_runs r
-      ORDER BY r.started_at DESC
+      ORDER BY (r.che_do = 'that') DESC, r.started_at DESC
       LIMIT 1`,
     [familyId]
   );
@@ -1597,6 +1605,10 @@ export async function lanDonVideoGanNhat(familyId: string): Promise<LanDonVideo 
     ngay: dateStr(r.run_date),
     cheDo: r.che_do === 'that' ? 'that' : 'thu',
     coLoi: r.loi !== null,
+    // `loi` chi duoc ghi o cau ket luot, nen mot luot chet giua chung (het gio
+    // cua route, may chu bi cat) de lai loi = NULL: khong co dong nay thi no bao
+    // "Da don ... 0 video" — mot luot hong doi lot thanh mot luot thanh cong.
+    chuaXong: r.finished_at === null,
     soCuaNha: Number(r.so_cua_nha ?? 0),
   };
 }

@@ -193,6 +193,10 @@ bị xoá, và một con lâu ngày không nộp bài cũng không bị mất s�
 Vào **Cài đặt** kéo xuống mục **"Dọn video cũ"** là thấy lần dọn gần nhất chạy
 ngày nào và xoá mấy video của nhà mình.
 
+Bài nào có video đã bị dọn thì trong màn của con (bên bố mẹ) thẻ 🎥 đổi thành
+**"Đã nộp, video đã dọn"** — con đã nộp xong rồi, chỉ là video không còn nữa,
+không phải con còn nợ một bản quay.
+
 > **Nên gửi bài cho cô trong vài ngày đầu.** Video đã xoá thì không lấy lại được.
 > Bình thường bố mẹ gửi ngay hôm đó nên không sao, nhưng nếu để quên cả tuần thì
 > video có thể đã bị dọn mất.

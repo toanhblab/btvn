@@ -66,7 +66,11 @@ for (const c of data.canhBao ?? []) console.log(`!  canh bao: ${c}`);
 // Chua hoi duoc kho thi KHONG in "0.0 MB" — khong biet la khong biet, dung bia 0.
 const chuaBietCo = data.ungVien.some((m) => m.bytes === null);
 const tongCo = chuaBietCo ? 'chua ro dung luong' : mb(data.soBytes);
-console.log(`\n${data.cheDo === 'that' ? 'Da xoa' : 'SE xoa'}: ${data.ungVien.length} tep, ${tongCo}`);
+// Che do that thi dem daXoa chu KHONG dem ungVien: ung vien nao thua cuoc dua
+// "con vua quay lai" thi khong bi xoa, no nam o boSot. Dem ung vien la in ra
+// mot con so lon hon so tep that su mat, va lech ca voi tong dung luong ben canh.
+const soTep = data.cheDo === 'that' ? data.daXoa.length : data.ungVien.length;
+console.log(`\n${data.cheDo === 'that' ? 'Da xoa' : 'SE xoa'}: ${soTep} tep, ${tongCo}`);
 for (const m of data.ungVien) {
   const xong = data.daXoa.includes(m.assignmentId);
   console.log(
@@ -74,6 +78,12 @@ for (const m of data.ungVien) {
     `  con=${m.childId}  thu ${m.hang}  ${m.bytes === null ? '?' : mb(m.bytes)}`
   );
   console.log(`      ${m.url}`);
+}
+
+// So cai con so tu luot truoc (del() hong giua chung): luot nay don not.
+if (data.daXoaLai?.length) {
+  console.log(`\nDon not so cai con so tu luot truoc: ${data.daXoaLai.length} tep`);
+  for (const id of data.daXoaLai) console.log(`  ✓ ${id}`);
 }
 
 if (data.boSot.length) {

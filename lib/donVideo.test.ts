@@ -36,6 +36,8 @@ const daGoiDel: GoiDel[] = [];
 const tuoiKhoBao = new Map<string, number>();
 /** URL ma kho tra loi loi khi hoi head(). */
 const khoLoi = new Set<string>();
+/** URL ma kho tra loi loi khi goi del() — mot lo cham vao la ca lo hong. */
+const khoLoiXoa = new Set<string>();
 
 const { query, queryTx } = await import('./db.ts');
 
@@ -51,6 +53,7 @@ mock.module('@vercel/blob', {
       return { size: 1_000_000, uploadedAt: new Date(rieng ?? tuCsdl) };
     },
     del: async (urls: string[]) => {
+      if (urls.some((u) => khoLoiXoa.has(u))) throw new Error('BlobServiceNotAvailable');
       // Hang rao 5, kiem NGAY TAI THOI DIEM PHA: truoc khi tep bien mat, so cai
       // phai da co dong va URL phai da bi go khoi bai. Doc thang CSDL o day chu
       // khong nhin ket qua cuoi — ket qua cuoi khong phan biet duoc thu tu.
@@ -70,6 +73,7 @@ mock.module('@vercel/blob', {
 });
 
 const donVideo = await import('./donVideo.ts');
+const { lanDonVideoGanNhat } = await import('./store.ts');
 const { chayMigrations } = await import('../scripts/db.mjs');
 
 const db = {
@@ -156,6 +160,7 @@ async function dungLaiDuLieu() {
   daGoiDel.length = 0;
   tuoiKhoBao.clear();
   khoLoi.clear();
+  khoLoiXoa.clear();
 }
 
 before(async () => {
@@ -410,6 +415,86 @@ test('con quay lai dung luc don: URL doi thi khong go, khong xoa tep moi', async
   assert.equal(con[0].u, urlKho('a4-quay-lai'), 'video con vua quay lai phai con nguyen');
 });
 
+test('tran cua luot dem SAU hang rao: dong bi chan khong an mat suat xoa', async () => {
+  // x4 la dong CU NHAT trong so duoc chon nen cau chon luon dua no len dau. Cho
+  // kho luon bao loi khi hoi ve no => no bi hang rao 4 chan VINH VIEN. Neu tran
+  // `max` nam o LIMIT cua cau chon thi luot nao cung chi thay mot minh x4, khong
+  // bao gio xoa duoc gi, ma van bao "thanh cong, 0 tep" — kho cu the day len.
+  khoLoi.add(urlKho('x4'));
+
+  const ra = await donVideo.donVideoQuaHan({ that: true, max: 1 });
+
+  assert.ok(ra.boSot.some((b) => b.assignmentId === 'x4' && b.vi === 'khong-hoi-duoc-kho'));
+  assert.deepEqual(ra.daXoa, ['b4'], 'phai xoa duoc dong ke tiep, khong dung lai o dong bi chan');
+  assert.equal(ra.ungVien.length, 1, 'tran cua luot van la 1 tep');
+  assert.ok((await conLai()).has('x4'), 'dong bi chan van con nguyen');
+});
+
+test('tran cua luot van la tran: quet rong hon khong lam xoa nhieu hon', async () => {
+  const ra = await donVideo.donVideoQuaHan({ that: true, max: 2 });
+  assert.equal(ra.daXoa.length, 2);
+  assert.ok(ra.canhBao.includes('dung-o-tran-moi-luot'));
+  const so = await query<{ n: number | string }>(
+    `SELECT COUNT(*) AS n FROM video_cleanups WHERE deleted_at IS NOT NULL`
+  );
+  assert.equal(Number(so[0].n), 2);
+});
+
+test('del() hong: URL da go nen tep thanh mo coi — so cai giu no lai va luot sau don not', async () => {
+  khoLoiXoa.add(urlKho('a4'));
+
+  const hong = await donVideo.donVideoQuaHan({ that: true });
+  assert.ok(hong.loi, 'del() hong phai duoc bao ra chu khong nuot');
+  assert.deepEqual(hong.daXoa, [], 'ca lo hong thi khong dong nao duoc dong dau da xoa');
+  assert.ok(!(await conLai()).has('a4'), 'URL da bi go truoc khi del() chay — tep thanh mo coi');
+
+  const conSo = await query<{ n: number | string }>(
+    `SELECT COUNT(*) AS n FROM video_cleanups WHERE deleted_at IS NULL`
+  );
+  assert.equal(Number(conSo[0].n), 4, 'so cai la ban ghi duy nhat con lai cua tep mo coi');
+
+  // Hom sau: kho lanh lai, luot moi khong con thay chung qua assignments nua.
+  await query(`UPDATE video_cleanup_runs SET run_date = run_date - 1`);
+  khoLoiXoa.clear();
+
+  const sau = await donVideo.donVideoQuaHan({ that: true });
+  assert.equal(sau.loi, null);
+  assert.deepEqual(sau.daXoaLai.sort(), ['a4', 'a5', 'b4', 'x4'],
+    'luot sau phai don not so cai con so, khong thi tep nam lai tren kho mai mai');
+
+  const chuaXoa = await query<{ n: number | string }>(
+    `SELECT COUNT(*) AS n FROM video_cleanups WHERE deleted_at IS NULL`
+  );
+  assert.equal(Number(chuaXoa[0].n), 0);
+  const urlDaXoa = daGoiDel.flatMap((g) => g.urls);
+  assert.ok(urlDaXoa.includes(urlKho('a4')));
+});
+
+test('chay thu chi bao so cai con so, khong dong vao no', async () => {
+  khoLoiXoa.add(urlKho('a4'));
+  await donVideo.donVideoQuaHan({ that: true });
+  daGoiDel.length = 0;
+  khoLoiXoa.clear();
+
+  const thu = await donVideo.donVideoQuaHan();
+  assert.ok(thu.canhBao.includes('so-cai-con-4-dong-chua-xoa'));
+  assert.deepEqual(thu.daXoaLai, []);
+  assert.equal(daGoiDel.length, 0, 'chay thu KHONG duoc goi del()');
+});
+
+test('bai da don giu lai moc nop: man cua bo me phan biet duoc voi bai chua quay', async () => {
+  await donVideo.donVideoQuaHan({ that: true });
+
+  const a4 = await query<{ u: string | null; t: Date | string | null }>(
+    `SELECT submitted_video_url AS u, submitted_video_at AS t FROM assignments WHERE id = 'a4'`
+  );
+  assert.equal(a4[0].u, null, 'URL phai bi go, khong thi bo me bam vao mot lien ket chet');
+  assert.ok(a4[0].t, 'moc nop phai con: no la dau vet duy nhat rang bai nay TUNG co video');
+
+  // Va dong da don khong bao gio duoc chon lai.
+  assert.ok(!(await idsDuocChon()).includes('a4'));
+});
+
 /* ----------------------- laUrlVideoConNop ----------------------- */
 
 test('laUrlVideoConNop: chi nhan https + host Blob + thu muc nop-bai/', () => {
@@ -434,6 +519,38 @@ test('laUrlVideoConNop: chi nhan https + host Blob + thu muc nop-bai/', () => {
   assert.equal(ok(''), false);
   assert.equal(ok(null), false);
   assert.equal(ok(`https://x.public.blob.vercel-storage.com/nop-bai/${'a'.repeat(3000)}.mp4`), false);
+});
+
+/* ------------- Dong trang thai o man Cai dat cua bo me ------------- */
+
+test('Cai dat: mot lan chay thu ve sau khong duoc che mat luot xoa that', async () => {
+  await donVideo.donVideoQuaHan({ that: true });
+  // Bo me go `node scripts/don-video.mjs` de xem truoc => mot dong 'thu' MOI HON.
+  await donVideo.donVideoQuaHan();
+
+  const lan = await lanDonVideoGanNhat('fam_that');
+  assert.ok(lan);
+  assert.equal(lan.cheDo, 'that', 'luot thu moi hon khong duoc bao "chua xoa gi ca"');
+  assert.equal(lan.soCuaNha, 3, 'a4, a5, b4 — x4 la video cua nha khac');
+  assert.equal(lan.coLoi, false);
+  assert.equal(lan.chuaXong, false);
+});
+
+test('Cai dat: luot chet giua chung khong duoc bao la da don xong', async () => {
+  await donVideo.donVideoQuaHan({ that: true });
+  // Route bi cat giua chung: cau ket luot khong chay, nen `loi` van NULL.
+  await query(`UPDATE video_cleanup_runs SET finished_at = NULL, loi = NULL WHERE che_do = 'that'`);
+
+  const lan = await lanDonVideoGanNhat('fam_that');
+  assert.equal(lan?.chuaXong, true, 'khong co finished_at thi luot do chua chay xong');
+  assert.equal(lan?.coLoi, false);
+});
+
+test('Cai dat: chua co luot that nao thi luot thu moi la thu dang bao', async () => {
+  await donVideo.donVideoQuaHan();
+  const lan = await lanDonVideoGanNhat('fam_that');
+  assert.equal(lan?.cheDo, 'thu');
+  assert.equal(lan?.soCuaNha, 0);
 });
 
 test('hai hang so cua luat nam dung mot cho va la so captain chot', () => {

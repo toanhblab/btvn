@@ -38,10 +38,15 @@
  *   5. SO CAI GHI CUNG LUC VOI LUC GO. Dong `video_cleanups` va cau go URL khoi
  *      `assignments` di trong CUNG MOT cau SQL (CTE), va ca hai xong xuoi TRUOC
  *      khi del() chay. Nen o moi thoi diem, duong dan sap mat da nam trong so
- *      cai roi — do la ban sao duy nhat con lai sau khi tep bien mat.
+ *      cai roi — do la ban sao duy nhat con lai sau khi tep bien mat. Vi the
+ *      del() hong la de lai mot tep KHONG con ai tro toi, va luot sau khong
+ *      nhin thay no qua `assignments` nua: moi luot phai doc lai dong so cai
+ *      `deleted_at IS NULL` va don not (`donSoCaiMoCoi`) truoc khi chon viec moi.
  *   6. Lan chay THAT dau tien do captain bam tay, sau khi doc danh sach cua mot
  *      lan chay thu (scripts/don-video.mjs).
  *   7. Nha demo bi loai ngay trong cau SELECT (`fam\_demo\_%`).
+ *
+ * `submitted_video_at` thi GIU LAI (chi URL bi go) — xem SQL_GO_VA_GHI_SO.
  *
  * VI SAO GO URL TRONG CSDL LA BAT BUOC, khong phai tuy chon: moi cho ve video
  * deu kiem rong san (`coVideo` trong ChiaSeVideo, `{submittedVideoUrl && …}`
@@ -75,6 +80,22 @@ export const MAX_MOI_LUOT_MAC_DINH = 20;
 
 /** Chia lo khi goi del(): mot lo la mot vong goi. Tai lieu khong neu tran nen tu dat. */
 const CO_LO_XOA = 100;
+
+/**
+ * Cua so QUET rong hon tran xoa cua luot.
+ *
+ * `max` la tran SO TEP BI XOA nen no phai duoc dem SAU cac hang rao, khong phai
+ * o LIMIT cua cau chon. Dat o LIMIT thi mot dong bi hang rao chan VINH VIEN
+ * (URL Google Drive bo me dan vao, hay tep da bien mat khoi kho nen head() luon
+ * loi) van la dong CU NHAT nen luot nao cung duoc chon truoc, an het cho, va
+ * viec don dung han trong im lang: luot chay bao thanh cong voi 0 tep con kho
+ * thi cu day len. Quet rong hon roi dung tay khi da du `max` dong lot HET hang
+ * rao thi dong bi chan chi ton mot cho trong CUA SO QUET, khong ton mot cho
+ * trong tran xoa.
+ */
+const HE_SO_QUET = 5;
+/** Tran cung cua cua so quet: moi dong la mot lan goi head(), route chi co 60s. */
+const TRAN_QUET = 100;
 
 const HOST_KHO = /(^|\.)blob\.vercel-storage\.com$/;
 /** Chi thu muc video con nop. `dinh-kem/` (tep bo me) va `bai-tap/` (anh) khong dinh toi. */
@@ -114,7 +135,8 @@ export function laUrlVideoConNop(url: unknown): url is string {
  * `fam\_demo\_%`: dau gach duoi la ky tu dai dien cua LIKE nen phai thoat, khong
  * thi mau con bat ca nhung id khong phai nha demo.
  *
- * $1 = so video moi nhat giu lai, $2 = so ngay giu, $3 = so tep toi da moi luot.
+ * $1 = so video moi nhat giu lai, $2 = so ngay giu, $3 = so dong QUET moi luot
+ * (rong hon tran xoa cua luot — xem HE_SO_QUET).
  */
 export const SQL_CHON_VIDEO_QUA_HAN = `
   WITH xep AS (
@@ -144,12 +166,21 @@ export const SQL_CHON_VIDEO_QUA_HAN = `
  * cau nay khong dong vao dong nao, khong ghi so cai, va nguoi goi khong xoa tep
  * do (no da thanh tep mo coi, de dot don mo coi sau lo).
  *
+ * `submitted_video_at` CO Y duoc GIU LAI trong khi URL bi go: no la dau vet duy
+ * nhat con lai tren chinh dong bai rang "bai nay TUNG co video, video da bi
+ * don". Go ca hai thi bai da xong quay ve y het bai chua quay bao gio, va man
+ * chi tiet con cua bo me dan lai the "Chờ quay video" cho mot bai con da nop
+ * xong tu tuan truoc. Khong cho nao doc `submitted_video_at` mot minh de bat
+ * dau mot luong nao (SuaBai chi doc no BEN TRONG khoi `submittedVideoUrl &&`),
+ * va cau chon o tren doi CA HAI cot khac NULL nen dong da don khong bao gio
+ * duoc chon lai.
+ *
  * $1 so cai id, $2 run id, $3 assignment id, $4 url, $5 bytes, $6 submitted_video_at.
  */
 export const SQL_GO_VA_GHI_SO = `
   WITH da_go AS (
     UPDATE assignments
-       SET submitted_video_url = NULL, submitted_video_at = NULL
+       SET submitted_video_url = NULL
      WHERE id = $3 AND submitted_video_url = $4
      RETURNING id, child_id
   )
@@ -158,6 +189,19 @@ export const SQL_GO_VA_GHI_SO = `
   SELECT $1, $2, da_go.id, da_go.child_id, $4, $5::bigint, $6::timestamptz
     FROM da_go
   RETURNING id, assignment_id, url`;
+
+/**
+ * So cai con so: dong da go URL khoi bai ma del() chua bao xoa xong.
+ *
+ * `planned_at` truoc thi don truoc — dong cu nhat la dong da mo coi lau nhat.
+ *
+ * $1 = so dong toi da moi luot.
+ */
+export const SQL_SO_CAI_CHUA_XOA = `
+  SELECT id, assignment_id, url FROM video_cleanups
+   WHERE deleted_at IS NULL
+   ORDER BY planned_at
+   LIMIT $1::int`;
 
 export type CheDoDon = 'thu' | 'that';
 
@@ -186,6 +230,8 @@ export interface KetQuaDon {
   canhBao: string[];
   /** assignmentId da xoa xong that su (rong khi chay thu). */
   daXoa: string[];
+  /** assignmentId cua so cai con so tu luot truoc, luot nay don not. */
+  daXoaLai: string[];
   soBytes: number;
   loi: string | null;
 }
@@ -217,7 +263,7 @@ export async function donVideoQuaHan(
   const max = Math.max(1, Math.min(tuyChon.max ?? MAX_MOI_LUOT_MAC_DINH, MAX_MOI_LUOT_MAC_DINH));
   const ra: KetQuaDon = {
     cheDo: that ? 'that' : 'thu', runId: null,
-    ungVien: [], boSot: [], canhBao: [], daXoa: [], soBytes: 0, loi: null,
+    ungVien: [], boSot: [], canhBao: [], daXoa: [], daXoaLai: [], soBytes: 0, loi: null,
   };
 
   // Xoa that ma khong co token thi khong the goi del() — dung lai thay vi go URL
@@ -242,8 +288,12 @@ export async function donVideoQuaHan(
   ra.runId = runId;
 
   try {
+    // Don not so cai con so TRUOC khi chon viec moi: nhung tep do da khong con
+    // ai tro toi, khong luot nao sau nay nhin thay chung qua assignments nua.
+    await donSoCaiMoCoi(ra, that, max);
+
     const dong = await query<DongChon>(SQL_CHON_VIDEO_QUA_HAN, [
-      SO_VIDEO_MOI_NHAT_GIU_LAI, SO_NGAY_GIU_VIDEO, max,
+      SO_VIDEO_MOI_NHAT_GIU_LAI, SO_NGAY_GIU_VIDEO, Math.min(max * HE_SO_QUET, TRAN_QUET),
     ]);
 
     // Khong co token thi khong hoi duoc kho. Chi xay ra o luot CHAY THU (nhanh
@@ -253,6 +303,11 @@ export async function donVideoQuaHan(
 
     const hanCu = Date.now() - SO_NGAY_GIU_VIDEO * 86_400_000;
     for (const d of dong) {
+      // Hang rao 2 — tran cua luot, dem SAU cac hang rao khac (xem HE_SO_QUET).
+      if (ra.ungVien.length >= max) {
+        ra.canhBao.push('dung-o-tran-moi-luot');
+        break;
+      }
       const url = d.submitted_video_url;
 
       // Hang rao 3
@@ -298,7 +353,7 @@ export async function donVideoQuaHan(
 
   await query(
     `UPDATE video_cleanup_runs SET finished_at = now(), so_tep = $2, so_bytes = $3, loi = $4 WHERE id = $1`,
-    [runId, that ? ra.daXoa.length : ra.ungVien.length, ra.soBytes, ra.loi]
+    [runId, that ? ra.daXoa.length + ra.daXoaLai.length : ra.ungVien.length, ra.soBytes, ra.loi]
   );
   return ra;
 }
@@ -322,11 +377,66 @@ async function xoaThat(runId: string, ra: KetQuaDon): Promise<void> {
   }
   if (daGo.length === 0) return;
 
-  for (let i = 0; i < daGo.length; i += CO_LO_XOA) {
-    const lo = daGo.slice(i, i + CO_LO_XOA);
-    await del(lo.map((g) => g.url));
-    await query(`UPDATE video_cleanups SET deleted_at = now() WHERE id = ANY($1::text[])`,
-      [lo.map((g) => g.id)]);
-    ra.daXoa.push(...lo.map((g) => g.assignment_id));
+  await xoaTheoLo(ra, daGo, ra.daXoa);
+}
+
+interface DongSoCai { id: string; assignment_id: string; url: string }
+
+/**
+ * Goi del() theo lo, dong dau so cai NGAY SAU moi lo, va CHIU DUOC mot lo hong.
+ *
+ * Khong nem loi ra ngoai: nem la bo luon cac lo sau, ma moi lo la mot nhom tep
+ * doc lap — mot cu 500 cua kho khong duoc keo theo phan con lai cua luot. Lo
+ * hong thi dong so cai giu nguyen `deleted_at IS NULL` va luot sau don not
+ * (donSoCaiMoCoi), nhung `ra.loi` van duoc dat nen route tra 500 va man Cai dat
+ * bao "bi loi giua chung" — hong ma bao thanh cong moi la cai nguy hiem.
+ */
+async function xoaTheoLo(ra: KetQuaDon, dong: DongSoCai[], vao: string[]): Promise<void> {
+  for (let i = 0; i < dong.length; i += CO_LO_XOA) {
+    const lo = dong.slice(i, i + CO_LO_XOA);
+    try {
+      await del(lo.map((g) => g.url));
+      await query(`UPDATE video_cleanups SET deleted_at = now() WHERE id = ANY($1::text[])`,
+        [lo.map((g) => g.id)]);
+      vao.push(...lo.map((g) => g.assignment_id));
+    } catch (e) {
+      ra.loi = ra.loi ?? (e instanceof Error ? e.message : String(e));
+      for (const g of lo) {
+        ra.boSot.push({ assignmentId: g.assignment_id, url: g.url, vi: 'kho-khong-xoa-duoc' });
+        ra.soBytes -= ra.ungVien.find((m) => m.assignmentId === g.assignment_id)?.bytes ?? 0;
+      }
+    }
   }
+}
+
+/**
+ * Don not nhung dong so cai con so — cai duong lui cua hang rao 5.
+ *
+ * Hang rao 5 go URL khoi bai TRUOC khi del() chay, nen mot cu del() hong de lai
+ * dung tinh huong xau nhat: tep van nam tren kho ma KHONG con ai tro toi. Cau
+ * chon chi di theo `assignments.submitted_video_url` nen khong luot nao sau nay
+ * nhin thay chung nua; dong so cai `deleted_at IS NULL` la ban ghi duy nhat con
+ * lai, nen moi luot phai doc lai chung truoc khi chon viec moi.
+ *
+ * Van qua danh sach trang (hang rao 3) truoc khi goi del(), va van an trong tran
+ * cua luot (hang rao 2). Luot chay THU khong xoa gi, chi bao ra con bao nhieu dong.
+ */
+async function donSoCaiMoCoi(ra: KetQuaDon, that: boolean, max: number): Promise<void> {
+  const dong = await query<DongSoCai>(SQL_SO_CAI_CHUA_XOA, [max]);
+  if (dong.length === 0) return;
+
+  const xoaDuoc = dong.filter((d) => {
+    if (laUrlVideoConNop(d.url)) return true;
+    ra.boSot.push({
+      assignmentId: d.assignment_id, url: d.url, vi: 'khong-phai-video-con-nop-tren-kho',
+    });
+    return false;
+  });
+  if (xoaDuoc.length === 0) return;
+
+  if (!that) {
+    ra.canhBao.push(`so-cai-con-${xoaDuoc.length}-dong-chua-xoa`);
+    return;
+  }
+  await xoaTheoLo(ra, xoaDuoc, ra.daXoaLai);
 }

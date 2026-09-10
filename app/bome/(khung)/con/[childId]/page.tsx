@@ -242,16 +242,28 @@ export default async function ChiTietCon({
                           </span>
                         )}
                         {/* Bai phai quay video: da nop thi mau "xong" — bam Sua
-                            (bieu tuong but) de mo bai ra xem video con quay */}
+                            (bieu tuong but) de mo bai ra xem video con quay.
+                            Ba trang thai chu khong hai: video da bi don
+                            (lib/donVideo.ts) thi URL bi go nhung submittedVideoAt
+                            con, va do la cho phan biet "con chua quay" voi "con
+                            quay roi, video cu da don" — gop hai cai lam mot la
+                            doi the sang "Chờ quay video" cho mot bai con da nop
+                            xong tu tuan truoc. */}
                         {a.requiresVideo && (
                           <span
                             className={`text-p-label px-2 py-0.5 rounded-full ${
                               a.submittedVideoUrl
                                 ? 'bg-success-container text-on-success-container'
-                                : 'bg-secondary-container text-on-secondary-container'
+                                : a.submittedVideoAt
+                                  ? 'bg-surface-container text-on-surface-variant'
+                                  : 'bg-secondary-container text-on-secondary-container'
                             }`}
                           >
-                            🎥 {a.submittedVideoUrl ? T('Đã nộp video') : T('Chờ quay video')}
+                            🎥 {a.submittedVideoUrl
+                              ? T('Đã nộp video')
+                              : a.submittedVideoAt
+                                ? T('Đã nộp, video đã dọn')
+                                : T('Chờ quay video')}
                           </span>
                         )}
                         {overdue && (

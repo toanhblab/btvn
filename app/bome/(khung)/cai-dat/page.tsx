@@ -129,14 +129,16 @@ export default async function Page() {
                   n: SO_VIDEO_MOI_NHAT_GIU_LAI, d: SO_NGAY_GIU_VIDEO,
                 })}
               </p>
-              <p className={`text-p-body-sm ${lanDon?.coLoi ? 'text-error' : 'text-on-surface'}`}>
+              <p className={`text-p-body-sm ${lanDon?.coLoi || lanDon?.chuaXong ? 'text-error' : 'text-on-surface'}`}>
                 {!lanDon
                   ? T('Chưa chạy lần nào.')
                   : lanDon.coLoi
                     ? T('Lần chạy ngày {date} bị lỗi giữa chừng.', { date: lanDon.ngay })
-                    : lanDon.cheDo === 'thu'
-                      ? T('Đã chạy thử ngày {date} — chưa xoá gì cả.', { date: lanDon.ngay })
-                      : T('Đã dọn ngày {date} — {n} video của nhà mình.', { date: lanDon.ngay, n: lanDon.soCuaNha })}
+                    : lanDon.chuaXong
+                      ? T('Lần chạy ngày {date} chưa chạy xong.', { date: lanDon.ngay })
+                      : lanDon.cheDo === 'thu'
+                        ? T('Đã chạy thử ngày {date} — chưa xoá gì cả.', { date: lanDon.ngay })
+                        : T('Đã dọn ngày {date} — {n} video của nhà mình.', { date: lanDon.ngay, n: lanDon.soCuaNha })}
               </p>
             </div>
           </section>

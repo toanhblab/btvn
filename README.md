@@ -269,7 +269,9 @@ nằm ở biến môi trường trên máy chủ. Hai khoá, hai nơi.
 
 **Xoá tệp trên kho không lùi được.** Đường lùi duy nhất là sổ cái `video_cleanups`
 (migration 019): mỗi tệp một dòng, ghi **cùng lúc** với lúc gỡ URL khỏi
-`assignments` và **trước** khi gọi `del()`. Bảng `video_cleanup_runs` có chỉ mục
+`assignments` và **trước** khi gọi `del()`. Vì gỡ URL đi trước, một cú `del()`
+hỏng để lại tệp **không còn ai trỏ tới** — nên mỗi lượt đọc lại dòng sổ cái
+`deleted_at IS NULL` và dọn nốt trước khi chọn việc mới (`donSoCaiMoCoi`). Bảng `video_cleanup_runs` có chỉ mục
 UNIQUE từng phần trên `(run_date) WHERE che_do = 'that'` — đó là hàng rào chống
 cron gọi trùng một lượt, và nó nằm ở CSDL chứ không ở code.
 
