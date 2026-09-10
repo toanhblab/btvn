@@ -47,6 +47,22 @@ if (!data) {
   process.exit(1);
 }
 
+// Than tra ve co the KHONG phai bao cao: route tra `{ error: 'unauthorized' }`
+// cho MOI lan goi khi CRON_SECRET thieu hay khong khop, va nen tang co the tra
+// mot than JSON khac han (404 khi chua deploy, trang loi cua Vercel). Than do
+// van la JSON hop le nen phep kiem o tren cho no di qua, roi `data.ungVien.some`
+// o duoi nga bang mot vet ngan xep Node khong he nhac den 401.
+//
+// Nhan ra bang CHINH hinh dang bao cao chu khong bang ma trang thai: mot luot
+// chay hong tra 500 nhung VAN kem bao cao day du, va luc do bao cao la thu dang
+// doc nhat — nhanh `data.loi` o cuoi tep nay in no ra.
+if (!Array.isArray(data.ungVien)) {
+  console.error(`✗ May chu tra ${res.status}${data.error ? `: ${data.error}` : ''}`);
+  if (!data.error) console.error('  Than tra ve khong phai bao cao don video.');
+  if (res.status === 401) console.error('  Kiem lai CRON_SECRET: bien o day phai trung voi bien tren may chu.');
+  process.exit(1);
+}
+
 const mb = (b) => `${(b / 1024 / 1024).toFixed(1)} MB`;
 
 if (data.boQua === 'da-chay-hom-nay') {
