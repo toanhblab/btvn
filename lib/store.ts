@@ -1608,11 +1608,16 @@ export async function trangThaiDonVideo(familyId: string): Promise<TrangThaiDonV
   // duoc no, nen dem theo run_id la bao "0 video cua nha minh" dung vao dem ma
   // video cua nha do vua that su mat. Cot do chi duoc ghi cung luc voi
   // `deleted_at` nen no da ham y "da xoa xong" (migration 020).
+  //
+  // `nhanh` la MOC de nhan ra dong nao cua nhanh nao. UNION ALL khong bao dam
+  // thu tu tra ve neu khong co ORDER BY ngoai cung, nen lay theo chi so (r[0])
+  // la dua vao mot chi tiet cai dat cua Postgres: hom nao no doi thu tu thi man
+  // Cai dat lai quay ve dung cai loi "khoe lan don thang truoc" da sua o day.
   const r = await query<{
-    id: string; run_date: string | Date; che_do: string; loi: string | null;
-    finished_at: string | Date | null; so_cua_nha: number | string;
+    nhanh: number | string; id: string; run_date: string | Date; che_do: string;
+    loi: string | null; finished_at: string | Date | null; so_cua_nha: number | string;
   }>(
-    `(SELECT r.id, r.run_date, r.che_do, r.loi, r.finished_at,
+    `(SELECT 1 AS nhanh, r.id, r.run_date, r.che_do, r.loi, r.finished_at,
              (SELECT COUNT(*) FROM video_cleanups v
                 JOIN children c ON c.id = v.child_id
                WHERE v.deleted_run_id = r.id AND c.family_id = $1) AS so_cua_nha
@@ -1620,7 +1625,7 @@ export async function trangThaiDonVideo(familyId: string): Promise<TrangThaiDonV
        ORDER BY r.started_at DESC
        LIMIT 1)
      UNION ALL
-     (SELECT r.id, r.run_date, r.che_do, r.loi, r.finished_at,
+     (SELECT 2 AS nhanh, r.id, r.run_date, r.che_do, r.loi, r.finished_at,
              (SELECT COUNT(*) FROM video_cleanups v
                 JOIN children c ON c.id = v.child_id
                WHERE v.deleted_run_id = r.id AND c.family_id = $1) AS so_cua_nha
@@ -1642,9 +1647,10 @@ export async function trangThaiDonVideo(familyId: string): Promise<TrangThaiDonV
     soCuaNha: Number(d.so_cua_nha ?? 0),
   });
 
-  const moiNhat = r[0] ?? null;
+  const moiNhat = r.find((d) => Number(d.nhanh) === 1) ?? null;
   // Luot that moi nhat CHINH LA luot moi nhat thi chi con mot dong de noi.
-  const luotThat = r.find((d) => d.che_do === 'that' && d.id !== moiNhat?.id) ?? null;
+  const luotThat =
+    r.find((d) => Number(d.nhanh) === 2 && d.id !== moiNhat?.id) ?? null;
   return {
     moiNhat: moiNhat ? doiVe(moiNhat) : null,
     donThatGanNhat: luotThat ? doiVe(luotThat) : null,

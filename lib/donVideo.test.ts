@@ -274,13 +274,33 @@ test('hang rao 1: chay thu la mac dinh — khong xoa gi, khong ghi so cai', asyn
   assert.equal(Number(so[0].n), 0, 'chay thu khong duoc ghi so cai');
 });
 
-test('hang rao 2: tran so tep moi luot, va khong nang len qua mac dinh duoc', async () => {
+test('hang rao 2: tran so tep moi luot', async () => {
   const ra = await donVideo.donVideoQuaHan({ that: true, max: 2 });
   assert.equal(ra.ungVien.length, 2);
   assert.equal(ra.daXoa.length, 2);
+});
+
+test('hang rao 2: nguoi goi khong nang tran len qua mac dinh duoc', async () => {
+  // Phai co NHIEU HON MAX_MOI_LUOT_MAC_DINH dong du dieu kien xoa, khong thi bai
+  // nay xanh ca khi khong con cai kep nao: bo `Math.min(..., MAX_MOI_LUOT_MAC_DINH)`
+  // di ma 4 <= 20 thi van dung. Route co nhan `?max=` cua nguoi goi
+  // (app/api/don-video/route.ts) nen cai kep do phai co bai kiem GAY DUOC.
+  const them = donVideo.MAX_MOI_LUOT_MAC_DINH + 5;
+  for (let i = 0; i < them; i++) {
+    await query(
+      `INSERT INTO assignments
+         (id, child_id, subject, icon, content, lang, due_date, source,
+          submitted_video_url, submitted_video_at)
+       VALUES ($1, 'con_a', 'Toan', '📝', 'noi dung', 'vi', CURRENT_DATE, 'primary_school',
+               $2, now() - ($3::numeric * interval '1 day'))`,
+      [`z${i}`, urlKho(`z${i}`), 30 + i]
+    );
+  }
 
   const xin = await donVideo.donVideoQuaHan({ that: false, max: 9999 });
-  assert.ok(xin.ungVien.length <= donVideo.MAX_MOI_LUOT_MAC_DINH);
+  assert.equal(xin.ungVien.length, donVideo.MAX_MOI_LUOT_MAC_DINH,
+    'xin 9999 thi van chi duoc dung so mac dinh, khong hon mot tep nao');
+  assert.ok(xin.canhBao.includes('dung-o-tran-moi-luot'));
 });
 
 test('hang rao 3: danh sach trang — URL ngoai kho khong bao gio di vao del()', async () => {
@@ -696,6 +716,19 @@ test('Cai dat: dem theo luot DA XOA, khong theo luot da dinh xoa', async () => {
   assert.equal(lan.moiNhat?.soCuaNha, 3, 'a4, a5, b4 — x4 la video cua nha khac');
   assert.equal(lan.moiNhat?.coLoi, false);
   assert.equal(lan.donThatGanNhat, null, 'luot moi nhat CHINH la luot that — khong in hai dong');
+});
+
+test('Cai dat: lau khong co luot nao thi noi that, mot cau cho moi kieu hong', () => {
+  const { lauKhongDon, SO_NGAY_COI_LA_NGUNG } = donVideo;
+  const homNay = '2026-10-08';
+  const luiNgay = (n: number) => new Date(Date.UTC(2026, 9, 8 - n)).toISOString().slice(0, 10);
+
+  assert.equal(lauKhongDon(homNay, homNay), false, 'chay hom nay thi khong co gi de noi');
+  assert.equal(lauKhongDon(luiNgay(SO_NGAY_COI_LA_NGUNG), homNay), false,
+    'dung nguong thi CHUA keu — mot vai dem lo khong noi len dieu gi');
+  assert.equal(lauKhongDon(luiNgay(SO_NGAY_COI_LA_NGUNG + 1), homNay), true,
+    'qua nguong thi phai keu, du dong cu do la mot luot xoa that thanh cong');
+  assert.equal(lauKhongDon('2026-09-30', homNay), true);
 });
 
 test('hai hang so cua luat nam dung mot cho va la so captain chot', () => {

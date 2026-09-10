@@ -73,6 +73,7 @@
  */
 
 import { del, head } from '@vercel/blob';
+import { lechNgay } from './ngay';
 import { query, queryTx, type CauSQL } from './db';
 import { newId } from './store';
 
@@ -93,6 +94,31 @@ export const SO_VIDEO_MOI_NHAT_GIU_LAI = 3;
 
 /** Tran so tep moi luot. Nguoi goi ha xuong duoc, khong nang len duoc. */
 export const MAX_MOI_LUOT_MAC_DINH = 20;
+
+/**
+ * Bao nhieu ngay khong co luot nao thi coi la viec don da ngung.
+ *
+ * BA, khong phai mot: cron chay moi dem nhung goi Hobby chi bao dam "khoang mot
+ * lan/ngay" va lech duoc toi 59 phut, nen mot dem lo khong noi len dieu gi va
+ * bao dong vi no chi lam bo me lo hao. Ba dem lien khong co dong nao thi chac.
+ */
+export const SO_NGAY_COI_LA_NGUNG = 3;
+
+/**
+ * Lau roi khong co luot don nao?
+ *
+ * MOT cau hoi nay la cau tra loi CHUNG cho moi kieu hong, dung tach thanh nhanh
+ * rieng cho tung kieu: CRON_SECRET bi doi (route tra 401 moi lan goi), route 500,
+ * luot chet giua chung, migration chua chay, CSDL khong noi duoc, hay cron bi go
+ * khoi vercel.json — tat ca deu hien ra dung MOT dau hieu: khong co dong moi nao
+ * trong `video_cleanup_runs`.
+ *
+ * Dung de man Cai dat noi that: mot dong "Da don ngay 30/9" mau binh thuong hien
+ * suot thang 10 la mot cau DUNG ma vo dung.
+ */
+export function lauKhongDon(ngayLuotGanNhat: string, homNay: string): boolean {
+  return ngayLuotGanNhat < lechNgay(homNay, -SO_NGAY_COI_LA_NGUNG);
+}
 
 /** Chia lo khi goi del(): mot lo la mot vong goi. Tai lieu khong neu tran nen tu dat. */
 const CO_LO_XOA = 100;

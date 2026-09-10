@@ -296,6 +296,7 @@ export const KO: Record<Key, string> = {
   'Chưa chạy lần nào.': '아직 한 번도 실행되지 않았습니다.',
   'Lần chạy ngày {date} bị lỗi giữa chừng.': '{date} 실행이 도중에 실패했습니다.',
   'Lần chạy ngày {date} chưa chạy xong.': '{date} 실행이 끝까지 완료되지 않았습니다.',
+  'Lâu rồi chưa dọn lần nào — lần gần nhất là ngày {date}.': '한동안 정리가 실행되지 않았습니다 — 가장 최근은 {date}입니다.',
   'Đã chạy thử ngày {date} — chưa xoá gì cả.': '{date}에 시험 실행했습니다 — 아무것도 삭제하지 않았습니다.',
   'Đã dọn ngày {date} — {n} video của nhà mình.': '{date}에 정리했습니다 — 우리 가족 영상 {n}개.',
   'Chọn ít nhất một con đã.': '아이를 한 명 이상 선택해 주세요.',

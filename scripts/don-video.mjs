@@ -77,8 +77,11 @@ console.log(`\n${data.cheDo === 'that' ? 'Da xoa' : 'SE xoa'}: ${soTep} tep, ${t
 for (const m of data.ungVien) {
   const xong = data.daXoa.includes(m.assignmentId);
   console.log(
+    // `nguon` la thu duy nhat trong danh sach nay phan biet duoc video PHAI GUI
+    // CHO CO (english_class) voi bai thuong — doc danh sach truoc lan xoa that
+    // dau tien thi do la cot dang nhin nhat.
     `  ${data.cheDo === 'that' ? (xong ? '✓' : '·') : '·'} ${m.submittedVideoAt.slice(0, 16).replace('T', ' ')}` +
-    `  con=${m.childId}  thu ${m.hang}  ${m.bytes === null ? '?' : mb(m.bytes)}`
+    `  con=${m.childId}  thu ${m.hang}  ${m.source}  ${m.bytes === null ? '?' : mb(m.bytes)}`
   );
   console.log(`      ${m.url}`);
 }

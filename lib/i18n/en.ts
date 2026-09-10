@@ -310,6 +310,7 @@ export const EN = {
   'Chưa chạy lần nào.': 'Has not run yet.',
   'Lần chạy ngày {date} bị lỗi giữa chừng.': 'The run on {date} failed part way through.',
   'Lần chạy ngày {date} chưa chạy xong.': 'The run on {date} never finished.',
+  'Lâu rồi chưa dọn lần nào — lần gần nhất là ngày {date}.': 'No cleanup has run for a while — the last one was on {date}.',
   'Đã chạy thử ngày {date} — chưa xoá gì cả.': 'Trial run on {date} — nothing was deleted.',
   'Đã dọn ngày {date} — {n} video của nhà mình.': 'Cleaned up on {date} — {n} of your family videos.',
   /* ---- Them bai (chup anh / dan) ---- */

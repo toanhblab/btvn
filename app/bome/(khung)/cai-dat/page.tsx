@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
-import { getFamilyById, listChildren, listChores, trangThaiDonVideo } from '@/lib/store';
+import { getFamilyById, listChildren, listChores, todayISO, trangThaiDonVideo } from '@/lib/store';
 import type { LanDonVideo } from '@/lib/store';
 import { hasNeon } from '@/lib/db';
-import { SO_NGAY_GIU_VIDEO, SO_VIDEO_MOI_NHAT_GIU_LAI } from '@/lib/donVideo';
+import { SO_NGAY_GIU_VIDEO, SO_VIDEO_MOI_NHAT_GIU_LAI, lauKhongDon } from '@/lib/donVideo';
 import CaiDat from './CaiDat';
 import { chu } from '@/lib/i18n/server';
 
@@ -35,6 +35,9 @@ export default async function Page() {
   /** Luot nao chua ket thuc tu te thi to do — chay xong ma sai cung vay. */
   const hong = (l: LanDonVideo | null) => Boolean(l && (l.coLoi || l.chuaXong));
   const dongTrangThai = (l: LanDonVideo) =>
+    lauKhongDon(l.ngay, todayISO())
+      ? T('Lâu rồi chưa dọn lần nào — lần gần nhất là ngày {date}.', { date: l.ngay })
+      :
     l.coLoi
       ? T('Lần chạy ngày {date} bị lỗi giữa chừng.', { date: l.ngay })
       : l.chuaXong
@@ -130,9 +133,12 @@ export default async function Page() {
             </div>
           </section>
 
-          {/* Don video cu (lib/donVideo.ts) — dong nay la cach DUY NHAT bo me
-              biet viec don co chay hay khong ma khong phai mo bang dieu khien
-              cua Vercel. Hien o MOI co man, khac khoi "He thong" o tren. */}
+          {/* Don video cu (lib/donVideo.ts). Day la mot NHAT KY, khong phai bo
+              theo doi suc khoe: no bao luot don gan nhat chay ngay nao, o che do
+              nao, va keu len khi da lau khong co luot nao (`lauKhongDon`).
+              Khong co gi o day hoi cron xem no con song hay khong — thu duy nhat
+              biet duoc la "dong moi nhat cu den muc dang ngo". Hien o MOI co
+              man, khac khoi "He thong" o tren. */}
           <section className="mt-4 xl:mt-6">
             <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Dọn video cũ')}</h2>
             <div className="bg-surface-container-lowest rounded-card card-shadow p-3 xl:p-4">
