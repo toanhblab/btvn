@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
 import { getChild, listAssignments, taoNhiemVuNgay, todayISO } from '@/lib/store';
-import { HW_SOURCES, NHOM_NHIEM_VU, type Assignment } from '@/lib/types';
+import { HW_SOURCES, NHOM_NHIEM_VU, trangThaiVideo, type Assignment } from '@/lib/types';
 import XoaBai from './XoaBai';
 import { chu } from '@/lib/i18n/server';
 
@@ -252,18 +252,18 @@ export default async function ChiTietCon({
                         {a.requiresVideo && (
                           <span
                             className={`text-p-label px-2 py-0.5 rounded-full ${
-                              a.submittedVideoUrl
-                                ? 'bg-success-container text-on-success-container'
-                                : a.submittedVideoAt
-                                  ? 'bg-surface-container text-on-surface-variant'
-                                  : 'bg-secondary-container text-on-secondary-container'
+                              {
+                                'da-nop': 'bg-success-container text-on-success-container',
+                                'da-don': 'bg-surface-container text-on-surface-variant',
+                                'chua-quay': 'bg-secondary-container text-on-secondary-container',
+                              }[trangThaiVideo(a)]
                             }`}
                           >
-                            🎥 {a.submittedVideoUrl
-                              ? T('Đã nộp video')
-                              : a.submittedVideoAt
-                                ? T('Đã nộp, video đã dọn')
-                                : T('Chờ quay video')}
+                            🎥 {{
+                              'da-nop': T('Đã nộp video'),
+                              'da-don': T('Đã nộp, video đã dọn'),
+                              'chua-quay': T('Chờ quay video'),
+                            }[trangThaiVideo(a)]}
                           </span>
                         )}
                         {overdue && (

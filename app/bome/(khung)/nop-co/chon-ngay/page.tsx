@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
 import { SO_NGAY_QUET_GAN_DAY, ngayGanNhatCoBai, ngayTiengViet } from '@/lib/ngay';
 import { listAssignments, todayISO } from '@/lib/store';
-import { HW_SOURCES } from '@/lib/types';
+import { HW_SOURCES, trangThaiVideo } from '@/lib/types';
 import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
@@ -30,7 +30,9 @@ export default async function ChonNgayNopBai() {
 
   const gopTheoNgay = ngayGanNhatCoBai(items.map((a) => a.dueDate), homNay, SO_NUT).map((ngay) => {
     const cuaNgay = items.filter((a) => a.dueDate === ngay);
-    const soVideo = cuaNgay.filter((a) => a.submittedVideoUrl).length;
+    // Dem "da quay" chu khong phai "con tep tren kho": video da don van la video
+    // con da quay (lib/types.ts trangThaiVideo).
+    const soVideo = cuaNgay.filter((a) => trangThaiVideo(a) !== 'chua-quay').length;
     return { ngay, tong: cuaNgay.length, soVideo };
   });
 

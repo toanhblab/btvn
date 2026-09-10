@@ -9,9 +9,10 @@
  *   A. LUAT: xoa khi CA HAI dung — qua SO_NGAY_GIU_VIDEO ngay, VA khong nam
  *      trong SO_VIDEO_MOI_NHAT_GIU_LAI video moi nhat CUA CHINH CON DO. Moi
  *      nhanh cua chu "VA" va cua chu "chinh con do" deu co mot bai rieng.
- *   B. BAY HANG RAO: chay thu la mac dinh, tran moi luot, danh sach trang host
- *      va thu muc, hai dong ho, so cai ghi TRUOC khi pha, chan chay trung, loai
- *      nha demo.
+ *   B. TAM HANG RAO: chay thu la mac dinh, tran moi luot (MOT tui chung cho ca
+ *      phan don not lan phan chon viec moi), danh sach trang host va thu muc,
+ *      hai dong ho, so cai ghi TRUOC khi pha, cau dao ngat khi kho tu choi xoa,
+ *      chan chay trung, loai nha demo.
  *
  * Bai dat nhat o day la "so cai ghi truoc khi pha": no khong kiem duoc bang
  * cach nhin ket qua cuoi cung, nen ham del() gia se DOC THANG CSDL ngay tai
@@ -73,7 +74,8 @@ mock.module('@vercel/blob', {
 });
 
 const donVideo = await import('./donVideo.ts');
-const { lanDonVideoGanNhat } = await import('./store.ts');
+const { lanDonVideoGanNhat, listAssignments } = await import('./store.ts');
+const { trangThaiVideo } = await import('./types.ts');
 const { chayMigrations } = await import('../scripts/db.mjs');
 
 const db = {
@@ -571,6 +573,35 @@ test('bai da don giu lai moc nop: man cua bo me phan biet duoc voi bai chua quay
 
   // Va dong da don khong bao gio duoc chon lai.
   assert.ok(!(await idsDuocChon()).includes('a4'));
+});
+
+test('sau khi don, bai do doc ra la "da don" chu khong phai "chua quay"', async () => {
+  // Day la con so ma ca ba man cua bo me dung: the 🎥 o man chi tiet con, danh
+  // sach "Nop bai cho co", va o dem "{done}/{total} video da quay". Doc moi
+  // submittedVideoUrl la bao bo me rang con chua tung quay bai da nop tuan truoc.
+  await donVideo.donVideoQuaHan({ that: true });
+
+  const bai = await listAssignments('fam_that', { childId: 'con_a' });
+  const daDon = bai.find((a) => a.id === 'a4');
+  const conNguyen = bai.find((a) => a.id === 'a1');
+  assert.ok(daDon && conNguyen);
+
+  assert.equal(trangThaiVideo(daDon), 'da-don');
+  assert.equal(trangThaiVideo(conNguyen), 'da-nop');
+  assert.equal(
+    bai.filter((a) => trangThaiVideo(a) !== 'chua-quay').length, 5,
+    'ca nam bai con_a deu da quay video — don tep di khong lam bai nao thanh chua quay'
+  );
+});
+
+test('bai chua bao gio co video moi la "chua quay"', async () => {
+  await query(
+    `INSERT INTO assignments (id, child_id, subject, icon, content, lang, due_date, source)
+     VALUES ('a-chua', 'con_a', 'Toan', '📝', 'chua quay', 'vi', CURRENT_DATE, 'primary_school')`
+  );
+  const bai = await listAssignments('fam_that', { childId: 'con_a' });
+  const chua = bai.find((a) => a.id === 'a-chua');
+  assert.equal(trangThaiVideo(chua!), 'chua-quay');
 });
 
 /* ----------------------- laUrlVideoConNop ----------------------- */

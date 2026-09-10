@@ -14,13 +14,13 @@
  * het video cu du con lau roi khong nop them cai nao — con (b) mot minh co the
  * xoa mot video vua nop SANG NAY neu hom do con nop sau bai. Hai cai cung luc
  * thi khong bao gio mat video moi, ma dung luong van co tran doan duoc:
- * so con x 5 video.
+ * so con x SO_VIDEO_MOI_NHAT_GIU_LAI (3) video.
  *
  * Dem theo TUNG CON chu khong gop ca nha: con nop nhieu se day video cua con
  * nop it ra ngoai, khong phai y captain.
  *
  * XOA TEP TREN KHO KHONG LUI DUOC. Ca tep nay duoc viet quanh mot cau do:
- * moi hang rao deu nam TRUOC luc pha, khong cai nao la duong lui.
+ * moi hang rao deu nam TRUOC luc pha, khong cai nao la duong lui. TAM cai:
  *
  *   1. CHAY THU LA MAC DINH. `that` phai duoc nguoi goi bat tuong minh
  *      (route doc DON_VIDEO_CHAY_THAT === '1'). Khong bat thi chi liet ke.
@@ -44,17 +44,20 @@
  *      del() hong la de lai mot tep KHONG con ai tro toi, va luot sau khong
  *      nhin thay no qua `assignments` nua: moi luot phai doc lai dong so cai
  *      `deleted_at IS NULL` va don not (`donSoCaiMoCoi`) truoc khi chon viec moi.
- *   8. CAU DAO NGAT: don not ma del() van hong thi DUNG CA LUOT ngay, khong chon
+ *   6. CAU DAO NGAT: don not ma del() van hong thi DUNG CA LUOT ngay, khong chon
  *      viec moi. Kho vua tu choi xoa, ma go URL di truoc del() nen chon them viec
  *      la bien mot dong ton bi chan thanh mot dong ton LON DAN: moi dem them
  *      `max` video mat cho xem va mat nut "Chia se", ma khong doi lay mot byte
  *      nao. Co cau dao ngat thi kho hong chi lam viec don DUNG LAI, khong lam no
  *      pha them.
- *   6. Lan chay THAT dau tien do captain bam tay, sau khi doc danh sach cua mot
+ *   7. Lan chay THAT dau tien do captain bam tay, sau khi doc danh sach cua mot
  *      lan chay thu (scripts/don-video.mjs).
- *   7. Nha demo bi loai ngay trong cau SELECT (`fam\_demo\_%`).
+ *   8. Nha demo bi loai ngay trong cau SELECT (`fam\_demo\_%`).
  *
- * `submitted_video_at` thi GIU LAI (chi URL bi go) — xem SQL_GO_VA_GHI_SO.
+ * `submitted_video_at` thi GIU LAI (chi URL bi go) — xem SQL_GO_VA_GHI_SO. Cap
+ * "URL rong ma moc nop con" la trang thai 'da-don' cua `trangThaiVideo`
+ * (lib/types.ts): moi man cua bo me doc trang thai video deu di qua ham do, dung
+ * tu viet lai dieu kien o man moi.
  *
  * VI SAO GO URL TRONG CSDL LA BAT BUOC, khong phai tuy chon: moi cho ve video
  * deu kiem rong san (`coVideo` trong ChiaSeVideo, `{submittedVideoUrl && …}`
@@ -302,7 +305,7 @@ export async function donVideoQuaHan(
     // No tieu vao CUNG tui tran voi phan chon viec moi (hang rao 2).
     byteDaXoa += await donSoCaiMoCoi(runId, ra, that, max);
 
-    // Hang rao 8 — cau dao ngat. Kho vua tu choi xoa thi dung chon viec moi:
+    // Hang rao 6 — cau dao ngat. Kho vua tu choi xoa thi dung chon viec moi:
     // go URL cua chung di la chi lam dong ton phinh ra ma khong thu ve byte nao.
     if (ra.loi) {
       ra.canhBao.push('dung-vi-kho-dang-tu-choi-xoa');

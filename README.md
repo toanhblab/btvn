@@ -244,7 +244,7 @@ các migration chạy được trên cả hai.
 
 Kho tệp Vercel Blob của gói Hobby chỉ có **1 GB** và app trước giờ không xoá tệp
 nào. Một cron mỗi ngày (`vercel.json` → `/api/don-video`, `0 19 * * *` UTC ≈ 2 giờ
-sáng giờ VN) dọn bớt video con nộp. Luật và bảy hàng rào an toàn ghi ở đầu
+sáng giờ VN) dọn bớt video con nộp. Luật và tám hàng rào an toàn ghi ở đầu
 `lib/donVideo.ts`; đọc chỗ đó trước khi sửa.
 
 **Luật:** xoá một video khi **cả hai** đúng — đã quá `SO_NGAY_GIU_VIDEO` (5) ngày

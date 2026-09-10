@@ -57,6 +57,29 @@ export const HW_SOURCE_DEFAULT: HwSource = 'primary_school';
  * Gia tri la KHONG nem loi: API cu / ban nhap cu van chay duoc, chi degrade ve
  * nguon mac dinh.
  */
+/**
+ * Bai nay dang o dau trong chuyen "con quay video nop lai"?
+ *
+ * BA trang thai chu khong hai, va cho thu ba la viec don video (lib/donVideo.ts):
+ * no go `submittedVideoUrl` nhung GIU `submittedVideoAt`, nen "con chua quay bao
+ * gio" va "con quay roi, video cu da don" khac nhau o dung mot cho do. Doc moi
+ * `submittedVideoUrl` la gop hai cai lam mot, va man hinh se noi voi bo me rang
+ * con chua quay mot bai con da nop xong tu tuan truoc.
+ *
+ * Moi man doc trang thai video PHAI di qua ham nay — hai man cua "Nop bai cho co"
+ * (danh sach video va o dem "{done}/{total} video da quay") va the 🎥 o man chi
+ * tiet con deu tra loi cung mot cau hoi, nen chung khong duoc tu viet lay dieu
+ * kien rieng.
+ */
+export type TrangThaiVideo = 'chua-quay' | 'da-nop' | 'da-don';
+
+export function trangThaiVideo(
+  a: { submittedVideoUrl: string | null; submittedVideoAt: string | null }
+): TrangThaiVideo {
+  if (a.submittedVideoUrl) return 'da-nop';
+  return a.submittedVideoAt ? 'da-don' : 'chua-quay';
+}
+
 export function hwSourceOf(v: unknown): HwSource {
   return typeof v === 'string' && HW_SOURCE_KEYS.has(v) ? (v as HwSource) : HW_SOURCE_DEFAULT;
 }
