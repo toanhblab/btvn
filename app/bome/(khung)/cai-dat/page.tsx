@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
-import { getFamilyById, lanDonVideoGanNhat, listChildren, listChores } from '@/lib/store';
+import { getFamilyById, listChildren, listChores, trangThaiDonVideo } from '@/lib/store';
+import type { LanDonVideo } from '@/lib/store';
 import { hasNeon } from '@/lib/db';
 import { SO_NGAY_GIU_VIDEO, SO_VIDEO_MOI_NHAT_GIU_LAI } from '@/lib/donVideo';
 import CaiDat from './CaiDat';
@@ -26,10 +27,21 @@ export default async function Page() {
     listChildren(familyId),
     getFamilyById(familyId),
     listChores(familyId),
-    lanDonVideoGanNhat(familyId),
+    trangThaiDonVideo(familyId),
   ]);
   if (!family) redirect('/bome/pin');
   const T = await chu();
+
+  /** Luot nao chua ket thuc tu te thi to do — chay xong ma sai cung vay. */
+  const hong = (l: LanDonVideo | null) => Boolean(l && (l.coLoi || l.chuaXong));
+  const dongTrangThai = (l: LanDonVideo) =>
+    l.coLoi
+      ? T('Lần chạy ngày {date} bị lỗi giữa chừng.', { date: l.ngay })
+      : l.chuaXong
+        ? T('Lần chạy ngày {date} chưa chạy xong.', { date: l.ngay })
+        : l.cheDo === 'thu'
+          ? T('Đã chạy thử ngày {date} — chưa xoá gì cả.', { date: l.ngay })
+          : T('Đã dọn ngày {date} — {n} video của nhà mình.', { date: l.ngay, n: l.soCuaNha });
 
   return (
     <main className="px-p-page pt-4 xl:max-w-[1080px] xl:mx-auto xl:px-12 xl:py-12">
@@ -129,17 +141,17 @@ export default async function Page() {
                   n: SO_VIDEO_MOI_NHAT_GIU_LAI, d: SO_NGAY_GIU_VIDEO,
                 })}
               </p>
-              <p className={`text-p-body-sm ${lanDon?.coLoi || lanDon?.chuaXong ? 'text-error' : 'text-on-surface'}`}>
-                {!lanDon
-                  ? T('Chưa chạy lần nào.')
-                  : lanDon.coLoi
-                    ? T('Lần chạy ngày {date} bị lỗi giữa chừng.', { date: lanDon.ngay })
-                    : lanDon.chuaXong
-                      ? T('Lần chạy ngày {date} chưa chạy xong.', { date: lanDon.ngay })
-                      : lanDon.cheDo === 'thu'
-                        ? T('Đã chạy thử ngày {date} — chưa xoá gì cả.', { date: lanDon.ngay })
-                        : T('Đã dọn ngày {date} — {n} video của nhà mình.', { date: lanDon.ngay, n: lanDon.soCuaNha })}
+              <p className={`text-p-body-sm ${hong(lanDon.moiNhat) ? 'text-error' : 'text-on-surface'}`}>
+                {lanDon.moiNhat ? dongTrangThai(lanDon.moiNhat) : T('Chưa chạy lần nào.')}
               </p>
+              {/* Luot moi nhat chi la chay thu thi no KHONG tra loi duoc "lan
+                  cuoi that su xoa la khi nao" — in them dong do. Hai cau hoi
+                  khac nhau, khong don duoc vao mot dong (lib/store.ts). */}
+              {lanDon.moiNhat?.cheDo === 'thu' && lanDon.donThatGanNhat && (
+                <p className={`text-p-body-sm ${hong(lanDon.donThatGanNhat) ? 'text-error' : 'text-on-surface-variant'}`}>
+                  {dongTrangThai(lanDon.donThatGanNhat)}
+                </p>
+              )}
             </div>
           </section>
         </div>

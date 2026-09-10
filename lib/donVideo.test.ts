@@ -76,7 +76,7 @@ mock.module('@vercel/blob', {
 });
 
 const donVideo = await import('./donVideo.ts');
-const { lanDonVideoGanNhat, listAssignments } = await import('./store.ts');
+const { listAssignments, trangThaiDonVideo } = await import('./store.ts');
 const { trangThaiVideo } = await import('./types.ts');
 const { chayMigrations } = await import('../scripts/db.mjs');
 
@@ -634,17 +634,30 @@ test('laUrlVideoConNop: chi nhan https + host Blob + thu muc nop-bai/', () => {
 
 /* ------------- Dong trang thai o man Cai dat cua bo me ------------- */
 
-test('Cai dat: mot lan chay thu ve sau khong duoc che mat luot xoa that', async () => {
+test('Cai dat: mot lan chay thu ve sau khong che mat luot xoa that', async () => {
   await donVideo.donVideoQuaHan({ that: true });
   // Bo me go `node scripts/don-video.mjs` de xem truoc => mot dong 'thu' MOI HON.
   await donVideo.donVideoQuaHan();
 
-  const lan = await lanDonVideoGanNhat('fam_that');
-  assert.ok(lan);
-  assert.equal(lan.cheDo, 'that', 'luot thu moi hon khong duoc bao "chua xoa gi ca"');
-  assert.equal(lan.soCuaNha, 3, 'a4, a5, b4 — x4 la video cua nha khac');
-  assert.equal(lan.coLoi, false);
-  assert.equal(lan.chuaXong, false);
+  const lan = await trangThaiDonVideo('fam_that');
+  assert.equal(lan.moiNhat?.cheDo, 'thu', 'luot moi nhat la lan xem truoc vua chay');
+  assert.equal(lan.donThatGanNhat?.cheDo, 'that',
+    'lan xoa that phai van doc duoc, khong thi bo me tuong viec don chua bao gio chay');
+  assert.equal(lan.donThatGanNhat?.soCuaNha, 3, 'a4, a5, b4 — x4 la video cua nha khac');
+  assert.equal(lan.donThatGanNhat?.coLoi, false);
+});
+
+test('Cai dat: tat xoa that roi thi khong duoc khoe mai lan don thang truoc', async () => {
+  // Da tung xoa that...
+  await donVideo.donVideoQuaHan({ that: true });
+  // ...roi DON_VIDEO_CHAY_THAT bi go khoi may chu: tu do dem nao cron cung chi
+  // chay thu va khong xoa gi. Man Cai dat phai noi dung tinh trang HIEN GIO.
+  for (let i = 0; i < 3; i++) await donVideo.donVideoQuaHan();
+
+  const lan = await trangThaiDonVideo('fam_that');
+  assert.equal(lan.moiNhat?.cheDo, 'thu',
+    'luot moi nhat dang la chay thu — dong dau tien phai noi dieu do');
+  assert.ok(lan.donThatGanNhat, 'va lan xoa that cu van con doc duoc o dong thu hai');
 });
 
 test('Cai dat: luot chet giua chung khong duoc bao la da don xong', async () => {
@@ -652,16 +665,17 @@ test('Cai dat: luot chet giua chung khong duoc bao la da don xong', async () => 
   // Route bi cat giua chung: cau ket luot khong chay, nen `loi` van NULL.
   await query(`UPDATE video_cleanup_runs SET finished_at = NULL, loi = NULL WHERE che_do = 'that'`);
 
-  const lan = await lanDonVideoGanNhat('fam_that');
-  assert.equal(lan?.chuaXong, true, 'khong co finished_at thi luot do chua chay xong');
-  assert.equal(lan?.coLoi, false);
+  const lan = await trangThaiDonVideo('fam_that');
+  assert.equal(lan.moiNhat?.chuaXong, true, 'khong co finished_at thi luot do chua chay xong');
+  assert.equal(lan.moiNhat?.coLoi, false);
 });
 
-test('Cai dat: chua co luot that nao thi luot thu moi la thu dang bao', async () => {
+test('Cai dat: chua co luot that nao thi chi co mot dong, la luot chay thu', async () => {
   await donVideo.donVideoQuaHan();
-  const lan = await lanDonVideoGanNhat('fam_that');
-  assert.equal(lan?.cheDo, 'thu');
-  assert.equal(lan?.soCuaNha, 0);
+  const lan = await trangThaiDonVideo('fam_that');
+  assert.equal(lan.moiNhat?.cheDo, 'thu');
+  assert.equal(lan.moiNhat?.soCuaNha, 0);
+  assert.equal(lan.donThatGanNhat, null);
 });
 
 test('Cai dat: dem theo luot DA XOA, khong theo luot da dinh xoa', async () => {
@@ -677,10 +691,11 @@ test('Cai dat: dem theo luot DA XOA, khong theo luot da dinh xoa', async () => {
   const sau = await donVideo.donVideoQuaHan({ that: true });
   assert.equal(sau.daXoaLai.length, 4);
 
-  const lan = await lanDonVideoGanNhat('fam_that');
-  assert.equal(lan?.cheDo, 'that');
-  assert.equal(lan?.soCuaNha, 3, 'a4, a5, b4 — x4 la video cua nha khac');
-  assert.equal(lan?.coLoi, false);
+  const lan = await trangThaiDonVideo('fam_that');
+  assert.equal(lan.moiNhat?.cheDo, 'that');
+  assert.equal(lan.moiNhat?.soCuaNha, 3, 'a4, a5, b4 — x4 la video cua nha khac');
+  assert.equal(lan.moiNhat?.coLoi, false);
+  assert.equal(lan.donThatGanNhat, null, 'luot moi nhat CHINH la luot that — khong in hai dong');
 });
 
 test('hai hang so cua luat nam dung mot cho va la so captain chot', () => {

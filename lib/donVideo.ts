@@ -179,8 +179,16 @@ export const SQL_CHON_VIDEO_QUA_HAN = `
  *
  * Dieu kien `submitted_video_url = $4` chan dung mot cuoc dua co that: con quay
  * lai bai do trong khoang giua luc SELECT va luc UPDATE. Luc do URL da khac,
- * cau nay khong dong vao dong nao, khong ghi so cai, va nguoi goi khong xoa tep
- * do (no da thanh tep mo coi, de dot don mo coi sau lo).
+ * cau nay khong dong vao dong nao, khong ghi so cai, va nguoi goi khong xoa tep.
+ *
+ * Tep CU tu day bi BO HAN, va phai noi thang ra vi de tuong nham dieu nguoc lai:
+ * bai da tro sang video moi nen khong con ai tro toi no, va vi cau tren khong
+ * ghi duoc dong so cai nao cho no nen `donSoCaiMoCoi` cung khong thay — KHONG co
+ * dot don nao sau nay dong toi no nua. Do la huong dung: xoa mot tep ma minh
+ * khong con biet chac la cua ai thi nguy hiem hon la de no nam do. Va no giong
+ * het moi lan con bam "Quay video khac" — ban cu van nam lai tren kho. Muon thu
+ * hoi ca lop tep do thi phai la mot dot quet KHAC (doi chieu `list()` cua kho
+ * voi CSDL), khong phai viec cua tep nay.
  *
  * `submitted_video_at` CO Y duoc GIU LAI trong khi URL bi go: no la dau vet duy
  * nhat con lai tren chinh dong bai rang "bai nay TUNG co video, video da bi
@@ -415,8 +423,9 @@ async function xoaThat(runId: string, ra: KetQuaDon): Promise<number> {
   const ketQua = await queryTx<{ id: string; assignment_id: string; url: string }>(cau);
   const daGo = ketQua.flat();
 
-  // Dong nao khong go duoc (con vua quay lai) thi KHONG xoa tep — no da thanh
-  // tep mo coi, khong con ai tro toi, de dot don mo coi sau lo.
+  // Dong nao khong go duoc (con vua quay lai) thi KHONG xoa tep. Tep cu bi bo
+  // han o day: khong dong bai nao tro toi, cung khong co dong so cai nao, nen
+  // donSoCaiMoCoi khong thay no — xem SQL_GO_VA_GHI_SO.
   for (const m of ra.ungVien) {
     if (!daGo.some((g) => g.assignment_id === m.assignmentId)) {
       ra.boSot.push({ assignmentId: m.assignmentId, url: m.url, vi: 'video-vua-doi-giua-chung' });

@@ -1561,6 +1561,16 @@ export async function truDiem(
 
 /* ---------------- Don video qua han (lib/donVideo.ts) ---------------- */
 
+export interface TrangThaiDonVideo {
+  /** Luot GAN NHAT bat ke che do — tra loi "viec don DANG lam gi". */
+  moiNhat: LanDonVideo | null;
+  /**
+   * Luot XOA THAT gan nhat — tra loi "lan cuoi cung that su xoa la khi nao".
+   * null khi chua co luot that nao.
+   */
+  donThatGanNhat: LanDonVideo | null;
+}
+
 export interface LanDonVideo {
   /** Ngay chay, YYYY-MM-DD. */
   ngay: string;
@@ -1573,48 +1583,70 @@ export interface LanDonVideo {
 }
 
 /**
- * Luot don video gan nhat — cho dong trang thai o man Cai dat, de bo me biet
- * viec don co chay hay khong ma khong phai mo bang dieu khien cua Vercel.
+ * Trang thai viec don video — cho dong o man Cai dat, de bo me biet viec don co
+ * chay hay khong ma khong phai mo bang dieu khien cua Vercel.
+ *
+ * Tra ve HAI luot vi day la HAI cau hoi khac nhau, va mot dong khong tra loi
+ * duoc ca hai:
+ *   - "dem qua no lam gi?"     -> luot moi nhat, bat ke che do
+ *   - "lan cuoi XOA THAT la khi nao?" -> luot 'that' moi nhat
+ *
+ * Gop lam mot bang cach uu tien luot 'that' thi hong theo ca hai chieu: mot lan
+ * `node scripts/don-video.mjs` de xem truoc (ghi mot dong 'thu') se che mat lan
+ * xoa that dem qua; con nguoc lai, go `DON_VIDEO_CHAY_THAT` khoi Vercel thi cron
+ * dem nao cung ghi 'thu' va khong xoa gi, ma man Cai dat van khoe "Da don ngay
+ * <thang truoc>" mai mai. Man hinh in ca hai dong khi chung khac nhau.
  *
  * Ngay/che do/loi la TINH TRANG CUA MAY, cung loai voi dong "Du lieu: Neon
  * Postgres" da co san o man do — khong phai du lieu cua nha nao. Con so dem thi
  * CO loc theo nha (`c.family_id = $1`), dung luat chung cua tep nay: khong ham
  * nao tra ve so dem gop ca CSDL.
  */
-export async function lanDonVideoGanNhat(familyId: string): Promise<LanDonVideo | null> {
-  const r = await queryOne<{
-    run_date: string | Date; che_do: string; loi: string | null;
+export async function trangThaiDonVideo(familyId: string): Promise<TrangThaiDonVideo> {
+  // Dem theo `deleted_run_id` (luot DA PHA) chu khong theo `run_id` (luot da
+  // DINH pha): del() hong thi dong so cai nam lai va luot HOM SAU moi don not
+  // duoc no, nen dem theo run_id la bao "0 video cua nha minh" dung vao dem ma
+  // video cua nha do vua that su mat. Cot do chi duoc ghi cung luc voi
+  // `deleted_at` nen no da ham y "da xoa xong" (migration 020).
+  const r = await query<{
+    id: string; run_date: string | Date; che_do: string; loi: string | null;
     finished_at: string | Date | null; so_cua_nha: number | string;
   }>(
-    // Dem theo `deleted_run_id` (luot DA PHA) chu khong theo `run_id` (luot da
-    // DINH pha): del() hong thi dong so cai nam lai va luot HOM SAU moi don not
-    // duoc no, nen dem theo run_id la bao "0 video cua nha minh" dung vao dem ma
-    // video cua nha do vua that su mat. Cot do chi duoc ghi cung luc voi
-    // `deleted_at` nen no da ham y "da xoa xong" (migration 020).
-    //
-    // Luot THAT duoc uu tien hon MOI luot thu, du luot thu moi hon: mot lan
-    // `node scripts/don-video.mjs` de xem truoc ghi mot dong 'thu' vao hom nay,
-    // va neu chi lay dong moi nhat thi man Cai dat doi thanh "chua xoa gi ca" —
-    // bo me ket luan viec don chua bao gio chay, trong khi dem qua no vua xoa
-    // that. Chi khi CHUA co luot that nao thi luot thu moi la thu dang bao.
-    `SELECT r.run_date, r.che_do, r.loi, r.finished_at,
-            (SELECT COUNT(*) FROM video_cleanups v
-               JOIN children c ON c.id = v.child_id
-              WHERE v.deleted_run_id = r.id AND c.family_id = $1) AS so_cua_nha
-       FROM video_cleanup_runs r
-      ORDER BY (r.che_do = 'that') DESC, r.started_at DESC
-      LIMIT 1`,
+    `(SELECT r.id, r.run_date, r.che_do, r.loi, r.finished_at,
+             (SELECT COUNT(*) FROM video_cleanups v
+                JOIN children c ON c.id = v.child_id
+               WHERE v.deleted_run_id = r.id AND c.family_id = $1) AS so_cua_nha
+        FROM video_cleanup_runs r
+       ORDER BY r.started_at DESC
+       LIMIT 1)
+     UNION ALL
+     (SELECT r.id, r.run_date, r.che_do, r.loi, r.finished_at,
+             (SELECT COUNT(*) FROM video_cleanups v
+                JOIN children c ON c.id = v.child_id
+               WHERE v.deleted_run_id = r.id AND c.family_id = $1) AS so_cua_nha
+        FROM video_cleanup_runs r
+       WHERE r.che_do = 'that'
+       ORDER BY r.started_at DESC
+       LIMIT 1)`,
     [familyId]
   );
-  if (!r) return null;
-  return {
-    ngay: dateStr(r.run_date),
-    cheDo: r.che_do === 'that' ? 'that' : 'thu',
-    coLoi: r.loi !== null,
+
+  const doiVe = (d: (typeof r)[number]): LanDonVideo => ({
+    ngay: dateStr(d.run_date),
+    cheDo: d.che_do === 'that' ? 'that' : 'thu',
+    coLoi: d.loi !== null,
     // `loi` chi duoc ghi o cau ket luot, nen mot luot chet giua chung (het gio
     // cua route, may chu bi cat) de lai loi = NULL: khong co dong nay thi no bao
     // "Da don ... 0 video" — mot luot hong doi lot thanh mot luot thanh cong.
-    chuaXong: r.finished_at === null,
-    soCuaNha: Number(r.so_cua_nha ?? 0),
+    chuaXong: d.finished_at === null,
+    soCuaNha: Number(d.so_cua_nha ?? 0),
+  });
+
+  const moiNhat = r[0] ?? null;
+  // Luot that moi nhat CHINH LA luot moi nhat thi chi con mot dong de noi.
+  const luotThat = r.find((d) => d.che_do === 'that' && d.id !== moiNhat?.id) ?? null;
+  return {
+    moiNhat: moiNhat ? doiVe(moiNhat) : null,
+    donThatGanNhat: luotThat ? doiVe(luotThat) : null,
   };
 }

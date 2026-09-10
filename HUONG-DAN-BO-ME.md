@@ -191,7 +191,9 @@ bị xoá, và một con lâu ngày không nộp bài cũng không bị mất s�
 Đếm **theo từng con**, không gộp cả nhà — anh nộp nhiều không làm em mất video.
 
 Vào **Cài đặt** kéo xuống mục **"Dọn video cũ"** là thấy lần dọn gần nhất chạy
-ngày nào và xoá mấy video của nhà mình.
+ngày nào và xoá mấy video của nhà mình. Nếu đêm qua app chỉ **chạy thử** (xem
+trước, không xoá gì) thì dòng đó nói rõ, và dòng ngay dưới cho biết lần xoá thật
+gần nhất là ngày nào.
 
 Bài nào có video đã bị dọn thì cả trong màn của con (bên bố mẹ) lẫn màn
 **"Nộp bài cho cô"** đều ghi **"Đã nộp, video đã dọn"** — con đã nộp xong rồi,
