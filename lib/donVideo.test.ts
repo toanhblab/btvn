@@ -373,6 +373,18 @@ test('hang rao 4: hoi kho khong duoc thi bo qua chu khong doan', async () => {
   assert.ok((await conLai()).has('a4'));
 });
 
+test('hang rao 4: kho tra moc khong doc duoc thi DONG lai, khong mo ra', async () => {
+  // Kho tra ve mot moc khong parse duoc. `NaN > hanCu` la false nen neu khong
+  // chan tay, dong nay di thang xuong del() voi dong ho thu hai bi tat.
+  tuoiKhoBao.set(urlKho('a4'), NaN);
+
+  const ra = await donVideo.donVideoQuaHan({ that: true });
+  assert.ok(ra.boSot.some((b) => b.assignmentId === 'a4' && b.vi === 'khong-hoi-duoc-kho'),
+    'doc khong ra moc thi phai bo qua dong do');
+  assert.ok((await conLai()).has('a4'), 'va tuyet doi khong duoc xoa no');
+  assert.ok(!daGoiDel.flatMap((g) => g.urls).includes(urlKho('a4')));
+});
+
 test('hang rao 5: so cai da co dong VA URL da go TRUOC khi del() chay', async () => {
   await donVideo.donVideoQuaHan({ that: true });
 
@@ -606,6 +618,45 @@ test('chay that: so byte la so THAT SU mat, khong tinh dong thua cuoc dua', asyn
   assert.equal(ra.soBytes, 1_000_000);
 });
 
+test('mot URL doc chi lam hong LO cua no, khong lam hong ca luot', async () => {
+  // Chia lo chi co nghia khi co lo NHO HON tran cua luot. De co lo bang tran thi
+  // moi luot goi del() dung mot lan, va mot URL khong xoa duoc lam viec don dung
+  // han: dem nao sweep cung doc lai dung dong so cai do, cung hong o do.
+  for (let i = 0; i < 15; i++) {
+    await query(
+      `INSERT INTO assignments
+         (id, child_id, subject, icon, content, lang, due_date, source,
+          submitted_video_url, submitted_video_at)
+       VALUES ($1, 'con_a', 'Toan', '📝', 'noi dung', 'vi', CURRENT_DATE, 'primary_school',
+               $2, now() - ($3::numeric * interval '1 day'))`,
+      [`z${i}`, urlKho(`z${i}`), 30 + i]
+    );
+  }
+
+  // Dem 1: kho tu choi moi cu del() => moi dong deu thanh tep mo coi.
+  const ungVien = await donVideo.donVideoQuaHan({ that: false });
+  for (const m of ungVien.ungVien) khoLoiXoa.add(m.url);
+  await donVideo.donVideoQuaHan({ that: true });
+  const moCoi = await query<{ n: number | string }>(
+    `SELECT COUNT(*) AS n FROM video_cleanups WHERE deleted_at IS NULL`
+  );
+  assert.ok(Number(moCoi[0].n) > 10, 'can du dong de co nhieu hon mot lo');
+
+  // Dem 2: kho lanh lai, TRU dung mot URL.
+  await luiMotNgay();
+  khoLoiXoa.clear();
+  khoLoiXoa.add(urlKho('z0'));
+
+  const sau = await donVideo.donVideoQuaHan({ that: true });
+  assert.ok(sau.daXoaLai.length > 0,
+    'cac lo khong dinh URL doc phai don duoc — mot URL doc khong duoc dung ca viec don');
+  assert.ok(!sau.daXoaLai.includes('z0'), 'rieng dong doc thi van nam lai');
+  const conLaiSoCai = await query<{ n: number | string }>(
+    `SELECT COUNT(*) AS n FROM video_cleanups WHERE deleted_at IS NULL`
+  );
+  assert.ok(Number(conLaiSoCai[0].n) < Number(moCoi[0].n), 'dong ton phai vo bot di');
+});
+
 test('chay thu chi bao so cai con so, khong dong vao no', async () => {
   khoLoiXoa.add(urlKho('a4'));
   await donVideo.donVideoQuaHan({ that: true });
@@ -616,6 +667,23 @@ test('chay thu chi bao so cai con so, khong dong vao no', async () => {
   assert.ok(thu.canhBao.includes('so-cai-con-4-dong-chua-xoa'));
   assert.deepEqual(thu.daXoaLai, []);
   assert.equal(daGoiDel.length, 0, 'chay thu KHONG duoc goi del()');
+});
+
+test('canh bao so cai bao dong ton THAT, khong bao lat cat theo tran', async () => {
+  // Dong ton lon hon tran cua luot: bao theo lat cat la noi "gan xong roi" trong
+  // khi con gap boi the — ma day la con so duy nhat do dong ton.
+  const tran = 3;
+  for (let i = 0; i < 12; i++) {
+    await query(
+      `INSERT INTO video_cleanups (id, run_id, assignment_id, child_id, url, bytes)
+       VALUES ($1, 'vcr_cu', $2, 'con_a', $3, 1000)`,
+      [`vcl_${i}`, `a_${i}`, urlKho(`cu${i}`)]
+    );
+  }
+
+  const thu = await donVideo.donVideoQuaHan({ max: tran });
+  assert.ok(thu.canhBao.includes('so-cai-con-12-dong-chua-xoa'),
+    `phai bao du 12 dong ton, khong phai ${tran} dong lay ve duoc luot nay`);
 });
 
 test('bai da don giu lai moc nop: man cua bo me phan biet duoc voi bai chua quay', async () => {
@@ -763,6 +831,53 @@ test('Cai dat: lau khong co luot nao thi noi that, mot cau cho moi kieu hong', (
   assert.equal(lauKhongDon(luiNgay(SO_NGAY_COI_LA_NGUNG + 1), homNay), true,
     'qua nguong thi phai keu, du dong cu do la mot luot xoa that thanh cong');
   assert.equal(lauKhongDon('2026-09-30', homNay), true);
+});
+
+test('tran do NGUOI dat: doc khong duoc thi TU CHOI, khong ve tran rong nhat', () => {
+  const { tranNguoiDat } = donVideo;
+
+  // Khong ai dat gi -> nguoi goi tu lay tran mac dinh.
+  assert.equal(tranNguoiDat(null), null, 'khong co ?max= tren dia chi');
+  assert.equal(tranNguoiDat(undefined), null, 'bien moi truong khong dat');
+
+  // Dat va doc duoc.
+  assert.equal(tranNguoiDat('5'), 5);
+  assert.equal(tranNguoiDat('20'), 20);
+
+  // Dat ma khong doc duoc: PHAI la false de nguoi goi tu choi. Tra mac dinh o
+  // day la bien "xin 5" thanh "xoa 20".
+  for (const xau of ['5x', 'five', '', ' ', '0', '-3', '2.5', 'NaN', 'Infinity']) {
+    assert.equal(tranNguoiDat(xau), false, `'${xau}' phai bi tu choi`);
+  }
+});
+
+test('route: tran khong doc duoc thi tra 400, khong chiem suat cua ngay', async () => {
+  process.env.CRON_SECRET = 'bi-mat-test';
+  delete process.env.DON_VIDEO_CHAY_THAT;
+  delete process.env.DON_VIDEO_MAX_MOI_LUOT;
+  const { GET } = await import('../app/api/don-video/route.ts');
+  const goi = (dc: string) =>
+    GET(new Request(`https://btvn.test/api/don-video${dc}`, {
+      headers: { authorization: 'Bearer bi-mat-test' },
+    }));
+
+  for (const xau of ['5x', 'five', '', '0', '-3', '2.5']) {
+    const res = await goi(`?max=${encodeURIComponent(xau)}`);
+    assert.equal(res.status, 400, `?max=${xau} phai bi tu choi, khong duoc thanh tran mac dinh`);
+  }
+
+  // Bien tren may chu dat sai cung vay — README goi no la "ha xuong duoc".
+  process.env.DON_VIDEO_MAX_MOI_LUOT = '5x';
+  assert.equal((await goi('')).status, 400);
+  delete process.env.DON_VIDEO_MAX_MOI_LUOT;
+
+  const luot = await query<{ n: number | string }>(`SELECT COUNT(*) AS n FROM video_cleanup_runs`);
+  assert.equal(Number(luot[0].n), 0, 'yeu cau sai khong duoc gianh suat cua ngay');
+  assert.equal(daGoiDel.length, 0, 'va khong duoc dong vao kho tep');
+
+  // Khong dat gi thi van chay binh thuong (tran mac dinh).
+  assert.equal((await goi('')).status, 200);
+  assert.equal((await goi('?max=5')).status, 200);
 });
 
 test('hai hang so cua luat nam dung mot cho va la so captain chot', () => {

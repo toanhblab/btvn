@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { MAX_MOI_LUOT_MAC_DINH, donVideoQuaHan } from '@/lib/donVideo';
+import { MAX_MOI_LUOT_MAC_DINH, donVideoQuaHan, tranNguoiDat } from '@/lib/donVideo';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -37,11 +37,26 @@ export async function GET(req: Request) {
   // Tran so tep: bien moi truong la muc cua CRON (luot chay khong ai nhin), tham
   // so tren dia chi la muc cua LUOT NAY. Lay cai NHO HON — ca hai chi ha duoc,
   // con `donVideoQuaHan` kep them lan nua o MAX_MOI_LUOT_MAC_DINH.
-  const soHopLe = (v: unknown) => {
-    const n = Number(v);
-    return Number.isFinite(n) && n > 0 ? n : MAX_MOI_LUOT_MAC_DINH;
-  };
-  const max = Math.min(soHopLe(process.env.DON_VIDEO_MAX_MOI_LUOT), soHopLe(q.get('max')));
+  //
+  // Dat ma khong doc duoc thi TU CHOI ngay tai day, truoc khi luot nay gianh
+  // suat cua ngay: thay bang tran mac dinh la thay bang tran RONG NHAT, dung
+  // chieu khong duoc phep sai tren duong xoa khong lui duoc (xem `tranNguoiDat`).
+  const xinTrenDiaChi = tranNguoiDat(q.get('max'));
+  const xinTrenMayChu = tranNguoiDat(process.env.DON_VIDEO_MAX_MOI_LUOT);
+  if (xinTrenDiaChi === false || xinTrenMayChu === false) {
+    return NextResponse.json(
+      {
+        error: 'max-khong-hop-le',
+        chiTiet: xinTrenDiaChi === false ? 'max' : 'DON_VIDEO_MAX_MOI_LUOT',
+        canLa: 'so nguyen duong',
+      },
+      { status: 400 }
+    );
+  }
+  const max = Math.min(
+    xinTrenDiaChi ?? MAX_MOI_LUOT_MAC_DINH,
+    xinTrenMayChu ?? MAX_MOI_LUOT_MAC_DINH
+  );
 
   const ketQua = await donVideoQuaHan({
     that: !epChayThu && process.env.DON_VIDEO_CHAY_THAT === '1',

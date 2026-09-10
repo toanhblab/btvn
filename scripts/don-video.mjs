@@ -19,10 +19,6 @@
 
 const args = process.argv.slice(2);
 const co = (ten) => args.includes(ten);
-const so = (ten) => {
-  const i = args.indexOf(ten);
-  return i === -1 ? null : Number(args[i + 1]);
-};
 
 const goc = (process.env.BTVN_URL ?? '').replace(/\/+$/, '');
 const secret = process.env.CRON_SECRET ?? '';

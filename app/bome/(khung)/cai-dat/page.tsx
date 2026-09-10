@@ -158,7 +158,9 @@ export default async function Page() {
                   n: SO_VIDEO_MOI_NHAT_GIU_LAI, d: SO_NGAY_GIU_VIDEO,
                 })}
               </p>
-              <p className={`text-p-body-sm ${hong(lanDon.moiNhat) ? 'text-error' : 'text-on-surface'}`}>
+              {/* Lau khong chay cung to do nhu luot hong: chu thi that tha ma mau
+                  lai binh thuong thi kenh de doc nhat noi rang moi thu van on. */}
+              <p className={`text-p-body-sm ${hong(lanDon.moiNhat) || lauKhongChay ? 'text-error' : 'text-on-surface'}`}>
                 {!lanDon.moiNhat
                   ? T('Chưa chạy lần nào.')
                   : lauKhongChay

@@ -96,6 +96,28 @@ export const SO_VIDEO_MOI_NHAT_GIU_LAI = 3;
 export const MAX_MOI_LUOT_MAC_DINH = 20;
 
 /**
+ * Doc mot tran do NGUOI dat: `?max=` tren dia chi, hay DON_VIDEO_MAX_MOI_LUOT
+ * tren may chu.
+ *
+ *   null  = khong ai dat gi -> nguoi goi lay tran mac dinh.
+ *   false = CO dat nhung khong doc duoc -> nguoi goi phai TU CHOI.
+ *
+ * Hai cai do KHONG duoc gop lam mot. Coi "dat ma sai" nhu "khong dat" nghia la
+ * `?max=5x` ra thanh tran MAC DINH — tuc tran RONG NHAT — nen nguoi go nham mot
+ * ky tu xoa 20 tep trong khi tin la minh vua cho phep 5, va hang rao 7 (mot luot
+ * that moi ngay) khien khong con lan thu hai de nhan ra. Tren duong xoa khong
+ * lui duoc, doc khong duoc nghia la TU CHOI, khong bao gio la "cu chay tiep".
+ *
+ * `donVideoQuaHan` khong tu lam duoc viec nay: no phai giu nghia "khong xin gi
+ * thi lay mac dinh" cho duong goi thang trong test va trong ma.
+ */
+export function tranNguoiDat(v: string | null | undefined): number | null | false {
+  if (v === undefined || v === null) return null;
+  const n = Number(v);
+  return Number.isInteger(n) && n > 0 ? n : false;
+}
+
+/**
  * Bao nhieu ngay khong co luot nao thi coi la viec don da ngung.
  *
  * BA, khong phai mot: cron chay moi dem nhung goi Hobby chi bao dam "khoang mot
@@ -120,8 +142,18 @@ export function lauKhongDon(ngayLuotGanNhat: string, homNay: string): boolean {
   return ngayLuotGanNhat < lechNgay(homNay, -SO_NGAY_COI_LA_NGUNG);
 }
 
-/** Chia lo khi goi del(): mot lo la mot vong goi. Tai lieu khong neu tran nen tu dat. */
-const CO_LO_XOA = 100;
+/**
+ * Chia lo khi goi del(): mot lo la mot vong goi.
+ *
+ * PHAI NHO HON tran cua luot (MAX_MOI_LUOT_MAC_DINH = 20), khong thi viec chia
+ * lo chi la chu tren giay: de 100 thi moi luot luon gon trong DUNG MOT lo, va
+ * mot URL hong keo ca luot hong theo. Luc do mot URL khong bao gio xoa duoc lam
+ * viec don DUNG HAN: dem nao sweep cung doc lai dung mot dong so cai do, cung
+ * hong o do, cau dao ngat (hang rao 6) dung ca luot, va khong video nao duoc don
+ * nua. De 5 thi doi lay chung ba lan goi del() moi dem — cai gia phai chang cho
+ * viec mot URL doc chi lam hong lo cua no.
+ */
+const CO_LO_XOA = 5;
 
 /**
  * Cua so QUET rong hon tran xoa cua luot.
@@ -264,6 +296,17 @@ export const SQL_SO_CAI_CHUA_XOA = `
    WHERE deleted_at IS NULL
    ORDER BY planned_at
    LIMIT $1::int`;
+
+/**
+ * Dem TOAN BO dong so cai con so, khong cat theo tran cua luot.
+ *
+ * Cau tren co LIMIT nen so dong lay ve luon <= tran; bao con so do ra la noi voi
+ * nguoi doc rang dong ton dung bang tran — "gan xong roi" trong khi con 50 dong.
+ * Day la con so DUY NHAT cho biet viec don dang tut lai bao xa sau mot cu del()
+ * hong, nen no phai la so that.
+ */
+export const SQL_DEM_SO_CAI_CHUA_XOA = `
+  SELECT COUNT(*) AS n FROM video_cleanups WHERE deleted_at IS NULL`;
 
 export type CheDoDon = 'thu' | 'that';
 
@@ -415,7 +458,15 @@ export async function donVideoQuaHan(
         try {
           const tin = await head(url);
           bytes = tin.size;
-          if (new Date(tin.uploadedAt).getTime() > hanCu) {
+          const mocKho = new Date(tin.uploadedAt).getTime();
+          // Doc khong ra moc thi DONG lai, dung mo ra. `NaN > hanCu` la false
+          // nen khong chan gi ca: dong do di thang xuong del() voi dong ho thu
+          // hai bi tat — dung cai loai loi ma hang rao nay sinh ra de bat.
+          if (!Number.isFinite(mocKho)) {
+            ra.boSot.push({ assignmentId: d.id, url, vi: 'khong-hoi-duoc-kho' });
+            continue;
+          }
+          if (mocKho > hanCu) {
             ra.boSot.push({ assignmentId: d.id, url, vi: 'kho-bao-tep-con-moi' });
             continue;
           }
@@ -560,7 +611,8 @@ async function donSoCaiMoCoi(
   if (xoaDuoc.length === 0) return 0;
 
   if (!that) {
-    ra.canhBao.push(`so-cai-con-${xoaDuoc.length}-dong-chua-xoa`);
+    const dem = await query<{ n: number | string }>(SQL_DEM_SO_CAI_CHUA_XOA);
+    ra.canhBao.push(`so-cai-con-${Number(dem[0]?.n ?? xoaDuoc.length)}-dong-chua-xoa`);
     return 0;
   }
   return await xoaTheoLo(runId, ra, xoaDuoc, ra.daXoaLai);
