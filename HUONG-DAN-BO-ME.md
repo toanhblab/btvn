@@ -177,6 +177,45 @@ Vài điều cần biết:
 - Con mở **🎁 Đổi thưởng** sẽ thấy mục **"Bố mẹ đã trừ ⭐"** với từng dòng
   *"−3 ⭐ Cãi bố mẹ"* — con biết mình bị trừ vì gì, không phải thấy sao tự tụt.
 
+### Video cũ tự dọn bớt
+
+App **tự xoá bớt video con quay** để chỗ lưu không bị đầy. Luật rất đơn giản, và
+nó cẩn thận theo hai lớp:
+
+- **Mỗi con luôn còn 3 video mới nhất của mình.** Kể cả 3 video đó đã quay từ lâu.
+- Video cũ hơn 3 cái đó **và** đã quá **5 ngày** kể từ lúc con nộp thì mới bị xoá.
+
+Hai điều kiện phải đúng cả hai. Nên một video con vừa quay hôm nay không bao giờ
+bị xoá, và một con lâu ngày không nộp bài cũng không bị mất sạch.
+
+Đếm **theo từng con**, không gộp cả nhà — anh nộp nhiều không làm em mất video.
+
+Vào **Cài đặt** kéo xuống mục **"Dọn video cũ"** là thấy lần dọn gần nhất chạy
+ngày nào và xoá mấy video của nhà mình. Nếu đêm qua app chỉ **chạy thử** (xem
+trước, không xoá gì) thì dòng đó nói rõ, và dòng ngay dưới cho biết lần xoá thật
+gần nhất là ngày nào.
+
+Dòng đó **chuyển sang màu đỏ** khi việc dọn đang không ổn, và có ba kiểu:
+
+- **"Lâu rồi việc dọn chưa chạy lại"** kèm ngày chạy gần nhất — mấy đêm liền
+  không có lượt nào.
+- **"Chưa chạy lần nào."** — app chưa hề dọn lần nào kể từ lúc dựng lên.
+- **"Lần chạy ngày … bị lỗi giữa chừng"** / **"chưa chạy xong"**.
+
+Cả ba đều không hỏng gì gấp, nhưng thấy dòng đỏ thì nhắn cho người dựng app biết
+để xem lại giúp.
+
+Bài nào có video đã bị dọn thì cả trong màn của con (bên bố mẹ) lẫn màn
+**"Nộp bài cho cô"** đều ghi **"Đã nộp, video đã dọn"** — con đã nộp xong rồi,
+chỉ là video không còn nữa, không phải con còn nợ một bản quay.
+
+> **Nên gửi bài cho cô trong vài ngày đầu.** Video đã xoá thì không lấy lại được.
+> Bình thường bố mẹ gửi ngay hôm đó nên không sao, nhưng nếu để quên cả tuần thì
+> video có thể đã bị dọn mất.
+
+Ảnh chụp đề bài, ảnh của con và tệp cô gửi **không bị đụng tới** — chỉ video con
+quay để nộp bài mới nằm trong diện dọn.
+
 ---
 
 ## 4. Việc hằng ngày của con
@@ -281,6 +320,11 @@ Con mở lại bài đó, bấm **"Chưa làm xong"** là bài quay về chưa x
 
 **Con quay video nhưng muốn quay lại?**
 Bấm **"Quay video khác"** — app chỉ giữ video mới nhất. Quay tối đa 10 phút mỗi bài.
+
+**Video con quay có bị mất không?**
+Mỗi con luôn còn **3 video mới nhất**. Video cũ hơn thế và đã quá **5 ngày** thì
+app tự dọn để chỗ lưu không đầy — xem mục "Video cũ tự dọn bớt" ở phần 3. Đã dọn
+thì không lấy lại được, nên bài nào cần gửi cho cô thì gửi trong vài ngày đầu.
 
 **Đang quay mà app báo "Máy quay bị gián đoạn giữa chừng nên bản này chưa lưu"?**
 Máy quay của máy tính ngừng đưa hình giữa buổi (hay gặp trên MacBook). Phần con

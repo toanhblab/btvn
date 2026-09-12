@@ -6,7 +6,7 @@ import {
   congDiemNgayNeuXong, deleteAssignment, getAssignment, ghiDiemSauKhiXong, setStatus,
   submitVideo, updateAssignment, xuLySauKhiDoiHanChot,
 } from '@/lib/store';
-import { hwSourceOf, sanitizeDuration, type DiemVuaCong } from '@/lib/types';
+import { hwSourceOf, sanitizeDuration, trangThaiVideo, type DiemVuaCong } from '@/lib/types';
 import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
@@ -63,9 +63,11 @@ export async function PATCH(req: Request, { params }: Ctx) {
       return NextResponse.json({ error: T('Video không hợp lệ.') }, { status: 400 });
     }
     // Bai bat buoc quay video thi tick suong khong tinh: phai co video (moi gui
-    // kem, hoac da nop tu truoc) thi moi cho chuyen sang done.
+    // kem, hoac da nop tu truoc) thi moi cho chuyen sang done. Video DA DON van
+    // tinh la da nop: con nop tuan truoc roi, doi con quay lai chi vi app da xoa
+    // tep di la doi sai nguoi.
     if (body.status === 'done' && current.requiresVideo &&
-        !body.videoUrl && !current.submittedVideoUrl) {
+        !body.videoUrl && trangThaiVideo(current) === 'chua-quay') {
       return NextResponse.json(
         { error: T('Bài này cần quay video trước khi xong nhé.') },
         { status: 400 }

@@ -2,11 +2,20 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
 import { getChild, listAssignments, taoNhiemVuNgay, todayISO } from '@/lib/store';
-import { HW_SOURCES, NHOM_NHIEM_VU, type Assignment } from '@/lib/types';
+import {
+  HW_SOURCES, NHOM_NHIEM_VU, trangThaiVideo, type Assignment, type TrangThaiVideo,
+} from '@/lib/types';
 import XoaBai from './XoaBai';
 import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
+
+/** Mau cua the 🎥 theo trang thai video (lib/types.ts trangThaiVideo). */
+const LOP_THE_VIDEO: Record<TrangThaiVideo, string> = {
+  'da-nop': 'bg-success-container text-on-success-container',
+  'da-don': 'bg-surface-container text-on-surface-variant',
+  'chua-quay': 'bg-secondary-container text-on-secondary-container',
+};
 
 /** Chi tiet hoc tap cua mot con — nen tu stitch-parent 09. */
 export default async function ChiTietCon({
@@ -198,6 +207,7 @@ export default async function ChiTietCon({
             <div className="flex flex-col gap-p-tight">
               {list.map((a) => {
                 const overdue = a.status === 'todo' && a.dueDate < today;
+                const trangThaiVideoBai = trangThaiVideo(a);
                 return (
                   <div
                     key={a.id}
@@ -242,16 +252,22 @@ export default async function ChiTietCon({
                           </span>
                         )}
                         {/* Bai phai quay video: da nop thi mau "xong" — bam Sua
-                            (bieu tuong but) de mo bai ra xem video con quay */}
+                            (bieu tuong but) de mo bai ra xem video con quay.
+                            Ba trang thai chu khong hai: video da bi don
+                            (lib/donVideo.ts) thi URL bi go nhung submittedVideoAt
+                            con, va do la cho phan biet "con chua quay" voi "con
+                            quay roi, video cu da don" — gop hai cai lam mot la
+                            doi the sang "Chờ quay video" cho mot bai con da nop
+                            xong tu tuan truoc. */}
                         {a.requiresVideo && (
                           <span
-                            className={`text-p-label px-2 py-0.5 rounded-full ${
-                              a.submittedVideoUrl
-                                ? 'bg-success-container text-on-success-container'
-                                : 'bg-secondary-container text-on-secondary-container'
-                            }`}
+                            className={`text-p-label px-2 py-0.5 rounded-full ${LOP_THE_VIDEO[trangThaiVideoBai]}`}
                           >
-                            🎥 {a.submittedVideoUrl ? T('Đã nộp video') : T('Chờ quay video')}
+                            🎥 {trangThaiVideoBai === 'da-nop'
+                              ? T('Đã nộp video')
+                              : trangThaiVideoBai === 'da-don'
+                                ? T('Đã nộp, video đã dọn')
+                                : T('Chờ quay video')}
                           </span>
                         )}
                         {overdue && (

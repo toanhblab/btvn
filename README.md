@@ -229,6 +229,9 @@ bằng AI là chưa hoạt động. Đặt vào `.env.local`:
 | `NOUS_MODEL` | Dùng `qwen/qwen3-vl-32b-instruct` — **phải là model có vision** | Danh sách ở `/v1/models` |
 | `PIN_SECRET` | Dùng chuỗi mặc định — **phải đổi trước khi deploy** | Tự đặt |
 | `BTVN_PGLITE_DIR` | PGlite ở `.data/pg` | Chỉ để test / thử trên DB tạm (`memory://` = trong RAM) |
+| `CRON_SECRET` | `/api/don-video` trả 401 cho mọi request, tức **việc dọn video không chạy** | Tự đặt, ≥16 ký tự; Vercel tự gửi nó trong header `Authorization` khi gọi cron |
+| `DON_VIDEO_CHAY_THAT` | Việc dọn video **chỉ chạy thử**: liệt kê ra log, không xoá gì | Đặt `1` để bật xoá thật — xem "Dọn video quá hạn" |
+| `DON_VIDEO_MAX_MOI_LUOT` | Tối đa 20 tệp mỗi lượt | Hạ xuống được, không nâng lên được; đặt mà không phải số nguyên dương thì `/api/don-video` trả **400 và không dọn gì** (đọc không ra thì từ chối, không lùi về trần mặc định) |
 
 `PIN_SECRET` là gốc của cả hash PIN lẫn chữ ký cookie: **đặt một lần rồi không
 đổi nữa**. Đổi nó là PIN của mọi nhà thành vô hiệu (hash trong DB không khớp
@@ -236,6 +239,50 @@ nữa) và mọi thiết bị bị đăng xuất.
 
 Đổi `DATABASE_URL` là chuyển hẳn sang Neon, không phải sửa dòng code nào —
 các migration chạy được trên cả hai.
+
+## Dọn video quá hạn
+
+Kho tệp Vercel Blob của gói Hobby chỉ có **1 GB** và app trước giờ không xoá tệp
+nào. Một cron mỗi ngày (`vercel.json` → `/api/don-video`, `0 19 * * *` UTC ≈ 2 giờ
+sáng giờ VN) dọn bớt video con nộp. Luật và chín hàng rào an toàn ghi ở đầu
+`lib/donVideo.ts`; đọc chỗ đó trước khi sửa.
+
+**Luật:** xoá một video khi **cả hai** đúng — đã quá `SO_NGAY_GIU_VIDEO` (5) ngày
+kể từ `submitted_video_at`, **và** không nằm trong `SO_VIDEO_MOI_NHAT_GIU_LAI` (3)
+video mới nhất **của chính đứa con đó**. Hai hằng số ở `lib/donVideo.ts`, mỗi cái
+một chỗ duy nhất. Phần dung lượng **do việc nộp bài sinh ra** có trần đoán được:
+số con × 3 × cỡ video. Đó **không** phải trần của cả kho tệp — lượt dọn chỉ đi theo
+`assignments.submitted_video_url`, nên hai đường sinh tệp mồ côi vẫn phình chậm: con
+bấm "Quay video khác" sau khi đã nộp, và xoá bài bằng `DELETE /api/assignments/:id`.
+Cả hai có từ trước lần giao này; việc riêng `btvn-quet-tep-mo-coi` theo dõi.
+
+**Bật xoá thật lần đầu** (mặc định là chạy thử, deploy xong vẫn chưa xoá gì):
+
+```bash
+# 1. Xem trước bằng chế độ chạy thử — không xoá gì, kể cả khi đã bật biến ở dưới
+BTVN_URL=https://<app> CRON_SECRET=<secret> node scripts/don-video.mjs --max 5
+
+# 2. Đọc danh sách. Ưng thì đặt DON_VIDEO_CHAY_THAT=1 (và DON_VIDEO_MAX_MOI_LUOT=5
+#    cho lượt đầu) trên Vercel rồi Redeploy.
+# 3. Chạy thật, vẫn bằng tay:
+BTVN_URL=https://<app> CRON_SECRET=<secret> node scripts/don-video.mjs --that --max 5
+```
+
+`--that` chỉ **bỏ** tham số ép chạy thử; nó không tự bật được xoá thật — quyền đó
+nằm ở biến môi trường trên máy chủ. Hai khoá, hai nơi.
+
+**Xoá tệp trên kho không lùi được.** Đường lùi duy nhất là sổ cái `video_cleanups`
+(migration 019): mỗi tệp một dòng, ghi **cùng lúc** với lúc gỡ URL khỏi
+`assignments` và **trước** khi gọi `del()`. Vì gỡ URL đi trước, một cú `del()`
+hỏng để lại tệp **không còn ai trỏ tới** — nên mỗi lượt đọc lại dòng sổ cái
+`deleted_at IS NULL` và dọn nốt trước khi chọn việc mới (`donSoCaiMoCoi`). Phần
+dọn nốt ăn **cùng một trần** với phần chọn việc mới, và nếu nó vẫn hỏng thì cả
+lượt **dừng ngay** — kho đang từ chối xoá thì gỡ thêm URL chỉ làm đống tồn lớn
+dần mà không thu về byte nào. Bảng `video_cleanup_runs` có chỉ mục
+UNIQUE từng phần trên `(run_date) WHERE che_do = 'that'` — đó là hàng rào 7,
+chống cron gọi trùng một lượt, và nó nằm ở CSDL chứ không ở code.
+
+Bố mẹ thấy việc này chạy hay không ở **Cài đặt → "Dọn video cũ"**.
 
 ## Cấu trúc
 
@@ -256,7 +303,8 @@ app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 phan-thuong (bố mẹ đặt phần thưởng, cần PIN), tru-diem (bố mẹ
                 trừ ⭐ của con, cần PIN), doi-thuong (con xin đổi — không cần
                 PIN; bố mẹ duyệt — cần PIN), tep (đọc tệp đã ghi ở
-                .data/uploads khi dev)
+                .data/uploads khi dev), don-video (cron dọn video quá hạn, xác
+                thực bằng CRON_SECRET)
 app/_components/ BanPhimPin — bàn phím số dùng chung cho 4 chỗ nhập PIN
 lib/i18n/       lớp dịch: ngonNgu (bộ ngôn ngữ + PIN demo), chu (T), en/ja/ko (từ
                 điển, khoá = câu tiếng Việt), server (chu()), client (useT)
@@ -266,8 +314,9 @@ lib/            db (Neon|PGlite), store (truy vấn theo familyId), auth (PIN +
                 con + hai nhóm nhiệm vụ), sqlNhiemVu (câu SQL tạo dòng nhiệm vụ
                 của ngày, dùng chung với seed và test), sqlDiem (câu SQL số dư ⭐
                 + trừ điểm + duyệt đổi thưởng, dùng chung với test), ngay (mốc
-                ngày + múi giờ nhà), media + upload-route (giới hạn tệp, tên/URL
-                tệp, thân chung hai route tải lên), avatar, ai, types
+                ngày + múi giờ nhà), donVideo (luật + hàng rào dọn video quá
+                hạn), media + upload-route (giới hạn tệp, tên/URL tệp, thân
+                chung hai route tải lên), avatar, ai, types
 proxy.ts        chặn /bome/* khi chưa nhập PIN
 migrations/     từng bước thay đổi lược đồ, chạy theo thứ tự tên tệp (bám PRD mục 7)
 scripts/        db.mjs (kết nối + bộ chạy migration), migrate.mjs (CLI, chạy khi
@@ -275,7 +324,9 @@ scripts/        db.mjs (kết nối + bộ chạy migration), migrate.mjs (CLI, 
                 seed-demo.mjs + demo-data.mjs (ba nhà demo, chạy khi build —
                 nạp `.ts` bằng import() động để lỗi demo không hỏng build),
                 quet-chu-viet.mjs (`npm run quet:chu-viet`, quét mã nguồn),
-                test-hook.mjs (node --test resolve import không đuôi)
+                don-video.mjs (gọi tay một lượt dọn video qua chính route của
+                cron, mặc định chạy thử), test-hook.mjs (node --test resolve
+                import không đuôi)
 stitch/         bản Stitch gốc của phần trẻ (đối chiếu)
 stitch-parent/  bản Stitch gốc của phần bố mẹ + design system
 legacy-static/  bản HTML/JS thuần đầu tiên của phần trẻ, giữ để tham chiếu
@@ -369,8 +420,11 @@ server cũng chặn tick xong khi chưa có video. Mỗi bài giữ **một vide
 (quay lại là thay URL, không giữ lịch sử). Video đi qua route riêng
 `/api/nop-video` (xác thực bằng cookie thiết bị vì con không có PIN, chỉ nhận
 video, trần 250MB vì máy quay của iPad ghi ~60MB/phút). Bố mẹ thấy badge
-🎥 "Đã nộp video" / "Chờ quay video" ở màn chi tiết theo con và phát lại video
-trong màn "Sửa bài tập".
+🎥 "Đã nộp video" / "Đã nộp, video đã dọn" / "Chờ quay video" ở màn chi tiết theo
+con và phát lại video trong màn "Sửa bài tập". **Ba** trạng thái chứ không hai:
+video đã bị dọn (xem "Dọn video quá hạn") thì URL bị gỡ nhưng mốc nộp còn — mọi
+chỗ hỏi trạng thái video đều đi qua `trangThaiVideo` trong `lib/types.ts`, đừng
+tự viết lại điều kiện bằng `submittedVideoUrl`.
 
 **Quét mã QR trên tờ bài tập.** Nhiều tờ bài tập giấy in mã QR dẫn tới đoạn nghe
 của nhà xuất bản. Màn chi tiết bài của con có nút **"Quét mã QR"** mở khung quét

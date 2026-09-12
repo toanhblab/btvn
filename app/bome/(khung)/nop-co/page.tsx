@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
 import { lechNgay, ngayTiengViet } from '@/lib/ngay';
 import { listAssignments, listChildren, todayISO } from '@/lib/store';
-import { HW_SOURCES } from '@/lib/types';
+import { HW_SOURCES, trangThaiVideo } from '@/lib/types';
 import { tenTepNop } from '@/lib/media';
 import ChiaSeVideo, { type NhomNop } from './ChiaSeVideo';
 import { chu } from '@/lib/i18n/server';
@@ -65,11 +65,14 @@ export default async function NopBaiChoCo({
           tenTep: a.submittedVideoUrl
             ? tenTepNop(c.name, a.subject, a.dueDate, a.submittedVideoUrl)
             : null,
+          daDon: trangThaiVideo(a) === 'da-don',
         })),
     }))
     .filter((n) => n.mucs.length > 0);
 
-  const soVideo = items.filter((a) => a.submittedVideoUrl).length;
+  // Video da don van la video con DA QUAY: dem no vao day, khong thi o dem noi
+  // "0/2 video da quay" cho hai bai con nop xong tu tuan truoc.
+  const soVideo = items.filter((a) => trangThaiVideo(a) !== 'chua-quay').length;
   const nhan = ngayTiengViet(dangXem, T);
 
   return (

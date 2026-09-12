@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { Assignment, DiemVuaCong, Lang } from '@/lib/types';
+import { trangThaiVideo, type Assignment, type DiemVuaCong, type Lang } from '@/lib/types';
 import { driveFileIdTu, drivePreviewUrl } from '@/lib/media';
 import { GIONG_DOC, TEN_NGON_NGU, pickVoice, splitSpeech } from '@/lib/speech';
 import { useNgonNgu, useT } from '@/lib/i18n/client';
@@ -36,6 +36,12 @@ export default function ChiTietBai({
   const router = useRouter();
   const [done, setDone] = useState(assignment.status === 'done');
   const [videoUrl, setVideoUrl] = useState(assignment.submittedVideoUrl);
+  // `videoUrl` la CAI TEP (co gi de phat lai khong), con day la TRANG THAI (con
+  // da quay bai nay chua) — video da don khong con tep nhung van la da quay.
+  const trangThaiVideoBai = trangThaiVideo({
+    submittedVideoUrl: videoUrl,
+    submittedVideoAt: assignment.submittedVideoAt,
+  });
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   // Xong khi dong ho van con gio -> ban confetti + loi khen (an mung, khong bat buoc)
@@ -335,7 +341,7 @@ export default function ChiTietBai({
         </div>
 
         <div className="flex flex-col items-center gap-4 mt-6 shrink-0">
-          {!done && assignment.requiresVideo && !videoUrl ? (
+          {!done && assignment.requiresVideo && trangThaiVideoBai === 'chua-quay' ? (
             // Chua co video thi khong co nut tick: quay video chinh la cach
             // hoan thanh bai nay (server cung chan tick suong).
             <p className="flex items-center gap-2 text-k-body-sm text-on-surface-variant text-center">

@@ -1558,3 +1558,101 @@ export async function truDiem(
   }
   return { ok: true, penalty: toPenalty(ghi[0]), conLai };
 }
+
+/* ---------------- Don video qua han (lib/donVideo.ts) ---------------- */
+
+export interface TrangThaiDonVideo {
+  /** Luot GAN NHAT bat ke che do — tra loi "viec don DANG lam gi". */
+  moiNhat: LanDonVideo | null;
+  /**
+   * Luot XOA THAT gan nhat — tra loi "lan cuoi cung that su xoa la khi nao".
+   * null khi chua co luot that nao.
+   */
+  donThatGanNhat: LanDonVideo | null;
+}
+
+export interface LanDonVideo {
+  /** Ngay chay, YYYY-MM-DD. */
+  ngay: string;
+  cheDo: 'thu' | 'that';
+  coLoi: boolean;
+  /** Luot chua ghi `finished_at`: no dut giua chung (hoac dang chay ngay luc nay). */
+  chuaXong: boolean;
+  /** So video CUA NHA NAY chinh luot do DA XOA. Luot chay thu luon la 0 (khong xoa gi). */
+  soCuaNha: number;
+}
+
+/**
+ * Trang thai viec don video — cho dong o man Cai dat, de bo me biet viec don co
+ * chay hay khong ma khong phai mo bang dieu khien cua Vercel.
+ *
+ * Tra ve HAI luot vi day la HAI cau hoi khac nhau, va mot dong khong tra loi
+ * duoc ca hai:
+ *   - "dem qua no lam gi?"     -> luot moi nhat, bat ke che do
+ *   - "lan cuoi XOA THAT la khi nao?" -> luot 'that' moi nhat
+ *
+ * Gop lam mot bang cach uu tien luot 'that' thi hong theo ca hai chieu: mot lan
+ * `node scripts/don-video.mjs` de xem truoc (ghi mot dong 'thu') se che mat lan
+ * xoa that dem qua; con nguoc lai, go `DON_VIDEO_CHAY_THAT` khoi Vercel thi cron
+ * dem nao cung ghi 'thu' va khong xoa gi, ma man Cai dat van khoe "Da don ngay
+ * <thang truoc>" mai mai. Man hinh in ca hai dong khi chung khac nhau.
+ *
+ * Ngay/che do/loi la TINH TRANG CUA MAY, cung loai voi dong "Du lieu: Neon
+ * Postgres" da co san o man do — khong phai du lieu cua nha nao. Con so dem thi
+ * CO loc theo nha (`c.family_id = $1`), dung luat chung cua tep nay: khong ham
+ * nao tra ve so dem gop ca CSDL.
+ */
+export async function trangThaiDonVideo(familyId: string): Promise<TrangThaiDonVideo> {
+  // Dem theo `deleted_run_id` (luot DA PHA) chu khong theo `run_id` (luot da
+  // DINH pha): del() hong thi dong so cai nam lai va luot HOM SAU moi don not
+  // duoc no, nen dem theo run_id la bao "0 video cua nha minh" dung vao dem ma
+  // video cua nha do vua that su mat. Cot do chi duoc ghi cung luc voi
+  // `deleted_at` nen no da ham y "da xoa xong" (migration 020).
+  //
+  // `nhanh` la MOC de nhan ra dong nao cua nhanh nao. UNION ALL khong bao dam
+  // thu tu tra ve neu khong co ORDER BY ngoai cung, nen lay theo chi so (r[0])
+  // la dua vao mot chi tiet cai dat cua Postgres: hom nao no doi thu tu thi man
+  // Cai dat lai quay ve dung cai loi "khoe lan don thang truoc" da sua o day.
+  const r = await query<{
+    nhanh: number | string; id: string; run_date: string | Date; che_do: string;
+    loi: string | null; finished_at: string | Date | null; so_cua_nha: number | string;
+  }>(
+    `(SELECT 1 AS nhanh, r.id, r.run_date, r.che_do, r.loi, r.finished_at,
+             (SELECT COUNT(*) FROM video_cleanups v
+                JOIN children c ON c.id = v.child_id
+               WHERE v.deleted_run_id = r.id AND c.family_id = $1) AS so_cua_nha
+        FROM video_cleanup_runs r
+       ORDER BY r.started_at DESC
+       LIMIT 1)
+     UNION ALL
+     (SELECT 2 AS nhanh, r.id, r.run_date, r.che_do, r.loi, r.finished_at,
+             (SELECT COUNT(*) FROM video_cleanups v
+                JOIN children c ON c.id = v.child_id
+               WHERE v.deleted_run_id = r.id AND c.family_id = $1) AS so_cua_nha
+        FROM video_cleanup_runs r
+       WHERE r.che_do = 'that'
+       ORDER BY r.started_at DESC
+       LIMIT 1)`,
+    [familyId]
+  );
+
+  const doiVe = (d: (typeof r)[number]): LanDonVideo => ({
+    ngay: dateStr(d.run_date),
+    cheDo: d.che_do === 'that' ? 'that' : 'thu',
+    coLoi: d.loi !== null,
+    // `loi` chi duoc ghi o cau ket luot, nen mot luot chet giua chung (het gio
+    // cua route, may chu bi cat) de lai loi = NULL: khong co dong nay thi no bao
+    // "Da don ... 0 video" — mot luot hong doi lot thanh mot luot thanh cong.
+    chuaXong: d.finished_at === null,
+    soCuaNha: Number(d.so_cua_nha ?? 0),
+  });
+
+  const moiNhat = r.find((d) => Number(d.nhanh) === 1) ?? null;
+  // Luot that moi nhat CHINH LA luot moi nhat thi chi con mot dong de noi.
+  const luotThat =
+    r.find((d) => Number(d.nhanh) === 2 && d.id !== moiNhat?.id) ?? null;
+  return {
+    moiNhat: moiNhat ? doiVe(moiNhat) : null,
+    donThatGanNhat: luotThat ? doiVe(luotThat) : null,
+  };
+}

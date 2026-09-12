@@ -61,6 +61,41 @@ export function hwSourceOf(v: unknown): HwSource {
   return typeof v === 'string' && HW_SOURCE_KEYS.has(v) ? (v as HwSource) : HW_SOURCE_DEFAULT;
 }
 
+/**
+ * Bai nay dang o dau trong chuyen "con quay video nop lai"?
+ *
+ * BA trang thai chu khong hai, va cho thu ba la viec don video (lib/donVideo.ts):
+ * no go `submittedVideoUrl` nhung GIU `submittedVideoAt`, nen "con chua quay bao
+ * gio" va "con quay roi, video cu da don" khac nhau o dung mot cho do.
+ *
+ * LUAT: hoi TRANG THAI thi goi ham nay; can CHINH CAI URL (de phat, de chia se,
+ * de dat ten tep) thi doc thang cot — do khong phai cau hoi ham nay tra loi.
+ * Lay `submittedVideoUrl` de tra loi mot cau hoi TRANG THAI la gop 'chua-quay'
+ * voi 'da-don' lam mot, va man hinh se noi rang con chua quay mot bai con da nop
+ * xong tu tuan truoc.
+ *
+ * Nhung cho HOI TRANG THAI, tat ca deu qua ham nay:
+ *   - o dem "{done}/{total} video da quay" o /bome, /bome/nop-co va
+ *     /bome/nop-co/chon-ngay (mot khoa dich, phai ra cung mot con so)
+ *   - the 🎥 o man chi tiet con cua bo me, va dong "da don" o /bome/nop-co
+ *   - hang rao "bai can video moi tick xong duoc" cua PATCH /api/assignments/:id
+ *   - man chi tiet bai cua con: co hien nut "Da lam xong" khong
+ *
+ * Nhung cho doc THANG COT, va do la dung: nop-co/page.tsx (lay URL de phat, chia
+ * se, dat ten tep), SuaBai (khung phat; no doc `submittedVideoAt` chi BEN TRONG
+ * khoi `submittedVideoUrl &&`), QuayVideo qua `existingUrl` (co tep de phat lai
+ * khong), bo chuyen dong->doi tuong va duong GHI `submitVideo` trong lib/store.ts,
+ * seed, va chinh lib/donVideo.ts.
+ */
+export type TrangThaiVideo = 'chua-quay' | 'da-nop' | 'da-don';
+
+export function trangThaiVideo(
+  a: { submittedVideoUrl: string | null; submittedVideoAt: string | null }
+): TrangThaiVideo {
+  if (a.submittedVideoUrl) return 'da-nop';
+  return a.submittedVideoAt ? 'da-don' : 'chua-quay';
+}
+
 export interface Child {
   id: string;
   familyId: string;

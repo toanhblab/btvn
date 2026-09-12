@@ -26,10 +26,15 @@ export interface MucNop {
   icon: string;
   mon: string;
   noiDung: string;
-  /** null = con chua quay video cho bai nay. */
+  /** null = con chua quay, HOAC video da bi don khoi kho (xem `daDon`). */
   videoUrl: string | null;
   /** Ten tep gui cho co, vi du An-TiengAnh-2026-09-02.mp4. null khi chua co video. */
   tenTep: string | null;
+  /**
+   * Con DA quay bai nay, nhung viec don video (lib/donVideo.ts) da xoa tep di.
+   * Khong con gi de gui cho co, nhung cung KHONG duoc bao "con chua quay video".
+   */
+  daDon: boolean;
 }
 
 export interface NhomNop {
@@ -257,8 +262,10 @@ export default function ChiaSeVideo({ nhom, ngayVN }: { nhom: NhomNop[]; ngayVN:
                   ) : (
                     <p className="mt-2 flex items-center gap-1 text-p-body-sm text-on-surface-variant
                                   xl:mt-0 xl:w-[320px] xl:shrink-0">
-                      <span className="material-symbols-outlined text-base">videocam_off</span>
-                      {T('Con chưa quay video')}
+                      <span className="material-symbols-outlined text-base">
+                        {m.daDon ? 'auto_delete' : 'videocam_off'}
+                      </span>
+                      {m.daDon ? T('Đã nộp, video đã dọn') : T('Con chưa quay video')}
                     </p>
                   )}
                 </div>

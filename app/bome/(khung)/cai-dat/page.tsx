@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
-import { getFamilyById, listChildren, listChores } from '@/lib/store';
+import { getFamilyById, listChildren, listChores, todayISO, trangThaiDonVideo } from '@/lib/store';
+import type { LanDonVideo } from '@/lib/store';
 import { hasNeon } from '@/lib/db';
+import { SO_NGAY_GIU_VIDEO, SO_VIDEO_MOI_NHAT_GIU_LAI, laNhaDemo, lauKhongDon } from '@/lib/donVideo';
 import CaiDat from './CaiDat';
 import { chu } from '@/lib/i18n/server';
 
@@ -21,13 +23,39 @@ export default async function Page() {
   const familyId = await parentFamilyId();
   if (!familyId) redirect('/bome/pin');
 
-  const [children, family, chores] = await Promise.all([
+  const [children, family, chores, lanDon] = await Promise.all([
     listChildren(familyId),
     getFamilyById(familyId),
     listChores(familyId),
+    trangThaiDonVideo(familyId),
   ]);
   if (!family) redirect('/bome/pin');
   const T = await chu();
+
+  /** Luot nao chua ket thuc tu te thi to do — chay xong ma sai cung vay. */
+  const hong = (l: LanDonVideo | null) => Boolean(l && (l.coLoi || l.chuaXong));
+
+  // Ham nay noi MOT luot da chay ra sao, va che do luon duoc xet: mot luot chay
+  // THU khong xoa gi nen khong bao gio duoc goi la "da don".
+  const dongTrangThai = (l: LanDonVideo) =>
+    l.coLoi
+      ? T('Lần chạy ngày {date} bị lỗi giữa chừng.', { date: l.ngay })
+      : l.chuaXong
+        ? T('Lần chạy ngày {date} chưa chạy xong.', { date: l.ngay })
+        : l.cheDo === 'thu'
+          ? T('Đã chạy thử ngày {date} — chưa xoá gì cả.', { date: l.ngay })
+          : T('Đã dọn ngày {date} — {n} video của nhà mình.', { date: l.ngay, n: l.soCuaNha });
+
+  // "Lau khong co luot nao" la cau hoi ve DONG MOI NHAT, khong phai ve tung luot:
+  // hoi no cho ca dong thu hai thi ra hai cau "lan gan nhat" voi hai ngay khac
+  // nhau. Va cau tra loi noi ve LAN CHAY, khong noi ve lan don — dong moi nhat
+  // co the la mot luot chay thu, ma luot do khong xoa gi.
+  //
+  // KHONG CO dong nao cung la mot cau tra loi, va la cau dang lo nhat: do dung
+  // la thu mot ban deploy thieu CRON_SECRET de lai — route tra 401 moi dem nen
+  // khong dong nao duoc ghi bao gio. Coi no la "van on" thi cai hong de xay ra
+  // nhat lai thanh cai duy nhat khong bao gio to do.
+  const lauKhongChay = !lanDon.moiNhat || lauKhongDon(lanDon.moiNhat.ngay, todayISO());
 
   return (
     <main className="px-p-page pt-4 xl:max-w-[1080px] xl:mx-auto xl:px-12 xl:py-12">
@@ -115,6 +143,48 @@ export default async function Page() {
               </dl>
             </div>
           </section>
+
+          {/* Don video cu (lib/donVideo.ts). Day la mot NHAT KY, khong phai bo
+              theo doi suc khoe: no bao luot don gan nhat chay ngay nao, o che do
+              nao, va keu len khi da lau khong co luot nao (`lauKhongDon`).
+              Khong co gi o day hoi cron xem no con song hay khong — thu duy nhat
+              biet duoc la "dong moi nhat cu den muc dang ngo". Hien o MOI co
+              man, khac khoi "He thong" o tren.
+
+              Nha demo khong hien khoi nay: hang rao 9 loai chung ra khoi viec
+              don, nen moi cau o day deu la loi hua khong ap dung cho ho — ma nha
+              demo lai chinh la nha nguoi ngoai duoc xem. */}
+          {!laNhaDemo(familyId) && (
+          <section className="mt-4 xl:mt-6">
+            <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Dọn video cũ')}</h2>
+            <div className="bg-surface-container-lowest rounded-card card-shadow p-3 xl:p-4">
+              <p className="text-p-body-sm text-on-surface-variant mb-1">
+                {T('Mỗi con luôn giữ {n} video mới nhất. Video cũ hơn thế và đã quá {d} ngày thì tự xoá để kho không bị đầy.', {
+                  n: SO_VIDEO_MOI_NHAT_GIU_LAI, d: SO_NGAY_GIU_VIDEO,
+                })}
+              </p>
+              {/* Lau khong chay cung to do nhu luot hong: chu thi that tha ma mau
+                  lai binh thuong thi kenh de doc nhat noi rang moi thu van on. */}
+              <p className={`text-p-body-sm ${hong(lanDon.moiNhat) || lauKhongChay ? 'text-error' : 'text-on-surface'}`}>
+                {!lanDon.moiNhat
+                  ? T('Chưa chạy lần nào.')
+                  : lauKhongChay
+                    ? T('Lâu rồi việc dọn chưa chạy lại — lần chạy gần nhất là ngày {date}.', { date: lanDon.moiNhat.ngay })
+                    : dongTrangThai(lanDon.moiNhat)}
+              </p>
+              {/* Luot moi nhat chi la chay thu thi no KHONG tra loi duoc "lan
+                  cuoi that su xoa la khi nao" — in them dong do. Hai cau hoi
+                  khac nhau, khong don duoc vao mot dong (lib/store.ts). Nhung khi
+                  da lau khong co luot nao thi chi MOT cau: cau canh bao o tren da
+                  noi het, them dong nua chi lam hai ngay chong nhau. */}
+              {!lauKhongChay && lanDon.moiNhat?.cheDo === 'thu' && lanDon.donThatGanNhat && (
+                <p className={`text-p-body-sm ${hong(lanDon.donThatGanNhat) ? 'text-error' : 'text-on-surface-variant'}`}>
+                  {dongTrangThai(lanDon.donThatGanNhat)}
+                </p>
+              )}
+            </div>
+          </section>
+          )}
         </div>
 
         <div>

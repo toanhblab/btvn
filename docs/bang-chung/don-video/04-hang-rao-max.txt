@@ -1,0 +1,40 @@
+# Hang rao --max: xin hep khong bao gio duoc am tham thanh xin rong
+# (finding don-video-max-khong-hop-le-bi-bo-am-tham + route-max-khong-doc-duoc-van-ra-tran-rong-nhat)
+
+$ node scripts/don-video.mjs --max 5x
+  ✗ --max phai la so nguyen duong. Nhan duoc: 5x
+    Khong goi may chu, khong xoa gi ca.
+  -> exit 1
+
+$ node scripts/don-video.mjs --max 0
+  ✗ --max phai la so nguyen duong. Nhan duoc: 0
+    Khong goi may chu, khong xoa gi ca.
+  -> exit 1
+
+$ node scripts/don-video.mjs --max -3
+  ✗ --max phai la so nguyen duong. Nhan duoc: -3
+    Khong goi may chu, khong xoa gi ca.
+  -> exit 1
+
+$ node scripts/don-video.mjs --max 2.5
+  ✗ --max phai la so nguyen duong. Nhan duoc: 2.5
+    Khong goi may chu, khong xoa gi ca.
+  -> exit 1
+
+$ node scripts/don-video.mjs --max      # thieu han gia tri
+  ✗ --max phai la so nguyen duong. Nhan duoc: (khong co gi)
+    Khong goi may chu, khong xoa gi ca.
+  -> exit 1
+
+$ node scripts/don-video.mjs --max 5    # hop le
+  → http://localhost:3111/api/don-video?thu=1&max=5
+  
+  Che do: chay thu (khong xoa gi)
+  Luot:   vcr_7ca275bd18e6422e
+  !  canh bao: chua-kiem-dong-ho-thu-hai
+  
+  -> exit 0
+
+# May chu tu bao ve, khong dua vao script:
+$ curl -H 'Authorization: Bearer $CRON_SECRET' '.../api/don-video?max=5x'
+  HTTP 400  {"error":"max-khong-hop-le","chiTiet":"max","canLa":"so nguyen duong"}
