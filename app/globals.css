@@ -206,6 +206,49 @@
   }
 }
 
+/* ---------------------------------------------------------------------------
+   DIEN THOAI DOC (< 40rem = 640px) = thang k-* CO LAI. Doi xung voi khoi `xl:`
+   ngay tren: van chi hai thang k-* / p-*, khong sinh tien to thu ba.
+
+   Vi sao 640px (`sm:` co san, khong tu dat ten — xem ly do o khoi tren): iPhone
+   doc rong 375-440px, iPad doc hep nhat (iPad mini) la 744px. Nen moc nay bat
+   dung dien thoai DOC va khong dung vao bat ky co iPad nao. Dien thoai NGANG
+   (844-956px) khong roi vao day: be ngang du, cho no chi thieu chieu cao.
+
+   Vi sao phai co: thang k-* ve cho iPad ngang 1180px. Tren iPhone 390px, rieng
+   le trang p-k-edge da an 96px, con lai 294px cho [nut back 64] + [avatar 64] +
+   [tieu de k-hero 48px] + hai khoang 24px — thua ngay tu dau bo cuc. Ket qua o
+   man con va man phan thuong: tieu de bi bop lai, chu tran ra ngoai the va vien
+   ⭐ (shrink-0) de len tren no, che mat nut "Quay lai" ben trai (issue #56).
+   Co lai bang bien la sua MOT cho cho moi man cua con — dung co che da ghi o
+   khoi `xl:`.
+
+   --spacing-k-tap GIU NGUYEN 64px: do la chuan cham cua tre (PRD 4.3), man be
+   di thi ngon tay tre khong be theo.
+   --------------------------------------------------------------------------- */
+@media (width < 40rem) {
+  :root {
+    --text-k-hero: 30px;
+    --text-k-hero--line-height: 38px;
+
+    --text-k-headline: 22px;
+    --text-k-headline--line-height: 28px;
+
+    --text-k-body: 17px;
+    --text-k-body--line-height: 24px;
+
+    --text-k-body-sm: 15px;
+    --text-k-body-sm--line-height: 22px;
+
+    --text-k-label: 14px;
+    --text-k-label--line-height: 20px;
+
+    --spacing-k-edge: 20px;
+    --spacing-k-gutter: 16px;
+    --spacing-k-stack: 16px;
+  }
+}
+
 /* ===========================================================================
    CSS thuan — port tu legacy-static/theme.css (gop tu 5 man Stitch cua tre)
    =========================================================================== */
@@ -226,6 +269,45 @@ html[lang="ko"] body { font-family: Quicksand, "Noto Sans KR", ui-rounded, syste
 body {
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------------------------------------------------------------------------
+   VUNG AN TOAN cua iPhone (tai tho / thanh Home).
+
+   app/layout.tsx dat `viewportFit: 'cover'` — tuc la trang duoc TRAI HET man,
+   CHUI CA XUONG DUOI tai tho va thanh Home. Doi lai, trinh duyet giao lai bon
+   so do bang env(safe-area-inset-*) va trang phai tu chua. Truoc issue #56 chi
+   ThanhDuoi biet den chung, moi cho khac deu de nguyen: iPhone cam NGANG, tai
+   tho an 59px mep ben, ma le trang cua man con chi 48px => nua trai nut
+   "Quay lai" nam duoi tai tho — nhin khong thay, bam khong duoc.
+
+   Dem MOT lan o <body> cho moi trang thuong, thay vi va tung man: mau nen van
+   la mau cua body nen vung dem trong lien mach voi trang.
+
+   --sai-* la de nhung thu KHONG an theo padding cua body tu dem lay: the
+   `fixed` do theo VIEWPORT chu khong theo body, nen thanh dieu huong duoi
+   (ThanhDuoi) va cac lop phu toan man phai tu chua lay.
+   --------------------------------------------------------------------------- */
+:root {
+  --sai-top: env(safe-area-inset-top, 0px);
+  --sai-right: env(safe-area-inset-right, 0px);
+  --sai-bottom: env(safe-area-inset-bottom, 0px);
+  --sai-left: env(safe-area-inset-left, 0px);
+}
+
+body {
+  padding: var(--sai-top) var(--sai-right) var(--sai-bottom) var(--sai-left);
+}
+
+/* Le cua lop phu `fixed inset-0` — DUNG THAY cho p-k-edge, dung them canh no
+   (dat ngoai @layer nen no de moi lop p-* cua Tailwind, giong bay cua
+   .material-symbols-outlined ghi o AGENTS.md). Van la le k-edge, chi noi rong
+   ra khi so do vung an toan lon hon: iPhone ngang, tai tho 59px > k-edge 48px. */
+.overlay-edge {
+  padding-top: max(var(--spacing-k-edge), var(--sai-top));
+  padding-right: max(var(--spacing-k-edge), var(--sai-right));
+  padding-bottom: max(var(--spacing-k-edge), var(--sai-bottom));
+  padding-left: max(var(--spacing-k-edge), var(--sai-left));
 }
 
 /* Chi chan boi den o phan cua tre — bo me con can chon/sua text */

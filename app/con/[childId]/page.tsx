@@ -156,7 +156,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
      trong items ma man nay khong ve dong nao ca. ---- */
   if (sourceGroups.length === 0) {
     return (
-      <main className="kid-scope h-screen flex flex-col items-center justify-center text-center px-k-edge relative overflow-hidden">
+      <main className="kid-scope h-dvh flex flex-col items-center justify-center text-center px-k-edge relative overflow-hidden">
         <div className="absolute top-[15%] left-[20%] w-16 h-8 bg-primary-fixed rounded-full opacity-60 animate-float-slow" />
         <div className="absolute top-[25%] right-[25%] w-12 h-12 bg-tertiary-fixed rounded-full opacity-70 animate-float-fast" />
         <div className="absolute bottom-[20%] left-[30%] w-20 h-10 bg-secondary-fixed rounded-full opacity-50 animate-float-slow" />
@@ -192,7 +192,10 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
     <main className="kid-scope min-h-screen w-full max-w-[1440px] mx-auto flex flex-col p-k-edge">
       {/* Man may tinh: tien do doi sang ben phai tieu de (bo Macbook 02) — cho
           trong ben canh "Bai tap cua ..." tren man 1440px la cho dat no dep nhat. */}
-      <header className="flex items-center gap-6 mb-k-stack xl:justify-between">
+      {/* flex-wrap: tren iPhone doc, [nut back 64] + [avatar 64] + [tieu de] +
+          [vien ⭐] khong the nam mot hang trong 350px. Khong cho xuong dong thi
+          vien ⭐ (shrink-0) an het cho cua tieu de va de len tren no. */}
+      <header className="flex flex-wrap items-center gap-6 mb-k-stack xl:justify-between">
         <div className="flex items-center gap-6 min-w-0">
           <Link
             href="/con"

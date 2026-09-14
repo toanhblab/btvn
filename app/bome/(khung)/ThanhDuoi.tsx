@@ -20,7 +20,8 @@ export default function ThanhDuoi() {
   return (
     <nav
       className="fixed bottom-0 inset-x-0 bg-surface-container-lowest border-t border-surface-container-high
-                 flex items-stretch z-40 pb-[env(safe-area-inset-bottom)] xl:hidden"
+                 flex items-stretch z-40 xl:hidden
+                 pb-[var(--sai-bottom)] pl-[var(--sai-left)] pr-[var(--sai-right)]"
     >
       {TABS.map((t) => {
         const active = tabDangChon(path, t.href);

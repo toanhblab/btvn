@@ -321,7 +321,7 @@ export default function QuetQR() {
       </button>
 
       {mo && (
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col p-k-edge gap-4">
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col overlay-edge gap-4">
           <div className="shrink-0 flex items-center justify-between gap-4">
             <p className="text-k-headline text-white">
               {phase === 'result' ? T('Mã QR này là:') : T('Đưa mã QR vào khung')}
