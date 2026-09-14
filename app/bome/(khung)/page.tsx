@@ -94,12 +94,14 @@ export default async function BangDieuKhien() {
         </div>
       </header>
 
-      {/* Ba o tinh trang chung — dem GOP bai tap va nhiem vu hang ngay (bai tu hom
-          nay tro di, nhiem vu cua hom nay), nen chu la "Việc" chu khong phai "Bài";
-          ghi ro "tu hom nay tro di" de khoi doc nham la rieng hom nay. */}
+      {/* Ba o tinh trang chung — dem GOP bai tap va nhiem vu hang ngay, nen chu la
+          "Việc" chu khong phai "Bài". Dong chu KHONG ke ra khoang ngay nua (truoc
+          issue #55 no ghi "Việc từ hôm nay trở đi"): tap duoc dem la tap man cua
+          con VE RA, ma tap do gio gom ca bai QUA HAN chua xong — mot cau lieu ke
+          ngay se sai lai ngay lan sau luat loc doi. Xem bat bien o AGENTS.md. */}
       <div className="flex items-center gap-4 mb-2 xl:mb-4">
         <span className="hidden xl:block h-px flex-1 bg-outline-variant/40" />
-        <p className="text-p-body-sm text-on-surface-variant xl:text-p-label">{T('Việc từ hôm nay trở đi')}</p>
+        <p className="text-p-body-sm text-on-surface-variant xl:text-p-label">{T('Việc con đang thấy trên máy')}</p>
         <span className="hidden xl:block h-px flex-1 bg-outline-variant/40" />
       </div>
       <section className="grid grid-cols-3 gap-p-card mb-6 xl:gap-6 xl:mb-10">

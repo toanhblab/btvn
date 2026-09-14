@@ -17,10 +17,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  dongTrenManCuaCon, nhomBaiTheoNoiGiao, nhomNhiemVuHomNay, tienDoNhom, veTrenManCuaCon,
+  dongTrenManCuaCon, nhomBaiTheoNoiGiao, nhomNhiemVuHomNay, soSanhNgayTrenManCuaCon, tienDoNhom,
+  veTrenManCuaCon,
 } from './nhomNhiemVu.ts';
 import { HW_SOURCES, NHOM_NHIEM_VU, type Assignment, type HwSource, type NhomNhiemVu } from './types.ts';
 
+const HOM_QUA = '2026-09-07';
+const HOM_KIA = '2026-09-06';
 const HOM_NAY = '2026-09-08';
 const NGAY_MAI = '2026-09-09';
 const NHOMS = Object.keys(NHOM_NHIEM_VU) as NhomNhiemVu[];
@@ -116,6 +119,12 @@ test('bat bien: tap DEM (con so tom tat) == tap VE (man cua con) tren cung fixtu
     dong({ id: 'bai_hom_nay_xong', dueDate: HOM_NAY, choreId: null, choreNhom: null, status: 'done' }),
     dong({ id: 'bai_ngay_mai', dueDate: NGAY_MAI, choreId: null, choreNhom: null, source: 'english_class' }),
     dong({ id: 'bai_ngay_kia', dueDate: NGAY_KIA, choreId: null, choreNhom: null }),
+    // issue #55: bai qua han CHUA XONG o lai, bai qua han DA XONG thi khong.
+    dong({ id: 'bai_hom_qua_no', dueDate: HOM_QUA, choreId: null, choreNhom: null }),
+    dong({ id: 'bai_hom_qua_xong', dueDate: HOM_QUA, choreId: null, choreNhom: null, status: 'done' }),
+    // Dong NHIEM VU cua hom qua van bi loai du con 'todo' — man cua con chi ve
+    // nhiem vu cua hom nay, tick mot viec nha cua hom qua khong con nghia gi.
+    dong({ id: 'nv_hom_qua', dueDate: HOM_QUA, choreNhom: 'housework' }),
     dong({ id: 'nv_hom_nay_a', dueDate: HOM_NAY, choreNhom: 'after_study' }),
     dong({ id: 'nv_hom_nay_h', dueDate: HOM_NAY, choreNhom: 'housework', status: 'done' }),
     dong({ id: 'nv_hom_nay_cu', dueDate: HOM_NAY, choreNhom: null }),
@@ -125,7 +134,7 @@ test('bat bien: tap DEM (con so tom tat) == tap VE (man cua con) tren cung fixtu
 
   // Tap DEM: dung buoc loc `upcoming` cua progressUpcoming (lib/store.ts) —
   // cung ham nay, tren du lieu dang {choreId, dueDate}.
-  const demDuoc = fixture.filter((a) => veTrenManCuaCon(a.choreId, a.dueDate, HOM_NAY));
+  const demDuoc = fixture.filter((a) => veTrenManCuaCon(a.choreId, a.dueDate, HOM_NAY, a.status));
 
   // Tap VE: dung cach man cua con dung chung — loc mot lan roi chia thanh nhom
   // bai (theo HW_SOURCES, gom theo ngay) va hai nhom nhiem vu.
@@ -138,15 +147,17 @@ test('bat bien: tap DEM (con so tom tat) == tap VE (man cua con) tren cung fixtu
   assert.deepEqual(ids(veTheoNhom), ids(demDuoc), 'moi dong duoc dem phai co mot cho de tick');
   assert.deepEqual(
     ids(demDuoc),
-    ['bai_hom_nay', 'bai_hom_nay_xong', 'bai_ngay_kia', 'bai_ngay_mai',
+    ['bai_hom_nay', 'bai_hom_nay_xong', 'bai_hom_qua_no', 'bai_ngay_kia', 'bai_ngay_mai',
      'nv_hom_nay_a', 'nv_hom_nay_cu', 'nv_hom_nay_h'],
-    'bai tu hom nay tro di + nhiem vu chi hom nay; hai dong nhiem vu cua ngay mai bi loai'
+    'bai tu hom nay tro di + bai qua han CHUA xong + nhiem vu chi hom nay; '
+    + 'bai qua han da xong, nhiem vu cua hom qua va hai dong nhiem vu cua ngay mai bi loai'
   );
 
   // Phep thu ve-0: tick het moi thu man dang ve CUA HOM NAY thi con so con lai
-  // dung bang so bai cua ngay khac (2), khong con dong nhiem vu nao "treo".
+  // dung bang so bai cua ngay khac (3, ke ca bai no cua hom qua), khong con dong
+  // nhiem vu nao "treo".
   const conLai = demDuoc.filter((a) => !(a.status === 'done' || a.dueDate === HOM_NAY));
-  assert.deepEqual(ids(conLai), ['bai_ngay_kia', 'bai_ngay_mai']);
+  assert.deepEqual(ids(conLai), ['bai_hom_qua_no', 'bai_ngay_kia', 'bai_ngay_mai']);
 });
 
 test('loc BAT KE status: dong nhiem vu ngay mai da done cung khong duoc dem', () => {
@@ -209,5 +220,57 @@ test('nhom bai theo noi giao: loai dong nhiem vu, giu thu tu, bo nhom rong', () 
       .map((s) => [s, s === 'primary_school' ? ['ns1', 'ns2'] : s === 'english_class' ? ['ec1'] : []])
       .filter(([, ids]) => (ids as string[]).length > 0),
     'dong nhiem vu bi loai du source cua no la gi; nhom khong co bai thi khong hien'
+  );
+});
+
+
+/* ---------------- issue #55: bai chua hoan thanh cua ngay da qua ---------------- */
+
+test('#55: bai qua han CHUA xong van hien; bai qua han DA xong thi khong', () => {
+  const items = [
+    dong({ id: 'no_hom_qua', dueDate: HOM_QUA, choreId: null, choreNhom: null }),
+    dong({ id: 'no_hom_kia', dueDate: HOM_KIA, choreId: null, choreNhom: null }),
+    dong({ id: 'xong_hom_qua', dueDate: HOM_QUA, choreId: null, choreNhom: null, status: 'done' }),
+    dong({ id: 'bai_hom_nay', dueDate: HOM_NAY, choreId: null, choreNhom: null }),
+    dong({ id: 'xong_hom_nay', dueDate: HOM_NAY, choreId: null, choreNhom: null, status: 'done' }),
+  ];
+
+  assert.deepEqual(
+    ids(dongTrenManCuaCon(items, HOM_NAY)),
+    ['bai_hom_nay', 'no_hom_kia', 'no_hom_qua', 'xong_hom_nay'],
+    'bai da xong cua ngay da qua khong duoc lan vao — hanh vi cu giu nguyen'
+  );
+});
+
+test('#55: dong NHIEM VU cua ngay da qua KHONG hien, du con todo', () => {
+  // Moi ngay sinh mot dong nhiem vu cho moi con: giu lai dong 'todo' cu la vai
+  // nghin dong mot nam. Tick mot viec nha cua hom qua cung khong con nghia gi.
+  const items = [
+    dong({ id: 'nv_hom_qua', dueDate: HOM_QUA, choreNhom: 'housework' }),
+    dong({ id: 'nv_hom_nay', dueDate: HOM_NAY, choreNhom: 'housework' }),
+  ];
+  assert.deepEqual(ids(dongTrenManCuaCon(items, HOM_NAY)), ['nv_hom_nay']);
+});
+
+test('#55: tien do nhom BAI TAP tinh ca bai no cua ngay cu (than nhom co ve ra)', () => {
+  const fixture = [
+    dong({ id: 'hn', dueDate: HOM_NAY, choreId: null, choreNhom: null, status: 'done' }),
+    dong({ id: 'hq', dueDate: HOM_QUA, choreId: null, choreNhom: null }),
+  ];
+  const veRa = dongTrenManCuaCon(fixture, HOM_NAY);
+  const [nhomBai] = nhomBaiTheoNoiGiao(veRa, Object.keys(HW_SOURCES) as HwSource[]);
+  assert.deepEqual(
+    tienDoNhom(nhomBai.items),
+    { total: 2, done: 1, xongHet: false },
+    'con mot bai no cua hom qua thi dau nhom chua duoc to xanh'
+  );
+});
+
+test('#55: thu tu nhom ngay — hom nay, roi ngay toi tang dan, roi ngay cu lui dan', () => {
+  const NGAY_KIA = '2026-09-10';
+  const ngays = [HOM_KIA, NGAY_MAI, HOM_QUA, NGAY_KIA, HOM_NAY];
+  assert.deepEqual(
+    [...ngays].sort((a, b) => soSanhNgayTrenManCuaCon(a, b, HOM_NAY)),
+    [HOM_NAY, NGAY_MAI, NGAY_KIA, HOM_QUA, HOM_KIA]
   );
 });

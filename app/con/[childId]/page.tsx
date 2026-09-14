@@ -5,7 +5,7 @@ import { getChild, listAssignments, soDiem, taoNhiemVuNgay, todayISO } from '@/l
 import type { Assignment, HwSource, NhomNhiemVu } from '@/lib/types';
 import { HW_SOURCES, NHOM_NHIEM_VU } from '@/lib/types';
 import {
-  dongTrenManCuaCon, nhomBaiTheoNoiGiao, nhomNhiemVuHomNay, tienDoNhom,
+  dongTrenManCuaCon, nhomBaiTheoNoiGiao, nhomNhiemVuHomNay, soSanhNgayTrenManCuaCon, tienDoNhom,
 } from '@/lib/nhomNhiemVu';
 import TickHomNay from './TickHomNay';
 import ViecNhaBai from './ViecNhaBai';
@@ -19,9 +19,12 @@ export const dynamic = 'force-dynamic';
  * "Hôm nay" / "Ngày mai" thay vì ngày tháng: tre 4 tuoi chua doc duoc lich,
  * cac ngay xa hon moi kem so de bo me liec biet la hom nao.
  */
-function nhanNgay(T: T, date: string, today: string, tomorrow: string): string {
+function nhanNgay(
+  T: T, date: string, today: string, tomorrow: string, yesterday: string
+): string {
   if (date === today) return T('Hôm nay');
   if (date === tomorrow) return T('Ngày mai');
+  if (date === yesterday) return T('Hôm qua');
   const [y, m, d] = date.split('-').map(Number);
   return `${T(THU[new Date(y, m - 1, d).getDay()])}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
 }
@@ -35,6 +38,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   const T = await chu();
   const today = todayISO();
   const tomorrow = todayISO(1);
+  const yesterday = todayISO(-1);
 
   // Hai truy van chay SONG SONG. Neon la HTTP nen moi cau la mot vong goi rieng;
   // cho cau nay xong moi goi cau kia la cong them mot vong khong can thiet vao
@@ -43,7 +47,10 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   // getChild loc theo nha: con cua nha khac coi nhu khong ton tai, du co dung
   // dung link. Cac con khong dang nhap nen day la lop chan duy nhat.
   //
-  // Tu hom nay tro di: bai qua han khong hien nua, khong thi danh sach cu dai mai
+  // Tu hom nay tro di, CONG moi bai chua xong cua ngay da qua
+  // (keCaBaiChuaXongTruocDo, issue #55): bai hom qua con no phai o lai cho toi
+  // khi duoc tick, con bai DA XONG cua ngay cu thi khong keo ve — danh sach se
+  // dai mai. Luat day du o lib/nhomNhiemVu.ts; cau truy van chi la buoc thu hep.
   // includeChores: true — viec nha (issue #36) gio la dong assignments THAT,
   // xep thanh nhom rieng CUOI CUNG ben duoi. Moi noi goi listAssignments KHAC
   // trong app (man bo me, progressUpcoming) khong xin co nay nen tu dong giu
@@ -59,7 +66,9 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   await taoNhiemVuNgay(familyId, today, [childId]);
   const [child, tuDB, diem] = await Promise.all([
     getChild(familyId, childId),
-    listAssignments(familyId, { childId, from: today, includeChores: true }),
+    listAssignments(familyId, {
+      childId, from: today, includeChores: true, keCaBaiChuaXongTruocDo: true,
+    }),
     soDiem(familyId, childId),
   ]);
   if (!child) notFound();
@@ -93,7 +102,12 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   const todoHomNay = todayItems.length - done;
   const mocHomNay = Object.fromEntries(todayItems.map((a) => [a.id, a.status === 'done']));
 
-  /** listAssignments da sap xep theo due_date tang dan nen chi can gom lien tiep. */
+  /**
+   * listAssignments da sap xep theo due_date tang dan nen chi can gom lien tiep,
+   * roi XEP LAI thu tu nhom theo `soSanhNgayTrenManCuaCon` (issue #55): hom nay
+   * tren cung, ngay sap toi tang dan, cac ngay qua han lui dan o duoi. Thu tu
+   * cac the BEN TRONG mot ngay giu nguyen thu tu SQL.
+   */
   function gomTheoNgay(mine: Assignment[]): { date: string; items: Assignment[] }[] {
     const byDate: { date: string; items: Assignment[] }[] = [];
     for (const a of mine) {
@@ -101,7 +115,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
       if (last && last.date === a.dueDate) last.items.push(a);
       else byDate.push({ date: a.dueDate, items: [a] });
     }
-    return byDate;
+    return byDate.sort((x, y) => soSanhNgayTrenManCuaCon(x.date, y.date, today));
   }
 
   // Gom theo NOI GIAO truoc (moi ma trong HW_SOURCES mot nhom), trong moi noi
@@ -288,7 +302,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
             sg.byDate.map((g) => (
             <div key={g.date} className="mb-6 last:mb-0">
               <h3 className="text-k-headline text-on-surface-variant mb-4">
-                {nhanNgay(T, g.date, today, tomorrow)}
+                {nhanNgay(T, g.date, today, tomorrow, yesterday)}
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-k-gutter">

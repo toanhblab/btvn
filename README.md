@@ -120,7 +120,9 @@ bị bỏ qua và in cảnh báo.
 **Chạy lại `npm run db:seed:demo` ngay trước mỗi buổi demo.** Ngày của dữ liệu mẫu
 (hôm qua / hôm nay / mai) tính theo lúc CHẠY, mà lệnh này chỉ tự chạy lúc build —
 nên vài ngày sau lần deploy, mọi bài của nhà demo đã thành quá khứ và màn của con
-không còn thẻ bài nào (nó lọc từ hôm nay trở đi). Cố ý không thêm cron và cố ý
+không còn "Hôm nay" nào: bài của hôm qua đã seed sẵn 'done' nên biến mất, còn bài
+của "hôm nay" tụt xuống thành mấy nhóm bài quá hạn chưa xong (issue #55) — vẫn
+hiện, nhưng không còn giống một ngày thật để đem đi demo. Cố ý không thêm cron và cố ý
 không đặc biệt hoá đường đọc cho nhà demo: một lệnh chạy tay trước buổi demo là đủ,
 và nó chạy được bất cứ lúc nào trên DB đang chạy mà không đụng nhà thật
 (`DATABASE_URL=... npm run db:seed:demo`; `lib/nha-demo.test.ts` chụp nhà thật
@@ -464,13 +466,13 @@ nhưng không vẽ — tick được là ⭐ trước một ngày; bài tập ng
 mỗi dòng có icon + chip "⭐ N"; con bấm là tick ngay tại chỗ (không mở màn chi
 tiết bài), tick xong hiện chip "+N ⭐". Xong hết cả bài lẫn nhiệm
 vụ mới sang màn khen "Giỏi quá!". Badge ở màn chọn-con nói **"N việc"** = **đúng
-những gì màn của con đang vẽ và cho tick**: bài tập từ hôm nay trở đi + nhiệm vụ
-của hôm nay, đếm gộp hai loại. Nên tối bố mẹ đã nhập bài cho hôm sau, con tick
+những gì màn của con đang vẽ và cho tick**: bài tập từ hôm nay trở đi + mọi bài
+**chưa xong** của ngày đã qua (issue #55) + nhiệm vụ của hôm nay, đếm gộp. Nên tối bố mẹ đã nhập bài cho hôm sau, con tick
 xong hết việc hôm nay thì badge đọc "1 việc" (bài ngày mai) chứ chưa phải "Xong
 hết 🎉" — muốn "Xong hết 🎉" thì làm luôn bài ngày mai. "Chưa có bài" chỉ khi
 không có gì cả. Cùng một bộ lọc dùng cho hai ô "Hoàn thành" / "Đang chờ" ở màn
-tổng quan của bố mẹ (khối "Việc từ hôm nay trở đi"; ô "Quá hạn" thì loại nhiệm vụ
-ra, xem đoạn dưới) — xem `lib/nhomNhiemVu.ts` và bất biến ở AGENTS.md.
+tổng quan của bố mẹ (khối "Việc con đang thấy trên máy"; ô "Quá hạn" thì loại
+nhiệm vụ ra, xem đoạn dưới) — xem `lib/nhomNhiemVu.ts` và bất biến ở AGENTS.md.
 
 **Một danh sách chung cả nhà**, bố mẹ sửa ở trang riêng **Cài đặt → "Nhiệm vụ hàng
 ngày"** (cũng vào được từ dòng dẫn trên màn Thưởng): đổi chữ / icon / sao / nhóm /
