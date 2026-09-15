@@ -131,7 +131,7 @@ export default function DoiThuong({
       {hoi && (
         <div
           onClick={() => !busy && setHoi(null)}
-          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-k-edge"
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center overlay-edge"
         >
           <div
             onClick={(e) => e.stopPropagation()}

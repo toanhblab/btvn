@@ -197,8 +197,14 @@ export default function ChiTietBai({
   // Mot cot VAN noi rong o co may tinh (xem max-w duoi day), chi la khong chia doi.
   const coCotPhai = assignment.media.length > 0 || assignment.requiresVideo;
 
+  // h-dvh chu KHONG h-screen (100vh): tren Safari iOS, 100vh la chieu cao khi
+  // thanh cong cu DA THU LAI, luon cao hon phan dang nhin thay. Ghep voi
+  // overflow-hidden o day (trang khong cuon duoc, chi phan ruot moi cuon) thi
+  // day khoi 100vh — cho dat nut "Da lam xong" — nam vinh vien duoi thanh cong
+  // cu cua Safari, con ngoi xoay ngang xoay doc cung khong thay. dvh do dung
+  // phan dang nhin thay va tu co gian theo.
   return (
-    <main className="kid-scope h-screen flex flex-col p-k-edge overflow-hidden">
+    <main className="kid-scope h-dvh flex flex-col p-k-edge overflow-hidden">
       <div className="mb-k-stack shrink-0">
         {/* Vung bam phai du 64px CA HAI CHIEU (chuan cham cua man con): truoc day
             chi co dem ben phai nen nua trai mui ten khong an duoc — ngon tay tre
@@ -372,7 +378,7 @@ export default function ChiTietBai({
       </section>
 
       {showSuccess && (
-        <div className="fixed inset-0 bg-white/80 backdrop-blur-md z-50 flex flex-col items-center justify-center p-k-edge">
+        <div className="fixed inset-0 bg-white/80 backdrop-blur-md z-50 flex flex-col items-center justify-center overlay-edge">
           {/* Xong truoc khi het gio -> mua confetti sau tam chuc mung.
               Tam phai co position de confetti (canvas fixed) roi PHIA SAU chu. */}
           {xongSom && <Confetti />}

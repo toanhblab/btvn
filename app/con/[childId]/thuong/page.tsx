@@ -48,25 +48,30 @@ export default async function CuaHangPhanThuong({ params }: { params: Promise<{ 
 
   return (
     <main className="kid-scope min-h-screen w-full max-w-[1440px] mx-auto flex flex-col p-k-edge">
-      <header className="flex items-center gap-6 mb-k-stack">
-        <Link
-          href={`/con/${child.id}`}
-          className="w-16 h-16 bg-surface-container rounded-2xl flex items-center justify-center
-                     interactive-shadow text-primary shrink-0"
-        >
-          <span className="material-symbols-outlined text-4xl icon-fill">arrow_back</span>
-        </Link>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={child.avatarUrl}
-          alt=""
-          className="w-16 h-16 rounded-full object-cover border-4 border-surface-container shrink-0"
-        />
-        <h1 className="text-k-hero text-primary flex-1 min-w-0">{T('Phần thưởng của {name}', { name: child.name })}</h1>
+      {/* Cung khuon voi header man cua con: nut back + avatar + tieu de la MOT
+          nhom, vien ⭐ la nhom thu hai, va header cho xuong dong — de tren
+          iPhone doc vien ⭐ tut xuong hang duoi thay vi de len tieu de. */}
+      <header className="flex flex-wrap items-center gap-6 mb-k-stack">
+        <div className="flex items-center gap-6 min-w-0">
+          <Link
+            href={`/con/${child.id}`}
+            className="w-16 h-16 bg-surface-container rounded-2xl flex items-center justify-center
+                       interactive-shadow text-primary shrink-0"
+          >
+            <span className="material-symbols-outlined text-4xl icon-fill">arrow_back</span>
+          </Link>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={child.avatarUrl}
+            alt=""
+            className="w-16 h-16 rounded-full object-cover border-4 border-surface-container shrink-0"
+          />
+          <h1 className="text-k-hero text-primary min-w-0 break-words">{T('Phần thưởng của {name}', { name: child.name })}</h1>
+        </div>
 
         {/* So ⭐ dang co — to va o goc tren, con nhin vao day roi so voi gia tren
             tung the de biet doi duoc cai nao */}
-        <div className="flex items-center shrink-0 bg-tertiary-fixed text-on-tertiary-fixed
+        <div className="flex items-center shrink-0 sm:ml-auto bg-tertiary-fixed text-on-tertiary-fixed
                         text-k-headline px-8 py-4 rounded-full soft-shadow whitespace-nowrap">
           {T('Con có {n} ⭐', { n: diem })}
         </div>

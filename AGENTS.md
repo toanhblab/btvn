@@ -26,17 +26,30 @@ nhau. `app/globals.css` là nơi duy nhất khai báo token, với hai tiền t�
 đọc khối chú thích lớn ngay sau `@theme` trong `app/globals.css` trước khi định
 thêm token: nó giải thích vì sao ngữ cảnh Macbook là điểm ngắt `xl:` (1280px) và
 vì sao hai thang `k-*` / `p-*` tự giãn ra ở đó thay vì sinh ra bộ token trùng lặp.
+Cùng cơ chế đó chạy theo chiều ngược lại ở `@media (width < 40rem)`: **điện thoại
+DỌC thì thang `k-*` co lại** (thang gốc vẽ cho iPad ngang 1180px, để nguyên trên
+iPhone 390px là header màn con tràn và vỡ — issue #56). 640px không chạm vào cỡ
+iPad nào, và điện thoại NGANG (844-956px) không rơi vào đó.
 
 Một chỗ dễ vấp khi giãn thang `p-*`: `k-*` chỉ dùng trong `app/con/**` nên đặt
 thẳng ở `:root` được, còn `p-*` thì **không** — `BanPhimPin`, `ChonNha` và hộp
 "Bố mẹ đặt lại giờ" nằm ngay trong màn của con cũng dùng `p-*`. Nên `p-*` giãn ra
 trong lớp `.parent-scope`, do `app/bome/(khung)/layout.tsx` đặt.
 
-Hai cái bẫy đã trả giá để biết, cùng ghi ở khối chú thích đó:
+Bốn cái bẫy đã trả giá để biết, cùng ghi ở khối chú thích đó:
 
 - **Đừng tự đặt tên điểm ngắt trong `@theme`.** Tailwind v4 xếp mọi điểm ngắt tự
   định nghĩa RA TRƯỚC nhóm mặc định, nên `pc:grid-cols-3` (1280px) bị
   `md:grid-cols-2` (768px) đè — im lặng, rất khó lần ra. Dùng `xl:` có sẵn.
+- **Vùng an toàn của iPhone chỉ đệm ở MỘT chỗ.** `app/layout.tsx` đặt
+  `viewportFit: 'cover'` nên trang trải xuống dưới tai thỏ / thanh Home;
+  `app/globals.css` đệm một lần ở `body` bằng `--sai-*` (bọc
+  `env(safe-area-inset-*)`). Thẻ `fixed` KHÔNG ăn theo padding của body —
+  `ThanhDuoi` và các lớp phủ toàn màn (`.overlay-edge`) phải tự gọi `--sai-*`.
+  Đừng vá lề cho từng màn.
+- **Màn nào `h-screen` + `overflow-hidden` thì phải là `h-dvh`.** Safari iOS tính
+  `100vh` theo lúc thanh công cụ đã thu lại, nên đáy khối — chỗ đặt nút — nằm
+  vĩnh viễn dưới thanh công cụ mà trang lại không cuộn được.
 - **Mọi icon Material Symbols đang bị ghim 24px.** Bảng mẫu của Google ship
   `.material-symbols-outlined { font-size: 24px }` KHÔNG nằm trong `@layer`, nên
   nó đè mọi lớp `text-*` của Tailwind (ở `@layer utilities`). Lỗi này có ở cả
@@ -51,6 +64,23 @@ bản Macbook cho màn ấy.
 Kiểm bố cục ở nhiều cỡ màn: có sẵn ảnh chụp đối chiếu trong
 `stitch-macbook/kiem-tra/` (màn của con) và `stitch-parent-macbook/kiem-tra/`
 (màn của bố mẹ) — `macbook-*` ở 1440×900, `ipad-*` ở 1180×820.
+
+**Kiểm cỡ ĐIỆN THOẠI thì `chrome-devtools-axi resize` LÀ SAI** — cửa sổ Chrome có
+đáy 500px nên `resize 390 844` cho ra `innerWidth = 500`, rộng hơn iPhone 14 tới
+28%, vừa đủ để mọi lỗi chen chỗ trên header biến mất. Lỗi #56 lọt qua đúng vì
+thế. Dùng `emulate --viewport "390x844x3,mobile,touch"` (device-metrics override,
+có cả dpr và cảm ứng) và kiểm lại bằng `eval "() => innerWidth"` trước khi tin
+tấm ảnh nào.
+
+Và **ảnh chụp không đủ để nói "nút bấm được"**: mắt không thấy một lớp trong
+suốt đè lên. Phép kiểm chắc tay là hit-test ngay trong trang —
+`el.scrollIntoView()` rồi `document.elementFromPoint()` ở một lưới điểm trong
+`getBoundingClientRect()` của nút, đếm xem bao nhiêu điểm trả về chính nút đó;
+kèm `documentElement.scrollWidth > innerWidth` để bắt tràn ngang. Chạy vòng qua
+mọi màn × mọi cỡ thì một lượt rà là đủ tin.
+
+Dữ liệu seed mặc định là trạng thái DỄ NHẤT (con 0 ⭐ → viền "Đổi thưởng" hẹp
+nhất). Kiểm bố cục phải đặt dữ liệu XẤU NHẤT trước: ⭐ ba chữ số, tên con dài.
 
 Lái trình duyệt vào `next dev` thì mở bằng **`http://localhost:<cổng>`**, đừng
 dùng `127.0.0.1`. Next 16 chặn "cross-origin dev request" nên mọi tệp
