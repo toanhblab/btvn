@@ -43,8 +43,9 @@ Bố mẹ chia sẻ app cho bạn bè, mỗi nhà tự tạo hồ sơ của mìn
 1. Mở web → **"Tạo nhà mới"** → đặt tên nhà, chọn mã PIN 4 số (nhập hai lần).
 2. Thêm hồ sơ các con (tên, ảnh, lớp, màu riêng). Chưa có ảnh thì để tạm chữ cái
    đầu, thay ảnh thật sau.
-3. Vào **Cài đặt → Link cho iPad của các con**, copy link `/nha/<mã nhà>` rồi mở
-   một lần trên máy của các con.
+3. Xem **mã nhà** ở **Cài đặt** (trên máy tính thì nó nằm sẵn ở đầu thanh bên
+   trái, ngay dưới tên nhà), rồi mở link `/nha/<mã nhà>` một lần trên máy của các
+   con.
 
 Cách phân biệt nhà:
 
