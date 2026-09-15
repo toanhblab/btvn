@@ -237,7 +237,10 @@ Con mở app trên máy của mình (máy đã gắn vào nhà thì vào thẳng
 1. **"Hôm nay con là ai?"** — con bấm vào ảnh của mình. Ngay dưới ảnh là số ⭐ của
    từng anh chị em và **🏆 Bảng xếp hạng** cả nhà.
 2. Con thấy danh sách bài hôm nay, chia theo nơi giao (trường, lớp tiếng Anh,
-   khác), mỗi nhóm có tiến độ riêng.
+   khác), mỗi nhóm có tiến độ riêng. Bài của những ngày trước mà con chưa làm vẫn
+   nằm lại bên dưới, dưới ngày của nó, cho tới khi con tick xong. Bài bố mẹ giao
+   cho ngày mai thì sáng mai mới hiện trên máy của con (bố mẹ vẫn xem được ở phần
+   của mình).
 
 ![Danh sách bài hôm nay của con](huong-dan-anh/con-bai-hom-nay.png)
 

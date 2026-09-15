@@ -97,7 +97,6 @@ export const EN = {
   'Thứ Bảy': 'Saturday',
   /* ---- Man bai tap cua con (/con/[childId]) ---- */
   'Hôm nay': 'Today',
-  'Ngày mai': 'Tomorrow',
   'Hôm qua': 'Yesterday',
   'Đổi thưởng': 'Rewards',
   'Hôm nay không có bài tập hay nhiệm vụ 🎉': 'No homework or tasks today 🎉',

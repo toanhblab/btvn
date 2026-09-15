@@ -90,7 +90,6 @@ export const KO: Record<Key, string> = {
   'Thứ Sáu': '금요일',
   'Thứ Bảy': '토요일',
   'Hôm nay': '오늘',
-  'Ngày mai': '내일',
   'Hôm qua': '어제',
   'Đổi thưởng': '보상',
   'Hôm nay không có bài tập hay nhiệm vụ 🎉': '오늘은 숙제도 할 일도 없어요 🎉',
