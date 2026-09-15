@@ -98,6 +98,7 @@ export const EN = {
   /* ---- Man bai tap cua con (/con/[childId]) ---- */
   'Hôm nay': 'Today',
   'Ngày mai': 'Tomorrow',
+  'Hôm qua': 'Yesterday',
   'Đổi thưởng': 'Rewards',
   'Hôm nay không có bài tập hay nhiệm vụ 🎉': 'No homework or tasks today 🎉',
   '{name} đi chơi thôi!': 'Go play, {name}!',
@@ -201,7 +202,7 @@ export const EN = {
   /* ---- Tong quan bo me (/bome) ---- */
   'Tổng quan': 'Overview',
   'Thêm bài tập': 'Add homework',
-  'Việc từ hôm nay trở đi': 'From today onwards',
+  'Việc con đang thấy trên máy': 'What your child sees on their device',
   'Hoàn thành': 'Done',
   'Đang chờ': 'To do',
   'Quá hạn': 'Overdue',

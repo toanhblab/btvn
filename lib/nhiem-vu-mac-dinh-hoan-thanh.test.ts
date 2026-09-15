@@ -31,6 +31,7 @@ import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { chayMigrations } from '../scripts/db.mjs';
 import { veTrenManCuaCon } from './nhomNhiemVu.ts';
+import type { Status } from './types.ts';
 import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu.ts';
 
 const HOM_NAY = '2026-09-04';
@@ -86,7 +87,7 @@ async function quaHan(childId: string) {
 async function tienDo(childId: string) {
   const bai = await dongDuocKeo(childId);
   const upcoming = bai.filter((r) =>
-    veTrenManCuaCon(r.chore_id as string | null, String(r.due_date), HOM_NAY)
+    veTrenManCuaCon(r.chore_id as string | null, String(r.due_date), HOM_NAY, r.status as Status)
   );
   return {
     total: upcoming.length,
@@ -214,9 +215,12 @@ test('con khong duoc giao bai nao: sau buoc tao luoi cua #42 van co du nhiem vu 
 test('dong nhiem vu cu chua tick KHONG bi keo ve nua; bai THAT con no thi van keo', async () => {
   // Tu #42 moi ngay moi con co mot dong nhiem vu, ngay nao con khong tick het
   // (cuoi tuan, om, quen) thi dong do nam lai 'todo' mai mai. Nhanh "bai con no"
-  // cua progressUpcoming phai loai chung ra: chung khong vao duoc truong nao
-  // (`upcoming` loc theo due_date, `overdue` loc chore_id IS NULL), chi lam cau
-  // truy van phinh len theo thoi gian.
+  // cua progressUpcoming phai loai chung ra: man cua con khong ve dong nhiem vu
+  // cua ngay da qua (lib/nhomNhiemVu.ts) nen dem no la dem viec khong co cho
+  // tick, ma giu lai thi cau truy van phinh len theo thoi gian.
+  //
+  // Bai THAT qua han thi NGUOC LAI, tu issue #55: man cua con ve no duoi tieu de
+  // ngay cua chinh no, nen con so tom tat phai dem no.
   const HOM_KIA = '2026-08-30';
   const [chore] = await rows(
     `SELECT id FROM daily_chores WHERE family_id = 'fam_x' AND enabled ORDER BY sort_order LIMIT 1`
@@ -236,11 +240,11 @@ test('dong nhiem vu cu chua tick KHONG bi keo ve nua; bai THAT con no thi van ke
     'chi con bai THAT qua han duoc keo ve; dong nhiem vu cu bi loai ngay o SQL'
   );
 
-  // Ket qua tra ve khong doi mot chut nao so voi truoc khi loc.
+  // Bai THAT qua han vao total (issue #55), dong nhiem vu cu thi khong.
   const { total, done, baiThat } = await tienDo('con_cu');
-  assert.equal(total, 0, 'con nay khong co gi tu hom nay tro di');
+  assert.equal(total, 1, 'dung bai THAT qua han duoc dem — man cua con co ve no');
   assert.equal(done, 0);
-  assert.equal(baiThat, 0);
+  assert.equal(baiThat, 1);
   assert.equal(await quaHan('con_cu'), 1, 'dung mot bai THAT qua han vao badge "Qua han"');
 });
 

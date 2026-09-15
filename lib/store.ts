@@ -4,7 +4,7 @@ import {
 } from './diem';
 import type {
   Assignment, AttachedMedia, Child, ChildColor, DailyChore, DiemVuaCong, DraftAssignment, HwSource,
-  Lang, MediaKind, NhomNhiemVu, Penalty, Redemption, RedemptionStatus, Reward,
+  Lang, MediaKind, NhomNhiemVu, Penalty, Redemption, RedemptionStatus, Reward, Status,
 } from './types';
 import { DURATION_DEFAULT, HW_SOURCE_DEFAULT, hwSourceOf, nhomNhiemVuOf } from './types';
 import { veTrenManCuaCon } from './nhomNhiemVu';
@@ -349,6 +349,19 @@ export async function listAssignments(
      * includeChores: true.
      */
     includeChores?: boolean;
+    /**
+     * Di kem `from` (issue #55): NOI them cac bai tap CHUA XONG co han TRUOC
+     * `from`. Man cua con phai hien moi bai con no chu khong chi bai tu hom nay
+     * tro di, nhung bai da xong cua ngay cu thi khong — neu khong bo `from` di
+     * thi truy van keo ve ca lich su cua nha da dung app lau.
+     *
+     * Chi bai THAT (chore_id IS NULL) duoc noi them: dong nhiem vu hang ngay
+     * cua hom qua khong phai "bai con no" (man cua con chi ve nhiem vu cua hom
+     * nay — lib/nhomNhiemVu.ts), ma moi ngay sinh mot dong cho moi con nen giu
+     * lai la vai nghin dong 'todo' keo ve mai mai. CUNG mot dieu kien voi
+     * `progressUpcoming` ben duoi, co y.
+     */
+    keCaBaiChuaXongTruocDo?: boolean;
   }
 ): Promise<Assignment[]> {
   const where: string[] = ['c.family_id = $1'];
@@ -356,7 +369,14 @@ export async function listAssignments(
 
   if (opts.childId) { params.push(opts.childId); where.push(`a.child_id = $${params.length}`); }
   if (opts.date)    { params.push(opts.date);    where.push(`a.due_date = $${params.length}`); }
-  if (opts.from)    { params.push(opts.from);    where.push(`a.due_date >= $${params.length}`); }
+  if (opts.from) {
+    params.push(opts.from);
+    where.push(
+      opts.keCaBaiChuaXongTruocDo
+        ? `(a.due_date >= $${params.length} OR (a.status = 'todo' AND a.chore_id IS NULL))`
+        : `a.due_date >= $${params.length}`
+    );
+  }
   if (opts.to)      { params.push(opts.to);      where.push(`a.due_date <= $${params.length}`); }
   // Loc theo MA nguon ('english_class'...), khong theo ten mon: ten mon la chu
   // bo me go tay nen "Tiếng Anh" o nha nay co the la "English" o nha khac.
@@ -677,8 +697,9 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
   // "Bai con no" chi tinh bai THAT (chore_id IS NULL): tu issue #42 moi ngay
   // sinh mot dong nhiem vu cho moi con, ngay nao con khong tick het thi dong do
   // nam lai 'todo' MAI MAI — vai nghin dong mot nam keo ve moi lan dung hai man
-  // duoc mo nhieu nhat, ma khong dong nao vao duoc ket qua: `upcoming` loc theo
-  // due_date, con `overdue` da loc chore_id IS NULL san.
+  // duoc mo nhieu nhat. Tu issue #55 nhanh thu hai nay KHONG con la du thua:
+  // man cua con ve moi bai chua xong cua ngay da qua, nen `upcoming` (dem bang
+  // CHINH ham loc cua man do) phai thay chung.
   const [children, rows, diem] = await Promise.all([
     listChildren(familyId),
     query<{ child_id: string; status: string; due_date: string | Date; chore_id: string | null }>(
@@ -699,7 +720,7 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
     // nhap bai cho hom sau) la dem viec khong co cho tick: "Xong hết 🎉" thanh
     // bat kha ca toi. Xem bat bien o AGENTS.md.
     const upcoming = mine.filter((r) =>
-      veTrenManCuaCon(r.chore_id, dateStr(r.due_date), today)
+      veTrenManCuaCon(r.chore_id, dateStr(r.due_date), today, r.status as Status)
     );
     return {
       child,

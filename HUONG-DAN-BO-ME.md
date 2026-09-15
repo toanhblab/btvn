@@ -90,7 +90,7 @@ rồi sửa chỗ nào chưa đúng — chữ đề bài, môn, thời lượng 
 ### Xem con làm tới đâu
 
 Màn **Trang chủ** cho biết ngay: **Hoàn thành / Đang chờ / Quá hạn** trong khối
-"Việc từ hôm nay trở đi", từng con xong mấy việc, và số ⭐ mỗi con đang có. Hai ô
+"Việc con đang thấy trên máy", từng con xong mấy việc, và số ⭐ mỗi con đang có. Hai ô
 **Hoàn thành / Đang chờ** (và tiến độ từng con ngay dưới) đếm cả **nhiệm vụ hàng
 ngày** — đúng những việc con đang thấy trên máy của mình; riêng ô **Quá hạn** chỉ
 đếm bài tập, vì một nhiệm vụ của hôm qua không phải bài quá hạn.

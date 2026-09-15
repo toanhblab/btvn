@@ -171,9 +171,13 @@ không DELETE (migration 014 giải thích vì sao).
 **Một con số tóm tắt đếm đúng những dòng mà màn nó đại diện VẼ RA và cho TICK —
 không hơn, không kém — và phải được lọc bằng CÙNG một hàm với màn đó, không viết
 lại điều kiện bằng SQL hay JS riêng.** Hàm đó là `veTrenManCuaCon` /
-`dongTrenManCuaCon` trong `lib/nhomNhiemVu.ts` (bài tập: từ hôm nay trở đi;
+`dongTrenManCuaCon` trong `lib/nhomNhiemVu.ts` (bài tập: từ hôm nay trở đi CỘNG
+mọi bài CHƯA XONG của ngày đã qua — issue #55, bài đã xong của ngày cũ thì không;
 nhiệm vụ hàng ngày: chỉ hôm nay — đọc chú thích đầu file), dùng ở cả
-`app/con/[childId]/page.tsx` lẫn `progressUpcoming` trong `lib/store.ts`.
+`app/con/[childId]/page.tsx` lẫn `progressUpcoming` trong `lib/store.ts`. Truy vấn
+chỉ là bước thu hẹp cho khớp, không phải nơi định nghĩa luật: `listAssignments`
+có cờ `keCaBaiChuaXongTruocDo` đi kèm `from`, dùng ĐÚNG một điều kiện SQL với
+nhánh thứ hai của `progressUpcoming`.
 
 Bất biến này áp cả **trong một màn**: tiến độ ở đầu mỗi nhóm đếm đúng tập mà
 thân nhóm đó vẽ — nhóm bài tập tính cả bài "Ngày mai" (`nhomBaiTheoNoiGiao`),
@@ -190,8 +194,12 @@ không phải lỗi.)
 
 Từ bất biến trên suy ra được cả hai điều mà trước đây phải liệt kê theo từng màn:
 đếm gộp bài tập và nhiệm vụ (vì màn của con vẽ cả hai — đừng thêm lại trường kiểu
-`homeworkTotal`/`homeworkTodo`), và bài đếm từ hôm nay trở đi còn nhiệm vụ chỉ
-hôm nay (vì màn vẽ đúng như vậy). Hồi quy ghim ở `lib/nhomNhiemVu.test.ts`.
+`homeworkTotal`/`homeworkTodo`), và bài đếm từ hôm nay trở đi + bài quá hạn chưa
+xong, còn nhiệm vụ chỉ hôm nay (vì màn vẽ đúng như vậy). Hồi quy ghim ở
+`lib/nhomNhiemVu.test.ts`. Hệ quả cho chữ trên màn: dòng chú thích của ba ô
+"Hoàn thành"/"Đang chờ"/"Quá hạn" (`app/bome/(khung)/page.tsx`) KHÔNG liệt kê
+khoảng ngày nữa — nó đọc "Việc con đang thấy trên máy", câu duy nhất còn đúng
+khi luật lọc đổi.
 
 Hai ngoại lệ CÓ Ý: badge "Quá hạn" (nhiệm vụ hôm qua không phải bài quá hạn) và
 hộp "Nhiệm vụ hàng ngày" ở màn chi tiết con của bố mẹ (tách khỏi tiến độ bài tập,

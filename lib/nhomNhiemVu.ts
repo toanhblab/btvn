@@ -5,9 +5,14 @@
  * / "Đang chờ" cua bo me). Bat bien o AGENTS.md: tap DEM phai bang tap VE.
  *
  * Luat, hai loai hai kieu:
- *   - Bai tap (choreId null): TU HOM NAY TRO DI. Bo me hay nhap bai toi hom
- *     truoc cho hom sau, con lam bai truoc mot ngay la tot — man cua con ve bai
- *     ngay mai duoi tieu de "Ngày mai" va cho lam, nen phai dem.
+ *   - Bai tap (choreId null): TU HOM NAY TRO DI, CONG moi bai CHUA XONG cua ngay
+ *     da qua (issue #55). Bo me hay nhap bai toi hom truoc cho hom sau, con lam
+ *     bai truoc mot ngay la tot — man cua con ve bai ngay mai duoi tieu de
+ *     "Ngày mai" va cho lam, nen phai dem. Con bai cua hom qua chua lam thi
+ *     truoc #55 no BIEN MAT khoi man cua con: khong ai con biet la dang no bai
+ *     nao. Gio no o lai cho toi khi duoc tick, duoi tieu de ngay cua chinh no.
+ *     Bai DA XONG cua ngay da qua van bi loai nhu cu — xong roi thi khong con
+ *     viec gi de lam, giu lai chi lam danh sach dai mai.
  *   - Nhiem vu hang ngay: CHI HOM NAY. Dong cua ngay mai van duoc tao san
  *     (saveSubmission goi taoNhiemVuNgayNeuChuaQua cho ngay bo me giao bai —
  *     loi goi do con gac +10, xem lib/store.ts) nhung KHONG ve: tick mot dong
@@ -17,27 +22,53 @@
  *     khong mat gi: taoNhiemVuNgay chay luoi moi ngay nen sang mai mo man la
  *     co du.
  *
- * Loc BAT KE status: neu chi loai dong 'todo' cua ngay mai ma giu dong 'done'
+ * `status` chi duoc nhin o MOT cho: quyet dinh giu hay bo mot bai cua ngay DA
+ * QUA. Voi moi ngay tu hom nay tro di (va voi MOI dong nhiem vu, ke ca ngay mai)
+ * thi loc BAT KE status — neu loai dong 'todo' cua ngay mai ma giu dong 'done'
  * (tick qua ma cu truoc khi deploy, hay qua API) thi `total` phinh ma `left`
  * khong doi — "Chưa có bài" / "Xong hết 🎉" lech ngay.
  *
  * Ham thuan, khong import gi luc chay (chi import type) de node --test nap duoc.
  */
 
-import type { Assignment, HwSource, NhomNhiemVu } from './types';
+import type { Assignment, HwSource, NhomNhiemVu, Status } from './types';
 
-/** Dong nay co nam tren man cua con (duoc VE va cho TICK) hom nay khong? */
+/**
+ * Dong nay co nam tren man cua con (duoc VE va cho TICK) hom nay khong?
+ *
+ * `status` la tham so BAT BUOC (khong mac dinh) co chu y: tu #55 no tham gia
+ * luat loc, nen moi noi goi phai tu quyet dinh truyen gi — quen la loi bien dich
+ * chu khong phai mot con so lech im lang o mot man nao do.
+ */
 export function veTrenManCuaCon(
   choreId: string | null,
   dueDate: string,
-  today: string
+  today: string,
+  status: Status
 ): boolean {
-  return choreId == null ? dueDate >= today : dueDate === today;
+  if (choreId != null) return dueDate === today;
+  return dueDate >= today || status !== 'done';
 }
 
 /** Loc mot danh sach bai/nhiem vu xuong dung nhung dong man cua con ve ra. */
 export function dongTrenManCuaCon(items: Assignment[], today: string): Assignment[] {
-  return items.filter((a) => veTrenManCuaCon(a.choreId, a.dueDate, today));
+  return items.filter((a) => veTrenManCuaCon(a.choreId, a.dueDate, today, a.status));
+}
+
+/**
+ * Thu tu cac NHOM NGAY tren man cua con (issue #55): hom nay tren cung, roi cac
+ * ngay sap toi tang dan ("Ngày mai"), roi cac ngay DA QUA lui dan (hom qua truoc,
+ * cang cu cang xuong duoi).
+ *
+ * Vi sao khong xep ngay qua han len dau du no gap hon: man cua con mo ra la de
+ * lam BAI CUA HOM NAY: do la thu con phai xong truoc khi di choi (PRD 4.3). Bai
+ * no cu la phan bu them, de duoi cho khoi day thu tu uu tien cua con.
+ */
+export function soSanhNgayTrenManCuaCon(a: string, b: string, today: string): number {
+  const quaHan = (d: string) => (d < today ? 1 : 0);
+  if (quaHan(a) !== quaHan(b)) return quaHan(a) - quaHan(b);
+  // Ngay da qua: MOI truoc (giam dan). Ngay tu hom nay: GAN truoc (tang dan).
+  return a < today ? (a < b ? 1 : a > b ? -1 : 0) : a < b ? -1 : a > b ? 1 : 0;
 }
 
 /**
@@ -61,7 +92,7 @@ export function nhomNhiemVuHomNay(
       items: items.filter(
         (a) =>
           a.choreId != null &&
-          veTrenManCuaCon(a.choreId, a.dueDate, today) &&
+          veTrenManCuaCon(a.choreId, a.dueDate, today, a.status) &&
           (a.choreNhom ?? macDinh) === nhom
       ),
     }))
