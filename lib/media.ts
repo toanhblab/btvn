@@ -128,17 +128,26 @@ export function laUrlTepAppCap(url: unknown): url is string {
 }
 
 /**
- * Rut fileId tu link chia se Google Drive dang https://drive.google.com/file/d/<fileId>/view
- * (issue #28 — bo me dan tay link phim vao bai). Tra null neu khong dung dang nay.
+ * Link Google Drive bo me dan tay vao phan Dinh kem (issue #28), da chuan hoa.
+ * Tra null neu khong phai link Drive.
  *
- * Day la duong chap nhan RIENG voi laUrlTepAppCap o tren — KHONG noi long ham do,
- * vi hai ham phuc vu hai muc dich khac nhau: laUrlTepAppCap chot "URL app tu cap"
- * cho duong PATCH khong PIN cua con, con ham nay chi chot dinh dang link Drive de
- * dung fileId RUT RA (khong phai chuoi url goc) dung ban thanh iframe src o duoi —
- * ke ca media.url trong CSDL bi sua tay/hong, khong bao gio nhet thang url do vao
- * iframe.
+ * Issue #60 dao lai quyet dinh cua #28: truoc day link Drive duoc rut fileId roi
+ * NHUNG bang iframe (drivePreviewUrl) de con xem ngay trong app; gio con bam la
+ * MO SANG Google Drive va xem ben do. Vi khong con can fileId nua nen ham nay
+ * nhan CA link thu muc (`/drive/folders/<id>` — bo me dan ca album) chu khong
+ * chi `/file/d/<id>/view` nhu `driveFileIdTu` cu.
+ *
+ * Hang rao van la TEN MIEN, khong phai hinh dang duong dan: `evil.com/file/d/…`
+ * va `drive.google.com.evil.com/…` bi tu choi vi so sanh hostname BANG NHAU voi
+ * 'drive.google.com'. Chot ten mien la du, va no la thu duy nhat co nghia o day:
+ * gia tri tra ve di thang vao `href` cua the <a target="_blank">, nen dieu phai
+ * bao dam la "link nay chac chan dan sang Drive", khong phai "duong dan dung
+ * mot trong vai khuon minh biet" (Drive con nhieu dang: /drive/u/0/folders/…,
+ * /open?id=…). Doi lai, KHONG BAO GIO tra ve chuoi url goc: chi tra chuoi da di
+ * qua `new URL(...)`, nen `javascript:`/`data:` bi loai o buoc kiem protocol —
+ * ke ca khi media.url trong CSDL bi sua tay.
  */
-export function driveFileIdTu(url: unknown): string | null {
+export function linkDriveTu(url: unknown): string | null {
   if (typeof url !== 'string' || !url || url.length > 2048) return null;
   let u: URL;
   try {
@@ -147,15 +156,7 @@ export function driveFileIdTu(url: unknown): string | null {
     return null;
   }
   if (u.protocol !== 'https:' || u.hostname !== 'drive.google.com') return null;
-  // Chi nhan dung /file/d/<fileId>/ roi toi da mot doan (view|preview|edit) —
-  // moi thu sau do (query string, hash...) bi bo qua vi khong doc pathname.
-  const m = /^\/file\/d\/([a-zA-Z0-9_-]+)\/(?:view|preview|edit)?$/.exec(u.pathname);
-  return m ? m[1] : null;
-}
-
-/** Dung fileId da rut (driveFileIdTu) de dung URL nhung — Drive khong cho <video> phat thang. */
-export function drivePreviewUrl(fileId: string): string {
-  return `https://drive.google.com/file/d/${fileId}/preview`;
+  return u.toString();
 }
 
 /** Phan loai theo MIME; khong phai video/audio/anh thi tra null de bao loi som. */
