@@ -7,7 +7,7 @@ import type { Assignment, AttachedMedia, HwSource } from '@/lib/types';
 import { DURATION_DEFAULT, HW_SOURCES, iconFor, subjectsFor } from '@/lib/types';
 import { useNgonNgu, useT } from '@/lib/i18n/client';
 import { giaTriGiong, luaChonGiong } from '@/lib/speech';
-import { MEDIA_ACCEPT, MEDIA_ICON, driveFileIdTu, drivePreviewUrl, uploadMediaFile } from '@/lib/media';
+import { MEDIA_ACCEPT, MEDIA_ICON, linkDriveTu, uploadMediaFile } from '@/lib/media';
 import { MUI_GIO_NHA } from '@/lib/ngay';
 
 /**
@@ -77,19 +77,17 @@ export default function SuaBai({
 
   const back = `/bome/con/${assignment.childId}`;
 
-  // Link phim Google Drive (issue #28) khong tai len nhu tep — luu thang url
-  // dang chinh tac (bo query/hash lac vao) voi kind 'video', hien phan biet o
-  // luc render bang driveFileIdTu.
+  // Link Google Drive (issue #28) khong tai len nhu tep — luu thang url voi kind
+  // 'video', hien phan biet o luc render bang linkDriveTu. Tu issue #60 con bam
+  // la MO SANG Drive chu khong xem trong app, nen link thu muc (ca album) cung
+  // nhan duoc, khong con phai la link mot tep.
   function addDriveLink() {
-    const fileId = driveFileIdTu(driveUrl.trim());
-    if (!fileId) {
-      setDriveError(T('Link chưa đúng dạng chia sẻ Google Drive (…/file/d/<mã phim>/view).'));
+    const link = linkDriveTu(driveUrl.trim());
+    if (!link) {
+      setDriveError(T('Link chưa đúng — phải là link Google Drive (drive.google.com/…).'));
       return;
     }
-    setMedia((prev) => [
-      ...prev,
-      { url: `https://drive.google.com/file/d/${fileId}/view`, name: T('Phim Google Drive'), kind: 'video' },
-    ]);
+    setMedia((prev) => [...prev, { url: link, name: T('Link Google Drive'), kind: 'video' }]);
     setDriveUrl('');
     setDriveError('');
   }
@@ -303,7 +301,7 @@ export default function SuaBai({
               {media.map((m) => {
                 // Video co the la tep tai len hoac link Drive dan tay (issue #28) —
                 // phan biet bang chinh HINH DANG url, khong them gia tri kind moi.
-                const driveId = m.kind === 'video' ? driveFileIdTu(m.url) : null;
+                const driveUrlDaLuu = m.kind === 'video' ? linkDriveTu(m.url) : null;
                 return (
                   <div key={m.url} className="bg-surface-container rounded-lg p-2">
                     <div className="flex items-center gap-2 mb-1.5">
@@ -321,15 +319,21 @@ export default function SuaBai({
                         <span className="material-symbols-outlined text-lg">close</span>
                       </button>
                     </div>
-                    {/* Xem/nghe lai duoc ngay tai day de chac la dinh dung tep */}
-                    {m.kind === 'video' && driveId && (
-                      <iframe
-                        src={drivePreviewUrl(driveId)}
-                        allow="autoplay"
-                        className="w-full aspect-video rounded-lg"
-                      />
+                    {/* Xem/nghe lai duoc ngay tai day de chac la dinh dung tep. Rieng
+                        link Drive thi mo sang Drive — giong het thu con se thay (#60). */}
+                    {driveUrlDaLuu && (
+                      <a
+                        href={driveUrlDaLuu}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 min-h-p-tap px-2 rounded-lg
+                                   bg-surface-container-lowest text-primary text-p-body-sm"
+                      >
+                        <span className="material-symbols-outlined text-lg shrink-0">open_in_new</span>
+                        <span className="truncate">{T('Mở link này trên Google Drive')}</span>
+                      </a>
                     )}
-                    {m.kind === 'video' && !driveId && (
+                    {m.kind === 'video' && !driveUrlDaLuu && (
                       <video
                         src={m.url}
                         controls
@@ -362,7 +366,7 @@ export default function SuaBai({
                 setDriveUrl(e.target.value);
                 setDriveError('');
               }}
-              placeholder={T('Dán link phim Google Drive (drive.google.com/file/d/…)')}
+              placeholder={T('Dán link Google Drive — phim hoặc thư mục ảnh')}
               className="flex-1 rounded-lg border border-outline-variant min-h-p-tap px-2 text-p-body
                          placeholder:text-outline bg-surface-container-lowest"
             />

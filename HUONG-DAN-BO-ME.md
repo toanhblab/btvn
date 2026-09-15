@@ -87,6 +87,16 @@ rồi sửa chỗ nào chưa đúng — chữ đề bài, môn, thời lượng 
 > App đọc ảnh không ra chữ, hay mạng trục trặc? Vẫn có nút **"Nhập tay"** để bố mẹ
 > tự gõ từng bài — không bao giờ bị kẹt.
 
+**Gửi kèm phim, ghi âm, ảnh cho một bài:** mở bài đó ra sửa (tên con → bấm vào
+bài → **Sửa**), kéo xuống khối **"Đính kèm — video, ghi âm, ảnh"**. Có hai cách:
+
+- **Dán link Google Drive** — dán link phim cô gửi, hoặc link cả một thư mục ảnh,
+  rồi bấm **Thêm**. Con bấm vào là máy **mở sang Google Drive** và con xem bên đó.
+  Bố mẹ bấm **"Mở link này trên Google Drive"** ngay tại đây để xem thử đã dán
+  đúng link chưa.
+- **Thêm tệp** — chọn tệp video / ghi âm / ảnh từ máy. Loại này con xem, nghe
+  ngay trong app, không phải mở đi đâu cả.
+
 ### Xem con làm tới đâu
 
 Màn **Trang chủ** cho biết ngay: **Hoàn thành / Đang chờ / Quá hạn** trong khối
@@ -242,6 +252,9 @@ Con mở app trên máy của mình (máy đã gắn vào nhà thì vào thẳng
   mỗi 5 phút, hết giờ chỉ kêu nhẹ chứ **không phạt gì cả**.
 - **Đã làm xong** — tick xong bài. Bài nào có 🎥 thì con **quay video ngay trong
   app**; gửi video xong tức là bài đó đã xong (không có nút tick riêng).
+- **Cô gửi kèm bài này** — phim, ghi âm, ảnh bố mẹ đính kèm. Tệp bố mẹ tải lên thì
+  con xem, nghe ngay tại đây; còn dòng **"Mở Google Drive để xem"** thì con bấm
+  vào là máy mở sang Google Drive.
 
 Nhiệm vụ hàng ngày thì con bấm tick ngay tại danh sách, không phải mở ra; tick
 xong là ⭐ của nhiệm vụ đó cộng ngay, hiện luôn chip **"+N ⭐"** trên dòng vừa tick.

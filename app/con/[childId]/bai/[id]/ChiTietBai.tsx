@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { trangThaiVideo, type Assignment, type DiemVuaCong, type Lang } from '@/lib/types';
-import { driveFileIdTu, drivePreviewUrl } from '@/lib/media';
+import { linkDriveTu } from '@/lib/media';
 import { GIONG_DOC, TEN_NGON_NGU, pickVoice, splitSpeech } from '@/lib/speech';
 import { useNgonNgu, useT } from '@/lib/i18n/client';
 import Confetti from '../../xong/Confetti';
@@ -313,16 +313,29 @@ export default function ChiTietBai({
                         </div>
                       );
                     }
-                    // Video co the la tep tai len hoac link Drive dan tay (issue #28) —
-                    // Drive khong cho <video> phat thang nen phai nhung bang iframe.
-                    const driveId = driveFileIdTu(m.url);
-                    return driveId ? (
-                      <iframe
+                    // Video co the la tep tai len hoac link Drive dan tay (issue #28).
+                    // Link Drive KHONG phat trong app nua (issue #60): con bam la mo
+                    // sang Google Drive va xem ben do, nen o day la mot the bam duoc
+                    // chu khong phai trinh phat — nhan + icon mui ten noi ro la se mo
+                    // sang cho khac, de con khong doi no chay tai cho.
+                    const driveUrl = linkDriveTu(m.url);
+                    return driveUrl ? (
+                      <a
                         key={m.url}
-                        src={drivePreviewUrl(driveId)}
-                        allow="autoplay"
-                        className="w-full aspect-video rounded-3xl soft-shadow bg-black"
-                      />
+                        href={driveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-surface-container rounded-3xl soft-shadow p-5 min-h-k-tap
+                                   flex items-center gap-4 text-on-surface"
+                      >
+                        <span className="material-symbols-outlined text-5xl text-tertiary icon-fill shrink-0">
+                          smart_display
+                        </span>
+                        <span className="flex-1 text-k-body">{T('Mở Google Drive để xem')}</span>
+                        <span className="material-symbols-outlined text-4xl text-tertiary shrink-0">
+                          open_in_new
+                        </span>
+                      </a>
                     ) : (
                       <video
                         key={m.url}

@@ -36,7 +36,7 @@ mock.module('@vercel/blob/client', {
   },
 });
 
-const { uploadMediaFile, uploadSubmissionVideo, mediaKindOf, driveFileIdTu, tenTepNop } =
+const { uploadMediaFile, uploadSubmissionVideo, mediaKindOf, linkDriveTu, tenTepNop } =
   await import('./media.ts');
 
 beforeEach(() => {
@@ -75,31 +75,40 @@ test('mediaKindOf: mp3 la ghi am', () => {
 });
 
 /**
- * driveFileIdTu (issue #28): rut fileId tu link chia se Google Drive de dung
- * iframe src rieng — chot chat de khong nhet nham url la vao iframe.
+ * linkDriveTu (issue #28, doi luat o #60): nhan dien link Google Drive bo me dan
+ * tay. Truoc day rut fileId de nhung iframe; gio chi can chac link dan sang Drive
+ * vi no di thang vao href cua the <a target="_blank"> — chot la TEN MIEN.
  */
-test('driveFileIdTu: rut duoc fileId tu link chia se dung dang', () => {
+test('linkDriveTu: nhan link tep Drive va tra ve url da chuan hoa', () => {
+  const link = 'https://drive.google.com/file/d/1NnPqgO9iYBtIcO3WDnESJfl7MU1nKtfZ/view';
+  assert.equal(linkDriveTu(link), link);
+  assert.equal(linkDriveTu(`${link}?usp=sharing`), `${link}?usp=sharing`);
+});
+
+test('linkDriveTu: nhan CA link thu muc de bo me dan duoc ca album (issue #60)', () => {
+  const thuMuc = 'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz';
+  assert.equal(linkDriveTu(thuMuc), thuMuc);
+  assert.equal(linkDriveTu(`${thuMuc}?usp=drive_link`), `${thuMuc}?usp=drive_link`);
+  // Drive con vai dang duong dan khac, deu phai qua duoc
   assert.equal(
-    driveFileIdTu('https://drive.google.com/file/d/1NnPqgO9iYBtIcO3WDnESJfl7MU1nKtfZ/view'),
-    '1NnPqgO9iYBtIcO3WDnESJfl7MU1nKtfZ'
-  );
-  assert.equal(
-    driveFileIdTu('https://drive.google.com/file/d/1NnPqgO9iYBtIcO3WDnESJfl7MU1nKtfZ/preview'),
-    '1NnPqgO9iYBtIcO3WDnESJfl7MU1nKtfZ'
-  );
-  assert.equal(
-    driveFileIdTu('https://drive.google.com/file/d/1NnPqgO9iYBtIcO3WDnESJfl7MU1nKtfZ/view?usp=sharing'),
-    '1NnPqgO9iYBtIcO3WDnESJfl7MU1nKtfZ'
+    linkDriveTu('https://drive.google.com/drive/u/0/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz'),
+    'https://drive.google.com/drive/u/0/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz'
   );
 });
 
-test('driveFileIdTu: tu choi domain/dang khac de khong nhet nham iframe src', () => {
-  assert.equal(driveFileIdTu('https://drive.google.com/drive/folders/abc123'), null);
-  assert.equal(driveFileIdTu('https://evil.com/file/d/abc123/view'), null);
-  assert.equal(driveFileIdTu('https://drive.google.com.evil.com/file/d/abc123/view'), null);
-  assert.equal(driveFileIdTu('not a url'), null);
-  assert.equal(driveFileIdTu(''), null);
-  assert.equal(driveFileIdTu(undefined), null);
+test('linkDriveTu: tu choi ten mien gia va url khong dung dang', () => {
+  assert.equal(linkDriveTu('https://evil.com/file/d/abc123/view'), null);
+  assert.equal(linkDriveTu('https://drive.google.com.evil.com/file/d/abc123/view'), null);
+  assert.equal(linkDriveTu('https://evil.com/drive/folders/abc123'), null);
+  assert.equal(linkDriveTu('http://drive.google.com/file/d/abc123/view'), null, 'http khong phai https');
+  assert.equal(linkDriveTu('not a url'), null);
+  assert.equal(linkDriveTu(''), null);
+  assert.equal(linkDriveTu(undefined), null);
+});
+
+test('linkDriveTu: khong de url kieu javascript: lot vao href', () => {
+  assert.equal(linkDriveTu('javascript:alert(1)'), null);
+  assert.equal(linkDriveTu('data:text/html,<script>alert(1)</script>'), null);
 });
 
 /**
