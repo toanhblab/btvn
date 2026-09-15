@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Child, DraftAssignment, HwSource } from '@/lib/types';
@@ -42,6 +42,9 @@ export default function KiemTraLai({
   // Bai nao dang tai tep len — de khoa nut Luu va hien "Đang tải…" dung cho
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [error, setError] = useState('');
+  // O de bai cua tung the — de "Tach bai nay" doc vi tri con tro (selectionStart
+  // giu nguyen sau khi textarea mat focus vi bo me bam sang nut).
+  const oDeBai = useRef<(HTMLTextAreaElement | null)[]>([]);
 
   useEffect(() => {
     const raw = sessionStorage.getItem('btvn:draft');
@@ -127,6 +130,30 @@ export default function KiemTraLai({
         return [...acc, d];
       }, [])
     );
+
+  /**
+   * Tach bai nay lam hai — chieu nguoc cua "Gộp với bài trên", can tu khi AI gop
+   * theo CUON SACH (issue #64): gop nham hai viec khac cuon vao mot the thi bo me
+   * phai tach ra duoc bang tay.
+   *
+   * Cat tai CON TRO trong o de bai neu con tro dang nam giua chu (bo me cham vao
+   * cho muon cat roi bam nut); con tro o dau / cuoi / khong biet thi the moi de
+   * trong de bo me go. The moi CHEP mon, ghi chu (ten sach), giong doc, thoi
+   * luong va co quay video cua the goc — hai nua thuong cung mot cuon / cung mot
+   * tin nhan; tep dinh kem GIU o the goc, khong nhan doi.
+   */
+  const splitAt = (i: number) =>
+    setDrafts((ds) => {
+      const d = ds[i];
+      const o = oDeBai.current[i];
+      const pos = o?.selectionStart ?? 0;
+      const cat = pos > 0 && pos < d.content.length;
+      const dau = cat ? d.content.slice(0, pos).trim() : d.content;
+      const sau = cat ? d.content.slice(pos).trim() : '';
+      const goc = { ...d, content: dau || d.content };
+      const moi: Draft = { ...d, content: dau ? sau : '', media: [] };
+      return [...ds.slice(0, i), goc, moi, ...ds.slice(i + 1)];
+    });
 
   async function save() {
     const clean = drafts
@@ -239,6 +266,7 @@ export default function KiemTraLai({
 
               <div className="flex items-start gap-2">
                 <textarea
+                  ref={(el) => { oDeBai.current[i] = el; }}
                   value={d.content}
                   onChange={(e) => patch(i, 'content', e.target.value)}
                   rows={2}
@@ -319,6 +347,17 @@ export default function KiemTraLai({
                   }`}
                 >
                   🎥 {d.requiresVideo ? T('Cần quay video') : T('Không cần video')}
+                </button>
+
+                {/* Chieu nguoc cua "Gộp với bài trên": AI gop theo cuon sach (#64)
+                    nen gop nham thi bo me cham vao cho muon cat trong o de bai roi
+                    bam nut nay (splitAt) */}
+                <button
+                  onClick={() => splitAt(i)}
+                  className="text-p-body-sm rounded-full px-3 py-1.5 border border-transparent
+                             bg-surface-container text-on-surface-variant"
+                >
+                  ✂️ {T('Tách bài này')}
                 </button>
 
                 {/* Chi con ban tach tho theo dong (0.3) moi roi xuong duoi nguong */}

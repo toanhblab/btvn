@@ -309,11 +309,14 @@ app/bome/       màn của bố mẹ: PIN, tạo nhà, tổng quan, thêm bài, 
                 nhập tay, sửa bài, thêm con, chi tiết theo con, danh sách,
                 thưởng (duyệt đổi thưởng + danh sách phần thưởng + trừ ⭐ của
                 con), cài đặt, nhiệm vụ hàng ngày (trang riêng: giao cho con
-                nào, mấy ⭐, nhóm)
+                nào, mấy ⭐, nhóm), sách của các con (trang riêng: khai sách /
+                vở / nguồn bài tập làm ngữ cảnh cho AI tách bài theo cuốn)
 app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
-                nha (gắn máy), extract (Nous Portal), upload (ảnh đề bài),
+                nha (gắn máy), extract (Nous Portal, nhận childIds để lấy sách
+                của đúng nhóm con), upload (ảnh đề bài),
                 upload-media (tệp bố mẹ đính kèm), nop-video (video con nộp),
                 viec-nha (cấu hình nhiệm vụ hàng ngày của bố mẹ, cần PIN),
+                sach (sách của các con, cần PIN),
                 phan-thuong (bố mẹ đặt phần thưởng, cần PIN), tru-diem (bố mẹ
                 trừ ⭐ của con, cần PIN), doi-thuong (con xin đổi — không cần
                 PIN; bố mẹ duyệt — cần PIN), tep (đọc tệp đã ghi ở
@@ -367,6 +370,52 @@ thật** của `HW_SOURCES` nên tự nhận nguồn mới. Nhãn hiển thị �
 `inferSource` (`lib/ai.ts`) **cố ý** chỉ đoán ra hai nguồn, không bao giờ đoán
 "Khác" — đó là lựa chọn của con người, máy đoán ra thì bố mẹ mất dấu bài thật sự
 đến từ đâu.
+
+**Tách theo cuốn sách, không theo dòng (issue #64).** Captain phản ánh "Toán trang
+41, 42, 43 sách Poth Math" bị tách thành ba bài. Nguyên tắc nằm trong `PROMPT` của
+`lib/ai.ts`: **một cuốn sách / vở / phiếu = một bài**, số trang / số bài đi vào
+`note` (và nhắc gọn trong `content`); hai cuốn khác nhau thì hai bài kể cả cùng môn;
+việc không gắn cuốn nào (quay video, vẽ, thể dục) mỗi việc một bài. Luật này **không
+phụ thuộc** nhà đã khai sách hay chưa — nhà chưa khai gì thì lời nhắc y như trước,
+chỉ khác luật gộp. Ví dụ "Ex 1, Ex 2, Ex 3" trong prompt cũng đổi theo: một phiếu =
+một bài, không còn tách ra ba mục.
+
+**Sách của các con** (bảng `books`, migration 021) là ngữ cảnh thêm cho AI: bố mẹ
+khai tên sách / vở / phiếu ở **Cài đặt → "Sách của các con"** (`/bome/sach`, cũng có
+dòng dẫn ngay dưới ô dán nội dung ở màn Thêm bài), mỗi cuốn có môn (tuỳ chọn, là
+**khoá** trong `SUBJECTS`, hiện bằng `T(...)`) và "sách của" (cả nhà hay từng con —
+`child_ids`, cùng khuôn `daily_chores`; hai bé sinh đôi dùng chung sách nên treo vào
+**nhà**, không nhân bản theo từng con). Màn Thêm bài gửi `childIds` lên `POST
+/api/extract`; route lấy `listBooks(familyId, { childIds })` — sách cả nhà + sách
+của đúng nhóm con đó — rồi ghép khối "SÁCH / VỞ / NGUỒN BÀI TẬP BỐ MẸ ĐÃ KHAI" sau
+prompt (`khoiSachChoAI`), chặn trên `MAX_SACH_TRONG_PROMPT` = 30 cuốn, tên cắt ở
+`MAX_CHU_TEN_SACH` = 60. AI dùng danh sách để nhận tên sách viết tắt / sai chính tả
+và đoán môn; prompt nói rõ **không bịa bài từ danh sách**. Bỏ một cuốn là **đánh dấu
+bỏ** (`archived_at`, không DELETE — lý do ở đầu migration 021): biến khỏi màn cài
+đặt và khỏi lời nhắc; bài đã giao không mất gì vì tên sách đã nằm trong `note`.
+Bảng sách chỉ đọc được qua route có PIN; không đọc được bảng (thiếu migration) thì
+`/api/extract` coi như chưa khai, không chặn tách bài. Xoá một con thì id đó bị gỡ
+khỏi `child_ids` của sách (như nhiệm vụ hàng ngày).
+
+**Đường lùi tách thô** (`splitByRule`) theo cùng nguyên tắc ở mức nó làm được:
+tách theo dòng như cũ rồi **gộp các dòng liền nhau cùng cuốn** — cùng nhắc một cuốn
+đã khai (so tên bỏ dấu, ưu tiên tên dài nhất), hoặc không nhắc cuốn nào nhưng cùng
+môn (khác "Khác") và cả hai đều chỉ trang / số bài (`DAU_HIEU_TRANG`: "trang 41",
+"tr. 5", "bài 3", "page 12", "Ex 2"…) và cùng ngôn ngữ đoán được. Cùng một cuốn đã
+khai là bằng chứng mạnh nên gộp kể cả khi một dòng bị đoán là tiếng Anh vì không có
+dấu ("Poth Math tr. 44"); bài gộp phải quay video nếu **một** trong các dòng đòi
+("đọc to"), và đọc giọng Việt nếu có dòng tiếng Việt. Dòng nhắc cuốn đã khai lấy
+môn của cuốn và ghi tên cuốn vào `note`.
+**Giới hạn cố ý:** không có AI thì không biết "Toán trang 30" và "Toán trang 12" là
+một hay hai cuốn khi cô không ghi tên — coi là một; một dòng có tên sách, dòng sau
+chỉ ghi trang thì **không** gộp. Cả hai chiều đều sửa được một chạm ở màn Kiểm tra
+lại: "Gộp với bài trên" có từ trước, **"✂️ Tách bài này"** thêm ở lần này — cắt tại
+con trỏ trong ô đề bài (bố mẹ chạm vào chỗ muốn cắt rồi bấm), con trỏ ở đầu / cuối
+thì thẻ mới để trống; thẻ mới chép môn / ghi chú / giọng / thời lượng / cờ video,
+tệp đính kèm ở lại thẻ gốc. Hồi quy: `lib/tach-theo-sach.test.ts` (prompt, khối
+sách, fetch giả, splitByRule), `lib/sach.test.ts` (PGlite + route: lọc theo nhà,
+theo con, đánh dấu bỏ, và ca **nhà chưa khai sách** cho ra đúng `splitByRule(text)`
+cũ).
 
 **Giọng đọc.** Mỗi bài có trường `lang` (`vi`/`en`) quyết định giọng đọc thành
 tiếng. Bé 4 tuổi chưa đọc được chữ nào nên nút 🔊 gần như là cách duy nhất để
@@ -557,7 +606,8 @@ hơn giá và nếu chỉ đọc số dư thì app sẽ mời bố mẹ đi từ
 điểm không đụng vào ba luật cộng.
 
 **Không bao giờ để bố mẹ bị kẹt.** AI hỏng, hết quota hay chưa có key thì vẫn
-tách tạm theo dòng kèm cảnh báo, và luôn có đường "Nhập tay từng bài".
+tách tạm theo dòng (rồi gộp các dòng liền nhau cùng cuốn — xem **Tách theo cuốn
+sách**) kèm cảnh báo, và luôn có đường "Nhập tay từng bài".
 
 **PIN trên iPad.** Ô "Nhớ trên thiết bị này" mặc định **không** tick. iPad là máy
 dùng chung của các con — nhớ PIN ở đó thì PIN mất tác dụng. Không tick thì phiên bố

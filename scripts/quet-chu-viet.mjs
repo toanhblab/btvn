@@ -45,12 +45,20 @@ const MIEN_TRU = {
     // Khuon mau prompt va doan de bai ghep vao prompt: CHU GUI CHO MAY, khong hien.
     /const PROMPT = `[\s\S]*?`;/,
     /`Nội dung bài tập:[^`]*`/,
-    // Bang tu khoa doan mon / doan bai phai quay video: luoi NHAN DIEN, khong hien.
+    // Khoi "sach cua nha" ghep sau prompt (khoiSachChoAI, issue #64): cung la chu
+    // gui cho may — ca dong ten sach `(môn …)` lan khuon mau nhieu dong.
+    /`- \$\{ten\}\$\{b\.subject \? ` \(môn \$\{b\.subject\}\)` : ''\}`/,
+    /return `SÁCH \/ VỞ \/ NGUỒN BÀI TẬP[\s\S]*?`;/,
+    // Bang tu khoa doan mon / doan bai phai quay video / dau hieu trang-so bai:
+    // luoi NHAN DIEN, khong hien.
     /const HINTS: \[RegExp, string\]\[\] = \[[\s\S]*?\];/,
     /const VIDEO_HINT =[\s\S]*?;/,
-    // Bang chu cai de do de bai co phai tieng Viet khong (regex), khong hien.
+    /const DAU_HIEU_TRANG =[\s\S]*?;/,
+    // Bang chu cai de do de bai co phai tieng Viet khong (regex), khong hien; va
+    // phep bo dau (chuanHoa) de so ten sach — cung la regex.
     /const DAU_TIENG_VIET =[\s\S]*?;/,
     /const viChars = .*;/,
+    /\.replace\(\/đ\/gi, 'd'\)/,
   ],
   // Bang chu cai dung de NHAN DIEN tieng Viet trong de bai (regex), khong hien.
   'lib/speech.ts': [/\/\[[^\]]*\]\/i/],

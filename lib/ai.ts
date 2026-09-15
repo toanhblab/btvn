@@ -13,8 +13,8 @@
  * PRD muc 8 ghi ro dieu nay.
  */
 
-import type { DraftAssignment, HwSource, Lang } from './types';
-import { clampDuration, DURATION_DEFAULT, iconFor, SUBJECTS } from './types';
+import type { Book, DraftAssignment, HwSource, Lang } from './types';
+import { clampDuration, DURATION_DEFAULT, iconFor, MAX_CHU_TEN_SACH, SUBJECTS } from './types';
 import { T_VI, taoT, type Key, type T } from './i18n/chu';
 import { NGON_NGU_MAC_DINH, type NgonNgu } from './i18n/ngonNgu';
 
@@ -35,7 +35,18 @@ export const hasAI = Boolean(process.env.NOUS_API_KEY);
 const PROMPT = `Bạn đọc bài tập về nhà của học sinh tiểu học Việt Nam và tách thành danh sách bài riêng biệt.
 
 Quy tắc:
-- Mỗi bài tập là một mục riêng. Một dòng "Toán: bài 1, bài 2 trang 30" là MỘT bài.
+- NGUYÊN TẮC TÁCH: tách theo CUỐN SÁCH / VỞ / PHIẾU / NGUỒN BÀI TẬP, KHÔNG tách theo
+  dòng, theo trang hay theo số bài. Mọi việc con phải làm trong CÙNG MỘT cuốn — dù
+  cô viết thành nhiều trang, nhiều số bài, nhiều dòng hay nhiều gạch đầu dòng — gộp
+  thành MỘT bài; số trang / số bài ghi đủ vào "note" và nhắc gọn trong "content".
+  Ví dụ: "Toán: làm trang 41, 42, 43 sách Poth Math" -> MỘT bài, content "Làm bài
+  toán trang 41, 42, 43", note "Sách Poth Math — trang 41, 42, 43". KHÔNG tách
+  thành ba bài theo ba trang.
+  Hai cuốn khác nhau -> hai bài, kể cả cùng môn ("Toán: SGK trang 30; vở bài tập
+  trang 12" -> hai bài). Không rõ cuốn nào nhưng cùng môn và cùng kiểu trang / số
+  bài đứng liền nhau thì coi là cùng một cuốn.
+  Việc không gắn với cuốn nào (quay video, vẽ tranh, tập thể dục, học thuộc bài
+  hát...) -> mỗi việc một bài.
 - "subject" phải chọn đúng một trong: ${Object.keys(SUBJECTS).join(', ')}.
 - "content" là đề bài viết lại ngắn gọn, rõ ràng, dễ đọc to cho trẻ 4-6 tuổi nghe.
 - "note" là thông tin phụ, ghi TÊN SÁCH/VỞ trước rồi mới đến số trang, số bài:
@@ -51,12 +62,15 @@ Quy tắc:
   Lý do: app đọc "content" thành tiếng bằng giọng chọn theo "lang". Viết content
   tiếng Việt mà để lang = "en" thì máy đọc tiếng Việt bằng giọng Anh, trẻ 4 tuổi
   nghe không hiểu gì cả.
-- KHÔNG tạo bài trùng nhau. Nếu một mục tổng quát đã được liệt kê chi tiết ở các
-  gạch đầu dòng bên dưới nó, chỉ giữ các mục chi tiết, bỏ mục tổng quát đi.
+- KHÔNG tạo bài trùng nhau. Một mục tổng quát kèm các gạch đầu dòng chi tiết bên
+  dưới, cùng một cuốn / phiếu, là MỘT bài: content ghi gọn đủ các ý chi tiết,
+  không tạo thêm mục cho mục tổng quát.
   Ví dụ: "Hoàn thành Ex 1, Ex 2, Ex 3" + "Ex 1: viết nốt từ" + "Ex 2: nối các ngày"
-  + "Ex 3: viết câu" -> chỉ giữ ba mục Ex 1, Ex 2, Ex 3.
-  Lý do: con tick từng bài một, có mục tổng quát thì con phải tick hai lần cho
-  cùng một việc.
+  + "Ex 3: viết câu" -> MỘT bài, content "Ex 1 viết nốt từ, Ex 2 nối các ngày,
+  Ex 3 viết câu".
+  Lý do: con tick từng bài một; tách nhỏ theo trang hay theo số bài là con phải
+  tick ba lần cho cùng một quyển, có mục tổng quát lẫn mục chi tiết là con tick hai
+  lần cho cùng một việc.
 - Giữ đủ MỌI việc con phải làm trong một mục, kể cả việc phụ như "quay video gửi
   cho cô", "viết vào vở riêng", "gửi vào nhóm". Bỏ sót thì con làm thiếu.
 - "duration_minutes" là thời gian ước tính để trẻ làm xong bài, SỐ NGUYÊN từ 5
@@ -77,6 +91,48 @@ Quy tắc:
 - Bỏ qua lời chào, lời dặn chung chung của cô giáo, không phải bài tập thì đừng đưa vào.
 - Không bịa thêm bài không có trong nguồn.
 - Chỉ trả về JSON đúng lược đồ, không kèm lời giải thích.`;
+
+/**
+ * Tran so cuon sach dua vao loi nhac. Mot con co chung muoi cuon; nha ba con khai
+ * het cung chua toi ba muoi. Vuot tran (bo me khai tran lan, hay nhap trung) thi
+ * chi lay nhung cuon dau danh sach — thu tu bo me them vao (listBooks) — chu
+ * khong thoi phong loi nhac len theo so dong trong bang.
+ */
+export const MAX_SACH_TRONG_PROMPT = 30;
+
+/**
+ * Khoi ngu canh "sach cua nha" ghep SAU PROMPT (issue #64). Rong khi nha chua
+ * khai cuon nao — luc do loi nhac Y NGUYEN nhu khi chua co tinh nang nay, chi
+ * khac o luat gop theo sach da nam san trong PROMPT. Danh sach sach lam AI nhan
+ * dung ten (viet tat, sai chinh ta) va doan dung mon; no KHONG phai dieu kien de
+ * gop — "trang 41, 42, 43 sach Poth Math" van ra mot bai khi bang sach trong.
+ *
+ * Ten sach la chu bo me go: cat theo MAX_CHU_TEN_SACH (API da chan, day la chot
+ * cuoi), ep ve mot dong de mot cai ten khong pha vo bo cuc danh sach.
+ */
+export function khoiSachChoAI(sach: Book[]): string {
+  const dong = sach
+    .slice(0, MAX_SACH_TRONG_PROMPT)
+    .map((b) => {
+      const ten = b.name.replace(/\s+/g, ' ').trim().slice(0, MAX_CHU_TEN_SACH);
+      return ten ? `- ${ten}${b.subject ? ` (môn ${b.subject})` : ''}` : null;
+    })
+    .filter((d): d is string => d !== null);
+  if (dong.length === 0) return '';
+  return `SÁCH / VỞ / NGUỒN BÀI TẬP BỐ MẸ ĐÃ KHAI cho các con đang được giao bài:
+${dong.join('\n')}
+Dùng danh sách này để nhận ra tên sách trong nội dung kể cả khi cô viết tắt hay
+viết sai chính tả, và để chọn "subject" theo sách khi đề không nói rõ môn. Ghi tên
+sách đúng như trong danh sách vào "note". KHÔNG bịa bài từ danh sách này — chỉ tách
+những gì có trong nội dung; nội dung nhắc tới cuốn không có trong danh sách thì vẫn
+tách như thường.`;
+}
+
+/** Loi nhac he thong hoan chinh cho mot lan tach: luat chung + (neu co) sach cua nha. */
+export function loiNhacHeThong(sach: Book[] = []): string {
+  const khoi = khoiSachChoAI(sach);
+  return khoi ? `${PROMPT}\n\n${khoi}` : PROMPT;
+}
 
 /**
  * Structured output kieu OpenAI bat buoc goc phai la object (khong duoc la
@@ -236,10 +292,14 @@ type Part =
 
 /**
  * @param images  anh dang base64 (khong co tien to data:)
+ * @param sach    sach cua nha cho nhom con dang duoc giao bai (listBooks) — ngu
+ *                canh them vao loi nhac, xem khoiSachChoAI. Thieu / rong = loi
+ *                nhac chuan.
  */
 export async function extractAssignments(input: {
   text?: string;
   images?: { base64: string; mimeType: string }[];
+  sach?: Book[];
 }, ngonNgu: NgonNgu = NGON_NGU_MAC_DINH): Promise<DraftAssignment[]> {
   const T = taoT(ngonNgu);
   if (!hasAI) throw new Error('NO_API_KEY');
@@ -268,7 +328,7 @@ export async function extractAssignments(input: {
       model: MODEL,
       temperature: 0,          // tach bai la viec doc chinh xac, khong phai sang tac
       messages: [
-        { role: 'system', content: PROMPT },
+        { role: 'system', content: loiNhacHeThong(input.sach ?? []) },
         { role: 'user', content: parts },
       ],
       response_format: {
@@ -312,11 +372,91 @@ export function inferSource(drafts: DraftAssignment[]): HwSource {
 }
 
 /**
- * Duong lui khi khong co API key / het quota / mang loi (PRD muc 10 yeu cau
- * van phai nhap duoc bai). Tach tho theo dong va doan mon theo tu khoa —
- * giao dien phai bao ro cho bo me biet day khong phai ket qua cua AI.
+ * Dau hieu mot dong dang chi TRANG / SO BAI trong mot cuon: "trang 41", "tr. 5",
+ * "bài 3", "page 12", "Ex 2", "Unit 3". Doi mot CHU SO ngay sau tu khoa, khong
+ * thi "bài" khop moi dong ("làm bài tập", "bài thơ", "bài hát"). Chi dung cho
+ * splitByRule (gop hai dong lien nhau cung mon, cung dang trang/bai).
  */
-export function splitByRule(text: string, T: T = T_VI): DraftAssignment[] {
+const DAU_HIEU_TRANG = /\b(?:trang|tr\.|page|p\.|bài|ex(?:ercise)?s?\.?|unit|lesson)\s*\d/i;
+
+/** Bo dau, thuong hoa, gom khoang trang — de so ten sach bo me khai voi chu co go. */
+const chuanHoa = (s: string): string =>
+  s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase()
+    .replace(/\s+/g, ' ').trim();
+
+/**
+ * Cuon sach (bo me da khai) duoc nhac trong dong nay — uu tien ten DAI nhat: bo me
+ * khai ca "Toán" lan "Vở bài tập Toán" thi dong "Vở bài tập Toán trang 12" phai
+ * ra cuon thu hai. Ten duoi 3 ky tu bo qua: khop bua.
+ */
+function sachTrongDong(line: string, sach: Book[]): Book | null {
+  const l = chuanHoa(line);
+  const khop = sach
+    .map((b) => ({ b, ten: chuanHoa(b.name) }))
+    .filter(({ ten }) => ten.length >= 3 && l.includes(ten))
+    .sort((x, y) => y.ten.length - x.ten.length);
+  return khop[0]?.b ?? null;
+}
+
+/** Mot dong da doc xong, truoc khi gop — giu cac dau hieu de xet "cung cuon". */
+interface DongTho {
+  content: string;
+  subject: string;       // khoa tieng Viet trong SUBJECTS
+  book: Book | null;
+  coTrang: boolean;
+  lang: Lang;
+  requiresVideo: boolean;
+}
+
+/**
+ * Hai dong lien nhau co phai CUNG MOT CUON khong — ban tho cua nguyen tac "mot
+ * cuon sach = mot bai" (issue #64) khi khong goi duoc AI:
+ *
+ *   - ca hai nhac toi mot cuon bo me da khai   -> cung cuon khi la cung mot cuon;
+ *   - chi mot dong nhac ten sach                -> khong gop (khong biet dong kia
+ *                                                  thuoc cuon nao);
+ *   - khong dong nao nhac ten sach              -> cung mon (khac "Khác") va ca hai
+ *                                                  deu chi trang / so bai.
+ *
+ * Cung mot cuon da khai la bang chung MANH: gop ke ca khi hai dong doan ra ngon
+ * ngu khac nhau — "Poth Math tr. 44" khong co dau nao nen bi doan la tieng Anh,
+ * con "Toán trang 45 sách Poth Math" la tieng Viet, ma ro rang la mot cuon. Nhanh
+ * khong ten sach yeu hon nen them dieu kien cung ngon ngu. Co quay video KHONG
+ * chan gop o ca hai nhanh: cung mot cuon ma mot dong doi "đọc to" thi ca bai gop
+ * phai quay — dung nhu AI lam ("giu du MOI viec trong mot muc, ke ca quay video").
+ *
+ * GIOI HAN co y, ghi ca o README: khong co AI thi khong biet hai dong "Toán trang
+ * 30" va "Toán trang 12" la mot cuon hay hai cuon (SGK / vo bai tap) neu co khong
+ * ghi ten — o day coi la MOT, vi captain phan nan chieu tach vun (#64) va man
+ * Kiem tra lai da co nut "Tách bài này" cho chieu nguoc lai.
+ */
+function cungCuon(a: DongTho, b: DongTho): boolean {
+  if (a.book && b.book) return a.book.id === b.book.id;
+  if (a.book || b.book) return false;
+  return a.subject === b.subject && a.subject !== 'Khác' && a.coTrang && b.coTrang && a.lang === b.lang;
+}
+
+/** Gop dong `b` vao `a`: noi de bai; mot trong hai phai quay video thi bai gop phai quay; co dong tieng Viet thi doc giong Viet. */
+function gopDong(a: DongTho, b: DongTho): DongTho {
+  return {
+    ...a,
+    content: `${a.content}; ${b.content}`,
+    requiresVideo: a.requiresVideo || b.requiresVideo,
+    lang: a.lang === 'vi' || b.lang === 'vi' ? 'vi' : 'en',
+  };
+}
+
+/**
+ * Duong lui khi khong co API key / het quota / mang loi (PRD muc 10 yeu cau
+ * van phai nhap duoc bai). Tach tho theo dong, doan mon theo tu khoa, roi GOP
+ * cac dong lien nhau thuoc cung mot cuon (cungCuon) — cung nguyen tac "mot cuon
+ * sach = mot bai" voi PROMPT cua AI, o muc khong co AI lam duoc. Giao dien phai
+ * bao ro cho bo me biet day khong phai ket qua cua AI.
+ *
+ * @param sach  sach cua nha (listBooks) — nhan ten sach trong dong de gop va de
+ *              lay mon; rong thi chi con luat "cung mon + cung dang trang/bai".
+ */
+export function splitByRule(text: string, T: T = T_VI, sach: Book[] = []): DraftAssignment[] {
   const HINTS: [RegExp, string][] = [
     [/\btoán|phép tính|cộng|trừ|nhân|chia\b/i, 'Toán'],
     [/\btiếng việt|tập đọc|chính tả|tập viết\b/i, 'Tiếng Việt'],
@@ -325,24 +465,49 @@ export function splitByRule(text: string, T: T = T_VI): DraftAssignment[] {
     [/\btự nhiên|khoa học|quan sát\b/i, 'Tự nhiên'],
   ];
 
-  return text
+  const dong: DongTho[] = text
     .split(/\r?\n|(?:^|\s)[-•*]\s+/m)
     .map((s) => s.trim())
     .filter((s) => s.length > 3)
     .map((line) => {
-      const subject = HINTS.find(([re]) => re.test(line))?.[1] ?? 'Khác';
-      // Chi coi la tieng Anh khi gan nhu khong co dau tieng Viet
-      const viChars = (line.match(/[àáảãạăâđêôơưèéẻẽẹìíỉĩịòóỏõọùúủũụỳýỷỹỵ]/gi) ?? []).length;
+      const book = sachTrongDong(line, sach);
+      // Mon: theo tu khoa trong dong; dong khong lo mon ma nhac mot cuon bo me da
+      // khai mon thi lay mon cua cuon do.
+      const subject = HINTS.find(([re]) => re.test(line))?.[1] ?? book?.subject ?? 'Khác';
+      // Chi coi la tieng Anh khi khong co dau tieng Viet nao. Dung DAU_TIENG_VIET
+      // (bang day du) — bang cu thieu cac chu co HAI dau (ế, ố, ứ...) nen "Tiếng
+      // Anh trang 6" bi coi la tieng Anh, va lang lech thi luat "cung cuon" o
+      // duoi khong bao gio gop duoc hai dong tieng Viet cung mon.
+      const viChars = (line.match(new RegExp(DAU_TIENG_VIET.source, 'gi')) ?? []).length;
       return {
-        subject: tenMonTheoNha(subject, T),
-        icon: iconFor(subject),
         content: line,
-        note: null,
+        subject,
+        book,
+        coTrang: DAU_HIEU_TRANG.test(line),
         lang: (viChars === 0 && /[a-z]/i.test(line) ? 'en' : 'vi') as Lang,
-        confidence: 0.3,   // thap de man kiem tra luon canh bao bo me xem lai
-        // Tach tho khong doan duoc do phuc tap -> de mac dinh, bo me sua o man kiem tra
-        durationMinutes: DURATION_DEFAULT,
         requiresVideo: VIDEO_HINT.test(line),
       };
     });
+
+  const gop = dong.reduce<DongTho[]>((acc, d) => {
+    const truoc = acc[acc.length - 1];
+    if (truoc && cungCuon(truoc, d)) {
+      acc[acc.length - 1] = gopDong(truoc, d);
+      return acc;
+    }
+    return [...acc, d];
+  }, []);
+
+  return gop.map((d) => ({
+    subject: tenMonTheoNha(d.subject, T),
+    icon: iconFor(d.subject),
+    content: d.content,
+    // Ten sach len the bai cua con (nhu AI ghi vao note) khi nhan ra cuon nao
+    note: d.book?.name ?? null,
+    lang: d.lang,
+    confidence: 0.3,   // thap de man kiem tra luon canh bao bo me xem lai
+    // Tach tho khong doan duoc do phuc tap -> de mac dinh, bo me sua o man kiem tra
+    durationMinutes: DURATION_DEFAULT,
+    requiresVideo: d.requiresVideo,
+  }));
 }

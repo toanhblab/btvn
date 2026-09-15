@@ -108,6 +108,13 @@ rồi sửa chỗ nào chưa đúng — chữ đề bài, môn, thời lượng 
 (🇻🇳 tiếng Việt / 🇬🇧 tiếng Anh), và chip 🎥 cho bài phải **quay video** (đọc to,
 đọc thuộc lòng, thể dục...). Bấm **Lưu** là bài hiện ngay trên máy của con.
 
+App tách bài **theo cuốn sách**, không theo dòng: cô viết *"Toán trang 41, 42, 43
+sách Poth Math"* thì ra **một** bài, số trang nằm ở dòng ghi chú "sách, trang"; hai
+cuốn khác nhau mới là hai bài. Nếu app gộp nhầm hai việc khác cuốn vào một thẻ,
+bố mẹ **chạm vào chỗ muốn cắt** trong ô đề bài rồi bấm **"✂️ Tách bài này"** — thẻ
+mới hiện ngay bên dưới, giữ nguyên môn và ghi chú. Ngược lại, tách vụn quá thì bấm
+**"Gộp với bài trên"**.
+
 > App đọc ảnh không ra chữ, hay mạng trục trặc? Vẫn có nút **"Nhập tay"** để bố mẹ
 > tự gõ từng bài — không bao giờ bị kẹt.
 
@@ -120,6 +127,26 @@ bài → **Sửa**), kéo xuống khối **"Đính kèm — video, ghi âm, ản
   đúng link chưa.
 - **Thêm tệp** — chọn tệp video / ghi âm / ảnh từ máy. Loại này con xem, nghe
   ngay trong app, không phải mở đi đâu cả.
+
+### Sách của các con
+
+Vào **Cài đặt → "Sách của các con"** (cũng có dòng dẫn ngay dưới ô dán nội dung ở
+màn Thêm bài). Ở đây bố mẹ khai **tên sách, vở, phiếu bài tập** các con đang dùng —
+ví dụ *Poth Math*, *Tiếng Việt tập 1*, *Vở ô ly*. Mỗi cuốn chọn thêm được:
+
+- **Môn** của cuốn đó (để trống nếu chưa rõ hoặc sách nhiều môn).
+- **Sách của**: mặc định **Cả nhà**, hoặc bấm chọn từng con — sách của bé mẫu giáo
+  thì chỉ chọn bé đó, để app không đem cuốn ấy ra đoán bài của hai bé lớp 1.
+
+Khai xong, mỗi lần bố mẹ bấm **"Tách bài tập"**, app dùng danh sách này để nhận
+đúng tên sách kể cả khi cô viết tắt hay viết sai chính tả, đoán đúng môn, và gộp
+mọi trang / số bài trong cùng một cuốn thành một bài. **Chưa khai cuốn nào cũng
+không sao** — app vẫn gộp theo sách dựa vào chữ trong tin nhắn, chỉ là kém chắc hơn
+với tên sách lạ.
+
+Bỏ một cuốn (nút thùng rác, app hỏi lại một nhịp) thì cuốn đó biến khỏi danh sách
+và từ lần tách sau app không dùng nó nữa; bài đã giao vẫn giữ nguyên tên sách trong
+ghi chú. Danh sách này chỉ bố mẹ thấy, các con không thấy.
 
 ### Xem con làm tới đâu
 
@@ -345,6 +372,12 @@ lần mở sau.
 **Thêm con thứ hai, thứ ba thế nào?**
 **Cài đặt → "Hồ sơ các con" → "Thêm con"**, làm y như con đầu. Từ lần giao bài sau,
 con mới hiện trong ô "Giao cho con nào".
+
+**App tách một cuốn sách thành ba bài theo ba trang, hoặc gộp hai việc khác nhau vào một?**
+App tách **theo cuốn sách**: mọi trang, số bài trong cùng một cuốn là một bài. Muốn
+app nhận đúng tên sách của nhà mình (kể cả cô viết tắt) thì khai ở **Cài đặt →
+"Sách của các con"**. Còn ngay lúc kiểm tra lại: gộp nhầm thì chạm vào chỗ muốn cắt
+trong ô đề bài rồi bấm **"✂️ Tách bài này"**; tách vụn thì bấm **"Gộp với bài trên"**.
 
 **Hai bé sinh đôi học cùng lớp thì phải nhập bài hai lần à?**
 Không. Nhập một lần, tick cả hai bé — mỗi bé nhận một bản riêng, tự tick, xoá bài

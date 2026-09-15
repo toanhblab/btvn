@@ -232,7 +232,7 @@ export const SUBJECTS = {
   'Khác': '📝',
 } satisfies Partial<Record<Key, string>>;
 
-type TenMon = keyof typeof SUBJECTS;
+export type TenMon = keyof typeof SUBJECTS;
 const SUBJECT_KEYS = Object.keys(SUBJECTS) as TenMon[];
 
 /** Danh sach mon theo ngon ngu cua nha: { ten hien thi (= ten luu DB) -> icon }. */
@@ -251,6 +251,39 @@ const ICON_THEO_TEN_MON: Record<string, string> = Object.fromEntries([
 
 export function iconFor(subject: string): string {
   return ICON_THEO_TEN_MON[subject] ?? SUBJECTS['Khác'];
+}
+
+/* ---------------- Sach / vo / nguon bai tap cua cac con (issue #64) ----------------
+ *
+ * Bo me khai bao o /bome/sach; AI tach bai nhan danh sach nay lam ngu canh de
+ * nhan dung ten sach (viet tat, sai chinh ta) va doan dung mon, roi GOP moi viec
+ * trong cung mot cuon thanh MOT bai. Danh sach chi la goi y: nha chua khai cuon
+ * nao thi AI van gop theo sach dua vao chinh chu trong tin nhan (luat nam trong
+ * PROMPT o lib/ai.ts, khong phu thuoc bang nay).
+ *
+ * Luoc do + ly do (treo vao nha kem child_ids, bo la danh dau) o
+ * migrations/021_sach_cua_nha.sql. Man cua con KHONG doc bang nay: ten sach da
+ * nam trong assignments.note tu luc tach bai.
+ */
+
+export interface Book {
+  id: string;
+  name: string;
+  /**
+   * Mon cua sach — KHOA (ten mon tieng Viet trong SUBJECTS), hien thi thi boc
+   * T(subject). null = bo me chua chon / sach nhieu mon.
+   */
+  subject: TenMon | null;
+  /** Sach cua con nao: null = CA NHA, hoac danh sach id con (nhu DailyChore.childIds). */
+  childIds: string[] | null;
+}
+
+/** Ten sach — dai hon thi tran o "sach, trang" tren the bai cua con. */
+export const MAX_CHU_TEN_SACH = 60;
+
+/** Loc mon cua sach tu ngoai vao (API body, DB): phai la khoa trong SUBJECTS, khong thi null. */
+export function monSachOf(v: unknown): TenMon | null {
+  return typeof v === 'string' && v in SUBJECTS ? (v as TenMon) : null;
 }
 
 /* ---------------- Nhiem vu hang ngay ("viec nha") ----------------

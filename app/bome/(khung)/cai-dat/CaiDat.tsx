@@ -14,12 +14,15 @@ const THE =
 export default function CaiDat({
   family,
   soNhiemVu,
+  soSach,
   hasAI,
   hasBlob,
 }: {
   family: Family;
   /** So nhiem vu hang ngay dang co (ca dang tat) — hien o the dan sang trang rieng. */
   soNhiemVu: number;
+  /** So sach / vo / nguon bai tap bo me da khai (issue #64) — hien o the dan sang /bome/sach. */
+  soSach: number;
   hasAI: boolean;
   hasBlob: boolean;
 }) {
@@ -224,6 +227,29 @@ export default function CaiDat({
           <span className="block text-p-body text-on-surface font-bold">{T('Cài nhiệm vụ hàng ngày')}</span>
           <span className="block text-p-body-sm text-on-surface-variant">
             {soNhiemVu > 0 ? T('{n} nhiệm vụ', { n: soNhiemVu }) : T('Chưa có nhiệm vụ nào')} · {T('giao cho con nào, mấy ⭐, thuộc nhóm nào')}
+          </span>
+        </span>
+        <span className="material-symbols-outlined text-outline">chevron_right</span>
+      </Link>
+      </section>
+
+      {/* ---- Sach cua cac con (issue #64): TRANG RIENG /bome/sach, cung khuon
+          the dan voi "Nhiem vu hang ngay" o tren. Danh sach nay la ngu canh cho
+          AI tach bai theo cuon sach; con khong thay. ---- */}
+      <section className={THE}>
+      <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Sách của các con')}</h2>
+      <Link
+        href="/bome/sach"
+        className="w-full bg-surface-container-lowest rounded-card card-shadow p-3 flex items-center gap-3
+                   min-h-p-tap text-left mb-4 xl:shadow-none xl:p-0 xl:mb-0"
+      >
+        <span className="w-9 h-9 rounded-lg bg-primary-fixed flex items-center justify-center shrink-0">
+          <span className="material-symbols-outlined text-primary">menu_book</span>
+        </span>
+        <span className="flex-1">
+          <span className="block text-p-body text-on-surface font-bold">{T('Khai sách, vở, nguồn bài tập')}</span>
+          <span className="block text-p-body-sm text-on-surface-variant">
+            {soSach > 0 ? T('{n} cuốn', { n: soSach }) : T('Chưa khai cuốn nào')} · {T('để máy tách bài theo đúng cuốn sách')}
           </span>
         </span>
         <span className="material-symbols-outlined text-outline">chevron_right</span>

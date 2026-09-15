@@ -66,7 +66,7 @@ Hệ quả thiết kế (quan trọng, quyết định UI):
 ### 4.2 Tự động tách bài tập
 
 - Với ảnh: đọc chữ trong ảnh (OCR / AI vision) → ra text.
-- Với text: tách thành từng bài riêng biệt (theo môn, theo số bài, theo dòng gạch đầu dòng…).
+- Với text: tách thành từng bài riêng biệt **theo cuốn sách / vở / nguồn bài tập** — mọi trang, số bài trong cùng một cuốn là MỘT bài, không tách theo dòng hay theo trang (issue #64). Phụ huynh khai danh sách sách của các con ở phần cài đặt để AI nhận đúng tên sách và môn; chưa khai thì vẫn gộp theo sách dựa vào nội dung.
 - Mỗi bài tập tách ra gồm: **môn học**, **nội dung/đề bài**, **ghi chú** (ví dụ "trang 34, bài 3"), **hạn hoàn thành**, **ngôn ngữ của đề (`vi` | `en`)**, **thời lượng làm bài** (phút, AI ước theo độ phức tạp — xem mục 4.3).
 - Ngôn ngữ do AI tự nhận biết (đề của lớp tiếng Anh thường là tiếng Anh hoặc lẫn Việt–Anh) và phụ huynh sửa lại được. Trường này quyết định giọng đọc ở mục 4.3.
 - Bài **phải quay video nộp lại** ("đọc to", "đọc thuộc lòng", "quay video gửi cô", thể dục/biểu diễn) được AI gắn cờ ngay khi tách bài; phụ huynh bật/tắt lại cờ này theo từng bài ở bản nháp và sau khi lưu. Xem cách con nộp ở mục 4.3.

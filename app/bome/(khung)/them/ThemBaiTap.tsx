@@ -83,10 +83,13 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
           base64: i.url.slice(i.url.indexOf(',') + 1),
         }));
 
+      // childIds: de may chu lay DUNG danh sach sach cua nhom con dang duoc giao
+      // bai lam ngu canh cho AI (issue #64) — sach cua be mau giao khong lot vao
+      // bai cua hai be lop 1.
       const res = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, images: payloadImages }),
+        body: JSON.stringify({ text, images: payloadImages, childIds: chosen }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? T('Tách bài lỗi'));
@@ -187,6 +190,16 @@ export default function ThemBaiTap({ children: kids }: { children: Child[] }) {
           className="w-full rounded-card border border-outline-variant bg-surface-container-lowest
                      p-3 text-p-body text-on-surface placeholder:text-outline resize-y xl:min-h-64"
         />
+        {/* Nguyen tac tach: mot cuon sach = mot bai (issue #64). Danh sach sach o
+            /bome/sach la ngu canh cho AI nhan dung ten sach — dong dan de bo me
+            biet co cho khai. */}
+        <p className="text-p-body-sm text-on-surface-variant mt-2">
+          {T('Máy gộp mọi trang / số bài trong cùng một cuốn sách thành một bài.')}{' '}
+          <Link href="/bome/sach" className="text-primary font-bold underline-offset-2 hover:underline">
+            {T('Khai sách của các con')}
+          </Link>{' '}
+          {T('để máy nhận đúng tên sách.')}
+        </p>
       </section>
 
       </div>

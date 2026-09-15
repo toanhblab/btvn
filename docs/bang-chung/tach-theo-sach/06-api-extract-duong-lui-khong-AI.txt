@@ -1,0 +1,49 @@
+# POST /api/extract — đường lùi tách thô (máy dev không có NOUS_API_KEY), nhà đã khai 4 cuốn:
+#   Poth Math (Toán, sách của Minh + An) · Tiếng Việt tập 1 (Tiếng Việt, cả nhà) · Bé tập tô (Vẽ, Bé Na) · Vở ô ly (cả nhà)
+# Cùng một nội dung, gửi kèm childIds khác nhau -> danh sách sách khác nhau -> kết quả gộp khác nhau.
+# Giao cho Minh: hai dòng Poth Math gộp thành MỘT bài Toán (dòng "Poth Math tr. 44" không dấu, bị đoán tiếng Anh, vẫn gộp vì cùng cuốn đã khai);
+#   hai dòng Tiếng Việt tập 1 gộp thành MỘT bài, phải quay video vì một dòng đòi "đọc to".
+# Giao cho Bé Na: Poth Math không phải sách của Na -> không nhận ra cuốn, dòng "Poth Math tr. 44" đứng riêng, môn Khác (hành vi cũ).
+# Chụp ngày 2026-09-16 trên PGlite local, sau khi seed (npm run db:seed) và thêm sách qua /api/sach.
+{
+  "text": "Toán: làm bài tập trang 41, 42, 43 ở sách poth math\nPoth Math tr. 44\nTiếng Việt tập 1 trang 10\nTiếng Việt tập 1 trang 11, đọc to cho bố mẹ nghe",
+  "giao cho Minh (Poth Math la sach cua Minh + An)": [
+    {
+      "subject": "Toán",
+      "note": "Poth Math",
+      "lang": "vi",
+      "video": false,
+      "content": "Toán: làm bài tập trang 41, 42, 43 ở sách poth math; Poth Math tr. 44"
+    },
+    {
+      "subject": "Tiếng Việt",
+      "note": "Tiếng Việt tập 1",
+      "lang": "vi",
+      "video": true,
+      "content": "Tiếng Việt tập 1 trang 10; Tiếng Việt tập 1 trang 11, đọc to cho bố mẹ nghe"
+    }
+  ],
+  "giao cho Be Na (Poth Math KHONG phai sach cua Na)": [
+    {
+      "subject": "Toán",
+      "note": null,
+      "lang": "vi",
+      "video": false,
+      "content": "Toán: làm bài tập trang 41, 42, 43 ở sách poth math"
+    },
+    {
+      "subject": "Khác",
+      "note": null,
+      "lang": "en",
+      "video": false,
+      "content": "Poth Math tr. 44"
+    },
+    {
+      "subject": "Tiếng Việt",
+      "note": "Tiếng Việt tập 1",
+      "lang": "vi",
+      "video": true,
+      "content": "Tiếng Việt tập 1 trang 10; Tiếng Việt tập 1 trang 11, đọc to cho bố mẹ nghe"
+    }
+  ]
+}
