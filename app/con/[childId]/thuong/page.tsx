@@ -66,12 +66,12 @@ export default async function CuaHangPhanThuong({ params }: { params: Promise<{ 
             alt=""
             className="w-16 h-16 rounded-full object-cover border-4 border-surface-container shrink-0"
           />
-          <h1 className="text-k-hero text-primary min-w-0">{T('Phần thưởng của {name}', { name: child.name })}</h1>
+          <h1 className="text-k-hero text-primary min-w-0 break-words">{T('Phần thưởng của {name}', { name: child.name })}</h1>
         </div>
 
         {/* So ⭐ dang co — to va o goc tren, con nhin vao day roi so voi gia tren
             tung the de biet doi duoc cai nao */}
-        <div className="flex items-center shrink-0 ml-auto bg-tertiary-fixed text-on-tertiary-fixed
+        <div className="flex items-center shrink-0 sm:ml-auto bg-tertiary-fixed text-on-tertiary-fixed
                         text-k-headline px-8 py-4 rounded-full soft-shadow whitespace-nowrap">
           {T('Con có {n} ⭐', { n: diem })}
         </div>

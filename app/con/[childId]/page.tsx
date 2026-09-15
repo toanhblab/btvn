@@ -193,8 +193,12 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
       {/* Man may tinh: tien do doi sang ben phai tieu de (bo Macbook 02) — cho
           trong ben canh "Bai tap cua ..." tren man 1440px la cho dat no dep nhat. */}
       {/* flex-wrap: tren iPhone doc, [nut back 64] + [avatar 64] + [tieu de] +
-          [vien ⭐] khong the nam mot hang trong 350px. Khong cho xuong dong thi
-          vien ⭐ (shrink-0) an het cho cua tieu de va de len tren no. */}
+          [vien ⭐ ~230px] khong the nam mot hang trong 294px con lai — do la con
+          so do duoc, khong phai uoc luong (issue #56). Khong cho xuong dong thi
+          vien ⭐ (shrink-0) an het cho cua nhom ben trai roi VE DE LEN nut back:
+          con chi thay tho ra mot mau vien xam ben trai, bam khong duoc.
+          `ml-auto` chi tu `sm:`: khi vien ⭐ da xuong hang rieng thi day no sang
+          phai chi lam no lo lung giua man. */}
       <header className="flex flex-wrap items-center gap-6 mb-k-stack xl:justify-between">
         <div className="flex items-center gap-6 min-w-0">
           <Link
@@ -210,10 +214,12 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
             alt=""
             className="w-16 h-16 rounded-full object-cover border-4 border-surface-container shrink-0"
           />
-          <h1 className="text-k-hero text-primary">{T('Bài tập của {name}', { name: child.name })}</h1>
+          {/* min-w-0 + break-words: ten dai (hay mot tu dai) khong duoc day chu ra
+              ngoai the — tran ngang cung la mot duong che mat nut back. */}
+          <h1 className="text-k-hero text-primary min-w-0 break-words">{T('Bài tập của {name}', { name: child.name })}</h1>
         </div>
 
-        <div className="flex items-center gap-4 shrink-0 ml-auto">
+        <div className="flex items-center gap-4 shrink-0 sm:ml-auto">
           {nutDoiThuong}
           {/* Chi hien tu 1280px tro len; duoi nguong do tien do van nam trong the
               o duoi (xl:hidden ben trong the do) — khong nhan doi tren man iPad. */}
