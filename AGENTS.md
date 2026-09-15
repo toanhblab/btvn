@@ -65,6 +65,23 @@ Kiểm bố cục ở nhiều cỡ màn: có sẵn ảnh chụp đối chiếu t
 `stitch-macbook/kiem-tra/` (màn của con) và `stitch-parent-macbook/kiem-tra/`
 (màn của bố mẹ) — `macbook-*` ở 1440×900, `ipad-*` ở 1180×820.
 
+**Kiểm cỡ ĐIỆN THOẠI thì `chrome-devtools-axi resize` LÀ SAI** — cửa sổ Chrome có
+đáy 500px nên `resize 390 844` cho ra `innerWidth = 500`, rộng hơn iPhone 14 tới
+28%, vừa đủ để mọi lỗi chen chỗ trên header biến mất. Lỗi #56 lọt qua đúng vì
+thế. Dùng `emulate --viewport "390x844x3,mobile,touch"` (device-metrics override,
+có cả dpr và cảm ứng) và kiểm lại bằng `eval "() => innerWidth"` trước khi tin
+tấm ảnh nào.
+
+Và **ảnh chụp không đủ để nói "nút bấm được"**: mắt không thấy một lớp trong
+suốt đè lên. Phép kiểm chắc tay là hit-test ngay trong trang —
+`el.scrollIntoView()` rồi `document.elementFromPoint()` ở một lưới điểm trong
+`getBoundingClientRect()` của nút, đếm xem bao nhiêu điểm trả về chính nút đó;
+kèm `documentElement.scrollWidth > innerWidth` để bắt tràn ngang. Chạy vòng qua
+mọi màn × mọi cỡ thì một lượt rà là đủ tin.
+
+Dữ liệu seed mặc định là trạng thái DỄ NHẤT (con 0 ⭐ → viền "Đổi thưởng" hẹp
+nhất). Kiểm bố cục phải đặt dữ liệu XẤU NHẤT trước: ⭐ ba chữ số, tên con dài.
+
 Lái trình duyệt vào `next dev` thì mở bằng **`http://localhost:<cổng>`**, đừng
 dùng `127.0.0.1`. Next 16 chặn "cross-origin dev request" nên mọi tệp
 `/_next/static/**` trả 403 khi host là `127.0.0.1`: trang vẫn dựng xong ở phía
