@@ -44,14 +44,14 @@ export default async function ChonCon() {
   };
 
   return (
-    <main className="kid-scope min-h-screen flex flex-col items-center justify-center relative overflow-hidden py-8">
+    <main className="kid-scope min-h-dvh flex flex-col items-center relative overflow-hidden py-8">
       {/* Mang mau mo lam nen, thuan trang tri */}
       <div className="absolute top-[-10%] left-[-5%] w-[40vw] h-[40vw] rounded-full bg-primary-fixed opacity-40 blur-3xl -z-10 pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-5%] w-[50vw] h-[50vw] rounded-full bg-tertiary-fixed opacity-30 blur-3xl -z-10 pointer-events-none" />
 
       {/* Khung 1100px (bo Macbook 01): tren man rong, de avatar trai het chieu
           ngang 1440px thi ba con nam xa nhau, mat phai quet ca man moi tim ten. */}
-      <div className="w-full max-w-[1100px] mx-auto flex flex-col items-center px-k-edge">
+      <div className="w-full max-w-[1100px] mx-auto flex flex-1 flex-col items-center justify-center px-k-edge">
         <h1 className="text-k-hero text-on-surface mb-8 xl:mb-3 text-center">
           {rows.length === 0 ? T('Chưa có bạn nào ở đây') : T('Hôm nay con là ai?')}
         </h1>
@@ -180,10 +180,26 @@ export default async function ChonCon() {
         )}
       </div>
 
-      {/* Loi vao cua bo me — de nho va mo de tre bo qua (PRD 4.5) */}
+      {/* Loi vao cua bo me — de nho va mo de tre bo qua (PRD 4.5).
+
+          Nam TRONG LUONG (self-end, cuoi <main>) chu KHONG `absolute bottom-8
+          right-8` nua: neo theo khung man thi noi dung dai bao nhieu cung truot
+          duoc xuong DUOI no. Nha ba con, kho iPhone, the Bang xep hang dai dung
+          toi goc duoi phai va chu cua nut lan vao dong "🥉 ... ⭐" (issue #63).
+          Trong luong thi noi dung day nut xuong, khong bao gio de len — dung
+          voi moi so con va moi kho man, khong phu thuoc mot con so nao.
+
+          Vi tri mat thay khong doi khi noi dung ngan: khoi noi dung `flex-1
+          justify-center` van chiem het chieu cao va tu can giua, con nut van o
+          goc duoi phai cach mep 2rem (mr-8 + py-8 cua <main>) dung nhu truoc.
+
+          Vung an toan iPhone: the trong luong an theo padding cua <body>
+          (--sai-*, xem app/globals.css) — chi the `fixed` moi phai tu chua.
+          `min-h-dvh` thay `min-h-screen` de tren Safari iOS day <main> khong
+          tut xuong duoi thanh cong cu. */}
       <Link
         href="/bome/pin"
-        className="absolute bottom-8 right-8 flex items-center gap-2 px-6 py-4 rounded-full
+        className="self-end mt-8 mr-8 flex items-center gap-2 px-6 py-4 rounded-full
                    text-outline hover:text-on-surface-variant hover:bg-surface-container-low
                    transition-colors min-h-k-tap"
       >
