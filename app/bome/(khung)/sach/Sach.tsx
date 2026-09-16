@@ -93,9 +93,12 @@ export default function Sach({
     // cho cung mot con (Toán tập 1, Toán tập 2...).
   }
 
+  /** Tra ve true khi may chu da nhan — o go tay dua vao day de tra lai chu cu. */
   async function sua(b: Book, patch: Partial<Pick<Book, 'name' | 'subject' | 'childIds'>>) {
     const data = await goi(`/api/sach/${b.id}`, { method: 'PATCH', body: JSON.stringify(patch) });
-    if (data) setBooks((ds) => ds.map((x) => (x.id === b.id ? data.book : x)));
+    if (!data) return false;
+    setBooks((ds) => ds.map((x) => (x.id === b.id ? data.book : x)));
+    return true;
   }
 
   async function bo(b: Book) {
@@ -156,12 +159,15 @@ export default function Sach({
                   key={`${b.id}:name:${b.name}`}
                   maxLength={MAX_CHU_TEN_SACH}
                   aria-label={T('Tên sách')}
-                  onBlur={(e) => {
-                    // Xoa trang roi bam ra ngoai thi tra lai chu cu ngay tren the
-                    // input (key khong doi nen React giu the, defaultValue bi bo qua)
-                    const moi = e.target.value.trim();
-                    if (!moi || moi === b.name) { e.target.value = b.name; return; }
-                    sua(b, { name: moi });
+                  onBlur={async (e) => {
+                    // Xoa trang, hoac may chu tu choi (trung ten / dai qua), thi tra
+                    // lai chu cu ngay tren the input: key khong doi nen React giu the
+                    // va defaultValue bi bo qua, de nguyen thi the hien mot dang ten
+                    // ma CSDL dang giu mot dang khac.
+                    const o = e.target;
+                    const moi = o.value.trim();
+                    if (!moi || moi === b.name) { o.value = b.name; return; }
+                    if (!(await sua(b, { name: moi }))) o.value = b.name;
                   }}
                   className={`${oNhap} flex-1 min-w-0 text-on-surface`}
                 />

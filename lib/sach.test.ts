@@ -15,7 +15,8 @@
  *   4. Bo la DANH DAU (archived_at): bien khoi moi duong doc, dong van con.
  *   5. Xoa mot con thi id do bien khoi books.child_ids (cung bat bien voi
  *      daily_chores) — khong thi hang "Sach cua" khong sua duoc nua.
- *   6. Route: can PIN (401), chan ten trung / ten dai / con nha khac (400).
+ *   6. Route: can PIN (401), chan ten trung / ten dai / con nha khac / than khong
+ *      phai object (400).
  *   7. HOI QUY bat buoc (firstmate): nha CHUA khai sach nao thi /api/extract tra
  *      ve dung ket qua cua splitByRule(text) khong sach — y nhu truoc; nha da
  *      khai thi ban tach nhan ten sach va gop; va childIds quyet dinh sach nao
@@ -193,6 +194,10 @@ test('route /api/sach: can PIN; them / trung ten / ten dai / con nha khac; PATCH
 
   // PATCH: doi ten trung cuon khac -> 400; doi thanh chinh ten no (khac hoa/thuong) -> ok
   assert.equal((await sachIdRoute.PATCH(json({ name: 'Poth Math' }), ctx(book.id))).status, 400);
+  // Than khong phai object (so / chuoi / mang): 400 chu khong nga vi `'subject' in body`
+  for (const la of [5, 'x', ['name'], null]) {
+    assert.equal((await sachIdRoute.PATCH(json(la), ctx(book.id))).status, 400, `than la ${JSON.stringify(la)}`);
+  }
   const doi = await sachIdRoute.PATCH(json({ name: 'TIẾNG VIỆT TẬP 1', subject: null, childIds: null }), ctx(book.id));
   assert.equal(doi.status, 200);
   const sauDoi = (await doi.json()).book;

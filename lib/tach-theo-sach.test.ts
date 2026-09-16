@@ -9,10 +9,10 @@
  *   2. extractAssignments GUI dung loi nhac do len (fetch gia): co sach thi khoi
  *      sach di kem, khong sach thi khong — va van doc ket qua nhu cu.
  *   3. splitByRule (duong lui khong AI) gop theo cung nguyen tac o muc no lam
- *      duoc: cung mon + cung dang trang/so bai lien nhau, hoac cung mot cuon bo me
- *      da khai; khong gop khac ngon ngu / khac co quay video; va cac GIOI HAN co
- *      y (mot dong nhac ten sach, dong kia khong -> khong gop) ghim lai de doi la
- *      biet.
+ *      duoc: cung mon + cung dang trang/so bai + cung ngon ngu, hoac cung mot cuon
+ *      bo me da khai (bang chung manh nen bo qua ngon ngu); co quay video la HOAC
+ *      cua cac dong gop, khong phai dieu kien chan gop; va cac GIOI HAN co y (mot
+ *      dong nhac ten sach, dong kia khong -> khong gop) ghim lai de doi la biet.
  *
  * Hoi quy "nha chua khai sach thi chay y nhu truoc": moi ca duoi day chay ca hai
  * lan — sach rong va sach co — o cho nao hai ket qua PHAI giong nhau thi khang

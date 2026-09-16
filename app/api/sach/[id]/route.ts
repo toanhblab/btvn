@@ -24,7 +24,9 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
   const { id } = await params;
   const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: T('Dữ liệu không đọc được.') }, { status: 400 });
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return NextResponse.json({ error: T('Dữ liệu không đọc được.') }, { status: 400 });
+  }
 
   if (!(await getBook(familyId, id))) {
     return NextResponse.json({ error: T('Không tìm thấy cuốn sách này.') }, { status: 404 });
