@@ -1,0 +1,41 @@
+# Quy trinh dau tien cua kho nay: chay dung hai lenh ma du an da co,
+# `npm test` va `npm run lint`, tren moi pull request.
+#
+# Vi sao can: truoc day hai dau xanh duy nhat tren PR la `Vercel` va
+# `Vercel Preview Comments` — chung chi noi ban xem thu DUNG DUOC, khong noi
+# gi ve test. Moi con so kieu "246/246 xanh" deu la loi khai chay tren may
+# worker, khong ai kiem lai duoc. Quy trinh nay la dau thu ba, va no chay o
+# noi ai cung mo xem duoc.
+#
+# Node 22.18 lay theo `engines` trong package.json — do cung la ban dau tien
+# bo strip-types cho .ts ma khong can co, thu ma `npm test` dua vao.
+# KHONG dung vao cau hinh Vercel.
+
+name: Kiểm tra
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  kiem-tra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.18'
+          cache: npm
+
+      - run: npm ci
+
+      # Bo kiem PGlite chay duoc nguyen ven o day: moi tep test tu dat
+      # BTVN_PGLITE_DIR=memory:// nen khong can Postgres ben ngoai.
+      - name: npm test
+        run: npm test
+
+      # `lint` = tsc --noEmit + npm run quet:chu-viet (hang rao da ngon ngu).
+      - name: npm run lint
+        run: npm run lint

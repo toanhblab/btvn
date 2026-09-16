@@ -80,7 +80,9 @@ kèm `documentElement.scrollWidth > innerWidth` để bắt tràn ngang. Chạy 
 mọi màn × mọi cỡ thì một lượt rà là đủ tin.
 
 Dữ liệu seed mặc định là trạng thái DỄ NHẤT (con 0 ⭐ → viền "Đổi thưởng" hẹp
-nhất). Kiểm bố cục phải đặt dữ liệu XẤU NHẤT trước: ⭐ ba chữ số, tên con dài.
+nhất). Kiểm bố cục phải đặt dữ liệu XẤU NHẤT trước: ⭐ ba chữ số, tên con dài, và
+số con NHIỀU HƠN 3 (hàng chọn tên con chỉ vỡ khi đủ thẻ để tràn). Ảnh chụp trên
+dữ liệu seed mặc định không chứng minh được gì về bố cục.
 
 Lái trình duyệt vào `next dev` thì mở bằng **`http://localhost:<cổng>`**, đừng
 dùng `127.0.0.1`. Next 16 chặn "cross-origin dev request" nên mọi tệp
@@ -88,6 +90,27 @@ dùng `127.0.0.1`. Next 16 chặn "cross-origin dev request" nên mọi tệp
 máy chủ và chụp ảnh vẫn đẹp, nhưng React KHÔNG hydrate — mọi `useEffect`, mọi
 nút của component khách đều chết lặng, không báo lỗi gì. Bằng chứng nằm ở nhật
 ký `next dev` ("Blocked cross-origin request to Next.js dev resource").
+
+Bằng chứng của một PR phải NHÚNG vào THÂN PR, không trỏ đường dẫn. Ảnh và tệp
+nằm trong kho mà chỉ nhắc tên thư mục thì KHÔNG hiện trên GitHub, người duyệt
+không mở được — đó không tính là bằng chứng. Đây là yêu cầu của dự án, không phải
+lời nhắc:
+
+- **Việc đụng giao diện: ảnh TRƯỚC/SAU, ít nhất hai cỡ màn và một trong hai phải
+  là cỡ điện thoại.** Commit ảnh vào kho rồi nhúng bằng đường dẫn ghim theo
+  commit — `https://raw.githubusercontent.com/toanhblab/btvn/<sha>/<đường dẫn>` —
+  đừng dùng đường dẫn theo nhánh, nhánh xoá đi là ảnh chết.
+- **Việc đụng bố cục phải kèm kết quả hit-test trong trang**, số điểm trúng trên
+  tổng, theo cách ở trên: "nhìn ảnh thấy nút" không chứng minh được nút bấm được.
+- **Việc đụng giao diện ĐIỆN THOẠI: ảnh giả lập KHÔNG đủ — phải có người xác nhận
+  trên máy thật trước khi đóng việc.** Đây là RANH GIỚI, không phải khuyến nghị:
+  PR #58 ship một bản vá iPhone kèm bộ ảnh ghi "390px" mà thật ra là 500px (xem
+  `resize` ở trên), mở trên điện thoại thật thì lỗi vẫn còn nguyên.
+- **Kết quả `npm test` và `npm run lint` dán vào PR là OUTPUT THẬT**, có số bài
+  kiểm, không phải câu "tests pass". Quy trình `.github/workflows/kiem-tra.yml`
+  chạy đúng hai lệnh đó trên mọi PR — dấu xanh của nó là thứ người duyệt kiểm
+  lại được, còn hai dấu `Vercel` / `Vercel Preview Comments` chỉ nói bản xem thử
+  dựng được, KHÔNG nói gì về test.
 
 Video con quay để nộp bài (`MediaRecorder`, vòng đời ở `lib/phienQuay.ts`) là
 mp4 PHÂN MẢNH (`moov` không có mẫu, dữ liệu nằm trong `moof`/`mdat`) với
