@@ -351,9 +351,10 @@ export async function listAssignments(
     includeChores?: boolean;
     /**
      * Di kem `from` (issue #55): NOI them cac bai tap CHUA XONG co han TRUOC
-     * `from`. Man cua con phai hien moi bai con no chu khong chi bai tu hom nay
-     * tro di, nhung bai da xong cua ngay cu thi khong — neu khong bo `from` di
-     * thi truy van keo ve ca lich su cua nha da dung app lau.
+     * `from`. Man cua con phai hien moi bai con no chu khong chi bai cua hom
+     * nay, nhung bai da xong cua ngay cu thi khong — neu khong bo `from` di
+     * thi truy van keo ve ca lich su cua nha da dung app lau. Man cua con di
+     * kem ca `to` = hom nay (issue #62: khong ve bai cua ngay mai).
      *
      * Chi bai THAT (chore_id IS NULL) duoc noi them: dong nhiem vu hang ngay
      * cua hom qua khong phai "bai con no" (man cua con chi ve nhiem vu cua hom
@@ -690,9 +691,12 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
   // cho xong roi moi dem — khong chay song song voi ba cau duoi.
   await taoNhiemVuNgay(familyId, today, null);
   // Ba cau chay SONG SONG (Neon la HTTP, moi cau mot vong goi). Bai da xong cua
-  // nhung ngay truoc khong con y nghia -> chi lay bai sap toi va bai con no.
-  // chore_id lay ve de loc `overdue` ben duoi. Diem lay kem o day vi ca hai man
-  // goi ham nay (chon-con cua con, tong quan cua bo me) deu hien diem canh tien do.
+  // nhung ngay truoc khong con y nghia -> chi lay bai hom nay va bai con no;
+  // bai tu ngay mai tro di cung khong (issue #62: man cua con khong ve chung,
+  // keo ve chi de loc bo). CUNG khoang voi man cua con (`from`+`to` = hom nay,
+  // `keCaBaiChuaXongTruocDo`). chore_id lay ve de loc `overdue` ben duoi. Diem
+  // lay kem o day vi ca hai man goi ham nay (chon-con cua con, tong quan cua bo
+  // me) deu hien diem canh tien do.
   //
   // "Bai con no" chi tinh bai THAT (chore_id IS NULL): tu issue #42 moi ngay
   // sinh mot dong nhiem vu cho moi con, ngay nao con khong tick het thi dong do
@@ -706,7 +710,8 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
       `SELECT a.child_id, a.status, a.due_date, a.chore_id FROM assignments a
        JOIN children c ON c.id = a.child_id
        WHERE c.family_id = $1
-         AND (a.due_date >= $2 OR (a.status = 'todo' AND a.chore_id IS NULL))`,
+         AND (a.due_date >= $2 OR (a.status = 'todo' AND a.chore_id IS NULL))
+         AND a.due_date <= $2`,
       [familyId, today]
     ),
     soDiemTheoCon(familyId),
@@ -715,7 +720,7 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
   return children.map((child) => {
     const mine = rows.filter((r) => r.child_id === child.id);
     // CUNG mot ham loc voi man cua con (lib/nhomNhiemVu.ts): con so tom tat chi
-    // duoc dem nhung dong man do VE RA va cho TICK — bai tu hom nay tro di,
+    // duoc dem nhung dong man do VE RA va cho TICK — bai hom nay + bai con no,
     // nhiem vu chi hom nay. Dem dong nhiem vu cua ngay mai (co san khi bo me da
     // nhap bai cho hom sau) la dem viec khong co cho tick: "Xong hết 🎉" thanh
     // bat kha ca toi. Xem bat bien o AGENTS.md.
@@ -826,7 +831,9 @@ export async function taoNhiemVuNgay(
  * 2. Ngay TU HOM NAY TRO DI thi PHAI tao — day la hang rao "+10 cua ngay mai":
  *    `congDiemNgayNeuXong` +10 khi MOI dong cua (con, ngay do) da 'done' va
  *    KHONG kiem "ngay do da toi chua". Bo me nhap bai / doi han chot sang NGAY
- *    MAI roi con lam xong bai do ngay toi nay (duoc phep, co ve duoi "Ngày mai"):
+ *    MAI roi bai do thanh 'done' ngay toi nay (tu #62 man cua con khong ve bai
+ *    ngay mai nua, nhung link truc tiep toi bai / API / PATCH cua bo me van doi
+ *    duoc status, nen hang rao giu nguyen):
  *    neu dong nhiem vu cua ngay mai chua ton tai thi tap dong cua ngay mai chi co
  *    bai -> +10 cua ngay mai cong NGAY TOI NAY, sang mai con lam nhiem vu that
  *    thi khong con gi de cong. Dong 'todo' tao san chinh la cai chan do.

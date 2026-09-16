@@ -5,14 +5,16 @@
  * / "Đang chờ" cua bo me). Bat bien o AGENTS.md: tap DEM phai bang tap VE.
  *
  * Luat, hai loai hai kieu:
- *   - Bai tap (choreId null): TU HOM NAY TRO DI, CONG moi bai CHUA XONG cua ngay
- *     da qua (issue #55). Bo me hay nhap bai toi hom truoc cho hom sau, con lam
- *     bai truoc mot ngay la tot — man cua con ve bai ngay mai duoi tieu de
- *     "Ngày mai" va cho lam, nen phai dem. Con bai cua hom qua chua lam thi
- *     truoc #55 no BIEN MAT khoi man cua con: khong ai con biet la dang no bai
- *     nao. Gio no o lai cho toi khi duoc tick, duoi tieu de ngay cua chinh no.
- *     Bai DA XONG cua ngay da qua van bi loai nhu cu — xong roi thi khong con
- *     viec gi de lam, giu lai chi lam danh sach dai mai.
+ *   - Bai tap (choreId null): HOM NAY (xong hay chua deu ve) CONG moi bai CHUA
+ *     XONG cua ngay da qua. Bai co han tu NGAY MAI tro di KHONG ve (issue #62,
+ *     captain chot): #55 tung keo bai ngay mai len duoi tieu de "Ngày mai" cho
+ *     con lam truoc, captain muon man cua con chi noi ve viec cua hom nay va
+ *     viec con no — bo me van thay bai ngay mai o man cua ho. Bai cua hom qua
+ *     chua lam thi o lai cho toi khi duoc tick, duoi tieu de ngay cua chinh no
+ *     (#55): truoc do no BIEN MAT khoi man cua con, khong ai con biet la dang no
+ *     bai nao. Bai DA XONG cua ngay da qua van bi loai — xong roi thi khong con
+ *     viec gi de lam, giu lai chi lam danh sach dai mai. Bai DA XONG cua HOM NAY
+ *     thi VAN ve: tick xong ma bai bien mat la hong mach an mung cua con.
  *   - Nhiem vu hang ngay: CHI HOM NAY. Dong cua ngay mai van duoc tao san
  *     (saveSubmission goi taoNhiemVuNgayNeuChuaQua cho ngay bo me giao bai —
  *     loi goi do con gac +10, xem lib/store.ts) nhung KHONG ve: tick mot dong
@@ -23,10 +25,11 @@
  *     co du.
  *
  * `status` chi duoc nhin o MOT cho: quyet dinh giu hay bo mot bai cua ngay DA
- * QUA. Voi moi ngay tu hom nay tro di (va voi MOI dong nhiem vu, ke ca ngay mai)
- * thi loc BAT KE status — neu loai dong 'todo' cua ngay mai ma giu dong 'done'
- * (tick qua ma cu truoc khi deploy, hay qua API) thi `total` phinh ma `left`
- * khong doi — "Chưa có bài" / "Xong hết 🎉" lech ngay.
+ * QUA. Voi hom nay (va voi MOI dong nhiem vu) thi loc BAT KE status, va voi ngay
+ * mai thi loai BAT KE status — neu loai dong 'todo' cua ngay mai ma giu dong
+ * 'done' (tick qua ma cu truoc khi deploy, hay qua API, hay qua link truc tiep
+ * toi bai) thi `total` phinh ma `left` khong doi — "Chưa có bài" / "Xong hết 🎉"
+ * lech ngay.
  *
  * Ham thuan, khong import gi luc chay (chi import type) de node --test nap duoc.
  */
@@ -47,7 +50,8 @@ export function veTrenManCuaCon(
   status: Status
 ): boolean {
   if (choreId != null) return dueDate === today;
-  return dueDate >= today || status !== 'done';
+  if (dueDate === today) return true;
+  return dueDate < today && status !== 'done';
 }
 
 /** Loc mot danh sach bai/nhiem vu xuong dung nhung dong man cua con ve ra. */
@@ -56,19 +60,17 @@ export function dongTrenManCuaCon(items: Assignment[], today: string): Assignmen
 }
 
 /**
- * Thu tu cac NHOM NGAY tren man cua con (issue #55): hom nay tren cung, roi cac
- * ngay sap toi tang dan ("Ngày mai"), roi cac ngay DA QUA lui dan (hom qua truoc,
- * cang cu cang xuong duoi).
+ * Thu tu cac NHOM NGAY tren man cua con: hom nay tren cung, roi cac ngay DA QUA
+ * lui dan (hom qua truoc, cang cu cang xuong duoi). Tu #62 man cua con khong con
+ * ngay nao SAU hom nay (`veTrenManCuaCon`), nen "moi truoc" la du — nhanh xep
+ * "ngay sap toi tang dan" cua #55 da bo vi khong con du lieu nao chay vao.
  *
  * Vi sao khong xep ngay qua han len dau du no gap hon: man cua con mo ra la de
  * lam BAI CUA HOM NAY: do la thu con phai xong truoc khi di choi (PRD 4.3). Bai
  * no cu la phan bu them, de duoi cho khoi day thu tu uu tien cua con.
  */
-export function soSanhNgayTrenManCuaCon(a: string, b: string, today: string): number {
-  const quaHan = (d: string) => (d < today ? 1 : 0);
-  if (quaHan(a) !== quaHan(b)) return quaHan(a) - quaHan(b);
-  // Ngay da qua: MOI truoc (giam dan). Ngay tu hom nay: GAN truoc (tang dan).
-  return a < today ? (a < b ? 1 : a > b ? -1 : 0) : a < b ? -1 : a > b ? 1 : 0;
+export function soSanhNgayTrenManCuaCon(a: string, b: string): number {
+  return a < b ? 1 : a > b ? -1 : 0;
 }
 
 /**
@@ -124,10 +126,10 @@ export function nhomBaiTheoNoiGiao(
 /**
  * Tien do o dau mot nhom tren man cua con — dem DUNG nhung dong ma than nhom do
  * VE RA, khong hon khong kem (bat bien o AGENTS.md, o pham vi trong mot man):
- *   - nhom BAI TAP ve ca bai cua ngay mai (duoi tieu de "Ngày mai") nen tien do
- *     phai tinh ca chung. Neu chi dem hom nay thi con lam xong hai bai hom nay
- *     la dau nhom to xanh + "🎉 2/2 bài xong" trong khi ngay duoi con ba the bai
- *     ngay mai chua lam.
+ *   - nhom BAI TAP ve ca bai con no cua ngay da qua (duoi tieu de ngay cua no)
+ *     nen tien do phai tinh ca chung. Neu chi dem hom nay thi con lam xong hai
+ *     bai hom nay la dau nhom to xanh + "🎉 2/2 bài xong" trong khi ngay duoi
+ *     con ba the bai no chua lam.
  *   - nhom NHIEM VU chi ve dong cua hom nay (`nhomNhiemVuHomNay`) nen tien do
  *     cung chi co dong cua hom nay — dung cung ham nay, khac o tap dua vao.
  */

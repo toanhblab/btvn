@@ -16,20 +16,18 @@ import { THU } from '@/lib/ngay';
 export const dynamic = 'force-dynamic';
 
 /**
- * "Hôm nay" / "Ngày mai" thay vì ngày tháng: tre 4 tuoi chua doc duoc lich,
- * cac ngay xa hon moi kem so de bo me liec biet la hom nao.
+ * "Hôm nay" / "Hôm qua" thay vì ngày tháng: tre 4 tuoi chua doc duoc lich,
+ * cac ngay xa hon moi kem so de bo me liec biet la hom nao. Khong co nhanh
+ * "Ngày mai": man nay khong ve bai cua ngay mai (issue #62, lib/nhomNhiemVu.ts).
  */
-function nhanNgay(
-  T: T, date: string, today: string, tomorrow: string, yesterday: string
-): string {
+function nhanNgay(T: T, date: string, today: string, yesterday: string): string {
   if (date === today) return T('Hôm nay');
-  if (date === tomorrow) return T('Ngày mai');
   if (date === yesterday) return T('Hôm qua');
   const [y, m, d] = date.split('-').map(Number);
   return `${T(THU[new Date(y, m - 1, d).getDay()])}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
 }
 
-/** Bai tap tu hom nay tro di cua mot con — nen tu Stitch 06, kem man trong tu Stitch 08. */
+/** Bai tap hom nay + bai con no cua mot con — nen tu Stitch 06, kem man trong tu Stitch 08. */
 export default async function BaiHomNay({ params }: { params: Promise<{ childId: string }> }) {
   const { childId } = await params;
   const familyId = await viewingFamilyId();
@@ -37,7 +35,6 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
 
   const T = await chu();
   const today = todayISO();
-  const tomorrow = todayISO(1);
   const yesterday = todayISO(-1);
 
   // Hai truy van chay SONG SONG. Neon la HTTP nen moi cau la mot vong goi rieng;
@@ -47,10 +44,12 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   // getChild loc theo nha: con cua nha khac coi nhu khong ton tai, du co dung
   // dung link. Cac con khong dang nhap nen day la lop chan duy nhat.
   //
-  // Tu hom nay tro di, CONG moi bai chua xong cua ngay da qua
+  // Bai cua HOM NAY, CONG moi bai chua xong cua ngay da qua
   // (keCaBaiChuaXongTruocDo, issue #55): bai hom qua con no phai o lai cho toi
   // khi duoc tick, con bai DA XONG cua ngay cu thi khong keo ve — danh sach se
-  // dai mai. Luat day du o lib/nhomNhiemVu.ts; cau truy van chi la buoc thu hep.
+  // dai mai. `to: today` cat phan tu ngay mai tro di (issue #62): man cua con
+  // khong ve bai cua ngay mai nua, keo ve chi de loc bo. Luat day du o
+  // lib/nhomNhiemVu.ts; cau truy van chi la buoc thu hep cho khop.
   // includeChores: true — viec nha (issue #36) gio la dong assignments THAT,
   // xep thanh nhom rieng CUOI CUNG ben duoi. Moi noi goi listAssignments KHAC
   // trong app (man bo me, progressUpcoming) khong xin co nay nen tu dong giu
@@ -67,14 +66,14 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   const [child, tuDB, diem] = await Promise.all([
     getChild(familyId, childId),
     listAssignments(familyId, {
-      childId, from: today, includeChores: true, keCaBaiChuaXongTruocDo: true,
+      childId, from: today, to: today, includeChores: true, keCaBaiChuaXongTruocDo: true,
     }),
     soDiem(familyId, childId),
   ]);
   if (!child) notFound();
 
-  // MOT bo loc duy nhat cho ca man nay: bai tu hom nay tro di, nhiem vu chi hom
-  // nay (lib/nhomNhiemVu.ts). `progressUpcoming` dem bang CHINH ham do, nen huy
+  // MOT bo loc duy nhat cho ca man nay: bai hom nay + bai con no, nhiem vu chi
+  // hom nay (lib/nhomNhiemVu.ts). `progressUpcoming` dem bang CHINH ham do, nen huy
   // hieu "N viec" o man chon ten khong bao gio noi ve mot dong ma man nay khong
   // cho tick — xem bat bien o AGENTS.md.
   const items = dongTrenManCuaCon(tuDB, today);
@@ -105,8 +104,8 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   /**
    * listAssignments da sap xep theo due_date tang dan nen chi can gom lien tiep,
    * roi XEP LAI thu tu nhom theo `soSanhNgayTrenManCuaCon` (issue #55): hom nay
-   * tren cung, ngay sap toi tang dan, cac ngay qua han lui dan o duoi. Thu tu
-   * cac the BEN TRONG mot ngay giu nguyen thu tu SQL.
+   * tren cung, cac ngay qua han lui dan o duoi. Thu tu cac the BEN TRONG mot
+   * ngay giu nguyen thu tu SQL.
    */
   function gomTheoNgay(mine: Assignment[]): { date: string; items: Assignment[] }[] {
     const byDate: { date: string; items: Assignment[] }[] = [];
@@ -115,7 +114,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
       if (last && last.date === a.dueDate) last.items.push(a);
       else byDate.push({ date: a.dueDate, items: [a] });
     }
-    return byDate.sort((x, y) => soSanhNgayTrenManCuaCon(x.date, y.date, today));
+    return byDate.sort((x, y) => soSanhNgayTrenManCuaCon(x.date, y.date));
   }
 
   // Gom theo NOI GIAO truoc (moi ma trong HW_SOURCES mot nhom), trong moi noi
@@ -128,7 +127,8 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   // HW_SOURCES cho hai nhom do de khong phai them 'viec nha' vao hang so day.
   //
   // Hai nhom nhiem vu chi ve dong cua HOM NAY (mot danh sach phang, khong tieu de
-  // ngay), con nhom bai tap gom theo ngay vi bai cua ngay mai phai hien. Tien do
+  // ngay), con nhom bai tap gom theo ngay vi bai con no cua ngay cu phai hien
+  // duoi ngay cua chinh no. Tien do
   // o dau moi nhom dem DUNG tap ma than nhom do ve ra — ca hai deu qua
   // `tienDoNhom`, khac o tap dua vao (xem lib/nhomNhiemVu.ts va bat bien o
   // AGENTS.md).
@@ -166,8 +166,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
   /* ---- Khong co gi de VE: man khen thay vi man trong (PRD 4.3). Tu issue #42
      nhiem vu hien moi ngay nen man nay hau nhu chi con hien khi con khong duoc
      giao nhiem vu nao (bo me tat het / khong giao cho con nay). Do theo
-     sourceGroups chu khong theo items: con co the con dong nhiem vu cua NGAY MAI
-     trong items ma man nay khong ve dong nao ca. ---- */
+     sourceGroups — dung tap ma man nay VE, khong doan qua tap keo ve. ---- */
   if (sourceGroups.length === 0) {
     return (
       <main className="kid-scope h-dvh flex flex-col items-center justify-center text-center px-k-edge relative overflow-hidden">
@@ -311,7 +310,7 @@ export default async function BaiHomNay({ params }: { params: Promise<{ childId:
             sg.byDate.map((g) => (
             <div key={g.date} className="mb-6 last:mb-0">
               <h3 className="text-k-headline text-on-surface-variant mb-4">
-                {nhanNgay(T, g.date, today, tomorrow, yesterday)}
+                {nhanNgay(T, g.date, today, yesterday)}
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-k-gutter">

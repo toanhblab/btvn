@@ -90,7 +90,6 @@ export const JA: Record<Key, string> = {
   'Thứ Sáu': '金曜日',
   'Thứ Bảy': '土曜日',
   'Hôm nay': '今日',
-  'Ngày mai': '明日',
   'Hôm qua': '昨日',
   'Đổi thưởng': 'ごほうび',
   'Hôm nay không có bài tập hay nhiệm vụ 🎉': '今日は宿題もタスクもないよ 🎉',

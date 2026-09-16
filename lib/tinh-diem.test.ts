@@ -676,9 +676,9 @@ async function taoNhiemVuNeuChuaQua(familyId: string, dueDate: string, childId: 
  * taoNhiemVuNgay trong saveSubmission (chu thich o lib/store.ts tro tới day).
  *
  * `congDiemNgayNeuXong` KHONG kiem "ngay do da toi chua": no chi hoi "moi dong
- * cua (con, ngay do) da done chua". Bo me nhap bai cho NGAY MAI toi nay, con lam
- * het bai ngay mai ngay toi nay (duoc phep — man cua con ve bai ngay mai duoi
- * tieu de "Ngày mai" va cho tick). Cai duy nhat chan +10 cua ngay mai cong som
+ * cua (con, ngay do) da done chua". Bo me nhap bai cho NGAY MAI toi nay, bai do
+ * thanh done ngay toi nay (tu #62 man cua con khong ve bai ngay mai, nhung link
+ * truc tiep toi bai / API van tick duoc). Cai duy nhat chan +10 cua ngay mai cong som
  * la dong nhiem vu 'todo' cua ngay mai da duoc tao san.
  *
  * Nhanh thu hai chay CUNG kich ban nhung KHONG tao dong nhiem vu, de thay ro

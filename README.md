@@ -463,15 +463,16 @@ cron. Hai lời gọi sau cùng còn **gác điểm +10**: dòng nhiệm vụ `t
 là thứ chặn "+10 một ngày xong hết" cộng sớm khi con làm xong bài của ngày mai
 ngay tối nay. Trên màn của con chúng xếp thành **hai nhóm
 riêng cuối cùng** và **chỉ hiện việc của hôm nay** (dòng của ngày mai vẫn tạo sẵn
-nhưng không vẽ — tick được là ⭐ trước một ngày; bài tập ngày mai thì vẫn hiện),
+nhưng không vẽ — tick được là ⭐ trước một ngày; bài tập ngày mai cũng không hiện
+trên màn của con từ issue #62, bố mẹ vẫn thấy ở màn của mình),
 mỗi dòng có icon + chip "⭐ N"; con bấm là tick ngay tại chỗ (không mở màn chi
 tiết bài), tick xong hiện chip "+N ⭐". Xong hết cả bài lẫn nhiệm
 vụ mới sang màn khen "Giỏi quá!". Badge ở màn chọn-con nói **"N việc"** = **đúng
-những gì màn của con đang vẽ và cho tick**: bài tập từ hôm nay trở đi + mọi bài
-**chưa xong** của ngày đã qua (issue #55) + nhiệm vụ của hôm nay, đếm gộp. Nên tối bố mẹ đã nhập bài cho hôm sau, con tick
-xong hết việc hôm nay thì badge đọc "1 việc" (bài ngày mai) chứ chưa phải "Xong
-hết 🎉" — muốn "Xong hết 🎉" thì làm luôn bài ngày mai. "Chưa có bài" chỉ khi
-không có gì cả. Cùng một bộ lọc dùng cho hai ô "Hoàn thành" / "Đang chờ" ở màn
+những gì màn của con đang vẽ và cho tick**: bài tập của hôm nay + mọi bài
+**chưa xong** của ngày đã qua (issue #55) + nhiệm vụ của hôm nay, đếm gộp; bài có
+hạn từ ngày mai trở đi không vẽ nên không đếm (issue #62). Nên tối bố mẹ đã nhập
+bài cho hôm sau, con tick xong hết việc hôm nay là badge đọc "Xong hết 🎉" — bài
+ngày mai sáng mai mới hiện. "Chưa có bài" chỉ khi không có gì cả. Cùng một bộ lọc dùng cho hai ô "Hoàn thành" / "Đang chờ" ở màn
 tổng quan của bố mẹ (khối "Việc con đang thấy trên máy"; ô "Quá hạn" thì loại
 nhiệm vụ ra, xem đoạn dưới) — xem `lib/nhomNhiemVu.ts` và bất biến ở AGENTS.md.
 
