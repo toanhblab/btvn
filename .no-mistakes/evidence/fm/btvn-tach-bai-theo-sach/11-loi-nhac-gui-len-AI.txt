@@ -1,0 +1,28 @@
+# Lời nhắc THỰC SỰ GỬI LÊN mô hình — bắt tại điểm cuối HTTP
+# Máy dev không có NOUS_API_KEY nên NOUS_BASE_URL trỏ vào một máy chủ giả ở cổng 3599;
+# máy chủ giả ghi lại NGUYÊN VĂN thân yêu cầu lib/ai.ts gửi đi, rồi trả lời như mô hình thật.
+# Bốn cuốn đã khai qua màn /bome/sach: Poth Math (Toán — sách của Minh + An) ·
+#   Tiếng Việt tập 1 (Tiếng Việt — cả nhà) · Bé tập tô (Vẽ — sách của Bé Na) · Vở ô ly (cả nhà).
+
+## 1) Bấm "Tách bài tập" ở /bome/them, giao cho Minh + An — đuôi lời nhắc hệ thống:
+SÁCH / VỞ / NGUỒN BÀI TẬP BỐ MẸ ĐÃ KHAI cho các con đang được giao bài:
+- Poth Math (môn Toán)
+- Tiếng Việt tập 1 (môn Tiếng Việt)
+- Vở ô ly
+Dùng danh sách này để nhận ra tên sách trong nội dung kể cả khi cô viết tắt hay
+viết sai chính tả, và để chọn "subject" theo sách khi đề không nói rõ môn. Ghi tên
+sách đúng như trong danh sách vào "note". KHÔNG bịa bài từ danh sách này — chỉ tách
+những gì có trong nội dung; nội dung nhắc tới cuốn không có trong danh sách thì vẫn
+tách như thường.
+
+## 2) CÙNG nội dung nhưng giao cho Bé Na — danh sách sách đổi theo con
+##    (Poth Math biến mất vì không phải sách của Na; Bé tập tô xuất hiện):
+SÁCH / VỞ / NGUỒN BÀI TẬP BỐ MẸ ĐÃ KHAI cho các con đang được giao bài:
+- Tiếng Việt tập 1 (môn Tiếng Việt)
+- Bé tập tô (môn Vẽ)
+- Vở ô ly
+Dùng danh sách này để nhận ra tên sách trong nội dung kể cả khi cô viết tắt hay
+viết sai chính tả, và để chọn "subject" theo sách khi đề không nói rõ môn. Ghi tên
+sách đúng như trong danh sách vào "note". KHÔNG bịa bài từ danh sách này — chỉ tách
+những gì có trong nội dung; nội dung nhắc tới cuốn không có trong danh sách thì vẫn
+tách như thường.

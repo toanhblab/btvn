@@ -1,0 +1,16 @@
+# Trạng thái ĐÃ LƯU trong CSDL sau khi bố mẹ bấm "Lưu 3 bài tập"
+# GET /api/assignments?childId=minh (2026-09-17) — các dòng còn lại là dữ liệu seed
+
+[Tiếng Anh ] note=Lớp tiếng Anh thứ Ba       video=False  10 phút :: Learn the colors: red, blue, yellow, green. Say each color out loud three times.
+[Tiếng Việt] note=Sách Tiếng Việt tập 1      video=False  10 phút :: Đọc bài trang 10, đọc to cho bố mẹ nghe.
+[Tiếng Việt] note=Tiếng Việt tập 1           video=True   40 phút :: Tiếng Việt tập 1 trang 10; Tiếng Việt tập 1 trang 11, đọc to cho bố mẹ nghe
+[Toán      ] note=Poth Math                  video=False  40 phút :: Toán: làm bài tập trang 41, 42, 43 ở sách poth math; Poth Math tr. 44
+[Toán      ] note=Trang 34, bài 3            video=False  10 phút :: Làm bài 3 trang 34. Viết vào vở ô ly.
+[Vẽ        ] note=None                       video=False  10 phút :: Vẽ một bức tranh về gia đình
+[Vẽ        ] note=Giấy A4                    video=False  10 phút :: Vẽ ngôi nhà của em, tô màu cho thật đẹp.
+
+Ba dòng vừa lưu từ tin nhắn 5 dòng của cô: hai dòng Poth Math -> MỘT dòng (note "Poth Math"),
+hai dòng Tiếng Việt tập 1 -> MỘT dòng (cần quay video vì một nửa đòi "đọc to"), bài vẽ đứng riêng.
+Ghi chú: hai dòng mới ghi 40 phút vì trước khi lưu mình đã thử ✂️ Tách rồi Gộp lại
+(tách CHÉP thời lượng sang cả hai nửa, gộp thì CỘNG — hai luật đã chốt ở các vòng
+soát trước). Tách xong mà lưu luôn thì thời lượng vẫn là 20 phút như ảnh 05.

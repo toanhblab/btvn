@@ -1,0 +1,21 @@
+# Hit-test TRONG TRANG (không phải nhìn ảnh): el.scrollIntoView() rồi
+# document.elementFromPoint() trên lưới 5×5 điểm trong getBoundingClientRect(),
+# đếm số điểm trả về đúng nút đó. Kèm documentElement.scrollWidth > innerWidth.
+
+## /bome/kiem-tra ở 390×844 (emulate --viewport "390x844x3,mobile,touch", innerWidth = 390)
+✂️ Tách bài này: 25/25
++ Gộp với bài trên: 25/25
+✂️ Tách bài này: 25/25
++ Gộp với bài trên: 25/25
+✂️ Tách bài này: 25/25
+Lưu 3 bài tập: 25/25
+scrollWidth > innerWidth: false
+
+## /bome/sach ở 390×844 (innerWidth = 390) — 4 thẻ sách + ô thêm mới
+delete: 25/25 · Môn (select): 25/25 · Cả nhà: 25/25 · Minh: 25/25 · An: 25/25 · Bé Na: 25/25   (× 4 thẻ)
+Môn (select) ô thêm mới: 25/25 · Cả nhà/Minh/An/Bé Na: 25/25 · Thêm sách: 25/25
+scrollWidth > innerWidth: false
+
+## /bome/sach ở 1440×900 (innerWidth = 1440)
+Mọi nút / select như trên: 25/25
+scrollWidth > innerWidth: false

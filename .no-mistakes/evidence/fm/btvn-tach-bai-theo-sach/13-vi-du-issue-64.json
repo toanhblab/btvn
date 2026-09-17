@@ -1,0 +1,28 @@
+{
+  "1) nguyên văn ví dụ trong issue #64 (một dòng, ba trang) -> 1 bài": [
+    {
+      "subject": "Toán",
+      "note": "Poth Math",
+      "content": "Toán: làm bài tập trang 41, 42, 43 ở sách poth math"
+    }
+  ],
+  "2) cô viết thành BA DÒNG cùng cuốn -> vẫn 1 bài": [
+    {
+      "subject": "Toán",
+      "note": "Poth Math",
+      "content": "Poth math trang 41; poth math trang 42; Poth Math trang 43"
+    }
+  ],
+  "3) ba dòng cùng cuốn + một việc khác -> 1 bài của cuốn + 1 bài vẽ (không gộp bừa)": [
+    {
+      "subject": "Toán",
+      "note": "Poth Math",
+      "content": "Poth math trang 41; poth math trang 42; Poth Math trang 43"
+    },
+    {
+      "subject": "Vẽ",
+      "note": null,
+      "content": "Vẽ một bức tranh về gia đình"
+    }
+  ]
+}

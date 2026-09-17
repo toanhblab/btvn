@@ -1,0 +1,57 @@
+{
+  "# ": "POST /api/extract — ĐƯỜNG LÙI tách thô (máy dev không có NOUS_API_KEY). Cùng một tin nhắn 5 dòng của cô.",
+  "text": "Toán: làm bài tập trang 41, 42, 43 ở sách poth math\nPoth Math tr. 44\nTiếng Việt tập 1 trang 10\nTiếng Việt tập 1 trang 11, đọc to cho bố mẹ nghe\nVẽ một bức tranh về gia đình",
+  "giao cho Minh + An (Poth Math là sách của hai bạn) -> 3 bài": [
+    {
+      "subject": "Toán",
+      "note": "Poth Math",
+      "video": false,
+      "phut": 20,
+      "content": "Toán: làm bài tập trang 41, 42, 43 ở sách poth math; Poth Math tr. 44"
+    },
+    {
+      "subject": "Tiếng Việt",
+      "note": "Tiếng Việt tập 1",
+      "video": true,
+      "phut": 20,
+      "content": "Tiếng Việt tập 1 trang 10; Tiếng Việt tập 1 trang 11, đọc to cho bố mẹ nghe"
+    },
+    {
+      "subject": "Vẽ",
+      "note": null,
+      "video": false,
+      "phut": 10,
+      "content": "Vẽ một bức tranh về gia đình"
+    }
+  ],
+  "giao cho Bé Na (Poth Math KHÔNG phải sách của Na) -> 4 bài": [
+    {
+      "subject": "Toán",
+      "note": null,
+      "video": false,
+      "phut": 10,
+      "content": "Toán: làm bài tập trang 41, 42, 43 ở sách poth math"
+    },
+    {
+      "subject": "Khác",
+      "note": null,
+      "video": false,
+      "phut": 10,
+      "content": "Poth Math tr. 44"
+    },
+    {
+      "subject": "Tiếng Việt",
+      "note": "Tiếng Việt tập 1",
+      "video": true,
+      "phut": 20,
+      "content": "Tiếng Việt tập 1 trang 10; Tiếng Việt tập 1 trang 11, đọc to cho bố mẹ nghe"
+    },
+    {
+      "subject": "Vẽ",
+      "note": null,
+      "video": false,
+      "phut": 10,
+      "content": "Vẽ một bức tranh về gia đình"
+    }
+  ]
+}
