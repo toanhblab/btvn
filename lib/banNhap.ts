@@ -22,7 +22,7 @@
  * thi 45 + 30 ra 60, tuc la tu lam thieu dung thu nay muon tranh.
  */
 
-import type { DraftAssignment } from './types';
+import type { AttachedMedia, DraftAssignment } from './types';
 import { DURATION_DEFAULT, sanitizeDuration } from './types';
 
 /** Mot the o man Kiem tra lai. `durationStr` giu dang chuoi de bo me xoa trong o roi go so moi. */
@@ -102,4 +102,23 @@ export function tachBanNhap(ds: BanNhap[], i: number, viTriConTro: number | null
   const goc = { ...d, content: dau || d.content };
   const moi: BanNhap = { ...d, ma: maBanNhapMoi(), content: dau ? sau : '', media: [] };
   return [...ds.slice(0, i), goc, moi, ...ds.slice(i + 1)];
+}
+
+/** Vi tri cua ban nhap mang ma nay; -1 khi no khong con trong danh sach. */
+export const viTriBanNhap = (ds: BanNhap[], ma: string): number => ds.findIndex((d) => d.ma === ma);
+
+/**
+ * Dinh mot tep vao the mang ma nay. Tra theo MA chu khong theo cho dung trong
+ * mang: tai tep len la mot cho doi, ma trong luc doi bo me van bam Gop / Tach
+ * duoc, nen cho so 3 luc bam khong con la cho so 3 luc tep len xong. The da bi
+ * xoa (ma khong con) thi bo tep, khong dinh nham the khac.
+ */
+export function dinhTepVaoBanNhap(ds: BanNhap[], ma: string, tep: AttachedMedia): BanNhap[] {
+  return ds.map((d) => (d.ma === ma ? { ...d, media: [...(d.media ?? []), tep] } : d));
+}
+
+/** Go mot tep khoi the mang ma nay — cung cach tra theo ma voi dinhTepVaoBanNhap. */
+export function goTepKhoiBanNhap(ds: BanNhap[], ma: string, url: string): BanNhap[] {
+  return ds.map((d) =>
+    (d.ma === ma ? { ...d, media: (d.media ?? []).filter((m) => m.url !== url) } : d));
 }

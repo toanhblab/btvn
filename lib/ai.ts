@@ -389,9 +389,19 @@ const chuanHoa = (s: string): string =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase()
     .replace(/\s+/g, ' ').trim();
 
-/** Tach thanh TU, giu song song ca dang co dau (chu thuong) lan dang bo dau. */
+/**
+ * Tach thanh TU, giu song song ca dang co dau (chu thuong) lan dang bo dau.
+ *
+ * Ep ve NFC TRUOC KHI tach tu: "ở" go trong trinh duyet la MOT ky tu (NFC), con
+ * chu dan tu Zalo / ban phim tieng Viet tren macOS thuong la "o" + dau roi (NFD).
+ * Hai chuoi do hien ra giong het nhau ma `===` tra false, nen khong ep thi ten
+ * sach bo me khai khong bao gio khop dong co giao gui — im lang, khong bao loi gi.
+ * Va dau roi KHONG phai \p{L}, nen de nguyen NFD thi chinh phep tach tu cat ngay
+ * giua chu: "vở" ra hai tu "v" va "o". Dang bo dau khong can ep: chuanHoa da go
+ * het dau roi.
+ */
 const tachTu = (s: string): { co: string; khong: string }[] =>
-  s.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+  s.normalize('NFC').toLowerCase().split(/[^\p{L}\p{N}\p{M}]+/u).filter(Boolean)
     .map((t) => ({ co: t, khong: chuanHoa(t) }));
 
 /**

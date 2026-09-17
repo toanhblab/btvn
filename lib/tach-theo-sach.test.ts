@@ -260,6 +260,27 @@ test('ten sach khop theo TU, khong phai chuoi con: "toàn bộ" khong bi nhan la
   assert.equal(splitByRule('Nhạc: hát bài Toánca trang 2', undefined, [TOAN])[0].note, null);
 });
 
+test('ten sach khop du chu go o dang NFC hay NFD (chu dan tu Zalo / ban phim tieng Viet)', () => {
+  const ten = 'Vở ô ly';
+  const dong = 'Vở ô ly trang 4, viết chính tả';
+  // Cung mot chuoi nhin bang mat, khac nhau tung byte
+  assert.notEqual(ten.normalize('NFC'), ten.normalize('NFD'));
+
+  for (const dangTen of ['NFC', 'NFD'] as const) {
+    for (const dangDong of ['NFC', 'NFD'] as const) {
+      const ds = splitByRule(dong.normalize(dangDong), undefined, [sach(ten.normalize(dangTen))]);
+      assert.equal(ds[0].note, ten.normalize(dangTen), `ten ${dangTen} / dong ${dangDong}`);
+    }
+  }
+
+  // Van khong nhan bua: "toàn" khong phai cuon "Toán" o bat ky dang nao
+  for (const dang of ['NFC', 'NFD'] as const) {
+    const ds = splitByRule('Đọc toàn bộ câu chuyện trang 7'.normalize(dang), undefined,
+      [sach('Toán'.normalize(dang), 'Toán')]);
+    assert.equal(ds[0].note, null, `dang ${dang}`);
+  }
+});
+
 test('viec doc lap (quay video, khong chi trang) KHONG bi nuot vao bai cua cuon dang gop', () => {
   const TOAN = sach('Toán', 'Toán');
   const ds = splitByRule('Toán trang 41\nToán: quay video đọc bảng cộng gửi cô', undefined, [TOAN]);

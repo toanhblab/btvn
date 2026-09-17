@@ -417,7 +417,12 @@ hành vi trong `lib/tach-theo-sach.test.ts`; tóm tắt:
   cuốn *"Toán"* và chữ *"toàn"* đều ra `toan` — nên một từ chỉ khớp khi **đúng
   nguyên dạng có dấu**, hoặc khi **chính nó không có dấu nào**. Vì thế *"đọc toàn bộ
   câu chuyện"* không bị gán cuốn *"Toán"*. Bỏ sót một cách nhắc lỏng lẻo chỉ là
-  không gộp được; gán nhầm cuốn là con lấy sai quyển ra làm.
+  không gộp được; gán nhầm cuốn là con lấy sai quyển ra làm. Phép so chịu được
+  **dòng bài tập** viết không dấu, nhưng **không** chịu được **tên sách bố mẹ khai**
+  thiếu dấu (khai *"Vo o ly"* thì không khớp dòng *"Vở ô ly trang 4"*) — cả
+  `HUONG-DAN-BO-ME.md` lẫn màn khai sách đều nhắc gõ tên có dấu như trên bìa. Hai
+  bên đều ép về **NFC** trước khi so: chữ dán từ Zalo / bàn phím tiếng Việt thường
+  là NFD, nhìn giống hệt mà `===` trả false.
 - **Không dòng nào nhắc cuốn nào**: gộp khi cùng môn (khác "Khác"), **cả hai** đều
   chỉ trang / số bài (`DAU_HIEU_TRANG`: "trang 41", "tr. 5", "bài 3", "page 12",
   "Ex 2"…) và cùng ngôn ngữ đoán được.

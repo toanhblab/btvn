@@ -137,6 +137,10 @@ Vào **Cài đặt → "Sách của các con"** (cũng có dòng dẫn ngay dư�
 màn Thêm bài). Ở đây bố mẹ khai **tên sách, vở, phiếu bài tập** các con đang dùng —
 ví dụ *Poth Math*, *Tiếng Việt tập 1*, *Vở ô ly*. Mỗi cuốn chọn thêm được:
 
+> **Gõ tên sách có dấu, đúng như in trên bìa** (*"Vở ô ly"*, không phải *"Vo o ly"*).
+> App nhận ra tên sách cả khi **cô giáo** viết không dấu trong tin nhắn, nhưng tên
+> bố mẹ khai mà thiếu dấu thì app không ghép được với tin nhắn viết có dấu.
+
 - **Môn** của cuốn đó (để trống nếu chưa rõ hoặc sách nhiều môn).
 - **Sách của**: mặc định **Cả nhà**, hoặc bấm chọn từng con — sách của bé mẫu giáo
   thì chỉ chọn bé đó, để app không đem cuốn ấy ra đoán bài của hai bé lớp 1.

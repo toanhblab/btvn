@@ -13,7 +13,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { gopLenBanNhap, maBanNhapMoi, tachBanNhap, type BanNhap } from './banNhap.ts';
+import {
+  dinhTepVaoBanNhap, goTepKhoiBanNhap, gopLenBanNhap, maBanNhapMoi, tachBanNhap, viTriBanNhap,
+  type BanNhap,
+} from './banNhap.ts';
 import type { AttachedMedia } from './types.ts';
 
 const banNhap = (content: string, them: Partial<BanNhap> = {}): BanNhap => ({
@@ -109,4 +112,42 @@ test('tach khi khong biet con tro (chua cham vao o) hay con tro o dau/cuoi: the 
     assert.equal(kq[0].content, x.content, `vi tri ${viTri}`);
     assert.equal(kq[1].content, '', `vi tri ${viTri}`);
   }
+});
+
+test('tep dinh vao the nao thi o lai the do, du trong luc tai len bo me tach / gop the khac', () => {
+  const [a, b, c] = [banNhap('A'), banNhap('B'), banNhap('C')];
+  // Bo me bam dinh tep o the C (cho so 2) roi trong luc doi tai len, tach the A
+  const maDangTai = c.ma;
+  const sauTach = tachBanNhap([a, b, c], 0, null);      // chen mot the moi -> C trot xuong cho 3
+  assert.equal(viTriBanNhap(sauTach, maDangTai), 3);
+
+  const xong = dinhTepVaoBanNhap(sauTach, maDangTai, tep('u1'));
+  assert.deepEqual(xong.find((d) => d.ma === maDangTai)?.media, [tep('u1')]);
+  assert.deepEqual(
+    xong.filter((d) => d.ma !== maDangTai).flatMap((d) => d.media ?? []), [],
+    'khong bai nao khac om tep');
+
+  // Chieu gop cung vay: the bien mat khoi cho cu ma tep van ve dung the
+  const sauGop = gopLenBanNhap([a, b, c], 1);           // [AB, C] -> C len cho 1
+  assert.equal(viTriBanNhap(sauGop, maDangTai), 1);
+  assert.deepEqual(
+    dinhTepVaoBanNhap(sauGop, maDangTai, tep('u2')).find((d) => d.ma === maDangTai)?.media,
+    [tep('u2')]);
+});
+
+test('the da bi xoa trong luc tai len: tep bi bo, khong dinh nham the khac', () => {
+  const [a, b] = [banNhap('A'), banNhap('B')];
+  const conLai = [a];   // bo me xoa the B trong luc doi
+
+  const xong = dinhTepVaoBanNhap(conLai, b.ma, tep('u1'));
+  assert.deepEqual(xong.flatMap((d) => d.media ?? []), []);
+});
+
+test('go tep cung tra theo ma: go dung tep cua dung the', () => {
+  const a = banNhap('A', { media: [tep('u1'), tep('u2')] });
+  const b = banNhap('B', { media: [tep('u1')] });
+
+  const sau = goTepKhoiBanNhap([a, b], a.ma, 'u1');
+  assert.deepEqual(sau[0].media?.map((m) => m.url), ['u2']);
+  assert.deepEqual(sau[1].media?.map((m) => m.url), ['u1'], 'the kia con nguyen');
 });
