@@ -110,13 +110,48 @@ test('tach tai con tro: hai nua chia dung cho, the moi mang ma moi va khong om t
   assert.notEqual(kq[1].ma, x.ma, 'the moi phai co ma rieng, khong dung chung o de bai');
   assert.deepEqual(kq[0].media, x.media, 'tep giu o the goc');
   assert.deepEqual(kq[1].media, []);
-  // Chep mon / ghi chu / giong doc / co quay video; thoi luong CHEP nguyen sang ca
-  // hai nua (sai theo huong thua), khong chia ti le
+  // Chep mon / ghi chu / giong doc; thoi luong CHEP nguyen sang ca hai nua (sai
+  // theo huong thua), khong chia ti le
   assert.equal(kq[1].subject, x.subject);
   assert.equal(kq[1].note, x.note);
   assert.equal(kq[1].lang, x.lang);
   assert.equal(kq[0].durationStr, '24');
   assert.equal(kq[1].durationStr, '24');
+});
+
+test('tach the co co video ma khong nua nao doi quay: giu co o nua DAU, nua sau bo co', () => {
+  const x = banNhap('Toán trang 41 và chép bài thơ', { requiresVideo: true });
+  const kq = tachBanNhap([x], 0, 'Toán trang 41'.length);
+
+  assert.deepEqual(kq.map((d) => d.content), ['Toán trang 41', 'và chép bài thơ']);
+  assert.equal(kq[0].requiresVideo, true, 'nua dau la phan o lai the cu');
+  assert.equal(kq[1].requiresVideo, false, 'viec vua tach ra khong tu nhien doi quay video');
+
+  // Cung the do, con tro o cuoi (khong cat thuc su): the moi trong thi khong co co
+  const nguyen = tachBanNhap([x], 0, null);
+  assert.equal(nguyen[0].requiresVideo, true);
+  assert.equal(nguyen[1].requiresVideo, false);
+});
+
+test('tach the gop vi mot nua phai quay video: co theo dung nua mang chu "đọc to"', () => {
+  const x = banNhap('Poth Math trang 41, 42. Poth Math bài 3: đọc to cho cô nghe', {
+    requiresVideo: true, durationStr: '24',
+  });
+  const kq = tachBanNhap([x], 0, 'Poth Math trang 41, 42.'.length);
+
+  assert.deepEqual(kq.map((d) => d.content),
+    ['Poth Math trang 41, 42.', 'Poth Math bài 3: đọc to cho cô nghe']);
+  assert.equal(kq[0].requiresVideo, false, 'nua trang giay het co — khong thi con mat nut "Đã làm xong"');
+  assert.equal(kq[1].requiresVideo, true, 'nua "đọc to" van phai quay');
+  assert.equal(kq[0].durationStr, '24', 'thoi luong van chep sang ca hai nua');
+  assert.equal(kq[1].durationStr, '24');
+});
+
+test('tach the CHUA bat co ma mot nua doi quay: nua do duoc bat co', () => {
+  const x = banNhap('Viết chính tả vào vở. Đọc thuộc lòng bài thơ cho cô nghe');
+  const kq = tachBanNhap([x], 0, 'Viết chính tả vào vở.'.length);
+
+  assert.equal(kq[0].requiresVideo, false);
   assert.equal(kq[1].requiresVideo, true);
 });
 

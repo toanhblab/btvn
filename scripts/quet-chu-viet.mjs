@@ -49,10 +49,8 @@ const MIEN_TRU = {
     // gui cho may — ca dong ten sach `(môn …)` lan khuon mau nhieu dong.
     /`- \$\{ten\}\$\{b\.subject \? ` \(môn \$\{b\.subject\}\)` : ''\}`/,
     /return `SÁCH \/ VỞ \/ NGUỒN BÀI TẬP[\s\S]*?`;/,
-    // Bang tu khoa doan mon / doan bai phai quay video / dau hieu trang-so bai:
-    // luoi NHAN DIEN, khong hien.
+    // Bang tu khoa doan mon / dau hieu trang-so bai: luoi NHAN DIEN, khong hien.
     /const HINTS: \[RegExp, string\]\[\] = \[[\s\S]*?\];/,
-    /const VIDEO_HINT =[\s\S]*?;/,
     /const DAU_HIEU_TRANG =[\s\S]*?;/,
     // Bang chu cai de do de bai co phai tieng Viet khong (regex), khong hien; va
     // phep bo dau (chuanHoa) de so ten sach — cung la regex.
@@ -60,6 +58,9 @@ const MIEN_TRU = {
     /const viChars = .*;/,
     /\.replace\(\/đ\/gi, 'd'\)/,
   ],
+  // Luoi nhan ra bai phai quay video (regex dung chung cho duong lui tach tho va
+  // phep tach the o man Kiem tra lai): NHAN DIEN chu tin nhan cua co, khong hien.
+  'lib/dauHieuVideo.ts': [/export const VIDEO_HINT =[\s\S]*?;/],
   // Bang chu cai dung de NHAN DIEN tieng Viet trong de bai (regex), khong hien.
   'lib/speech.ts': [/\/\[[^\]]*\]\/i/],
   // Bo dau de dat ten tep video nop cho co (regex trong boDau), khong hien.

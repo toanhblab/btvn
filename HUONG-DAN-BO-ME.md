@@ -115,7 +115,10 @@ cũng là của cả ba trang** (ba trang mỗi trang khoảng 8 phút thì app 
 không để 8) — bố mẹ thấy con nhà mình làm nhanh hay chậm hơn thì sửa lại số phút
 ngay ở màn này. Nếu app gộp nhầm hai việc khác cuốn vào một thẻ,
 bố mẹ **chạm vào chỗ muốn cắt** trong ô đề bài rồi bấm **"✂️ Tách bài này"** — thẻ
-mới hiện ngay bên dưới, giữ nguyên môn và ghi chú. Ngược lại, tách vụn quá thì bấm
+mới hiện ngay bên dưới, giữ nguyên môn và ghi chú. Chip 🎥 thì **không** chép sang
+cả hai: mỗi thẻ chỉ giữ 🎥 nếu chính chữ của nó nói đến việc phải quay (đọc to, đọc
+thuộc, biểu diễn…), để nửa bài viết vào vở không bị đòi quay video. Thấy thiếu hay
+thừa thì bấm chip 🎥 ngay trên thẻ đó. Ngược lại, tách vụn quá thì bấm
 **"Gộp với bài trên"** — thẻ gộp giữ đủ của cả hai: đề bài nối lại, dòng "sách,
 trang" của cả hai thẻ đứng cạnh nhau, tệp đính kèm của cả hai, và nếu một trong hai
 cần quay video thì thẻ gộp cũng cần.

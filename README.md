@@ -452,8 +452,8 @@ một hay hai cuốn khi cô không ghi tên — coi là một; một dòng có 
 chỉ ghi trang thì **không** gộp. Cả hai chiều đều sửa được một chạm ở màn Kiểm tra
 lại: "Gộp với bài trên" có từ trước, **"✂️ Tách bài này"** thêm ở lần này — cắt tại
 con trỏ trong ô đề bài (bố mẹ chạm vào chỗ muốn cắt rồi bấm), con trỏ ở đầu / cuối
-thì thẻ mới để trống; thẻ mới chép môn / ghi chú / giọng / thời lượng / cờ video,
-tệp đính kèm ở lại thẻ gốc (`lib/banNhap.ts`, hai hàm thuần). Chiều gộp giữ **đủ
+thì thẻ mới để trống; thẻ mới chép môn / ghi chú / giọng / thời lượng, tệp đính kèm
+ở lại thẻ gốc (`lib/banNhap.ts`, hai hàm thuần). Chiều gộp giữ **đủ
 của cả hai thẻ**: đề bài nối lại, **ghi chú ghép bằng " · "** (trùng nhau thì một
 lần, cả hai trống thì `null`), tệp lấy hợp, cờ video là HOẶC. Ghi chú là chỗ ghi
 tên sách + số trang, mà từ khi AI đã tự gộp các dòng cùng một cuốn thì hai thẻ bố
@@ -466,6 +466,15 @@ cho một bài nó làm đúng hạn, còn thừa thì chỉ là đồng hồ c�
 thì cộng** hai số, còn **tách thì chép** nguyên số sang cả hai nửa, không chia tỉ
 lệ: không biết con trỏ cắt vào chỗ nặng hay nhẹ, mà chép là sai theo hướng thừa.
 Bố mẹ sửa lại số phút ngay tại dòng đó.
+
+**Cờ 🎥 đi ngược chiều với thời lượng**, đừng lấy nhầm: thừa giờ thì vô hại, còn
+thừa cờ là con **mất hẳn nút "Đã làm xong"** (màn của con chỉ cho nộp bằng video)
+cho tới khi bố mẹ vào bỏ tick. Nên **gộp thì HOẶC** hai cờ, còn **tách thì không
+chép** cờ sang nửa kia: mỗi nửa đọc lại chữ đề bài **của chính nó** bằng
+`coDauHieuVideo` (`lib/dauHieuVideo.ts` — cùng một lưới với đường lùi tách thô, một
+bản duy nhất cho cả máy chủ lẫn màn Kiểm tra lại). Thẻ đang bật cờ mà **không nửa
+nào** dính dấu hiệu (AI gắn cờ, hoặc bố mẹ tự bấm chip) thì giữ cờ ở **nửa đầu** và
+bỏ ở nửa sau. Nhờ vậy thẻ gộp vì một nửa "đọc to" tách ra thì nửa trang giấy hết cờ.
 
 Hai **trần khác nhau**, đừng dùng lẫn: ước lượng do **máy** sinh ra (AI và
 `gopDong` của đường lùi) kẹp ở `clampDuration`, trần 60; số **bố mẹ tự gõ** ở màn

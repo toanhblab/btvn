@@ -17,6 +17,7 @@ import type { Book, DraftAssignment, HwSource, Lang } from './types';
 import { clampDuration, DURATION_DEFAULT, iconFor, laTenMon, MAX_CHU_TEN_SACH, SUBJECTS } from './types';
 import { T_VI, taoT, type Key, type T } from './i18n/chu';
 import { NGON_NGU_MAC_DINH, type NgonNgu } from './i18n/ngonNgu';
+import { coDauHieuVideo } from './dauHieuVideo';
 
 /**
  * Ten mon AI tra ve la TIENG VIET (enum trong luoc do). Nha demo (issue #46) luu
@@ -173,64 +174,6 @@ interface RawDraft {
   duration_minutes?: number;
   canQuayVideo?: boolean;
 }
-
-/**
- * Luoi THO nhan ra bai phai QUAY VIDEO. CHI dung cho splitByRule — ban tach tho
- * theo dong khi khong goi duoc AI, khong co cau tra loi nao de dua vao. Khi da
- * goi duoc AI thi truong canQuayVideo cua no la quyet dinh cuoi cung, KHONG OR
- * them regex nay vao: regex bat nham ("viết đoạn văn kể lại...") se chan con
- * tick xong bai. KHONG bat tu "video" tran: "xem video cô gửi" la XEM, khong
- * phai quay.
- *
- * DUNG "dong bo" danh sach nay voi danh sach trigger trong prompt cua AI o tren.
- * Hai ben CO Y lech nhau: prompt con co "kể lại ... cho bố mẹ nghe", "thuyết
- * trình", "hát" nhung o day khong co. Tieng Viet khong dong lai duoc bang mot
- * danh sach tu khoa — "kể lại" nam trong ca bai NOI ("kể lại cho bố mẹ nghe")
- * lan bai VIET ("viết đoạn văn kể lại ... vào vở"), va gan co sai vao bai viet
- * la XOA han nut "Đã làm xong" cua con cho tới khi bo me vao /bome bo tick.
- *
- * Nen o duong nay THIEU co la lua chon co chu y, khong phai lo: moi bai tach
- * theo dong deu mang confidence 0.3 nen man Kiem tra lai luon dan canh bao
- * "Tách tạm, chưa qua AI", va bo me bat chip 🎥 ngay tai do bang mot lan bam.
- * Bom them tu khoa vao day de "cho du" la doi cai gia dat hon cai duoc.
- *
- * Ngoai le duy nhat: khi co giao GHI THANG chu "video/clip/phim" sau mot dong tu
- * nop bai thi khong con gi phai doan, nen nhanh do nhan ca chu dem o giua ("quay
- * 1 video...", "quay lại video...", "nộp video...").
- *
- * Repo khong co unit test — cac ca duoi day la hop dong cua regex nay, doi regex
- * thi doi tay lai het:
- *   PHAI bat: "Quay 1 video kể lại câu chuyện" | "Quay một video thuyết trình"
- *             "Quay lại video bài hát" | "Quay 2 videos đọc bài"
- *             "Nộp video đọc bài" | "quay video gửi cô"
- *             "Đọc to bài thơ" | "Đọc thuộc lòng" | "Tập thể dục" | "Biểu diễn"
- *   KHONG duoc bat: "Viết đoạn văn kể lại câu chuyện Cây khế vào vở"
- *                   "Chép lời bài hát Bụi phấn vào vở"
- *                   "Xem video bài giảng rồi làm bài tập"
- *                   "Xem video cô gửi" | "Đọc toàn bộ câu chuyện" | "Đọc toán trang 5"
- *                   "Xem lại group video của lớp rồi viết vào vở"
- *                   "Bố mẹ backup video bài giảng cho con xem"
- *                   "Cô gửi video bài giảng, con xem rồi làm bài tập vào vở"
- *                   "Cô giáo gửi video cho bố mẹ tham khảo"
- *                   "Con xem ít nhất 1 tập phim hoạt hình trong link film cô gửi
- *                    trong nhóm riêng."
- *
- * Ba ca cuoi la ly do dong tu "gửi" DA BI BO khoi nhom dong tu — DUNG them lai.
- * Trong tin nhan cua co giao, "gửi" gan chu "video" thi nguoi gui thuong la CO
- * chu khong phai con ("cô gửi video bài giảng"), va ca hai huong va — neo nguoi
- * gui (cô|thầy) hay negative lookbehind chan chu ngu — deu vo tren bien the that
- * ("Cô giáo gửi", "Cô chủ nhiệm gửi", "Cô Lan gửi", "Giáo viên gửi", "Nhà trường
- * gửi"). Sot co thi bo me bat lai bang chip 🎥 khi duyet; bat oan thi XOA han nut
- * "Đã làm xong" cua con. Chieu "Con gửi video cho cô" van bat duoc qua "quay" /
- * "nộp" — hai chu gan nhu luon co mat trong de kieu do.
- *
- * Hai ca "group video" / "backup video" la ly do co (?<![a-zA-ZÀ-ỹ]) truoc nhom
- * dong tu: khong co bien trai thi "up" bat duoc phan duoi cua "gro-up" /
- * "back-up". splitByRule chi chay o may chu (app/api/extract) nen lookbehind
- * khong lien quan Safari cu.
- */
-const VIDEO_HINT =
-  /(?<![a-zA-ZÀ-ỹ])(quay|nộp|upload|up)\s*(lại\s*)?(\d+|một|hai|ba)?\s*(video|clip|phim)|đọc\s+to(?![a-zA-ZÀ-ỹ])|đọc\s+thuộc|thuộc\s+lòng|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
 
 /**
  * Truoc day o day hoi model tu cham "confidence" 0..1, va man Kiem tra lai gan
@@ -390,7 +333,8 @@ const DAU_HIEU_TRANG = /\b(?:trang|tr\.|page|p\.|bài|ex(?:ercise)?s?\.?|unit|le
  * "ở" go trong trinh duyet la MOT ky tu (NFC), con chu dan tu Zalo / ban phim
  * tieng Viet tren macOS thuong la "o" + dau roi (NFD): nhin giong het nhau ma moi
  * phep so deu truot. Truot im lang o KHAP NOI trong splitByRule chu khong chi o
- * ten sach — bang tu khoa doan mon, DAU_TIENG_VIET (doan ngon ngu), VIDEO_HINT,
+ * ten sach — bang tu khoa doan mon, DAU_TIENG_VIET (doan ngon ngu), VIDEO_HINT
+ * (lib/dauHieuVideo.ts),
  * DAU_HIEU_TRANG deu la regex viet o dang NFC. Dang NFD lot vao thi moi the ra
  * mon "Khác", ngon ngu "en" (man cua con doc de tieng Viet bang giong Anh), sot
  * co quay video, va khong the nao gop duoc.
@@ -604,7 +548,7 @@ export function splitByRule(text: string, T: T = T_VI, sach: Book[] = []): Draft
         book,
         coTrang: DAU_HIEU_TRANG.test(line),
         lang: (viChars === 0 && /[a-z]/i.test(line) ? 'en' : 'vi') as Lang,
-        requiresVideo: VIDEO_HINT.test(line),
+        requiresVideo: coDauHieuVideo(line),
         // Tach tho khong doan duoc do phuc tap cua tung dong -> moi dong mot muc
         // mac dinh; gop bao nhieu dong thi bai gop cong bay nhieu.
         phut: DURATION_DEFAULT,
