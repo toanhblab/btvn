@@ -100,7 +100,13 @@ export default function Sach({
   ): Promise<Book | null> {
     const data = await goi(`/api/sach/${b.id}`, { method: 'PATCH', body: JSON.stringify(patch) });
     if (!data) return null;
-    const daLuu = data.book as Book;
+    const daLuu = data.book as Book | null;
+    // Chi nhet vao danh sach thu la CUON THAT: mot `null` lot vao day thi nhip ve
+    // ke tiep doc b.id cua no va ca man hinh trang, khong mot cau bao nao
+    if (!daLuu || typeof daLuu !== 'object') {
+      setError(T('Không tìm thấy cuốn sách này.'));
+      return null;
+    }
     setBooks((ds) => ds.map((x) => (x.id === b.id ? daLuu : x)));
     return daLuu;
   }

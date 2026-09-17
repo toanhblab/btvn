@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { parentFamilyId } from '@/lib/auth';
 import { bookTrungTen, deleteBook, getBook, locChildIdsGiaoCho, updateBook } from '@/lib/store';
-import { MAX_CHU_TEN_SACH, monSachOf } from '@/lib/types';
+import { lamSachTenSach, MAX_CHU_TEN_SACH, monSachOf } from '@/lib/types';
 import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
@@ -38,7 +38,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
     if (typeof body.name !== 'string') {
       return NextResponse.json({ error: T('Chưa nhập tên sách.') }, { status: 400 });
     }
-    const name = body.name.replace(/\s+/g, ' ').trim();
+    const name = lamSachTenSach(body.name);
     if (!name) return NextResponse.json({ error: T('Chưa nhập tên sách.') }, { status: 400 });
     if (name.length > MAX_CHU_TEN_SACH) {
       return NextResponse.json({ error: T('Tên sách dài quá, để ngắn thôi.') }, { status: 400 });
@@ -55,7 +55,13 @@ export async function PATCH(req: Request, { params }: Ctx) {
     patch.childIds = giaoCho.childIds;
   }
 
-  return NextResponse.json({ book: await updateBook(familyId, id, patch) });
+  // updateBook doc lai dong sau khi ghi; null = cuon vua bi BO giua chung (o may
+  // khac). Tra 200 kem book: null thi man hinh nhet null vao danh sach roi trang.
+  const book = await updateBook(familyId, id, patch);
+  if (!book) {
+    return NextResponse.json({ error: T('Không tìm thấy cuốn sách này.') }, { status: 404 });
+  }
+  return NextResponse.json({ book });
 }
 
 /**

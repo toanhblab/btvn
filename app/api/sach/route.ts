@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { parentFamilyId } from '@/lib/auth';
 import { bookTrungTen, createBook, listBooks, locChildIdsGiaoCho } from '@/lib/store';
-import { MAX_CHU_TEN_SACH, monSachOf } from '@/lib/types';
+import { lamSachTenSach, MAX_CHU_TEN_SACH, monSachOf } from '@/lib/types';
 import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   if (body?.name !== undefined && typeof body.name !== 'string') {
     return NextResponse.json({ error: T('Chưa nhập tên sách.') }, { status: 400 });
   }
-  const name = (body?.name ?? '').replace(/\s+/g, ' ').trim();
+  const name = lamSachTenSach(body?.name ?? '');
   if (!name) return NextResponse.json({ error: T('Chưa nhập tên sách.') }, { status: 400 });
   if (name.length > MAX_CHU_TEN_SACH) {
     return NextResponse.json({ error: T('Tên sách dài quá, để ngắn thôi.') }, { status: 400 });

@@ -148,6 +148,48 @@ test('bo sach = danh dau archived_at: bien khoi list/get/update, dong van con', 
   assert.equal(await store.bookTrungTen(nhaA.id, 'Sách tạm'), false);
 });
 
+test('cuon vua bi BO giua chung: PATCH tra 404, KHONG bao gio 200 kem book: null', async () => {
+  hu.clear();
+  await signIn(nhaA.id, true, PIN_A);
+  const tam = await store.createBook(nhaA.id, { name: 'Sách sắp bỏ', subject: null, childIds: null });
+
+  // Cai ma route phai xu ly: ghi xong doc lai khong con dong nao
+  await store.deleteBook(nhaA.id, tam.id);
+  assert.equal(await store.updateBook(nhaA.id, tam.id, { subject: 'Toán' }), null);
+
+  const res = await sachIdRoute.PATCH(json({ subject: 'Toán' }), ctx(tam.id));
+  assert.equal(res.status, 404);
+  const data = await res.json();
+  assert.ok(data.error, 'co cau bao loi cho bo me doc');
+  assert.equal(data.book, undefined, 'khong tra ve cuon rong');
+});
+
+test('ten sach luu o dang NFC: cung mot ten go hai dang khac nhau van la TRUNG ten', async () => {
+  hu.clear();
+  await signIn(nhaA.id, true, PIN_A);
+  const ten = 'Sổ tay chữ đẹp';
+  assert.notEqual(ten.normalize('NFC'), ten.normalize('NFD'), 'hai dang khac nhau tung byte');
+
+  const dau = await sachRoute.POST(json({ name: ten.normalize('NFD') }));
+  assert.equal(dau.status, 200);
+  const cuon = (await dau.json()).book;
+  assert.equal(cuon.name, ten.normalize('NFC'), 'luu ve dang NFC du go dang NFD');
+
+  // Lan sau bo me dan ten dang NFC: phai bao trung, khong tao dong thu hai
+  assert.equal((await sachRoute.POST(json({ name: ten.normalize('NFC') }))).status, 400);
+  assert.equal(
+    (await store.listBooks(nhaA.id)).filter((b) => b.name.normalize('NFC') === ten.normalize('NFC')).length,
+    1, 'chi mot dong "So tay chu dep" trong danh sach');
+
+  // Doi ten cuon KHAC thanh cung ten do o dang NFD cung bi chan
+  const khac = await store.createBook(nhaA.id, { name: 'Vở kẻ ngang', subject: null, childIds: null });
+  assert.equal(
+    (await sachIdRoute.PATCH(json({ name: ten.normalize('NFD') }), ctx(khac.id))).status, 400);
+
+  await store.deleteBook(nhaA.id, cuon.id);
+  await store.deleteBook(nhaA.id, khac.id);
+});
+
 test('bookTrungTen: khong phan biet hoa/thuong va khoang trang thua; exceptId cho doi ten chinh no', async () => {
   const [poth] = (await store.listBooks(nhaA.id)).filter((b) => b.name === 'Poth Math');
   assert.equal(await store.bookTrungTen(nhaA.id, 'poth  math'), true);

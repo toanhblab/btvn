@@ -298,6 +298,20 @@ export interface Book {
 /** Ten sach — dai hon thi tran o "sach, trang" tren the bai cua con. */
 export const MAX_CHU_TEN_SACH = 60;
 
+/**
+ * Lam sach ten sach bo me go, TRUOC khi so trung va truoc khi luu — POST va PATCH
+ * dung chung mot ham de hai duong khong lech nhau.
+ *
+ * Ep NFC la phan quan trong nhat: "ở" go tren ban phim tieng Viet cua macOS la
+ * "o" + dau roi (NFD), con chu dan tu Zalo thuong la mot ky tu (NFC). Hai chuoi do
+ * hien ra giong het nhau ma Postgres `lower(...) = lower(...)` trong bookTrungTen
+ * coi la khac, nen khong ep thi nha co hai dong "Vở ô ly" khong the phan biet tren
+ * man hinh, va ca hai cung di vao loi nhac cua AI. Phep khop ten sach luc tach bai
+ * (chuanHoaNFC trong lib/ai.ts) cung ep NFC — hai ben phai cung mot dang.
+ */
+export const lamSachTenSach = (s: string): string =>
+  s.normalize('NFC').replace(/\s+/g, ' ').trim();
+
 /** Loc mon cua sach tu ngoai vao (API body, DB): phai la khoa trong SUBJECTS, khong thi null. */
 export function monSachOf(v: unknown): TenMon | null {
   return laTenMon(v) ? v : null;
