@@ -7,6 +7,21 @@ trước khi chụp (AGENTS.md); Macbook 1440×900. Máy dev không có `NOUS_AP
 nên mọi lần tách ở đây đi **đường lùi tách thô** — phần AI được kiểm bằng fetch
 giả trong `lib/tach-theo-sach.test.ts` (lời nhắc gửi lên đúng như mong đợi).
 
+## Còn thiếu: xác nhận trên iPhone THẬT
+
+Mọi ảnh cỡ điện thoại trong thư mục này là **ảnh GIẢ LẬP**: Chrome trên máy dev
+với `emulate --viewport "390x844x3,mobile,touch"` (device-metrics override, có
+dpr và cảm ứng), kiểm lại bằng `eval "() => innerWidth"` ra đúng `390` trước khi
+chụp. Không tấm nào được chụp trên điện thoại thật.
+
+Theo luật của dự án (AGENTS.md, tiền lệ PR #58) ảnh giả lập **CHƯA ĐỦ** để đóng
+việc đụng giao diện điện thoại. Vẫn còn một bước phải làm bằng tay trước khi gộp
+PR và đóng issue #64: captain mở trên iPhone THẬT
+
+- màn **Sách của các con** (`/bome/sach`) — khai một cuốn, sửa tên, chọn môn,
+  chọn "Sách của", bỏ một cuốn;
+- chip **✂️ Tách bài này** và **Gộp với bài trên** ở màn **Kiểm tra lại**.
+
 | Tệp | Nội dung |
 | --- | --- |
 | `01-bome-sach-chua-khai-dien-thoai.png` | Màn **Sách của các con** khi nhà chưa khai cuốn nào: câu giải thích + ô thêm mới. |

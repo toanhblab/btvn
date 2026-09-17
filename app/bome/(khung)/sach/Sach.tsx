@@ -87,7 +87,7 @@ export default function Sach({
       body: JSON.stringify({ name, subject: themMon, childIds: themChildIds }),
     });
     if (!data) return;
-    setBooks([...books, data.book]);
+    setBooks((ds) => [...ds, data.book]);
     setThemTen('');
     // Giu mon va "sach cua" vua chon: bo me hay khai lien mot loat sach cung mon
     // cho cung mot con (Toán tập 1, Toán tập 2...).
@@ -168,6 +168,7 @@ export default function Sach({
                   defaultValue={b.name}
                   key={`${b.id}:name:${b.name}`}
                   maxLength={MAX_CHU_TEN_SACH}
+                  disabled={busy}
                   aria-label={T('Tên sách')}
                   onBlur={async (e) => {
                     // The input luon phai hien DUNG ten may chu dang giu: key khong
@@ -180,7 +181,7 @@ export default function Sach({
                     const daLuu = await sua(b, { name: moi });
                     o.value = daLuu ? daLuu.name : b.name;
                   }}
-                  className={`${oNhap} flex-1 min-w-0 text-on-surface`}
+                  className={`${oNhap} flex-1 min-w-0 text-on-surface disabled:opacity-60`}
                 />
                 <button
                   onClick={() => { setHoiBo(b.id); setError(''); }}
