@@ -405,7 +405,12 @@ môn (khác "Khác") và cả hai đều chỉ trang / số bài (`DAU_HIEU_TRAN
 khai là bằng chứng mạnh nên gộp kể cả khi một dòng bị đoán là tiếng Anh vì không có
 dấu ("Poth Math tr. 44"); bài gộp phải quay video nếu **một** trong các dòng đòi
 ("đọc to"), và đọc giọng Việt nếu có dòng tiếng Việt. Dòng nhắc cuốn đã khai lấy
-môn của cuốn và ghi tên cuốn vào `note`.
+môn của cuốn và ghi tên cuốn vào `note`. Hai chỗ đi theo đúng luật của đường AI:
+(1) **việc độc lập không bị nuốt** — dòng đòi quay / đọc to mà không chỉ trang nào
+(`viecDocLap`) giữ bài riêng kể cả khi nhắc đúng cuốn đang gộp, vì prompt cũng để
+mỗi việc như vậy ra một bài; (2) **thời lượng cộng theo số dòng đã gộp** — mỗi dòng
+tính `DURATION_DEFAULT` rồi `clampDuration` (trần 60), nên ba trang gộp làm một thẻ
+ra 30 phút chứ không phải 10.
 **Giới hạn cố ý:** không có AI thì không biết "Toán trang 30" và "Toán trang 12" là
 một hay hai cuốn khi cô không ghi tên — coi là một; một dòng có tên sách, dòng sau
 chỉ ghi trang thì **không** gộp. Cả hai chiều đều sửa được một chạm ở màn Kiểm tra

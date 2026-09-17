@@ -177,6 +177,39 @@ test('KHONG gop (khong ten sach): dong khong chi trang, mon "Khác", khac ngon n
   assert.deepEqual(en.map((d) => d.lang), ['en', 'vi']);
 });
 
+test('thoi luong CONG theo so dong da gop, kep o tran 60 — khong con mot muc mac dinh cho ca cuon', () => {
+  const mot = splitByRule('Toán trang 41');
+  assert.equal(mot[0].durationMinutes, 10, 'mot dong: y nhu truoc');
+
+  const ba = splitByRule('Toán trang 41\nToán trang 42\nToán trang 43');
+  assert.equal(ba.length, 1, 'ba trang cung cuon -> mot bai');
+  assert.equal(ba[0].durationMinutes, 30, 'ba phan thi bai gop duoc ba lan thoi gian');
+
+  // Mon khac khong gop -> moi bai giu uoc luong cua rieng no
+  const haiBai = splitByRule('Toán trang 41\nToán trang 42\nTiếng Việt tập đọc trang 20');
+  assert.deepEqual(haiBai.map((d) => d.durationMinutes), [20, 10]);
+
+  // Gop nhieu qua thi kep o tran cua AI (DURATION_MAX = 60), khong troi tu do
+  const bayDong = Array.from({ length: 7 }, (_, i) => `Toán trang ${41 + i}`).join('\n');
+  const gopNhieu = splitByRule(bayDong);
+  assert.equal(gopNhieu.length, 1);
+  assert.equal(gopNhieu[0].durationMinutes, 60);
+});
+
+test('viec doc lap (quay video, khong chi trang) KHONG bi nuot vao bai cua cuon dang gop', () => {
+  const TOAN = sach('Toán', 'Toán');
+  const ds = splitByRule('Toán trang 41\nToán: quay video đọc bảng cộng gửi cô', undefined, [TOAN]);
+
+  assert.equal(ds.length, 2, 'hai viec khac nhau du cung nhac ten cuon "Toán"');
+  assert.equal(ds[0].requiresVideo, false, 'phan viet van tick xong duoc, khong doi quay');
+  assert.equal(ds[1].requiresVideo, true);
+
+  // Ca hai dong deu chi trang thi van gop, ke ca khi mot dong doi quay video
+  const gop = splitByRule('Toán trang 41\nToán trang 42, đọc to cho cô nghe', undefined, [TOAN]);
+  assert.equal(gop.length, 1);
+  assert.equal(gop[0].requiresVideo, true);
+});
+
 test('gop thi co quay video la HOAC cua hai dong (mot dong doi "đọc to" -> ca bai gop phai quay)', () => {
   const ds = splitByRule('Tiếng Việt tập 1 trang 10\nTiếng Việt tập 1 trang 11, đọc to cho bố mẹ nghe');
   assert.equal(ds.length, 1);

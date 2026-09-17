@@ -198,6 +198,13 @@ test('route /api/sach: can PIN; them / trung ten / ten dai / con nha khac; PATCH
   for (const la of [5, 'x', ['name'], null]) {
     assert.equal((await sachIdRoute.PATCH(json(la), ctx(book.id))).status, 400, `than la ${JSON.stringify(la)}`);
   }
+  // name khong phai chuoi: 400 chu KHONG ep kieu (khong doi ten thanh 'null' / '5')
+  for (const la of [null, 5, {}, []]) {
+    assert.equal(
+      (await sachIdRoute.PATCH(json({ name: la }), ctx(book.id))).status, 400,
+      `name la ${JSON.stringify(la)}`);
+    assert.equal((await store.getBook(nhaA.id, book.id))?.name, book.name, 'ten giu nguyen');
+  }
   const doi = await sachIdRoute.PATCH(json({ name: 'TIẾNG VIỆT TẬP 1', subject: null, childIds: null }), ctx(book.id));
   assert.equal(doi.status, 200);
   const sauDoi = (await doi.json()).book;

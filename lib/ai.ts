@@ -411,13 +411,25 @@ interface DongTho {
   coTrang: boolean;
   lang: Lang;
   requiresVideo: boolean;
+  /** Uoc luong phut cua RIENG phan nay — gop bao nhieu dong thi cong bay nhieu. */
+  phut: number;
 }
+
+/**
+ * Viec DOC LAP: doi con trinh dien (quay video, doc to, doc thuoc, the duc) ma
+ * khong chi vao trang / so bai nao. PROMPT cua AI de moi viec nhu vay ra MOT bai
+ * rieng ("Việc không gắn với cuốn nào -> mỗi việc một bài"), nen duong lui cung
+ * khong duoc nuot no vao bai cua cuon sach dung canh: gop vao la the bai doi
+ * quay video, con mat luon nut "Đã làm xong" cho ca phan viet.
+ */
+const viecDocLap = (d: DongTho): boolean => d.requiresVideo && !d.coTrang;
 
 /**
  * Hai dong lien nhau co phai CUNG MOT CUON khong — ban tho cua nguyen tac "mot
  * cuon sach = mot bai" (issue #64) khi khong goi duoc AI:
  *
- *   - ca hai nhac toi mot cuon bo me da khai   -> cung cuon khi la cung mot cuon;
+ *   - ca hai nhac toi mot cuon bo me da khai   -> cung cuon khi la cung mot cuon
+ *                                                  VA khong ben nao la viec doc lap;
  *   - chi mot dong nhac ten sach                -> khong gop (khong biet dong kia
  *                                                  thuoc cuon nao);
  *   - khong dong nao nhac ten sach              -> cung mon (khac "Khác") va ca hai
@@ -426,9 +438,12 @@ interface DongTho {
  * Cung mot cuon da khai la bang chung MANH: gop ke ca khi hai dong doan ra ngon
  * ngu khac nhau — "Poth Math tr. 44" khong co dau nao nen bi doan la tieng Anh,
  * con "Toán trang 45 sách Poth Math" la tieng Viet, ma ro rang la mot cuon. Nhanh
- * khong ten sach yeu hon nen them dieu kien cung ngon ngu. Co quay video KHONG
- * chan gop o ca hai nhanh: cung mot cuon ma mot dong doi "đọc to" thi ca bai gop
- * phai quay — dung nhu AI lam ("giu du MOI viec trong mot muc, ke ca quay video").
+ * khong ten sach yeu hon nen them dieu kien cung ngon ngu.
+ *
+ * Co quay video KHONG chan gop khi hai dong deu chi trang / so bai: cung mot cuon
+ * ma mot dong doi "đọc to" thi ca bai gop phai quay — dung nhu AI lam ("giu du MOI
+ * viec trong mot muc, ke ca quay video"). Nhung mot dong doi quay ma KHONG chi
+ * trang nao la viec doc lap (viecDocLap) — no giu bai rieng, o ca hai nhanh.
  *
  * GIOI HAN co y, ghi ca o README: khong co AI thi khong biet hai dong "Toán trang
  * 30" va "Toán trang 12" la mot cuon hay hai cuon (SGK / vo bai tap) neu co khong
@@ -436,16 +451,24 @@ interface DongTho {
  * Kiem tra lai da co nut "Tách bài này" cho chieu nguoc lai.
  */
 function cungCuon(a: DongTho, b: DongTho): boolean {
-  if (a.book && b.book) return a.book.id === b.book.id;
-  if (a.book || b.book) return false;
+  if (a.book || b.book) {
+    if (a.book?.id !== b.book?.id) return false;
+    return !viecDocLap(a) && !viecDocLap(b);
+  }
   return a.subject === b.subject && a.subject !== 'Khác' && a.coTrang && b.coTrang && a.lang === b.lang;
 }
 
-/** Gop dong `b` vao `a`: noi de bai; mot trong hai phai quay video thi bai gop phai quay; co dong tieng Viet thi doc giong Viet. */
+/**
+ * Gop dong `b` vao `a`: noi de bai; CONG uoc luong cua hai phan (ba trang gop lam
+ * mot the thi the do phai duoc ba lan thoi gian, khong phai mot — cung luat voi
+ * duong AI, xem lib/types.ts); mot trong hai phai quay video thi bai gop phai
+ * quay; co dong tieng Viet thi doc giong Viet.
+ */
 function gopDong(a: DongTho, b: DongTho): DongTho {
   return {
     ...a,
     content: `${a.content}; ${b.content}`,
+    phut: a.phut + b.phut,
     requiresVideo: a.requiresVideo || b.requiresVideo,
     lang: a.lang === 'vi' || b.lang === 'vi' ? 'vi' : 'en',
   };
@@ -491,6 +514,9 @@ export function splitByRule(text: string, T: T = T_VI, sach: Book[] = []): Draft
         coTrang: DAU_HIEU_TRANG.test(line),
         lang: (viChars === 0 && /[a-z]/i.test(line) ? 'en' : 'vi') as Lang,
         requiresVideo: VIDEO_HINT.test(line),
+        // Tach tho khong doan duoc do phuc tap cua tung dong -> moi dong mot muc
+        // mac dinh; gop bao nhieu dong thi bai gop cong bay nhieu.
+        phut: DURATION_DEFAULT,
       };
     });
 
@@ -511,8 +537,8 @@ export function splitByRule(text: string, T: T = T_VI, sach: Book[] = []): Draft
     note: d.book?.name ?? null,
     lang: d.lang,
     confidence: 0.3,   // thap de man kiem tra luon canh bao bo me xem lai
-    // Tach tho khong doan duoc do phuc tap -> de mac dinh, bo me sua o man kiem tra
-    durationMinutes: DURATION_DEFAULT,
+    // Bo me sua lai o man kiem tra; tran van la tran cua AI (clampDuration)
+    durationMinutes: clampDuration(d.phut),
     requiresVideo: d.requiresVideo,
   }));
 }
