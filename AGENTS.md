@@ -276,6 +276,16 @@ trẻ em, phân tích xong phải xoá ngay. File Safari: `tfhd` flags `0x2001a`
 là `default-base-is-moof` (offset tương đối), một `moof`, không `mfra`, AAC; file
 Chrome có nhiều `moof`, `mfra>tfra` (offset tuyệt đối), Opus, `mvhd`/`tkhd` version 1.
 
+Cài thành app trên màn hình chính (issue #70): **không có service worker, cố ý**
+— đừng thêm để "chạy offline" (SW đã cài trên máy con sống dai, phục vụ bản cũ sau
+deploy, con không tự gỡ được). Bản kê khai là route handler
+`app/api/manifest/route.ts` nhận mã nhà qua `?nha=<slug>` vì **trình duyệt tải
+manifest KHÔNG kèm cookie** (đo trên Chrome) — `app/layout.tsx` ghép slug vào
+`<link rel="manifest">`, và `start_url` là `/nha/<slug>` vì app cài trên iOS có kho
+cookie riêng với Safari. Mọi màn đều có lối quay lại trong trang (app rời không có
+nút back của Safari) — thêm màn mới thì giữ luật đó. Chi tiết ở README mục
+"Nhiều gia đình" và chú thích đầu route.
+
 Đa ngôn ngữ (issue #46) — chi tiết ở mục "Đa ngôn ngữ" của `README.md`; ở đây chỉ
 những điều phải biết TRƯỚC khi đụng vào mã:
 

@@ -555,6 +555,20 @@ export const EN = {
   'Tắt đèn học': 'Turn off the desk lamp',
   'Soạn sách vở cho ngày mai': "Pack books for tomorrow",
   'Việc nhà': 'Chores',
+
+  /* ---- Cai thanh app tren man hinh chinh (issue #70) ---- */
+  'Bài tập': 'Homework',
+  'Bài tập và nhiệm vụ hàng ngày của các con': "The kids' homework and daily chores",
+  'Cài thành app trên máy của con': "Install as an app on your child's device",
+  'Cài xong, con chạm biểu tượng "Bài tập" ở màn hình chính là vào thẳng bài, không phải mở trình duyệt.':
+    'Once installed, your child taps the "Homework" icon on the home screen and lands right on their homework, no browser needed.',
+  'Trên iPhone / iPad của con, mở trang này bằng Safari.': "On your child's iPhone / iPad, open this page in Safari.",
+  'Bấm nút Chia sẻ (ô vuông có mũi tên lên) rồi chọn "Thêm vào MH chính".':
+    'Tap Share (the square with an arrow) and choose "Add to Home Screen".',
+  'Bấm "Thêm". Lần mở đầu, nếu app hỏi máy này của nhà nào thì nhập mã PIN của nhà một lần.':
+    'Tap "Add". On first launch, if the app asks which family this device belongs to, enter the family PIN once.',
+  'Trên Android hoặc máy tính dùng Chrome: bấm menu ⋮ rồi chọn "Cài đặt ứng dụng" (hoặc "Thêm vào Màn hình chính").':
+    'On Android or a computer with Chrome: open the ⋮ menu and choose "Install app" (or "Add to Home screen").',
 } as const;
 
 export type Key = keyof typeof EN;

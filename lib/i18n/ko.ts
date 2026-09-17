@@ -531,4 +531,18 @@ export const KO: Record<Key, string> = {
   'Tắt đèn học': '공부방 불 끄기',
   'Soạn sách vở cho ngày mai': '내일 책 챙기기',
   'Việc nhà': '집안일',
+
+  /* ---- Cai thanh app tren man hinh chinh (issue #70) ---- */
+  'Bài tập': '숙제',
+  'Bài tập và nhiệm vụ hàng ngày của các con': '아이들의 숙제와 매일 할 일',
+  'Cài thành app trên máy của con': '아이 기기에 앱으로 설치',
+  'Cài xong, con chạm biểu tượng "Bài tập" ở màn hình chính là vào thẳng bài, không phải mở trình duyệt.':
+    '설치하면 아이가 홈 화면의 "숙제" 아이콘을 누르기만 해도 바로 숙제로 들어갑니다. 브라우저를 열 필요가 없습니다.',
+  'Trên iPhone / iPad của con, mở trang này bằng Safari.': '아이의 iPhone / iPad에서 이 페이지를 Safari로 엽니다.',
+  'Bấm nút Chia sẻ (ô vuông có mũi tên lên) rồi chọn "Thêm vào MH chính".':
+    '공유 버튼(화살표가 있는 네모)을 누르고 "홈 화면에 추가"를 선택합니다.',
+  'Bấm "Thêm". Lần mở đầu, nếu app hỏi máy này của nhà nào thì nhập mã PIN của nhà một lần.':
+    '"추가"를 누릅니다. 처음 열 때 이 기기가 어느 가족의 것인지 물으면 가족 PIN을 한 번 입력합니다.',
+  'Trên Android hoặc máy tính dùng Chrome: bấm menu ⋮ rồi chọn "Cài đặt ứng dụng" (hoặc "Thêm vào Màn hình chính").':
+    'Android나 컴퓨터의 Chrome에서는 ⋮ 메뉴를 열고 "앱 설치"(또는 "홈 화면에 추가")를 선택합니다.',
 };

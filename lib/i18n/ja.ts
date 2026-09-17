@@ -531,4 +531,18 @@ export const JA: Record<Key, string> = {
   'Tắt đèn học': '勉強机のライトを消す',
   'Soạn sách vở cho ngày mai': '明日の教科書をそろえる',
   'Việc nhà': 'おてつだい',
+
+  /* ---- Cai thanh app tren man hinh chinh (issue #70) ---- */
+  'Bài tập': '宿題',
+  'Bài tập và nhiệm vụ hàng ngày của các con': '子どもたちの宿題と毎日のおてつだい',
+  'Cài thành app trên máy của con': '子どもの端末にアプリとして追加',
+  'Cài xong, con chạm biểu tượng "Bài tập" ở màn hình chính là vào thẳng bài, không phải mở trình duyệt.':
+    '追加すると、ホーム画面の「宿題」アイコンをタップするだけで宿題が開きます。ブラウザを開く必要はありません。',
+  'Trên iPhone / iPad của con, mở trang này bằng Safari.': '子どもの iPhone / iPad で、このページを Safari で開きます。',
+  'Bấm nút Chia sẻ (ô vuông có mũi tên lên) rồi chọn "Thêm vào MH chính".':
+    '共有ボタン（矢印付きの四角）をタップし、「ホーム画面に追加」を選びます。',
+  'Bấm "Thêm". Lần mở đầu, nếu app hỏi máy này của nhà nào thì nhập mã PIN của nhà một lần.':
+    '「追加」をタップします。初回起動時にどの家庭の端末か聞かれたら、家庭の PIN を一度入力します。',
+  'Trên Android hoặc máy tính dùng Chrome: bấm menu ⋮ rồi chọn "Cài đặt ứng dụng" (hoặc "Thêm vào Màn hình chính").':
+    'Android やパソコンの Chrome では、⋮ メニューから「アプリをインストール」（または「ホーム画面に追加」）を選びます。',
 };
