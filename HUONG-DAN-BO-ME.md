@@ -60,6 +60,30 @@ chỗ đó, bấm vào một con để đổi tên, ảnh, lớp, màu riêng �
 Trên iPad/máy tính của con, mở app → màn **"Đây là máy của nhà nào?"** → nhập mã
 PIN của nhà một lần. Xong, máy đó nhớ khoảng một năm.
 
+### Cài app lên màn hình chính của máy con
+
+Cài xong, con chỉ chạm biểu tượng **"Bài tập"** ở màn hình chính là vào thẳng
+bài — không phải mở Safari rồi gõ địa chỉ. Trên iPhone / iPad của con:
+
+1. Mở Safari, vào trang của app (nếu máy chưa gắn vào nhà thì nhập mã PIN một
+   lần như ở trên, để app biết máy này của nhà mình).
+2. Bấm nút **Chia sẻ** (ô vuông có mũi tên hướng lên, ở giữa thanh dưới của
+   Safari; trên iPad nút này nằm cạnh thanh địa chỉ).
+3. Kéo danh sách xuống, chọn **"Thêm vào MH chính"**.
+4. Tên hiện sẵn là **"Bài tập"**, bấm **"Thêm"** ở góc trên.
+
+Biểu tượng "Bài tập" xuất hiện ở màn hình chính như một app bình thường. Lần mở
+đầu, nếu app hỏi **"Đây là máy của nhà nào?"** thì nhập mã PIN của nhà thêm một
+lần nữa (app mở từ màn hình chính không dùng chung bộ nhớ với Safari). Sau đó máy
+nhớ luôn.
+
+Trong app mở từ màn hình chính không có nút quay lại của Safari; con dùng nút
+**mũi tên quay lại** ở góc trên trái của từng màn là được.
+
+Máy Android hoặc máy tính dùng Chrome: bấm menu **⋮** → **"Cài đặt ứng dụng"**
+(hoặc **"Thêm vào Màn hình chính"**). Các bước trong app cũng có ở
+**Cài đặt → "Cài thành app trên máy của con"**.
+
 ---
 
 ## 3. Việc hằng ngày của bố mẹ

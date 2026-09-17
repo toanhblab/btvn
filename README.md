@@ -56,6 +56,17 @@ Cách phân biệt nhà:
 | Cookie `btvn_nha` | "Máy này là của nhà nào", chỉ để màn của con biết hiện danh sách con nào. Sống một năm, **không** mở được gì của bố mẹ. |
 | Link `/nha/<mã nhà>` | Gắn một máy vào một nhà. Mã nhà là chuỗi ngẫu nhiên (cột `families.slug`). |
 
+Cài thành app trên màn hình chính (issue #70): `app/api/manifest/route.ts` + `app/icon.png`
+/ `app/apple-icon.png` / `public/icons/` (nguồn `icon.svg`, dựng PNG bằng
+`qlmanage -t -s <cỡ>`) và `appleWebApp` trong `app/layout.tsx`. **Không có service
+worker**, cố ý — xem chú thích đầu `app/api/manifest/route.ts`. `start_url` là
+`/nha/<mã nhà>` của nhà đang mở vì app cài trên iOS có kho cookie riêng với Safari;
+mã nhà đi qua query của `<link rel="manifest">` (ghép ở `app/layout.tsx`) vì trình
+duyệt tải bản kê khai không kèm cookie. Muốn bỏ tính năng thì xoá các tệp đó, thẻ
+`<link rel="manifest">` + `<meta apple-mobile-web-app-capable>` và hai khoá
+`appleWebApp` / `themeColor` — không có gì nằm lại trên máy người dùng ngoài biểu
+tượng họ tự xoá.
+
 Không có link thì trên iPad mở web → "Đây là máy của nhà nào?" → nhập PIN một
 lần. Đường này **chỉ** gắn máy vào nhà, không mở phần bố mẹ, nên nhập PIN ở đây
 trên iPad của các con vẫn an toàn.

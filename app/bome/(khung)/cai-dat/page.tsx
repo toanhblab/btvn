@@ -122,6 +122,31 @@ export default async function Page() {
             </Link>
           </section>
 
+          {/* Cai thanh app tren may cua con (issue #70). Chi la HUONG DAN: viec cai
+              do trinh duyet lam (app/manifest.ts + icon), khong co nut nao goi
+              duoc tu trang. Buoc theo iOS vi may cua cac con la iPhone/iPad; mot
+              dong cho Android/Chrome. HUONG-DAN-BO-ME.md co ban dai hon. */}
+          <section className="mb-4 xl:mt-6 xl:mb-0">
+            <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Cài thành app trên máy của con')}</h2>
+            <div className="bg-surface-container-lowest rounded-card card-shadow p-3 xl:p-4">
+              <div className="flex items-start gap-3 mb-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/icons/icon-192.png" alt="" className="w-12 h-12 rounded-xl shrink-0" />
+                <p className="text-p-body-sm text-on-surface-variant">
+                  {T('Cài xong, con chạm biểu tượng "Bài tập" ở màn hình chính là vào thẳng bài, không phải mở trình duyệt.')}
+                </p>
+              </div>
+              <ol className="list-decimal pl-5 text-p-body-sm text-on-surface flex flex-col gap-1.5">
+                <li>{T('Trên iPhone / iPad của con, mở trang này bằng Safari.')}</li>
+                <li>{T('Bấm nút Chia sẻ (ô vuông có mũi tên lên) rồi chọn "Thêm vào MH chính".')}</li>
+                <li>{T('Bấm "Thêm". Lần mở đầu, nếu app hỏi máy này của nhà nào thì nhập mã PIN của nhà một lần.')}</li>
+              </ol>
+              <p className="text-p-body-sm text-on-surface-variant mt-3">
+                {T('Trên Android hoặc máy tính dùng Chrome: bấm menu ⋮ rồi chọn "Cài đặt ứng dụng" (hoặc "Thêm vào Màn hình chính").')}
+              </p>
+            </div>
+          </section>
+
           {/* Khoi "He thong" chi con o ban dien thoai.
               O co Macbook, ma nha da nam san o dau thanh ben trai; de them o day
               nua la bo me doc thay ma nha hai lan tren cung mot man hinh. Ten co
