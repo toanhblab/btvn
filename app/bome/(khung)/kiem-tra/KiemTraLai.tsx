@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Child, DraftAssignment, HwSource } from '@/lib/types';
 import { DURATION_DEFAULT, HW_SOURCES, HW_SOURCE_DEFAULT, SUBJECTS, hwSourceOf, iconFor, subjectsFor } from '@/lib/types';
+import { gopLenBanNhap, maBanNhapMoi, tachBanNhap, type BanNhap } from '@/lib/banNhap';
 import { useNgonNgu, useT } from '@/lib/i18n/client';
 import { giaTriGiong, luaChonGiong } from '@/lib/speech';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
@@ -22,7 +23,7 @@ interface Payload {
 }
 
 // Giu dang chuoi de bo me xoa trong o roi go so moi; luu thi rong = mac dinh
-type Draft = DraftAssignment & { durationStr: string };
+type Draft = BanNhap;
 
 /** Man kiem tra lai — nen tu stitch-parent 08. Ban nhap se KHONG luu neu bo me chua bam. */
 export default function KiemTraLai({
@@ -42,9 +43,11 @@ export default function KiemTraLai({
   // Bai nao dang tai tep len — de khoa nut Luu va hien "Đang tải…" dung cho
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [error, setError] = useState('');
-  // O de bai cua tung the — de "Tach bai nay" doc vi tri con tro (selectionStart
-  // giu nguyen sau khi textarea mat focus vi bo me bam sang nut).
-  const oDeBai = useRef<(HTMLTextAreaElement | null)[]>([]);
+  // O de bai cua tung the, tra theo MA ban nhap — de "Tach bai nay" doc vi tri
+  // con tro (selectionStart giu nguyen sau khi textarea mat focus vi bo me bam
+  // sang nut). Tra theo chi so thi sau mot lan gop, con tro cu cua the nay bi doc
+  // thanh con tro cua ban nhap khac.
+  const oDeBai = useRef<Record<string, HTMLTextAreaElement>>({});
 
   useEffect(() => {
     const raw = sessionStorage.getItem('btvn:draft');
@@ -55,6 +58,7 @@ export default function KiemTraLai({
     setDrafts(
       p.drafts.map((d) => ({
         ...d,
+        ma: maBanNhapMoi(),
         media: d.media ?? [],
         durationStr: String(d.durationMinutes ?? DURATION_DEFAULT),
         requiresVideo: d.requiresVideo ?? false,
@@ -77,6 +81,7 @@ export default function KiemTraLai({
     setDrafts((ds) => [
       ...ds,
       {
+        ma: maBanNhapMoi(),
         subject: T('Khác'), icon: iconFor('Khác'), content: '', note: null, lang: 'vi',
         confidence: 1, media: [], durationStr: String(DURATION_DEFAULT),
         requiresVideo: false,
@@ -108,57 +113,19 @@ export default function KiemTraLai({
     );
 
   /** Gop bai nay vao bai ngay tren — AI hay tach nham mot bai thanh hai dong. */
-  const mergeUp = (i: number) =>
-    setDrafts((ds) =>
-      ds.reduce<Draft[]>((acc, d, j) => {
-        if (j === i && acc.length) {
-          const prev = acc[acc.length - 1];
-          // Tep dinh kem lay hop cua hai bai, khong nhan doi tep trung URL
-          const media = [
-            ...(prev.media ?? []),
-            ...(d.media ?? []).filter((m) => !(prev.media ?? []).some((x) => x.url === m.url)),
-          ];
-          acc[acc.length - 1] = {
-            ...prev,
-            content: `${prev.content} ${d.content}`.trim(),
-            media,
-            // Mot trong hai nua co yeu cau quay video thi bai gop van phai quay
-            requiresVideo: Boolean(prev.requiresVideo || d.requiresVideo),
-          };
-          return acc;
-        }
-        return [...acc, d];
-      }, [])
-    );
+  const mergeUp = (i: number) => setDrafts((ds) => gopLenBanNhap(ds, i));
 
-  /**
-   * Tach bai nay lam hai — chieu nguoc cua "Gộp với bài trên", can tu khi AI gop
-   * theo CUON SACH (issue #64): gop nham hai viec khac cuon vao mot the thi bo me
-   * phai tach ra duoc bang tay.
-   *
-   * Cat tai CON TRO trong o de bai neu con tro dang nam giua chu (bo me cham vao
-   * cho muon cat roi bam nut); con tro o dau / cuoi / khong biet thi the moi de
-   * trong de bo me go. The moi CHEP mon, ghi chu (ten sach), giong doc, thoi
-   * luong va co quay video cua the goc — hai nua thuong cung mot cuon / cung mot
-   * tin nhan; tep dinh kem GIU o the goc, khong nhan doi.
-   */
+  /** Tach bai nay lam hai tai con tro trong O DE BAI CUA CHINH the do. */
   const splitAt = (i: number) =>
     setDrafts((ds) => {
-      const d = ds[i];
-      const o = oDeBai.current[i];
-      const pos = o?.selectionStart ?? 0;
-      const cat = pos > 0 && pos < d.content.length;
-      const dau = cat ? d.content.slice(0, pos).trim() : d.content;
-      const sau = cat ? d.content.slice(pos).trim() : '';
-      const goc = { ...d, content: dau || d.content };
-      const moi: Draft = { ...d, content: dau ? sau : '', media: [] };
-      return [...ds.slice(0, i), goc, moi, ...ds.slice(i + 1)];
+      const o = ds[i] ? oDeBai.current[ds[i].ma] : undefined;
+      return tachBanNhap(ds, i, o?.selectionStart ?? null);
     });
 
   async function save() {
     const clean = drafts
       .filter((d) => d.content.trim())
-      .map(({ durationStr, ...d }) => ({
+      .map(({ durationStr, ma, ...d }) => ({
         ...d,
         durationMinutes: durationStr === '' ? DURATION_DEFAULT : Number(durationStr),
       }));
@@ -252,7 +219,7 @@ export default function KiemTraLai({
 
       <div className="flex flex-col gap-p-tight mb-4">
         {drafts.map((d, i) => (
-          <div key={i}>
+          <div key={d.ma}>
             {i > 0 && (
               <button
                 onClick={() => mergeUp(i)}
@@ -266,7 +233,10 @@ export default function KiemTraLai({
 
               <div className="flex items-start gap-2">
                 <textarea
-                  ref={(el) => { oDeBai.current[i] = el; }}
+                  ref={(el) => {
+                    if (el) oDeBai.current[d.ma] = el;
+                    else delete oDeBai.current[d.ma];
+                  }}
                   value={d.content}
                   onChange={(e) => patch(i, 'content', e.target.value)}
                   rows={2}

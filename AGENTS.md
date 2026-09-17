@@ -329,8 +329,9 @@ những điều phải biết TRƯỚC khi đụng vào mã:
 Tách bài theo CUỐN SÁCH (issue #64): luật "một cuốn sách / vở / phiếu = một bài,
 số trang / số bài vào `note`" nằm TRONG `PROMPT` của `lib/ai.ts` và **KHÔNG phụ
 thuộc bảng `books`** — nhà chưa khai sách vẫn phải gộp "trang 41, 42, 43 sách Poth
-Math" thành một bài (ràng buộc chốt; `lib/tach-theo-sach.test.ts` ghim cả prompt lẫn
-fetch giả). Bảng `books` (migration 021: treo vào NHÀ + `child_ids` như
+Math" thành một bài (ràng buộc chốt; `lib/tach-theo-sach.test.ts` ghim lời nhắc
+THỰC SỰ GỬI ĐI qua fetch giả — không ghim nguyên văn từng câu của prompt, đổi cách
+diễn đạt cùng một luật thì không phải sửa test). Bảng `books` (migration 021: treo vào NHÀ + `child_ids` như
 `daily_chores`, bỏ = `archived_at`, `subject` là KHOÁ trong `SUBJECTS`) chỉ là NGỮ
 CẢNH: `POST /api/extract` nhận `childIds` → `listBooks(familyId, { childIds })` →
 `khoiSachChoAI` ghép SAU prompt, chặn `MAX_SACH_TRONG_PROMPT`; đọc bảng hỏng thì coi
@@ -338,6 +339,10 @@ như rỗng, không chặn tách. Đường lùi `splitByRule` gộp dòng liề
 theo `cungCuon` — giới hạn cố ý ghi ở chú thích hàm đó và README, đừng "sửa" cho
 khớp AI. Màn Kiểm tra lại có cả hai chiều: "Gộp với bài trên" và "✂️ Tách bài này"
 (cắt tại con trỏ) — thêm luật gộp mới thì kiểm chiều ngược lại còn làm được không.
+Hai phép đó là hàm thuần trong `lib/banNhap.ts` (`lib/banNhap.test.ts`): mỗi bản
+nhập mang một **mã riêng của máy** (`ma`), dùng làm `key` của React VÀ làm khoá
+tra ô đề bài — vị trí con trỏ nằm ở thẻ DOM chứ không ở state, nên đánh theo chỉ
+số mảng thì sau một lần gộp, "Tách bài này" cắt nhầm thẻ khác ở chỗ con trỏ cũ.
 Hàng chip "Giao cho" / "Sách của" dùng chung `app/bome/(khung)/GiaoCho.tsx`.
 Bằng chứng màn hình ở `docs/bang-chung/tach-theo-sach/`.
 

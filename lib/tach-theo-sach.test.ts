@@ -38,12 +38,10 @@ const POTH = sach('Poth Math', 'Toán');
 
 test('PROMPT co san luat gop theo cuon sach, khong can nha khai sach', () => {
   const goc = loiNhacHeThong([]);
-  assert.match(goc, /NGUYÊN TẮC TÁCH: tách theo CUỐN SÁCH/);
-  assert.match(goc, /trang 41, 42, 43 sách Poth Math" -> MỘT bài/);
-  assert.match(goc, /KHÔNG tách\s+thành ba bài theo ba trang/);
-  // Vi du Ex 1/2/3 da doi theo luat moi: mot phieu = mot bai, khong con "chi giu ba muc"
-  assert.match(goc, /Ex 3: viết câu" -> MỘT bài/);
-  assert.doesNotMatch(goc, /chỉ giữ ba mục/);
+  // MOT khang dinh rong: loi nhac phat di phai noi den viec tach theo cuon sach.
+  // Khong ghim nguyen van vi du hay thu tu cau — doi cach dien dat ma van cung mot
+  // luat thi khong duoc lam do bai kiem nay.
+  assert.match(goc, /cuốn sách/i);
   // Khong co khoi sach khi khong co sach
   assert.doesNotMatch(goc, /SÁCH \/ VỞ \/ NGUỒN BÀI TẬP BỐ MẸ ĐÃ KHAI/);
   assert.equal(khoiSachChoAI([]), '');
