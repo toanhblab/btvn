@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { parentFamilyId, viewingFamilyId } from '@/lib/auth';
-import { locMocBatDau } from '@/lib/diem';
+import { giayConPhaiCho, locMocBatDau } from '@/lib/diem';
 import { laUrlTepAppCap } from '@/lib/media';
 import {
   congDiemNgayNeuXong, deleteAssignment, getAssignment, ghiDiemSauKhiXong, setStatus,
@@ -27,7 +27,8 @@ type Ctx = { params: Promise<{ id: string }> };
  *
  * startedAt (epoch ms) la moc con bam "Bat dau lam" tren dong ho dem nguoc,
  * von chi nam trong localStorage cua may con (DongHoLamBai.tsx) — gui len kem
- * luc tick xong de may chu xet "xong som" va cong diem (lib/diem.ts). Tra ve
+ * luc tick xong de may chu xet "xong som" va cong diem (lib/diem.ts), va de
+ * chan tick khi chua du 50% thoi luong (issue #72 — giayConPhaiCho). Tra ve
  * them `diem` (DiemVuaCong) — ca ba so, nhung tam "Gioi qua!" cua man con chi
  * bao "+1" xong som; "+10" xong het ngay do man /xong bao (khong bao hai lan).
  *
@@ -81,6 +82,22 @@ export async function PATCH(req: Request, { params }: Ctx) {
     // chung duy nhat cua "xong som" va may con xoa ban trong localStorage ngay
     // sau khi luu duoc, nen khong duoc de buoc cong diem o duoi giu no.
     const moc = locMocBatDau(body.startedAt, Date.now());
+
+    // Hang rao 50% (issue #72): con bam "Bat dau lam" roi bam xong ngay khong
+    // tinh — phai troi qua it nhat nua thoi luong cua bai. Cung MOT moc voi luat
+    // "xong som" (lib/diem.ts), nen cung mot gioi han: moc do may con gui len nen
+    // day chan bam nham/bam voi, khong chan duoc nguoi co tinh sua.
+    //   - Khong co moc (con chua bam dong ho, hoac dong nhiem vu hang ngay
+    //     khong co dong ho) -> giu nguyen hanh vi cu, cho tick.
+    //   - Bai phai quay video -> mien: ban quay tu no la bang chung da lam, va
+    //     luong quay/nop video khong dung den trong viec nay.
+    if (body.status === 'done' && !current.requiresVideo &&
+        giayConPhaiCho(moc, Date.now(), current.durationMinutes) > 0) {
+      return NextResponse.json(
+        { error: T('Con làm thêm chút nữa rồi bấm xong nhé!') },
+        { status: 400 }
+      );
+    }
 
     let assignment = current;
     if (body.videoUrl) {

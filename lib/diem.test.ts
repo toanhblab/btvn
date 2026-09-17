@@ -11,7 +11,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  DIEM_NGAY_XONG, DIEM_XONG_SOM, locMocBatDau, ngayDuocTinhDiem, ngayHoanThanh, xepHang, xongSom,
+  DIEM_NGAY_XONG, DIEM_XONG_SOM, TI_LE_TOI_THIEU_DE_XONG, giayConPhaiCho, locMocBatDau,
+  ngayDuocTinhDiem, ngayHoanThanh, xepHang, xongSom,
 } from './diem.ts';
 
 const PHUT = 60_000;
@@ -142,4 +143,49 @@ test('xep hang: khong sua mang dau vao', () => {
   const vao = [{ id: 'a', points: 1 }, { id: 'b', points: 2 }];
   xepHang(vao);
   assert.deepEqual(vao.map((x) => x.id), ['a', 'b']);
+});
+
+/* ---- hang rao 50% truoc khi duoc bam "Da lam xong" (issue #72) ---- */
+
+test('hang rao la 50% thoi luong cua CHINH bai do', () => {
+  assert.equal(TI_LE_TOI_THIEU_DE_XONG, 0.5);
+});
+
+test('bai 10 phut: bam xong ngay -> phai cho them 5 phut', () => {
+  const batDau = 1_000_000;
+  assert.equal(giayConPhaiCho(batDau, batDau, 10), 300);
+  assert.equal(giayConPhaiCho(batDau, batDau + 2 * PHUT, 10), 180);
+});
+
+test('dung 50% la mo — bai 10 phut, phut thu 5', () => {
+  const batDau = 1_000_000;
+  assert.equal(giayConPhaiCho(batDau, batDau + 5 * PHUT - 1, 10), 1, 'thieu 1ms thi van khoa');
+  assert.equal(giayConPhaiCho(batDau, batDau + 5 * PHUT, 10), 0);
+});
+
+test('qua 50% roi thi luon 0, ke ca qua gio', () => {
+  const batDau = 1_000_000;
+  assert.equal(giayConPhaiCho(batDau, batDau + 9 * PHUT, 10), 0);
+  assert.equal(giayConPhaiCho(batDau, batDau + 99 * PHUT, 10), 0);
+});
+
+test('khong co moc bat dau -> 0: giu nguyen hanh vi cu (con chua bam Bat dau, dong nhiem vu hang ngay)', () => {
+  assert.equal(giayConPhaiCho(null, 1_000_000, 10), 0);
+});
+
+test('cua so 50%-100% van la "xong som" -> luat +1 cu khong bi hang rao pha', () => {
+  const batDau = 1_000_000;
+  for (const phut of [5, 6, 7, 8, 9]) {
+    const xong = batDau + phut * PHUT;
+    assert.equal(giayConPhaiCho(batDau, xong, 10), 0, `phut ${phut}: phai bam duoc`);
+    assert.equal(xongSom(batDau, xong, 10), true, `phut ${phut}: van tinh xong som`);
+  }
+  // Dung 10 phut thi bam duoc nhung het "som" — dung luat cu (xongSom o tren).
+  assert.equal(giayConPhaiCho(batDau, batDau + 10 * PHUT, 10), 0);
+  assert.equal(xongSom(batDau, batDau + 10 * PHUT, 10), false);
+});
+
+test('lam tron LEN theo giay: con 1.2s thi bao 2s, khong bao 1s roi van bi tu choi', () => {
+  const batDau = 1_000_000;
+  assert.equal(giayConPhaiCho(batDau, batDau + 5 * PHUT - 1_200, 10), 2);
 });

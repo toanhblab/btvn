@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { giayConPhaiCho } from '@/lib/diem';
 import { GIONG_DOC, pickVoice } from '@/lib/speech';
 import { T_VI, type T } from '@/lib/i18n/chu';
 import { NGON_NGU_MAC_DINH, type NgonNgu } from '@/lib/i18n/ngonNgu';
@@ -153,9 +154,17 @@ const CHU_VI = 2 * Math.PI * 88;
 export default function DongHoLamBai({
   assignmentId,
   minutes,
+  onConPhaiCho,
 }: {
   assignmentId: string;
   minutes: number;
+  /**
+   * Bao len cho <ChiTietBai> con phai cho BAO NHIEU GIAY nua moi duoc bam "Da
+   * lam xong" (hang rao 50%, issue #72); 0 = bam duoc. Dong ho nay la bo dem
+   * DUY NHAT cua man bai — nut xong doc nho theo day chu KHONG tu chay them mot
+   * setInterval thu hai.
+   */
+  onConPhaiCho?: (giay: number) => void;
 }) {
   const T = useT();
   const ngonNgu = useNgonNgu();
@@ -226,6 +235,14 @@ export default function DongHoLamBai({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [now]);
+
+  /* Hang rao 50% (issue #72): tinh tu CUNG moc bat dau voi luat "xong som", va
+     tinh lai moi nhip tick san co o tren. Chua bam Bat dau -> 0, nut xong mo
+     nhu cu. `now === 0` chi o nhip dau tien sau khi doc moc tu localStorage. */
+  const conPhaiCho = giayConPhaiCho(startAt, now > 0 ? now : Date.now(), minutes);
+  useEffect(() => {
+    onConPhaiCho?.(conPhaiCho);
+  }, [conPhaiCho, onConPhaiCho]);
 
   /**
    * Bo me da go dung PIN -> xoa moc bat dau, bai ve lai nut "Bat dau lam".

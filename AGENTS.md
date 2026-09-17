@@ -154,6 +154,13 @@ của hệ điều hành" đã BỎ HẲN theo captain, nên mở camera thất 
 `lib/phienQuay.test.ts` dùng MediaRecorder/luồng/đồng hồ giả; cú đứng THẬT chưa
 tái hiện được trên máy không camera.
 
+Mốc con bấm "Bắt đầu làm" (localStorage → `startedAt` → `assignments.started_at`)
+giờ gánh HAI luật, cùng một mốc: +1 "xong sớm" (`xongSom`) và hàng rào 50% —
+`giayConPhaiCho` trong `lib/diem.ts`, nút "Đã làm xong" khoá tới khi trôi nửa
+thời lượng của bài (issue #72). Màn con đọc số giây đó TỪ `DongHoLamBai` (không
+dựng bộ đếm thứ hai); máy chủ kiểm lại ở `PATCH /api/assignments/:id`. Không có
+mốc (chưa bấm Bắt đầu, dòng nhiệm vụ hàng ngày) và bài phải quay video thì MIỄN.
+
 Điểm thưởng (+10 một ngày xong hết, +1 mỗi bài xong sớm hơn `duration_minutes`,
 +`stars` mỗi dòng nhiệm vụ hàng ngày tick xong, đổi thưởng có bố mẹ duyệt): luật
 là hàm thuần trong `lib/diem.ts` (đọc chú thích đầu file trước — nó giải thích vì
