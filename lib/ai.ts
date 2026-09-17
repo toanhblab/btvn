@@ -461,8 +461,9 @@ function cungCuon(a: DongTho, b: DongTho): boolean {
 /**
  * Gop dong `b` vao `a`: noi de bai; CONG uoc luong cua hai phan (ba trang gop lam
  * mot the thi the do phai duoc ba lan thoi gian, khong phai mot — cung luat voi
- * duong AI, xem lib/types.ts); mot trong hai phai quay video thi bai gop phai
- * quay; co dong tieng Viet thi doc giong Viet.
+ * duong AI, xem lib/types.ts, va voi nut "Gop voi bai tren" o lib/banNhap.ts:
+ * thoi luong duoc sai theo huong THUA, khong bao gio theo huong THIEU); mot trong
+ * hai phai quay video thi bai gop phai quay; co dong tieng Viet thi doc giong Viet.
  */
 function gopDong(a: DongTho, b: DongTho): DongTho {
   return {

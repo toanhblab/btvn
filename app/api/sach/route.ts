@@ -33,7 +33,10 @@ export async function POST(req: Request) {
   if (!familyId) return NextResponse.json({ error: T('Cần mã PIN của bố mẹ.') }, { status: 401 });
 
   const body = await req.json().catch(() => null);
-  const name = String(body?.name ?? '').replace(/\s+/g, ' ').trim();
+  if (body?.name !== undefined && typeof body.name !== 'string') {
+    return NextResponse.json({ error: T('Chưa nhập tên sách.') }, { status: 400 });
+  }
+  const name = (body?.name ?? '').replace(/\s+/g, ' ').trim();
   if (!name) return NextResponse.json({ error: T('Chưa nhập tên sách.') }, { status: 400 });
   if (name.length > MAX_CHU_TEN_SACH) {
     return NextResponse.json({ error: T('Tên sách dài quá, để ngắn thôi.') }, { status: 400 });

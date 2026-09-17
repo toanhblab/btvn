@@ -189,6 +189,15 @@ test('route /api/sach: can PIN; them / trung ten / ten dai / con nha khac; PATCH
   const la = await (await sachRoute.POST(json({ name: 'Sách môn lạ', subject: 'Nhạc' }))).json();
   assert.equal(la.book.subject, null, 'mon khong co trong SUBJECTS -> chua ro mon');
 
+  // name khong phai chuoi: 400 chu KHONG ep kieu — cung luat voi PATCH, khong tao
+  // cuon nao ten '5' / '[object Object]' / 'a,b'
+  const truocDo = (await (await sachRoute.GET()).json()).books.length;
+  for (const sai of [5, {}, ['a', 'b'], true]) {
+    assert.equal(
+      (await sachRoute.POST(json({ name: sai }))).status, 400, `name la ${JSON.stringify(sai)}`);
+  }
+  assert.equal((await (await sachRoute.GET()).json()).books.length, truocDo, 'khong cuon nao duoc tao');
+
   const danhSach = await (await sachRoute.GET()).json();
   assert.ok(danhSach.books.some((b: { id: string }) => b.id === book.id));
 

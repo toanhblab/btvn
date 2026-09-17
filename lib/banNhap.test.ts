@@ -47,6 +47,19 @@ test('gop len: tep dinh kem lay hop khong trung URL, co quay video la HOAC cua h
   assert.equal(gop.requiresVideo, true);
 });
 
+test('gop len: thoi luong CONG hai the, kep tran 60, khong bao gio thap hon so bo me da go', () => {
+  const gop = (a: string, b: string) =>
+    gopLenBanNhap([banNhap('A', { durationStr: a }), banNhap('B', { durationStr: b })], 1)[0].durationStr;
+
+  assert.equal(gop('24', '8'), '32', 'the om viec cua ca hai thi dong ho phai du gio cho ca hai');
+  assert.equal(gop('45', '30'), '60', 'kep o tran cua AI');
+  // O de trong / so hong = mac dinh 10, nhu luc luu
+  assert.equal(gop('', '8'), '18');
+  assert.equal(gop('24', ''), '34');
+  // Bo me go tay 100 (o nay nhan toi 180): gop khong duoc ha xuong 60
+  assert.equal(gop('100', '8'), '100');
+});
+
 test('gop roi tach: con tro cu cua the da gop KHONG cat nham the dung o cho cua no', () => {
   const [a, b, c] = [banNhap('Toán trang 41'), banNhap('Chép bài thơ'), banNhap('Đọc to bài 3')];
   // Bo me cham vao o de bai cua B (vi tri 5) roi bam "Gop voi bai tren" cho B
@@ -77,10 +90,12 @@ test('tach tai con tro: hai nua chia dung cho, the moi mang ma moi va khong om t
   assert.notEqual(kq[1].ma, x.ma, 'the moi phai co ma rieng, khong dung chung o de bai');
   assert.deepEqual(kq[0].media, x.media, 'tep giu o the goc');
   assert.deepEqual(kq[1].media, []);
-  // Chep mon / ghi chu / giong doc / thoi luong / co quay video
+  // Chep mon / ghi chu / giong doc / co quay video; thoi luong CHEP nguyen sang ca
+  // hai nua (sai theo huong thua), khong chia ti le
   assert.equal(kq[1].subject, x.subject);
   assert.equal(kq[1].note, x.note);
   assert.equal(kq[1].lang, x.lang);
+  assert.equal(kq[0].durationStr, '24');
   assert.equal(kq[1].durationStr, '24');
   assert.equal(kq[1].requiresVideo, true);
 });

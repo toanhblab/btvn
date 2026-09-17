@@ -417,8 +417,20 @@ chỉ ghi trang thì **không** gộp. Cả hai chiều đều sửa được m�
 lại: "Gộp với bài trên" có từ trước, **"✂️ Tách bài này"** thêm ở lần này — cắt tại
 con trỏ trong ô đề bài (bố mẹ chạm vào chỗ muốn cắt rồi bấm), con trỏ ở đầu / cuối
 thì thẻ mới để trống; thẻ mới chép môn / ghi chú / giọng / thời lượng / cờ video,
-tệp đính kèm ở lại thẻ gốc. Hồi quy: `lib/tach-theo-sach.test.ts` (prompt, khối
-sách, fetch giả, splitByRule), `lib/sach.test.ts` (PGlite + route: lọc theo nhà,
+tệp đính kèm ở lại thẻ gốc (`lib/banNhap.ts`, hai hàm thuần).
+
+**Luật thời lượng của cả app:** số phút được phép sai theo hướng **thừa**, không
+bao giờ theo hướng **thiếu** — thiếu thì đồng hồ ở màn của con reo giữa chừng và
+con mất +1 "xong sớm" cho một bài nó làm đúng hạn, còn thừa thì chỉ là đồng hồ còn
+dư giờ. Vì thế **gộp thì cộng** (`gopDong` của đường lùi và "Gộp với bài trên" ở
+màn Kiểm tra lại đều cộng hai số rồi `clampDuration`, và trần 60 không hạ xuống
+thấp hơn số bố mẹ đã gõ tay — ô đó nhận tới 180), còn **tách thì chép** nguyên số
+sang cả hai nửa, không chia tỉ lệ: không biết con trỏ cắt vào chỗ nặng hay nhẹ,
+mà chép là sai theo hướng thừa. Bố mẹ sửa lại số phút ngay tại dòng đó.
+
+Hồi quy: `lib/tach-theo-sach.test.ts` (prompt, khối
+sách, fetch giả, splitByRule), `lib/banNhap.test.ts` (gộp / tách),
+`lib/sach.test.ts` (PGlite + route: lọc theo nhà,
 theo con, đánh dấu bỏ, và ca **nhà chưa khai sách** cho ra đúng `splitByRule(text)`
 cũ).
 
