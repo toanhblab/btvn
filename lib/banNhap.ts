@@ -33,6 +33,17 @@ let dem = 0;
 /** Ma moi cho mot ban nhap. Chi can duy nhat trong MOT lan mo man hinh. */
 export const maBanNhapMoi = (): string => `bn${++dem}`;
 
+/**
+ * Ghi chu cua bai gop: GIU CA HAI, ngan bang " · ". Ghi chu la cho ghi ten sach +
+ * so trang (issue #64) — the gop om viec cua ca hai thi con phai biet ca hai quyen
+ * ma lay ra, giu moi ghi chu cua the tren la mat han quyen kia. Hai ben trong thi
+ * null; hai ben trung nhau thi chi mot lan.
+ */
+const gopGhiChu = (a: string | null, b: string | null): string | null => {
+  const co = [a?.trim(), b?.trim()].filter((x): x is string => Boolean(x));
+  return [...new Set(co)].join(' · ') || null;
+};
+
 /** So phut cua mot the; o trong / so hong = mac dinh, nhu luc luu (KiemTraLai). */
 const phutCuaThe = (d: BanNhap): number => {
   const n = Number(d.durationStr);
@@ -42,6 +53,11 @@ const phutCuaThe = (d: BanNhap): number => {
 /**
  * Gop the thu `i` vao the ngay tren — AI hay tach nham mot bai thanh hai dong.
  * The con lai GIU NGUYEN ma cua no, nen con tro dang o the nao van thuoc the do.
+ *
+ * The gop mang DU thu cua ca hai the: de bai noi lai, ghi chu ghep (gopGhiChu),
+ * tep dinh kem lay hop, co quay video la HOAC. Tu khi AI da tu gop cac dong cung
+ * mot cuon, hai the bo me gop tay thuong la HAI CUON KHAC NHAU — bo mot ben la bo
+ * han mot quyen con phai lay ra.
  *
  * Thoi luong CONG hai the roi kep bang sanitizeDuration (tran 180 cua chinh o
  * nhap): mot the om viec cua ca hai thi dong ho phai du gio cho ca hai. Tran do
@@ -65,6 +81,7 @@ export function gopLenBanNhap(ds: BanNhap[], i: number): BanNhap[] {
       acc[acc.length - 1] = {
         ...prev,
         content: `${prev.content} ${d.content}`.trim(),
+        note: gopGhiChu(prev.note, d.note),
         durationStr: String(phut),
         media,
         // Mot trong hai nua co yeu cau quay video thi bai gop van phai quay

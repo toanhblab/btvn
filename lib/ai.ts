@@ -14,7 +14,7 @@
  */
 
 import type { Book, DraftAssignment, HwSource, Lang } from './types';
-import { clampDuration, DURATION_DEFAULT, iconFor, MAX_CHU_TEN_SACH, SUBJECTS } from './types';
+import { clampDuration, DURATION_DEFAULT, iconFor, laTenMon, MAX_CHU_TEN_SACH, SUBJECTS } from './types';
 import { T_VI, taoT, type Key, type T } from './i18n/chu';
 import { NGON_NGU_MAC_DINH, type NgonNgu } from './i18n/ngonNgu';
 
@@ -25,7 +25,7 @@ import { NGON_NGU_MAC_DINH, type NgonNgu } from './i18n/ngonNgu';
  * bang AI.
  */
 const tenMonTheoNha = (subject: string, T: T): string =>
-  subject in SUBJECTS ? T(subject as Key) : subject;
+  laTenMon(subject) ? T(subject as Key) : subject;
 
 const BASE_URL = process.env.NOUS_BASE_URL || 'https://inference-api.nousresearch.com/v1';
 const MODEL = process.env.NOUS_MODEL || 'qwen/qwen3-vl-32b-instruct';
@@ -263,7 +263,7 @@ function normalize(items: RawDraft[], T: T): DraftAssignment[] {
   return items
     .filter((d) => d.content && d.content.trim())
     .map((d) => {
-      const subject = d.subject && d.subject in SUBJECTS ? d.subject : 'Khác';
+      const subject = laTenMon(d.subject) ? d.subject : 'Khác';
       const content = d.content!.trim();
       return {
         subject: tenMonTheoNha(subject, T),

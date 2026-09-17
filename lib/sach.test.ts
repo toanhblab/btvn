@@ -51,6 +51,7 @@ const { signIn, hashPin } = await import('./auth.ts');
 const store = await import('./store.ts');
 const { splitByRule } = await import('./ai.ts');
 const { T_VI } = await import('./i18n/chu.ts');
+const { monSachOf } = await import('./types.ts');
 const sachRoute = await import('../app/api/sach/route.ts');
 const sachIdRoute = await import('../app/api/sach/[id]/route.ts');
 const extractRoute = await import('../app/api/extract/route.ts');
@@ -188,6 +189,14 @@ test('route /api/sach: can PIN; them / trung ten / ten dai / con nha khac; PATCH
   assert.equal((await sachRoute.POST(json({ name: 'Sách lạ', childIds: [] }))).status, 400, 'mang rong');
   const la = await (await sachRoute.POST(json({ name: 'Sách môn lạ', subject: 'Nhạc' }))).json();
   assert.equal(la.book.subject, null, 'mon khong co trong SUBJECTS -> chua ro mon');
+
+  // Khoa cua Object.prototype KHONG phai ten mon: 'constructor' & co. tung lot qua
+  // vi `v in SUBJECTS` di ca chuoi nguyen mau, roi len loi nhac AI va the bai cua con
+  for (const [i, xau] of ['constructor', 'toString', '__proto__', 'hasOwnProperty'].entries()) {
+    assert.equal(monSachOf(xau), null, `monSachOf(${xau})`);
+    const nguyenMau = await (await sachRoute.POST(json({ name: `Sách lạ ${i}`, subject: xau }))).json();
+    assert.equal(nguyenMau.book.subject, null, `POST subject=${xau}`);
+  }
 
   // name khong phai chuoi: 400 chu KHONG ep kieu — cung luat voi PATCH, khong tao
   // cuon nao ten '5' / '[object Object]' / 'a,b'

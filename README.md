@@ -419,10 +419,11 @@ hành vi trong `lib/tach-theo-sach.test.ts`; tóm tắt:
   câu chuyện"* không bị gán cuốn *"Toán"*. Bỏ sót một cách nhắc lỏng lẻo chỉ là
   không gộp được; gán nhầm cuốn là con lấy sai quyển ra làm. Phép so chịu được
   **dòng bài tập** viết không dấu, nhưng **không** chịu được **tên sách bố mẹ khai**
-  thiếu dấu (khai *"Vo o ly"* thì không khớp dòng *"Vở ô ly trang 4"*) — cả
-  `HUONG-DAN-BO-ME.md` lẫn màn khai sách đều nhắc gõ tên có dấu như trên bìa. Hai
-  bên đều ép về **NFC** trước khi so: chữ dán từ Zalo / bàn phím tiếng Việt thường
-  là NFD, nhìn giống hệt mà `===` trả false.
+  thiếu dấu (khai *"Vo o ly"* thì không khớp dòng *"Vở ô ly trang 4"*) —
+  `HUONG-DAN-BO-ME.md` nhắc bố mẹ gõ tên có dấu như trên bìa; **màn khai sách chưa
+  có dòng nhắc đó**, thêm thì thêm ở `app/bome/(khung)/sach/`. Hai bên đều ép về
+  **NFC** trước khi so: chữ dán từ Zalo / bàn phím tiếng Việt thường là NFD, nhìn
+  giống hệt mà `===` trả false.
 - **Không dòng nào nhắc cuốn nào**: gộp khi cùng môn (khác "Khác"), **cả hai** đều
   chỉ trang / số bài (`DAU_HIEU_TRANG`: "trang 41", "tr. 5", "bài 3", "page 12",
   "Ex 2"…) và cùng ngôn ngữ đoán được.
@@ -442,7 +443,12 @@ chỉ ghi trang thì **không** gộp. Cả hai chiều đều sửa được m�
 lại: "Gộp với bài trên" có từ trước, **"✂️ Tách bài này"** thêm ở lần này — cắt tại
 con trỏ trong ô đề bài (bố mẹ chạm vào chỗ muốn cắt rồi bấm), con trỏ ở đầu / cuối
 thì thẻ mới để trống; thẻ mới chép môn / ghi chú / giọng / thời lượng / cờ video,
-tệp đính kèm ở lại thẻ gốc (`lib/banNhap.ts`, hai hàm thuần).
+tệp đính kèm ở lại thẻ gốc (`lib/banNhap.ts`, hai hàm thuần). Chiều gộp giữ **đủ
+của cả hai thẻ**: đề bài nối lại, **ghi chú ghép bằng " · "** (trùng nhau thì một
+lần, cả hai trống thì `null`), tệp lấy hợp, cờ video là HOẶC. Ghi chú là chỗ ghi
+tên sách + số trang, mà từ khi AI đã tự gộp các dòng cùng một cuốn thì hai thẻ bố
+mẹ gộp tay thường là **hai cuốn khác nhau** — bỏ một bên là bỏ hẳn một quyển con
+phải lấy ra.
 
 **Thời lượng khi gộp / tách:** sai theo hướng **thừa** còn hơn sai theo hướng
 **thiếu** — thiếu thì đồng hồ ở màn của con reo giữa chừng và con mất +1 "xong sớm"

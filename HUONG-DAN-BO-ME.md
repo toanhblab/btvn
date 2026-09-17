@@ -116,7 +116,9 @@ không để 8) — bố mẹ thấy con nhà mình làm nhanh hay chậm hơn t
 ngay ở màn này. Nếu app gộp nhầm hai việc khác cuốn vào một thẻ,
 bố mẹ **chạm vào chỗ muốn cắt** trong ô đề bài rồi bấm **"✂️ Tách bài này"** — thẻ
 mới hiện ngay bên dưới, giữ nguyên môn và ghi chú. Ngược lại, tách vụn quá thì bấm
-**"Gộp với bài trên"**.
+**"Gộp với bài trên"** — thẻ gộp giữ đủ của cả hai: đề bài nối lại, dòng "sách,
+trang" của cả hai thẻ đứng cạnh nhau, tệp đính kèm của cả hai, và nếu một trong hai
+cần quay video thì thẻ gộp cũng cần.
 
 > App đọc ảnh không ra chữ, hay mạng trục trặc? Vẫn có nút **"Nhập tay"** để bố mẹ
 > tự gõ từng bài — không bao giờ bị kẹt.

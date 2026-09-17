@@ -379,9 +379,14 @@ export default function KiemTraLai({
                     </button>
                   </span>
                 ))}
+                {/* Khoa trong luc dang tai: the DOM bi khoa thi bam nhan khong mo
+                    duoc hop chon tep, nen nhan phai TRONG nhu da khoa — khong thi
+                    bo me bam mai vao mot chip nhin y het chip chay duoc. */}
                 <label
-                  className="inline-flex items-center gap-1 text-p-body-sm rounded-full px-3 py-1.5
-                             border border-dashed border-outline-variant text-on-surface-variant cursor-pointer"
+                  aria-disabled={dangTaiTep}
+                  className={`inline-flex items-center gap-1 text-p-body-sm rounded-full px-3 py-1.5
+                             border border-dashed border-outline-variant text-on-surface-variant
+                             ${dangTaiTep ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   <input
                     type="file"

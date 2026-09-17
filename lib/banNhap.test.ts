@@ -50,6 +50,21 @@ test('gop len: tep dinh kem lay hop khong trung URL, co quay video la HOAC cua h
   assert.equal(gop.requiresVideo, true);
 });
 
+test('gop len: GHI CHU giu ca hai the — do la ten sach + so trang con phai lay ra', () => {
+  const ghiChu = (a: string | null, b: string | null) =>
+    gopLenBanNhap([banNhap('A', { note: a }), banNhap('B', { note: b })], 1)[0].note;
+
+  assert.equal(
+    ghiChu('Poth Math — trang 41, 42, 43', 'Vở ô ly — trang 5'),
+    'Poth Math — trang 41, 42, 43 · Vở ô ly — trang 5',
+    'hai cuon khac nhau: giu ca hai, khong bo cuon cua the duoi');
+  assert.equal(ghiChu('Poth Math — trang 41', null), 'Poth Math — trang 41');
+  assert.equal(ghiChu(null, 'Vở ô ly — trang 5'), 'Vở ô ly — trang 5');
+  assert.equal(ghiChu(null, null), null);
+  assert.equal(ghiChu('   ', null), null, 'ghi chu chi co khoang trang = khong co');
+  assert.equal(ghiChu('Vở ô ly', 'Vở ô ly'), 'Vở ô ly', 'cung mot cuon thi khong nhac hai lan');
+});
+
 test('gop len: thoi luong CONG hai the, kep tran 180 cua o nhap, khong thap hon so bo me da go', () => {
   const gop = (a: string, b: string) =>
     gopLenBanNhap([banNhap('A', { durationStr: a }), banNhap('B', { durationStr: b })], 1)[0].durationStr;

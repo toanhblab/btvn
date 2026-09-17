@@ -242,6 +242,15 @@ export const SUBJECTS = {
 
 export type TenMon = keyof typeof SUBJECTS;
 const SUBJECT_KEYS = Object.keys(SUBJECTS) as TenMon[];
+const TAP_TEN_MON = new Set<string>(SUBJECT_KEYS);
+
+/**
+ * Chuoi nay co phai KHOA mon that khong (giong hwSourceOf: hoi mot Set, khong hoi
+ * `v in SUBJECTS`). `in` di ca chuoi nguyen mau nen 'constructor', 'toString',
+ * '__proto__', 'hasOwnProperty' deu tra true — mot than JSON go tay la lot vao DB
+ * mot "mon" nhu vay, roi no len loi nhac cua AI va len the bai cua con.
+ */
+export const laTenMon = (v: unknown): v is TenMon => typeof v === 'string' && TAP_TEN_MON.has(v);
 
 /** Danh sach mon theo ngon ngu cua nha: { ten hien thi (= ten luu DB) -> icon }. */
 export function subjectsFor(T: T = T_VI): Record<string, string> {
@@ -291,7 +300,7 @@ export const MAX_CHU_TEN_SACH = 60;
 
 /** Loc mon cua sach tu ngoai vao (API body, DB): phai la khoa trong SUBJECTS, khong thi null. */
 export function monSachOf(v: unknown): TenMon | null {
-  return typeof v === 'string' && v in SUBJECTS ? (v as TenMon) : null;
+  return laTenMon(v) ? v : null;
 }
 
 /* ---------------- Nhiem vu hang ngay ("viec nha") ----------------
