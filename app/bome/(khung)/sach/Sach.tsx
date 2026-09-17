@@ -168,9 +168,12 @@ export default function Sach({
                   defaultValue={b.name}
                   key={`${b.id}:name:${b.name}`}
                   maxLength={MAX_CHU_TEN_SACH}
-                  disabled={busy}
                   aria-label={T('Tên sách')}
                   onBlur={async (e) => {
+                    // O CHU khong khoa theo busy (khac nut bam / o chon ben duoi):
+                    // khoa mot o dang go la cuop con tro va sap ban phim dien thoai,
+                    // nen bo me bam sang o ten cuon khac trong luc luu la mat chu.
+                    //
                     // The input luon phai hien DUNG ten may chu dang giu: key khong
                     // doi nen React giu nguyen the, defaultValue bi bo qua. May chu
                     // tu choi (trung ten / dai qua) -> ten cu; may chu nhan nhung
@@ -181,7 +184,7 @@ export default function Sach({
                     const daLuu = await sua(b, { name: moi });
                     o.value = daLuu ? daLuu.name : b.name;
                   }}
-                  className={`${oNhap} flex-1 min-w-0 text-on-surface disabled:opacity-60`}
+                  className={`${oNhap} flex-1 min-w-0 text-on-surface`}
                 />
                 <button
                   onClick={() => { setHoiBo(b.id); setError(''); }}

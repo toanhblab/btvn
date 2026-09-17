@@ -7,6 +7,14 @@ trước khi chụp (AGENTS.md); Macbook 1440×900. Máy dev không có `NOUS_AP
 nên mọi lần tách ở đây đi **đường lùi tách thô** — phần AI được kiểm bằng fetch
 giả trong `lib/tach-theo-sach.test.ts` (lời nhắc gửi lên đúng như mong đợi).
 
+Ba ảnh Macbook 10–12 chụp ngày 2026-09-17, cách làm y như trên: `npm run db:seed`
+(PIN 1234) → `next dev` → `chrome-devtools-axi` mở qua `http://localhost:<cổng>`
+(không dùng `127.0.0.1`), đăng nhập bố mẹ bằng `POST /api/pin`, khai bốn cuốn
+sách qua `POST /api/sach`, `emulate --viewport "1440x900x1"` rồi **kiểm lại
+`eval "() => innerWidth"` ra đúng `1440`** và `documentElement.scrollWidth >
+innerWidth` = `false` trước khi chụp. Hit-test chạy trong trang
+(`scrollIntoView` + `elementFromPoint` trên lưới 5×5 trong `getBoundingClientRect()`).
+
 ## Còn thiếu: xác nhận trên iPhone THẬT
 
 Mọi ảnh cỡ điện thoại trong thư mục này là **ảnh GIẢ LẬP**: Chrome trên máy dev
@@ -33,6 +41,9 @@ PR và đóng issue #64: captain mở trên iPhone THẬT
 | `07-kiem-tra-lai-truoc-khi-tach-dien-thoai.png` | **Kiểm tra lại** với một thẻ AI gộp nhầm hai việc ("Làm bài toán trang 41, 42, 43. Vẽ một bức tranh…"); chip **✂️ Tách bài này** hit-test 25/25. |
 | `08-kiem-tra-lai-sau-khi-tach-dien-thoai.png` | Sau khi đặt con trỏ trước "Vẽ" và bấm Tách: 2 thẻ → 3 thẻ, thẻ mới giữ môn / giọng / thời lượng / ghi chú. |
 | `09-bome-sach-macbook.png` | Màn Sách của các con ở 1440×900 (cột hẹp `xl:max-w-lg`, chưa có bản Macbook riêng). |
+| `10-bome-cai-dat-macbook.png` | **Cài đặt** ở 1440×900: thẻ dẫn "Sách của các con · Khai sách, vở, nguồn bài tập — 4 cuốn" nằm trong cột phải, hit-test 25/25. |
+| `11-bome-them-macbook.png` | **Thêm bài** ở 1440×900: dòng dẫn dưới ô dán nội dung, link "Khai sách của các con" hit-test 25/25. |
+| `12-kiem-tra-lai-macbook.png` | **Kiểm tra lại** ở 1440×900 (ảnh cả trang): hàng chip của mỗi thẻ nằm gọn trên một dòng, không tràn ngang. Cùng một nội dung dán vào, hai dòng Poth Math ra **một** thẻ (ghi chú "Poth Math"), thẻ Vở ô ly và thẻ vẽ tranh tách riêng. Hit-test 5 chip (3 × "✂️ Tách bài này", 2 × "+ Gộp với bài trên") đều 25/25 điểm. |
 
 Bộ kiểm tự động: `lib/tach-theo-sach.test.ts` (prompt có luật gộp theo sách kể
 cả khi không có sách; khối sách có chặn trên; fetch giả; `splitByRule` gộp / không
