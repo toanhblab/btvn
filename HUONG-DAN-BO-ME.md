@@ -110,7 +110,10 @@ rồi sửa chỗ nào chưa đúng — chữ đề bài, môn, thời lượng 
 
 App tách bài **theo cuốn sách**, không theo dòng: cô viết *"Toán trang 41, 42, 43
 sách Poth Math"* thì ra **một** bài, số trang nằm ở dòng ghi chú "sách, trang"; hai
-cuốn khác nhau mới là hai bài. Nếu app gộp nhầm hai việc khác cuốn vào một thẻ,
+cuốn khác nhau mới là hai bài. Một thẻ gộp cả ba trang thì **thời lượng dự kiến
+cũng là của cả ba trang** (ba trang mỗi trang khoảng 8 phút thì app để 24 phút chứ
+không để 8) — bố mẹ thấy con nhà mình làm nhanh hay chậm hơn thì sửa lại số phút
+ngay ở màn này. Nếu app gộp nhầm hai việc khác cuốn vào một thẻ,
 bố mẹ **chạm vào chỗ muốn cắt** trong ô đề bài rồi bấm **"✂️ Tách bài này"** — thẻ
 mới hiện ngay bên dưới, giữ nguyên môn và ghi chú. Ngược lại, tách vụn quá thì bấm
 **"Gộp với bài trên"**.

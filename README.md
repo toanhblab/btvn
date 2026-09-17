@@ -422,9 +422,14 @@ tiếng. Bé 4 tuổi chưa đọc được chữ nào nên nút 🔊 gần như
 biết phải làm gì — đọc đề tiếng Anh bằng giọng Việt thì bé nghe không hiểu.
 Bố mẹ sửa được trường này ở màn "Kiểm tra lại".
 
-**Đồng hồ làm bài.** Mỗi bài có `duration_minutes` — AI ước 5–15 phút theo độ
-phức tạp (kẹp trong khoảng đó), bố mẹ sửa được ở màn "Kiểm tra lại" / "Sửa bài
-tập" / "Nhập tay" (sửa tay thì được ra ngoài khoảng, tối đa 180 phút). Ở màn của
+**Đồng hồ làm bài.** Mỗi bài có `duration_minutes` — AI ước 5–60 phút theo độ
+phức tạp (kẹp trong khoảng đó bằng `clampDuration`), bố mẹ sửa được ở màn "Kiểm
+tra lại" / "Sửa bài tập" / "Nhập tay" (sửa tay thì được ra ngoài khoảng, tối đa
+180 phút). Trần của AI là 60 chứ không phải 15 vì từ issue #64 **một cuốn sách là
+một bài**: ba trang toán ~8 phút mỗi trang là một thẻ ~24 phút thật, nên lời nhắc
+bắt AI **cộng** ước lượng của từng phần cho toàn bộ bài đã gộp — kẹp về 15 thì
+chuông reo giữa chừng và +1 "xong sớm" thành không thể đạt được đúng ở những bài
+mà luật gộp vừa làm to ra. Ở màn của
 con, bấm "Bắt đầu làm" là đếm ngược: vòng tiến độ đổi màu xanh → vàng → đỏ nhạt,
 giọng nói nhắc mỗi 5 phút và phút cuối, hết giờ chuông dịu + đếm quá giờ màu xám
 (không phạt), xong khi còn giờ thì confetti + lời khen. Mốc bắt đầu lưu trong

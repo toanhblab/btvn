@@ -113,7 +113,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
   // Noi giao chi nhan gia tri app biet — gia tri la ep ve nguon mac dinh (primary_school)
   if (body.source !== undefined) body.source = hwSourceOf(body.source);
 
-  // Thoi luong bo me sua tay: chi can so duong hop ly, khong kep lai 5-15
+  // Thoi luong bo me sua tay: chi can so duong hop ly, khong kep lai 5-60
   if (body.durationMinutes !== undefined) {
     body.durationMinutes = sanitizeDuration(body.durationMinutes);
   }

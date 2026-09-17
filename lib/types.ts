@@ -196,15 +196,23 @@ export interface DraftAssignment {
 /* ---------------- Thoi luong lam bai ----------------
  *
  * AI uoc luong theo do phuc tap nhung bi KEP trong [MIN, MAX] — LLM doi khi
- * phong dai ("bai kho, 45 phut") trong khi tre 4-6 tuoi khong ngoi qua 15 phut.
- * Bo me sua tay thi chi can so duong hop ly, duoc phep ra ngoai khoang cua AI.
+ * phong dai ("bai kho, 45 phut") cho mot viec nho.
+ *
+ * Tran cua AI la 60 chu khong con la 15 (issue #64): tu khi mot CUON SACH la
+ * mot bai, mot the co the la ba trang toan ~8 phut moi trang = ~24 phut that.
+ * Kep ve 15 thi dong ho reo giua chung va +1 "xong som" (lib/diem.ts) thanh
+ * khong the dat duoc DUNG o nhung bai ma luat gop vua lam to ra. Loi nhac cua
+ * AI (lib/ai.ts) vi the phai CONG uoc luong tung phan cua bai da gop.
+ *
+ * Bo me sua tay thi chi can so duong hop ly, duoc phep ra ngoai khoang cua AI
+ * (sanitizeDuration, toi da 180) — tran do KHONG doi.
  */
 
 export const DURATION_MIN = 5;
-export const DURATION_MAX = 15;
+export const DURATION_MAX = 60;
 export const DURATION_DEFAULT = 10;
 
-/** Kep uoc luong cua AI vao [5, 15]; gia tri hong -> mac dinh 10. */
+/** Kep uoc luong cua AI vao [5, 60]; gia tri hong -> mac dinh 10. */
 export function clampDuration(v: unknown): number {
   const n = Math.round(Number(v));
   if (!Number.isFinite(n) || n <= 0) return DURATION_DEFAULT;

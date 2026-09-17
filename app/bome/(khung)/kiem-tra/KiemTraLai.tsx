@@ -308,7 +308,7 @@ export default function KiemTraLai({
                   ))}
                 </select>
 
-                {/* Dong ho o man cua con dem nguoc tu so nay. AI uoc 5-15 phut;
+                {/* Dong ho o man cua con dem nguoc tu so nay. AI uoc 5-60 phut;
                     bo me sua tay thi duoc ghi ngoai khoang do (toi da 180). */}
                 <label className="inline-flex items-center gap-1 text-p-body-sm rounded-full bg-surface-container px-3 py-1.5 text-on-surface">
                   <span className="material-symbols-outlined text-base">timer</span>

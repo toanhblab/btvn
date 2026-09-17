@@ -93,12 +93,16 @@ export default function Sach({
     // cho cung mot con (Toán tập 1, Toán tập 2...).
   }
 
-  /** Tra ve true khi may chu da nhan — o go tay dua vao day de tra lai chu cu. */
-  async function sua(b: Book, patch: Partial<Pick<Book, 'name' | 'subject' | 'childIds'>>) {
+  /** Tra ve CUON MAY CHU DA LUU (ten da gom khoang trang), null khi bi tu choi. */
+  async function sua(
+    b: Book,
+    patch: Partial<Pick<Book, 'name' | 'subject' | 'childIds'>>,
+  ): Promise<Book | null> {
     const data = await goi(`/api/sach/${b.id}`, { method: 'PATCH', body: JSON.stringify(patch) });
-    if (!data) return false;
-    setBooks((ds) => ds.map((x) => (x.id === b.id ? data.book : x)));
-    return true;
+    if (!data) return null;
+    const daLuu = data.book as Book;
+    setBooks((ds) => ds.map((x) => (x.id === b.id ? daLuu : x)));
+    return daLuu;
   }
 
   async function bo(b: Book) {
@@ -160,14 +164,15 @@ export default function Sach({
                   maxLength={MAX_CHU_TEN_SACH}
                   aria-label={T('Tên sách')}
                   onBlur={async (e) => {
-                    // Xoa trang, hoac may chu tu choi (trung ten / dai qua), thi tra
-                    // lai chu cu ngay tren the input: key khong doi nen React giu the
-                    // va defaultValue bi bo qua, de nguyen thi the hien mot dang ten
-                    // ma CSDL dang giu mot dang khac.
+                    // The input luon phai hien DUNG ten may chu dang giu: key khong
+                    // doi nen React giu nguyen the, defaultValue bi bo qua. May chu
+                    // tu choi (trung ten / dai qua) -> ten cu; may chu nhan nhung
+                    // sua lai ten (gom khoang trang thua) -> ten da luu.
                     const o = e.target;
                     const moi = o.value.trim();
                     if (!moi || moi === b.name) { o.value = b.name; return; }
-                    if (!(await sua(b, { name: moi }))) o.value = b.name;
+                    const daLuu = await sua(b, { name: moi });
+                    o.value = daLuu ? daLuu.name : b.name;
                   }}
                   className={`${oNhap} flex-1 min-w-0 text-on-surface`}
                 />

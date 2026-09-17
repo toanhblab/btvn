@@ -7,7 +7,9 @@
  *      (MAX_SACH_TRONG_PROMPT), ten dai bi cat, ten trong bi bo, ten nhieu dong
  *      ep ve mot dong.
  *   2. extractAssignments GUI dung loi nhac do len (fetch gia): co sach thi khoi
- *      sach di kem, khong sach thi khong — va van doc ket qua nhu cu.
+ *      sach di kem, khong sach thi khong — va van doc ket qua nhu cu. Bai gop ca
+ *      cuon giu duoc thoi luong CONG lai (tran cua AI la 60, khong con 15: kep ve
+ *      15 thi dong ho reo giua chung va +1 "xong som" thanh khong the dat).
  *   3. splitByRule (duong lui khong AI) gop theo cung nguyen tac o muc no lam
  *      duoc: cung mon + cung dang trang/so bai + cung ngon ngu, hoac cung mot cuon
  *      bo me da khai (bang chung manh nen bo qua ngon ngu); co quay video la HOAC
@@ -107,6 +109,33 @@ test('extractAssignments gui loi nhac co khoi sach khi co sach, y nhu cu khi kho
       assert.equal(kq[0].note, 'Sách Poth Math — trang 41, 42, 43');
       assert.equal(kq[0].durationMinutes, 12);
       assert.equal(kq[0].confidence, 1);
+    }
+  } finally {
+    globalThis.fetch = fetchGoc;
+  }
+});
+
+test('bai gop ca cuon giu duoc thoi luong CONG lai: 24 phut khong bi kep ve 15; tren 60 moi kep', async () => {
+  const fetchGoc = globalThis.fetch;
+  const traVe = (duration_minutes: unknown) => (async () =>
+    new Response(JSON.stringify({
+      choices: [{ message: { content: JSON.stringify({ baiTap: [{
+        subject: 'Toán', content: 'Làm bài toán trang 41, 42, 43',
+        note: 'Sách Poth Math — trang 41, 42, 43', lang: 'vi', duration_minutes, canQuayVideo: false,
+      }] }) } }],
+    }), { status: 200 })) as typeof fetch;
+  const text = 'làm bài tập toán trang 41, 42, 43 ở sách poth math';
+  try {
+    // Ba trang ~8 phut moi trang: bai gop phai giu nguyen 24, khong con tran 15
+    for (const sachCuaNha of [[], [POTH]]) {
+      globalThis.fetch = traVe(24);
+      const kq = await extractAssignments({ text, sach: sachCuaNha });
+      assert.equal(kq[0].durationMinutes, 24, `sach: ${sachCuaNha.length}`);
+    }
+    // Hai dau khoang van kep: duoi 5 len 5, tren 60 ve 60, so hong ve mac dinh 10
+    for (const [tra, mong] of [[2, 5], [90, 60], ['x', 10]] as const) {
+      globalThis.fetch = traVe(tra);
+      assert.equal((await extractAssignments({ text }))[0].durationMinutes, mong, `tra ${tra}`);
     }
   } finally {
     globalThis.fetch = fetchGoc;

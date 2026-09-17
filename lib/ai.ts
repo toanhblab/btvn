@@ -73,10 +73,15 @@ Quy tắc:
   lần cho cùng một việc.
 - Giữ đủ MỌI việc con phải làm trong một mục, kể cả việc phụ như "quay video gửi
   cho cô", "viết vào vở riêng", "gửi vào nhóm". Bỏ sót thì con làm thiếu.
-- "duration_minutes" là thời gian ước tính để trẻ làm xong bài, SỐ NGUYÊN từ 5
-  đến 15 (phút). Ước theo độ phức tạp thực tế: bài chép ngắn, tô màu một hình,
-  đọc một trang → 5; bài trung bình → 8-10; bài toán nhiều câu, viết đoạn văn,
-  quay video gửi cô → 12-15. Không chắc thì để 10.
+- "duration_minutes" là thời gian ước tính để trẻ làm xong TOÀN BỘ bài này sau
+  khi đã gộp, SỐ NGUYÊN từ 5 đến 60 (phút). Ước theo độ phức tạp thực tế của
+  TỪNG PHẦN: bài chép ngắn, tô màu một hình, đọc một trang → 5; bài trung bình →
+  8-10; bài toán nhiều câu, viết đoạn văn, quay video gửi cô → 12-15.
+  Gộp nhiều trang / nhiều số bài của cùng một cuốn thành một bài thì CỘNG ước
+  lượng của từng phần lại, đừng lấy ước lượng của một phần.
+  Ví dụ: "Làm bài toán trang 41, 42, 43 sách Poth Math" — mỗi trang ~8 phút ->
+  duration_minutes = 24, KHÔNG phải 8 và cũng không phải 15.
+  Không chắc thì để 10.
 - "canQuayVideo" = true khi bài yêu cầu con QUAY VIDEO hoặc trình diễn thành
   tiếng/động tác để người khác kiểm tra: "quay video", "quay clip gửi cô",
   "đọc to", "đọc thuộc lòng", "kể lại câu chuyện cho bố mẹ nghe", "quay video
@@ -267,7 +272,7 @@ function normalize(items: RawDraft[], T: T): DraftAssignment[] {
         note: d.note?.trim() || null,
         lang: langOf(content, d.lang),
         confidence: DO_TIN_AI,
-        // Schema da rang 5-15 nhung van kep lai: model co the lo tra JSON ngoai schema
+        // Schema da rang 5-60 nhung van kep lai: model co the lo tra JSON ngoai schema
         durationMinutes: clampDuration(d.duration_minutes),
         requiresVideo: d.canQuayVideo === true,
       };
