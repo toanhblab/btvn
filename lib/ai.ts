@@ -545,6 +545,13 @@ function cungCuon(a: DongTho, b: DongTho): boolean {
  * sinh ra deu di theo tran cua clampDuration, xem lib/types.ts, va sai theo huong
  * THUA con hon thieu); mot trong hai phai quay video thi bai gop phai quay; co
  * dong tieng Viet thi doc giong Viet.
+ *
+ * `coTrang` cung phai la HOAC: mot phan da chi trang thi ca bai gop la bai co
+ * trang. De nguyen cua dong dau thi bai gop mang mot bo co KHONG DONG NAO co that
+ * — doi quay video ma khong chi trang nao — dung bang cua viecDocLap, va dong thu
+ * ba cung cuon bi tu choi gop, trai voi bang dieu kien o cungCuon. `book` lay cua
+ * `a` la dung: hai nhanh cua cungCuon chi gop khi hai dong cung mot cuon (hoac
+ * cung khong co cuon nao).
  */
 function gopDong(a: DongTho, b: DongTho): DongTho {
   return {
@@ -552,6 +559,7 @@ function gopDong(a: DongTho, b: DongTho): DongTho {
     content: `${a.content}; ${b.content}`,
     subject: monDaBiet(a, b),
     phut: a.phut + b.phut,
+    coTrang: a.coTrang || b.coTrang,
     requiresVideo: a.requiresVideo || b.requiresVideo,
     lang: a.lang === 'vi' || b.lang === 'vi' ? 'vi' : 'en',
   };

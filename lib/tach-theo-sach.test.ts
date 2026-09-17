@@ -316,6 +316,47 @@ test('viec doc lap (quay video, khong chi trang) KHONG bi nuot vao bai cua cuon 
   assert.equal(gop[0].requiresVideo, true);
 });
 
+test('bai da gop van la bai CO TRANG: dong thu ba cung cuon gop tiep duoc', () => {
+  const VO = sach('Vở ô ly');
+
+  // Dong dau khong chi trang, dong hai vua chi trang vua doi "đọc to". Gop hai
+  // dong nay ra mot bai doi quay video MA CO chi trang — khong phai viec doc lap,
+  // nen dong ba cung cuon phai gop tiep, khong de lai hai the cho mot quyen vo.
+  const ds = splitByRule(
+    'Vở ô ly: chép bài thơ vào vở\nVở ô ly trang 3, đọc to cho cô nghe\nVở ô ly trang 4',
+    undefined, [VO]);
+  assert.equal(ds.length, 1, 'mot quyen vo -> mot the');
+  assert.equal(ds[0].requiresVideo, true);
+  assert.equal(ds[0].note, 'Vở ô ly');
+
+  // Doi cho hai dong dau: ket qua khong duoc phu thuoc thu tu dong
+  const doiCho = splitByRule(
+    'Vở ô ly trang 3, đọc to cho cô nghe\nVở ô ly: chép bài thơ vào vở\nVở ô ly trang 4',
+    undefined, [VO]);
+  assert.equal(doiCho.length, 1);
+  assert.equal(doiCho[0].requiresVideo, true);
+
+  // Ba dong deu chi trang, dong giua doi quay video -> van MOT bai
+  const deuCoTrang = splitByRule(
+    'Vở ô ly trang 2\nVở ô ly trang 3, đọc to cho cô nghe\nVở ô ly trang 4', undefined, [VO]);
+  assert.equal(deuCoTrang.length, 1);
+  assert.equal(deuCoTrang[0].requiresVideo, true);
+});
+
+test('viec doc lap dung giua hai dong cung cuon: no dung rieng, hai dong kia khong ke nhau nen khong gop', () => {
+  const VO = sach('Vở ô ly');
+  const ds = splitByRule(
+    'Vở ô ly trang 3\nVở ô ly: quay video đọc bảng cộng\nVở ô ly trang 4', undefined, [VO]);
+
+  assert.equal(ds.length, 3, 'viec doc lap giu bai rieng va cat doi hai dong kia');
+  assert.deepEqual(ds.map((d) => d.requiresVideo), [false, true, false]);
+
+  // Hai dong do KE NHAU thi gop binh thuong
+  const keNhau = splitByRule('Vở ô ly trang 3\nVở ô ly trang 4', undefined, [VO]);
+  assert.equal(keNhau.length, 1);
+  assert.equal(keNhau[0].requiresVideo, false);
+});
+
 test('gop thi co quay video la HOAC cua hai dong (mot dong doi "đọc to" -> ca bai gop phai quay)', () => {
   const ds = splitByRule('Tiếng Việt tập 1 trang 10\nTiếng Việt tập 1 trang 11, đọc to cho bố mẹ nghe');
   assert.equal(ds.length, 1);
