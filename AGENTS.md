@@ -81,8 +81,14 @@ mọi màn × mọi cỡ thì một lượt rà là đủ tin.
 
 Dữ liệu seed mặc định là trạng thái DỄ NHẤT (con 0 ⭐ → viền "Đổi thưởng" hẹp
 nhất). Kiểm bố cục phải đặt dữ liệu XẤU NHẤT trước: ⭐ ba chữ số, tên con dài, và
-số con NHIỀU HƠN 3 (hàng chọn tên con chỉ vỡ khi đủ thẻ để tràn). Ảnh chụp trên
-dữ liệu seed mặc định không chứng minh được gì về bố cục.
+số con NHIỀU HƠN 3 (hàng chọn tên con chỉ vỡ khi đủ thẻ để tràn; bảng xếp hạng
+cũng dài ra theo số con — issue #63). Ảnh chụp trên dữ liệu seed mặc định không
+chứng minh được gì về bố cục.
+
+Đổi dữ liệu xong thì **phải khởi động lại `next dev`**: PGlite nạp cả `./.data/pg`
+vào bộ nhớ lúc mở, nên script ghi vào thư mục đó trong lúc máy chủ đang chạy KHÔNG
+hiện lên trang — màn vẫn vẽ dữ liệu cũ mà không báo gì, và một lượt rà cả chục cỡ
+màn coi như kiểm đúng một bộ dữ liệu.
 
 Lái trình duyệt vào `next dev` thì mở bằng **`http://localhost:<cổng>`**, đừng
 dùng `127.0.0.1`. Next 16 chặn "cross-origin dev request" nên mọi tệp
