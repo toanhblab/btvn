@@ -140,7 +140,21 @@ test('bai gop ca cuon giu duoc thoi luong CONG lai: 24 phut khong bi kep ve 15; 
   }
 });
 
-/* ---------------- splitByRule: duong lui khong AI ---------------- */
+/* ---------------- splitByRule: duong lui khong AI ----------------
+ *
+ * Moi dong cua BANG DIEU KIEN GOP o chu thich cungCuon (lib/ai.ts) co mot bai
+ * kiem duoi day, kiem qua HANH VI cua splitByRule:
+ *
+ *   co ten sach, cung cuon        -> 'khai sach: hai dong nhac CUNG cuon'
+ *   co ten sach, khac cuon        -> 'hai cuon KHAC nhau cung mon'
+ *   co ten sach, khac mon         -> 'cung mot cuon nhung KHAC mon'
+ *   co ten sach, viec doc lap     -> 'viec doc lap ... KHONG bi nuot'
+ *   co ten sach, khac ngon ngu    -> 'cung mot cuon da khai la bang chung manh'
+ *   khong ten sach, du dieu kien  -> 'cung mon + cung dang trang/so bai lien nhau'
+ *   khong ten sach, thieu mot dieu kien (khong chi trang / mon "Khác" / khac ngon
+ *                                  ngu) -> 'KHONG gop (khong ten sach)'
+ *   mot dong co ten sach, dong kia khong -> 'GIOI HAN co y'
+ */
 
 const noiDung = (ds: { content: string }[]) => ds.map((d) => d.content);
 
@@ -194,6 +208,21 @@ test('thoi luong CONG theo so dong da gop, kep o tran 60 — khong con mot muc m
   const gopNhieu = splitByRule(bayDong);
   assert.equal(gopNhieu.length, 1);
   assert.equal(gopNhieu[0].durationMinutes, 60);
+});
+
+test('cung mot cuon nhung KHAC mon -> hai the, moi the giu dung mon cua no', () => {
+  const VO = sach('Vở ô ly');   // bo me khai cuon vo ma chua chon mon
+  const ds = splitByRule('Vở ô ly: chép bài toán trang 3\nVở ô ly: viết chính tả trang 4', undefined, [VO]);
+
+  assert.equal(ds.length, 2, 'cung mot quyen vo khong co nghia la cung mot mon');
+  assert.deepEqual(ds.map((d) => d.subject), ['Toán', 'Tiếng Việt']);
+  assert.notEqual(ds[0].icon, ds[1].icon, 'moi the mang icon cua mon no');
+  assert.deepEqual(ds.map((d) => d.note), ['Vở ô ly', 'Vở ô ly'], 'ca hai van la cuon do');
+
+  // Cung cuon VA cung mon thi van gop nhu cu
+  const gop = splitByRule('Vở ô ly: viết chính tả trang 3\nVở ô ly: chính tả trang 4', undefined, [VO]);
+  assert.equal(gop.length, 1);
+  assert.equal(gop[0].subject, 'Tiếng Việt');
 });
 
 test('viec doc lap (quay video, khong chi trang) KHONG bi nuot vao bai cua cuon dang gop', () => {

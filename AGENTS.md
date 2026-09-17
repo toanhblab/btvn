@@ -335,9 +335,10 @@ diễn đạt cùng một luật thì không phải sửa test). Bảng `books` 
 `daily_chores`, bỏ = `archived_at`, `subject` là KHOÁ trong `SUBJECTS`) chỉ là NGỮ
 CẢNH: `POST /api/extract` nhận `childIds` → `listBooks(familyId, { childIds })` →
 `khoiSachChoAI` ghép SAU prompt, chặn `MAX_SACH_TRONG_PROMPT`; đọc bảng hỏng thì coi
-như rỗng, không chặn tách. Đường lùi `splitByRule` gộp dòng liền nhau cùng cuốn
-theo `cungCuon` — giới hạn cố ý ghi ở chú thích hàm đó và README, đừng "sửa" cho
-khớp AI. Màn Kiểm tra lại có cả hai chiều: "Gộp với bài trên" và "✂️ Tách bài này"
+như rỗng, không chặn tách. Đường lùi `splitByRule` gộp dòng liền nhau cùng cuốn +
+cùng môn theo `cungCuon` — **bảng điều kiện gộp đầy đủ** ở chú thích hàm đó (mỗi
+dòng của bảng có một bài kiểm hành vi), giới hạn cố ý ghi ở đó và README, đừng
+"sửa" cho khớp AI. Màn Kiểm tra lại có cả hai chiều: "Gộp với bài trên" và "✂️ Tách bài này"
 (cắt tại con trỏ) — thêm luật gộp mới thì kiểm chiều ngược lại còn làm được không.
 Hai phép đó là hàm thuần trong `lib/banNhap.ts` (`lib/banNhap.test.ts`): mỗi bản
 nhập mang một **mã riêng của máy** (`ma`), dùng làm `key` của React VÀ làm khoá

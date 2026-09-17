@@ -398,13 +398,23 @@ Bảng sách chỉ đọc được qua route có PIN; không đọc được b�
 khỏi `child_ids` của sách (như nhiệm vụ hàng ngày).
 
 **Đường lùi tách thô** (`splitByRule`) theo cùng nguyên tắc ở mức nó làm được:
-tách theo dòng như cũ rồi **gộp các dòng liền nhau cùng cuốn** — cùng nhắc một cuốn
-đã khai (so tên bỏ dấu, ưu tiên tên dài nhất), hoặc không nhắc cuốn nào nhưng cùng
-môn (khác "Khác") và cả hai đều chỉ trang / số bài (`DAU_HIEU_TRANG`: "trang 41",
-"tr. 5", "bài 3", "page 12", "Ex 2"…) và cùng ngôn ngữ đoán được. Cùng một cuốn đã
-khai là bằng chứng mạnh nên gộp kể cả khi một dòng bị đoán là tiếng Anh vì không có
-dấu ("Poth Math tr. 44"); bài gộp phải quay video nếu **một** trong các dòng đòi
-("đọc to"), và đọc giọng Việt nếu có dòng tiếng Việt. Dòng nhắc cuốn đã khai lấy
+tách theo dòng như cũ rồi **gộp các dòng liền nhau cùng cuốn**. Bảng điều kiện đầy
+đủ nằm ở chú thích `cungCuon` (`lib/ai.ts`) — mỗi dòng của bảng có một bài kiểm
+hành vi trong `lib/tach-theo-sach.test.ts`; tóm tắt:
+
+- **Cả hai dòng nhắc một cuốn đã khai** (so tên bỏ dấu, ưu tiên tên dài nhất): gộp
+  khi **cùng một cuốn** *và* **cùng môn** *và* không bên nào là việc độc lập. Cùng
+  một quyển vở không có nghĩa là cùng một môn — *"Vở ô ly: chép bài toán trang 3"*
+  và *"Vở ô ly: viết chính tả trang 4"* ra **hai** thẻ. Bằng chứng "cùng cuốn" chỉ
+  bỏ qua đúng một thứ: **ngôn ngữ** đoán được (*"Poth Math tr. 44"* không dấu nên bị
+  đoán là tiếng Anh). Nhánh này không đòi dấu hiệu trang — tên cuốn đã là mốc.
+- **Không dòng nào nhắc cuốn nào**: gộp khi cùng môn (khác "Khác"), **cả hai** đều
+  chỉ trang / số bài (`DAU_HIEU_TRANG`: "trang 41", "tr. 5", "bài 3", "page 12",
+  "Ex 2"…) và cùng ngôn ngữ đoán được.
+- **Một dòng có tên sách, dòng kia không** → không gộp.
+
+Bài gộp phải quay video nếu **một** trong các dòng đòi ("đọc to"), và đọc giọng Việt
+nếu có dòng tiếng Việt. Dòng nhắc cuốn đã khai lấy
 môn của cuốn và ghi tên cuốn vào `note`. Hai chỗ đi theo đúng luật của đường AI:
 (1) **việc độc lập không bị nuốt** — dòng đòi quay / đọc to mà không chỉ trang nào
 (`viecDocLap`) giữ bài riêng kể cả khi nhắc đúng cuốn đang gộp, vì prompt cũng để

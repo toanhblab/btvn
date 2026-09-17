@@ -426,24 +426,41 @@ const viecDocLap = (d: DongTho): boolean => d.requiresVideo && !d.coTrang;
 
 /**
  * Hai dong lien nhau co phai CUNG MOT CUON khong — ban tho cua nguyen tac "mot
- * cuon sach = mot bai" (issue #64) khi khong goi duoc AI:
+ * cuon sach = mot bai" (issue #64) khi khong goi duoc AI.
  *
- *   - ca hai nhac toi mot cuon bo me da khai   -> cung cuon khi la cung mot cuon
- *                                                  VA khong ben nao la viec doc lap;
- *   - chi mot dong nhac ten sach                -> khong gop (khong biet dong kia
- *                                                  thuoc cuon nao);
- *   - khong dong nao nhac ten sach              -> cung mon (khac "Khác") va ca hai
- *                                                  deu chi trang / so bai.
+ * BANG DIEU KIEN GOP — moi dong phai thoa HET dieu kien cua nhanh cua no; thieu
+ * mot dieu kien la KHONG gop. Bang nay la tat ca nhung gi ham nay hua, khong hua
+ * gi rong hon; moi dong co mot bai kiem hanh vi trong lib/tach-theo-sach.test.ts.
  *
- * Cung mot cuon da khai la bang chung MANH: gop ke ca khi hai dong doan ra ngon
- * ngu khac nhau — "Poth Math tr. 44" khong co dau nao nen bi doan la tieng Anh,
- * con "Toán trang 45 sách Poth Math" la tieng Viet, ma ro rang la mot cuon. Nhanh
- * khong ten sach yeu hon nen them dieu kien cung ngon ngu.
+ *   Nhanh CO TEN SACH — ca hai dong nhac toi cuon bo me da khai:
+ *     1. cung MOT cuon (so theo id, khong phai theo ten);
+ *     2. cung MON (subject bang nhau) — dong khong lo mon lay mon cua cuon nen
+ *        thuong bang nhau, nhung cung mot quyen vo KHONG co nghia la cung mot mon:
+ *        "Vở ô ly: chép bài toán trang 3" va "Vở ô ly: viết chính tả trang 4" la
+ *        hai the (Toán / Tiếng Việt), khong duoc thanh mot the Toán;
+ *     3. khong ben nao la VIEC DOC LAP (viecDocLap: doi quay / doc to ma khong chi
+ *        trang nao).
+ *   Bang chung "cung mot cuon da khai" manh hon nhanh duoi, nhung no bo qua DUNG
+ *   MOT thu: NGON NGU doan duoc. "Poth Math tr. 44" khong co dau nao nen bi doan
+ *   la tieng Anh, con "Toán trang 45 sách Poth Math" la tieng Viet — ro rang mot
+ *   cuon. Khong bo qua mon, khong bo qua viec doc lap. Nhanh nay KHONG doi dau
+ *   hieu trang: ten cuon da la moc roi.
  *
- * Co quay video KHONG chan gop khi hai dong deu chi trang / so bai: cung mot cuon
- * ma mot dong doi "đọc to" thi ca bai gop phai quay — dung nhu AI lam ("giu du MOI
- * viec trong mot muc, ke ca quay video"). Nhung mot dong doi quay ma KHONG chi
- * trang nao la viec doc lap (viecDocLap) — no giu bai rieng, o ca hai nhanh.
+ *   Nhanh KHONG TEN SACH — khong dong nao nhac cuon nao:
+ *     1. cung MON, va mon do khac "Khác" (khong doan ra mon thi khong con bang
+ *        chung nao);
+ *     2. ca hai deu chi TRANG / SO BAI (DAU_HIEU_TRANG);
+ *     3. cung NGON NGU doan duoc.
+ *   Dieu kien 2 lam viec doc lap khong bao gio gop duoc o nhanh nay (viecDocLap
+ *   doi khong co dau hieu trang), nen luat "viec doc lap giu bai rieng" dung o ca
+ *   hai nhanh.
+ *
+ *   MOT dong nhac ten sach, dong kia khong -> khong gop: khong biet dong kia thuoc
+ *   cuon nao.
+ *
+ * Co quay video KHONG phai dieu kien chan gop: cung mot cuon ma mot dong doi "đọc
+ * to" giua cac trang thi ca bai gop phai quay — dung nhu AI lam ("giu du MOI viec
+ * trong mot muc, ke ca quay video").
  *
  * GIOI HAN co y, ghi ca o README: khong co AI thi khong biet hai dong "Toán trang
  * 30" va "Toán trang 12" la mot cuon hay hai cuon (SGK / vo bai tap) neu co khong
@@ -453,7 +470,7 @@ const viecDocLap = (d: DongTho): boolean => d.requiresVideo && !d.coTrang;
 function cungCuon(a: DongTho, b: DongTho): boolean {
   if (a.book || b.book) {
     if (a.book?.id !== b.book?.id) return false;
-    return !viecDocLap(a) && !viecDocLap(b);
+    return a.subject === b.subject && !viecDocLap(a) && !viecDocLap(b);
   }
   return a.subject === b.subject && a.subject !== 'Khác' && a.coTrang && b.coTrang && a.lang === b.lang;
 }
