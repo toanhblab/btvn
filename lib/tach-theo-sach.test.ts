@@ -260,6 +260,27 @@ test('ten sach khop theo TU, khong phai chuoi con: "toàn bộ" khong bi nhan la
   assert.equal(splitByRule('Nhạc: hát bài Toánca trang 2', undefined, [TOAN])[0].note, null);
 });
 
+test('chu dan vao o dang NFD cho ket qua Y HET dang NFC — khong chi ten sach', () => {
+  const text = 'Toán: làm bài tập trang 41, 42, 43 ở sách poth math\n'
+    + 'Tiếng Việt tập 1 trang 11, đọc to cho bố mẹ nghe';
+  const VIET = sach('Tiếng Việt tập 1', 'Tiếng Việt');
+
+  for (const ds of [[], [POTH, VIET]] as const) {
+    const nfc = splitByRule(text.normalize('NFC'), undefined, [...ds]);
+    const nfd = splitByRule(text.normalize('NFD'), undefined, [...ds]);
+    const rut = (kq: typeof nfc) => kq.map((d) => ({
+      subject: d.subject, lang: d.lang, requiresVideo: d.requiresVideo,
+      note: d.note?.normalize('NFC') ?? null, durationMinutes: d.durationMinutes,
+    }));
+    assert.deepEqual(rut(nfd), rut(nfc), `sach: ${ds.length}`);
+    // Va khong phai "giong nhau vi cung hong": mon doan ra dung, doc giong Viet,
+    // dong "đọc to" co co quay video
+    assert.deepEqual(nfd.map((d) => d.subject), ['Toán', 'Tiếng Việt']);
+    assert.deepEqual(nfd.map((d) => d.lang), ['vi', 'vi']);
+    assert.deepEqual(nfd.map((d) => d.requiresVideo), [false, true]);
+  }
+});
+
 test('ten sach khop du chu go o dang NFC hay NFD (chu dan tu Zalo / ban phim tieng Viet)', () => {
   const ten = 'Vở ô ly';
   const dong = 'Vở ô ly trang 4, viết chính tả';

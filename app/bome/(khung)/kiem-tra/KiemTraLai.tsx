@@ -37,6 +37,13 @@ type Draft = BanNhap;
  * chen them mot the. Thao tac nao co mot cho doi (`await` tai tep len) ma bat lay
  * chi so truoc roi dung lai sau thi dinh tep vao bai KHAC — im lang, va bo me chi
  * thay khi bai da luu xong. Cung ly do voi o de bai tra theo ma o `oDeBai`.
+ *
+ * Tra theo ma chi cuu duoc the CON NAM DO. Gop lam BIEN mot ma (the bi gop vao
+ * the tren), xoa cung vay, nen mot tep dang tai cho the do se khong con cho ma ve:
+ * bo di thi mat tep im lang, ma dinh sang the khac thi sai han. Vi the trong luc
+ * tai tep, moi thao tac DOI CAU TRUC danh sach — Gop, Tach, Xoa the, va ca viec
+ * bat dau MOT lan tai nua (`uploadingMa` chi giu duoc mot) — deu bi khoa, cung
+ * khuon voi nut Luu. Cho doi vai giay, khong mat gi.
  */
 export default function KiemTraLai({
   children: kids,
@@ -83,6 +90,8 @@ export default function KiemTraLai({
   if (!payload) return null;
 
   const chosenNames = kids.filter((c) => payload.childIds.includes(c.id)).map((c) => c.name);
+
+  const dangTaiTep = uploadingMa !== null;
 
   const patch = (ma: string, k: keyof Draft, v: unknown) =>
     setDrafts((ds) => ds.map((d) => (d.ma === ma ? { ...d, [k]: v } : d)));
@@ -229,7 +238,9 @@ export default function KiemTraLai({
             {i > 0 && (
               <button
                 onClick={() => mergeUp(d.ma)}
-                className="text-p-body-sm text-primary py-1 px-2 min-h-p-tap w-full text-left"
+                disabled={dangTaiTep}
+                className="text-p-body-sm text-primary py-1 px-2 min-h-p-tap w-full text-left
+                           disabled:opacity-40"
               >
                 + {T('Gộp với bài trên')}
               </button>
@@ -252,7 +263,8 @@ export default function KiemTraLai({
                 />
                 <button
                   onClick={() => remove(d.ma)}
-                  className="text-outline hover:text-error min-h-p-tap px-1"
+                  disabled={dangTaiTep}
+                  className="text-outline hover:text-error min-h-p-tap px-1 disabled:opacity-40"
                   aria-label={T('Xoá bài')}
                 >
                   <span className="material-symbols-outlined">delete</span>
@@ -330,8 +342,9 @@ export default function KiemTraLai({
                     bam nut nay (splitAt) */}
                 <button
                   onClick={() => splitAt(d.ma)}
+                  disabled={dangTaiTep}
                   className="text-p-body-sm rounded-full px-3 py-1.5 border border-transparent
-                             bg-surface-container text-on-surface-variant"
+                             bg-surface-container text-on-surface-variant disabled:opacity-40"
                 >
                   ✂️ {T('Tách bài này')}
                 </button>
@@ -374,6 +387,7 @@ export default function KiemTraLai({
                     type="file"
                     accept={MEDIA_ACCEPT}
                     multiple
+                    disabled={dangTaiTep}
                     className="hidden"
                     onChange={(e) => {
                       addMedia(d.ma, e.target.files);
@@ -409,7 +423,7 @@ export default function KiemTraLai({
         </Link>
         <button
           onClick={save}
-          disabled={busy || uploadingMa !== null}
+          disabled={busy || dangTaiTep}
           className="flex-[2] flex items-center justify-center gap-2 bg-success text-white rounded-card
                      h-14 min-h-p-tap text-p-body font-bold card-shadow disabled:opacity-60"
         >

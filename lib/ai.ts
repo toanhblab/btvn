@@ -384,6 +384,19 @@ export function inferSource(drafts: DraftAssignment[]): HwSource {
  */
 const DAU_HIEU_TRANG = /\b(?:trang|tr\.|page|p\.|bài|ex(?:ercise)?s?\.?|unit|lesson)\s*\d/i;
 
+/**
+ * Ep chu ve NFC — lam MOT LAN o cua vao, cho ca doan bo me dan lan ten sach.
+ *
+ * "ở" go trong trinh duyet la MOT ky tu (NFC), con chu dan tu Zalo / ban phim
+ * tieng Viet tren macOS thuong la "o" + dau roi (NFD): nhin giong het nhau ma moi
+ * phep so deu truot. Truot im lang o KHAP NOI trong splitByRule chu khong chi o
+ * ten sach — bang tu khoa doan mon, DAU_TIENG_VIET (doan ngon ngu), VIDEO_HINT,
+ * DAU_HIEU_TRANG deu la regex viet o dang NFC. Dang NFD lot vao thi moi the ra
+ * mon "Khác", ngon ngu "en" (man cua con doc de tieng Viet bang giong Anh), sot
+ * co quay video, va khong the nao gop duoc.
+ */
+const chuanHoaNFC = (s: string): string => s.normalize('NFC');
+
 /** Bo dau, thuong hoa, gom khoang trang — de so ten sach bo me khai voi chu co go. */
 const chuanHoa = (s: string): string =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase()
@@ -392,16 +405,13 @@ const chuanHoa = (s: string): string =>
 /**
  * Tach thanh TU, giu song song ca dang co dau (chu thuong) lan dang bo dau.
  *
- * Ep ve NFC TRUOC KHI tach tu: "ở" go trong trinh duyet la MOT ky tu (NFC), con
- * chu dan tu Zalo / ban phim tieng Viet tren macOS thuong la "o" + dau roi (NFD).
- * Hai chuoi do hien ra giong het nhau ma `===` tra false, nen khong ep thi ten
- * sach bo me khai khong bao gio khop dong co giao gui — im lang, khong bao loi gi.
- * Va dau roi KHONG phai \p{L}, nen de nguyen NFD thi chinh phep tach tu cat ngay
- * giua chu: "vở" ra hai tu "v" va "o". Dang bo dau khong can ep: chuanHoa da go
- * het dau roi.
+ * DOI chuoi da o dang NFC (xem chuanHoaNFC) — ca hai cho goi deu ep truoc. De
+ * nguyen NFD thi dau roi KHONG phai \p{L} nen chinh phep tach tu cat giua chu
+ * ("vở" ra hai tu "v" va "o"), va "===" o nhacTen tra false cho hai chuoi nhin
+ * giong het nhau.
  */
 const tachTu = (s: string): { co: string; khong: string }[] =>
-  s.normalize('NFC').toLowerCase().split(/[^\p{L}\p{N}\p{M}]+/u).filter(Boolean)
+  s.toLowerCase().split(/[^\p{L}\p{N}\p{M}]+/u).filter(Boolean)
     .map((t) => ({ co: t, khong: chuanHoa(t) }));
 
 /**
@@ -436,7 +446,7 @@ function nhacTen(tuDong: { co: string; khong: string }[], tuTen: { co: string; k
 function sachTrongDong(line: string, sach: Book[]): Book | null {
   const tuDong = tachTu(line);
   const khop = sach
-    .map((b) => ({ b, ten: chuanHoa(b.name), tu: tachTu(b.name) }))
+    .map((b) => ({ b, ten: chuanHoa(b.name), tu: tachTu(chuanHoaNFC(b.name)) }))
     .filter(({ ten, tu }) => ten.length >= 3 && nhacTen(tuDong, tu))
     .sort((x, y) => y.ten.length - x.ten.length);
   return khop[0]?.b ?? null;
@@ -566,7 +576,7 @@ export function splitByRule(text: string, T: T = T_VI, sach: Book[] = []): Draft
     [/\btự nhiên|khoa học|quan sát\b/i, 'Tự nhiên'],
   ];
 
-  const dong: DongTho[] = text
+  const dong: DongTho[] = chuanHoaNFC(text)
     .split(/\r?\n|(?:^|\s)[-•*]\s+/m)
     .map((s) => s.trim())
     .filter((s) => s.length > 3)
