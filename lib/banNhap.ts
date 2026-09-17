@@ -18,10 +18,18 @@
  *
  * CO QUAY VIDEO di NGUOC chieu voi thoi luong, de y ke~o lay nham: thua gio la vo
  * hai, con thua co la con MAT HAN nut "Đã làm xong" (man cua con chi cho nop bang
- * video) cho toi khi bo me vao bo tick. Nen gop thi HOAC hai co — mot nua doi quay
- * thi ca the phai quay — con tach thi KHONG chep co sang nua kia: moi nua doc lai
- * chu de bai CUA CHINH NO bang coDauHieuVideo (lib/dauHieuVideo.ts, cung luoi voi
- * duong lui). The gop vi mot nua "đọc to" ma tach ra la nua trang giay het co.
+ * video) cho toi khi bo me vao bo tick. Nen GOP thi HOAC hai co — mot nua doi quay
+ * thi ca the phai quay — con TACH thi chia co theo chu cua tung nua, KHONG chep
+ * sang ca hai.
+ *
+ * Luat thu bac cua phep chia do, dung sua mot ve ma quen ve kia: phep khop chu
+ * (VIDEO_HINT / coDauHieuVideo trong lib/dauHieuVideo.ts) CO Y hep hon danh sach
+ * dau hieu trong PROMPT cua AI — chu thich o tep do ke ro nhung dau hieu no bo
+ * ("kể lại ... cho bố mẹ nghe", "thuyết trình", "hát") vi tieng Viet khong dong
+ * lai duoc bang mot danh sach tu khoa. Mot luoi co y bo sot thi chi du tham quyen
+ * THU HEP mot co DANG BAT, khong bao gio du de TU BAT mot co dang tat: the goc tat
+ * co (AI da quyet, hoac bo me vua bo tick chip 🎥) thi ca hai nua deu tat, khong
+ * ngoai le — bat lai la lay mat nut "Đã làm xong" cua con ma bo me khong he biet.
  *
  * So o day la so BO ME DANG GO, khong phai uoc luong may sinh ra, nen no di theo
  * tran cua CHINH O NHAP: sanitizeDuration, 180 phut. Tran 60 (DURATION_MAX,
@@ -117,10 +125,11 @@ export function gopLenBanNhap(ds: BanNhap[], i: number): BanNhap[] {
  * nua duoc du gio) — huong duy nhat duoc phep sai. Bo me sua lai so phut ngay o
  * dong do neu muon.
  *
- * CO QUAY VIDEO thi KHONG chep (ly do o dau tep): moi nua tu doc lai chu cua
- * chinh no. The goc dang bat co ma khong nua nao dinh dau hieu — AI gan co, hay
- * bo me tu bam chip 🎥 — thi giu co o nua DAU va bo o nua sau: nua dau la phan
- * bo me de lai cho the cu, con nua sau la viec vua duoc tach ra rieng.
+ * CO QUAY VIDEO thi KHONG chep sang ca hai, va chi CHIA duoc chu khong bat duoc
+ * (luat thu bac o dau tep): the goc TAT co thi ca hai nua tat, khong do lai chu.
+ * The goc BAT co thi chia theo dau hieu — nua nao dinh thi nua do giu co (ca hai
+ * dinh thi ca hai giu); khong nua nao dinh thi giu o nua DAU va bo o nua sau, vi
+ * nua dau la phan o lai the cu con nua sau la viec vua duoc tach ra rieng.
  */
 export function tachBanNhap(ds: BanNhap[], i: number, viTriConTro: number | null): BanNhap[] {
   const d = ds[i];
@@ -131,20 +140,20 @@ export function tachBanNhap(ds: BanNhap[], i: number, viTriConTro: number | null
   const sau = cat ? d.content.slice(pos).trim() : '';
   const noiDungGoc = dau || d.content;
   const noiDungMoi = dau ? sau : '';
-  const gocDinh = coDauHieuVideo(noiDungGoc);
-  const moiDinh = coDauHieuVideo(noiDungMoi);
-  const khongNuaNaoDinh = !gocDinh && !moiDinh;
+  const dangBatCo = Boolean(d.requiresVideo);
+  const dinhDau = dangBatCo && coDauHieuVideo(noiDungGoc);
+  const dinhSau = dangBatCo && coDauHieuVideo(noiDungMoi);
   const goc = {
     ...d,
     content: noiDungGoc,
-    requiresVideo: gocDinh || (khongNuaNaoDinh && Boolean(d.requiresVideo)),
+    requiresVideo: dangBatCo && (dinhDau || !dinhSau),
   };
   const moi: BanNhap = {
     ...d,
     ma: maBanNhapMoi(),
     content: noiDungMoi,
     media: [],
-    requiresVideo: moiDinh,
+    requiresVideo: dinhSau,
   };
   return [...ds.slice(0, i), goc, moi, ...ds.slice(i + 1)];
 }

@@ -470,11 +470,18 @@ Bố mẹ sửa lại số phút ngay tại dòng đó.
 **Cờ 🎥 đi ngược chiều với thời lượng**, đừng lấy nhầm: thừa giờ thì vô hại, còn
 thừa cờ là con **mất hẳn nút "Đã làm xong"** (màn của con chỉ cho nộp bằng video)
 cho tới khi bố mẹ vào bỏ tick. Nên **gộp thì HOẶC** hai cờ, còn **tách thì không
-chép** cờ sang nửa kia: mỗi nửa đọc lại chữ đề bài **của chính nó** bằng
+chép** cờ sang cả hai nửa — cờ được **chia** theo chữ của từng nửa, bằng
 `coDauHieuVideo` (`lib/dauHieuVideo.ts` — cùng một lưới với đường lùi tách thô, một
-bản duy nhất cho cả máy chủ lẫn màn Kiểm tra lại). Thẻ đang bật cờ mà **không nửa
-nào** dính dấu hiệu (AI gắn cờ, hoặc bố mẹ tự bấm chip) thì giữ cờ ở **nửa đầu** và
-bỏ ở nửa sau. Nhờ vậy thẻ gộp vì một nửa "đọc to" tách ra thì nửa trang giấy hết cờ.
+bản duy nhất cho cả máy chủ lẫn màn Kiểm tra lại).
+
+**Thứ bậc, đừng sửa một vế mà quên vế kia:** lưới khớp chữ đó **cố ý hẹp hơn** danh
+sách dấu hiệu trong `PROMPT` của AI (nó bỏ "kể lại … cho bố mẹ nghe", "thuyết
+trình", "hát"), nên nó chỉ đủ thẩm quyền **thu hẹp** một cờ **đang bật**, không bao
+giờ đủ để **tự bật** một cờ đang tắt. Cụ thể: thẻ **tắt** cờ (AI đã quyết, hoặc bố
+mẹ vừa bỏ tick) thì **cả hai nửa đều tắt**, không đọc lại chữ; thẻ **bật** cờ thì
+nửa nào dính dấu hiệu giữ cờ (cả hai dính thì cả hai giữ), **không nửa nào** dính
+thì giữ ở **nửa đầu** và bỏ ở nửa sau. Nhờ vậy thẻ gộp vì một nửa "đọc to" tách ra
+thì nửa trang giấy hết cờ, mà quyết định bố mẹ đã bấm thì không bị lật lại sau lưng.
 
 Hai **trần khác nhau**, đừng dùng lẫn: ước lượng do **máy** sinh ra (AI và
 `gopDong` của đường lùi) kẹp ở `clampDuration`, trần 60; số **bố mẹ tự gõ** ở màn

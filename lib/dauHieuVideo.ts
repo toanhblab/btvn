@@ -61,8 +61,11 @@
  *
  * Hai ca "group video" / "backup video" la ly do co (?<![a-zA-ZÀ-ỹ]) truoc nhom
  * dong tu: khong co bien trai thi "up" bat duoc phan duoi cua "gro-up" /
- * "back-up". splitByRule chi chay o may chu (app/api/extract) nen lookbehind
- * khong lien quan Safari cu.
+ * "back-up". Luu y regex nay SHIP XUONG TRINH DUYET (lib/banNhap.ts -> man Kiem
+ * tra lai), khong chi chay o may chu, nen moi cau truc trong no phai nam trong
+ * nen Safari du an dang do — Next 16 dich cho `safari 16.4`, va lookbehind co tu
+ * dung 16.4. Cau truc moi hon the la SyntaxError luc nap: ca manh Kiem tra lai
+ * chet lang, khong bao gi.
  */
 export const VIDEO_HINT =
   /(?<![a-zA-ZÀ-ỹ])(quay|nộp|upload|up)\s*(lại\s*)?(\d+|một|hai|ba)?\s*(video|clip|phim)|đọc\s+to(?![a-zA-ZÀ-ỹ])|đọc\s+thuộc|thuộc\s+lòng|tập\s+thể\s+dục|biểu\s+diễn|read\s+aloud|recite|record\s+(a\s+)?video/i;
