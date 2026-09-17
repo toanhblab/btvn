@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { parentFamilyId } from '@/lib/auth';
-import { bookTrungTen, deleteBook, getBook, locChildIdsGiaoCho, updateBook } from '@/lib/store';
+import { bookTrungTen, deleteBook, getBook, locChildIdsGiaoCho, LoiTrungTenSach, updateBook } from '@/lib/store';
 import { lamSachTenSach, MAX_CHU_TEN_SACH, monSachOf } from '@/lib/types';
 import { chu } from '@/lib/i18n/server';
 
@@ -57,7 +57,16 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
   // updateBook doc lai dong sau khi ghi; null = cuon vua bi BO giua chung (o may
   // khac). Tra 200 kem book: null thi man hinh nhet null vao danh sach roi trang.
-  const book = await updateBook(familyId, id, patch);
+  let book: Awaited<ReturnType<typeof updateBook>>;
+  try {
+    book = await updateBook(familyId, id, patch);
+  } catch (e) {
+    // Cuon khac vua duoc doi / them sang dung ten nay sau khi bookTrungTen chay
+    if (e instanceof LoiTrungTenSach) {
+      return NextResponse.json({ error: T('Nhà mình đã có cuốn này rồi.') }, { status: 400 });
+    }
+    throw e;
+  }
   if (!book) {
     return NextResponse.json({ error: T('Không tìm thấy cuốn sách này.') }, { status: 404 });
   }

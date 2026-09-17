@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { parentFamilyId } from '@/lib/auth';
-import { bookTrungTen, createBook, listBooks, locChildIdsGiaoCho } from '@/lib/store';
+import { bookTrungTen, createBook, listBooks, locChildIdsGiaoCho, LoiTrungTenSach } from '@/lib/store';
 import { lamSachTenSach, MAX_CHU_TEN_SACH, monSachOf } from '@/lib/types';
 import { chu } from '@/lib/i18n/server';
 
@@ -48,11 +48,21 @@ export async function POST(req: Request) {
   const giaoCho = await locChildIdsGiaoCho(familyId, body?.childIds);
   if ('error' in giaoCho) return NextResponse.json({ error: T(giaoCho.error) }, { status: 400 });
 
-  return NextResponse.json({
-    book: await createBook(familyId, {
-      name,
-      subject: monSachOf(body?.subject),
-      childIds: giaoCho.childIds,
-    }),
-  });
+  // Phep kiem tren doc roi moi ghi o cau sau: hai lan them cung ten chen nhau deu
+  // thay "chua co". Chi muc books_family_name_uniq (migration 022) chan cai sau,
+  // va no ve dung cau bao trung ten chu khong phai 500.
+  try {
+    return NextResponse.json({
+      book: await createBook(familyId, {
+        name,
+        subject: monSachOf(body?.subject),
+        childIds: giaoCho.childIds,
+      }),
+    });
+  } catch (e) {
+    if (e instanceof LoiTrungTenSach) {
+      return NextResponse.json({ error: T('Nhà mình đã có cuốn này rồi.') }, { status: 400 });
+    }
+    throw e;
+  }
 }

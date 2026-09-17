@@ -17,6 +17,9 @@
  *      daily_chores) — khong thi hang "Sach cua" khong sua duoc nua.
  *   6. Route: can PIN (401), chan ten trung / ten dai / con nha khac / than khong
  *      phai object (400).
+ *   6b. Trung ten khong chi nam trong ma: chi muc `books_family_name_uniq`
+ *      (migration 022) chan ca hai lan ghi chen nhau ma phep kiem trong ma cho
+ *      qua, va route doi loi do thanh 400 quen thuoc chu khong 500.
  *   7. HOI QUY bat buoc (firstmate): nha CHUA khai sach nao thi /api/extract tra
  *      ve dung ket qua cua splitByRule(text) khong sach — y nhu truoc; nha da
  *      khai thi ban tach nhan ten sach va gop; va childIds quyet dinh sach nao
@@ -57,6 +60,7 @@ const sachIdRoute = await import('../app/api/sach/[id]/route.ts');
 const extractRoute = await import('../app/api/extract/route.ts');
 
 const TEP_021 = '021_sach_cua_nha.sql';
+const TEP_022 = '022_ten_sach_duy_nhat.sql';
 const rows = (sql: string, p: unknown[] = []) => query<Record<string, unknown>>(sql, p);
 const boChay = {
   ten: 'PGlite',
@@ -286,6 +290,77 @@ test('route /api/sach: can PIN; them / trung ten / ten dai / con nha khac; PATCH
   assert.equal((await sachIdRoute.DELETE(json({}), ctx(book.id))).status, 404, 'bo lan hai: khong con');
   assert.equal(await store.getBook(nhaA.id, book.id), null);
   await sachIdRoute.DELETE(json({}), ctx(la.book.id));
+});
+
+let demId = 0;
+const themThang = (familyId: string, name: string, archived = false) =>
+  query(
+    `INSERT INTO books (id, family_id, name, archived_at)
+     VALUES ($1, $2, $3, ${archived ? 'now()' : 'NULL'})`,
+    [`book_kt_${++demId}`, familyId, name]
+  );
+
+test('022: mot nha khong the co hai cuon dang dung cung ten — chan o CSDL, khong chi o ma', async () => {
+  const [{ n }] = await rows(`SELECT COUNT(*) AS n FROM _migrations WHERE name = $1`, [TEP_022]);
+  assert.equal(Number(n), 1);
+
+  await themThang(nhaA.id, 'Vở kiểm tra');
+  // Ghi THANG vao bang, khong qua bookTrungTen: chi muc phai tu tu choi
+  await assert.rejects(() => themThang(nhaA.id, 'vở   KIỂM tra'), 'cung ten, khac hoa/thuong va khoang trang');
+
+  // Nha khac dung ten do thi khong lien quan
+  await themThang(nhaB.id, 'Vở kiểm tra');
+
+  // Cuon DA BO khong chiem ten: bo roi khai lai dung ten do van duoc
+  await query(`UPDATE books SET archived_at = now() WHERE family_id = $1 AND name = 'Vở kiểm tra'`, [nhaA.id]);
+  await themThang(nhaA.id, 'Vở kiểm tra');
+  assert.equal((await store.listBooks(nhaA.id)).filter((b) => b.name === 'Vở kiểm tra').length, 1);
+
+  // Chay lai migration khong hong gi
+  await rows(`DELETE FROM _migrations WHERE name = $1`, [TEP_022]);
+  await chayMigrations(boChay);
+  await assert.rejects(() => themThang(nhaA.id, 'Vở kiểm tra'), 'sau khi chay lai, chi muc van con');
+
+  await query(`DELETE FROM books WHERE id LIKE 'book_kt_%'`);
+});
+
+test('store: them cuon trung ten (chen nhau) nem LoiTrungTenSach, khong phai loi CSDL tho', async () => {
+  const dau = await store.createBook(nhaA.id, { name: 'Sách chen nhau', subject: null, childIds: null });
+  await assert.rejects(
+    () => store.createBook(nhaA.id, { name: 'sách  chen nhau', subject: null, childIds: null }),
+    (e: unknown) => e instanceof store.LoiTrungTenSach);
+
+  const khac = await store.createBook(nhaA.id, { name: 'Sách khác hẳn', subject: null, childIds: null });
+  await assert.rejects(
+    () => store.updateBook(nhaA.id, khac.id, { name: 'Sách chen nhau' }),
+    (e: unknown) => e instanceof store.LoiTrungTenSach, 'doi ten sang ten dang co cung bi chan');
+
+  assert.equal((await store.getBook(nhaA.id, khac.id))?.name, 'Sách khác hẳn', 'ten cu giu nguyen');
+  await store.deleteBook(nhaA.id, dau.id);
+  await store.deleteBook(nhaA.id, khac.id);
+});
+
+test('route: hai POST cung ten cung luc -> mot cai 200, cai kia 400 (khong 500), chi mot dong', async () => {
+  hu.clear();
+  await signIn(nhaA.id, true, PIN_A);
+  const ten = 'Phiếu bài tập cuối tuần';
+
+  const [x, y] = await Promise.all([
+    sachRoute.POST(json({ name: ten })),
+    sachRoute.POST(json({ name: ten.toUpperCase() })),
+  ]);
+  const ma = [x.status, y.status].sort();
+  assert.deepEqual(ma, [200, 400], 'mot cai vao, mot cai bi tu choi — khong cai nao 500');
+
+  const hong = x.status === 400 ? x : y;
+  assert.ok((await hong.json()).error, 'co cau bao loi cho bo me doc');
+  assert.equal(
+    (await store.listBooks(nhaA.id)).filter((b) => b.name.toLowerCase() === ten.toLowerCase()).length,
+    1, 'chi mot dong trong danh sach');
+
+  for (const b of (await store.listBooks(nhaA.id)).filter((b) => b.name.toLowerCase() === ten.toLowerCase())) {
+    await store.deleteBook(nhaA.id, b.id);
+  }
 });
 
 test('/api/extract: nha CHUA khai sach -> y nhu splitByRule(text) cu; nha da khai -> nhan ten sach va gop; childIds quyet dinh sach nao', async () => {

@@ -397,6 +397,16 @@ Bảng sách chỉ đọc được qua route có PIN; không đọc được b�
 `/api/extract` coi như chưa khai, không chặn tách bài. Xoá một con thì id đó bị gỡ
 khỏi `child_ids` của sách (như nhiệm vụ hàng ngày).
 
+**Hai cuốn đang dùng không được trùng tên** (không phân biệt hoa/thường, bỏ khoảng
+trắng thừa). Phép kiểm trong mã (`bookTrungTen`) chỉ để trả câu "Nhà mình đã có cuốn
+này rồi."; hàng rào thật là **chỉ mục duy nhất một phần** `books_family_name_uniq`
+(migration 022, `WHERE archived_at IS NULL` nên bỏ rồi khai lại vẫn được) — cùng tiền
+lệ với `score_events` và `video_cleanups`. Hai lần thêm chen nhau (bấm Enter hai nhịp,
+hai máy cùng mở màn sách) thì cái sau vẫn ra 400 quen thuộc chứ không sinh dòng thứ
+hai: hai dòng giống hệt nhau thì bố mẹ không phân biệt được, cùng chiếm chỗ trong lời
+nhắc AI, và từ đó không đổi tên dòng nào được nữa. Tên đi vào chỉ mục phải qua
+`lamSachTenSach` (NFC + gom khoảng trắng) vì Postgres không chuẩn hoá Unicode hộ.
+
 **Đường lùi tách thô** (`splitByRule`) theo cùng nguyên tắc ở mức nó làm được:
 tách theo dòng như cũ rồi **gộp các dòng liền nhau cùng cuốn**. Bảng điều kiện đầy
 đủ nằm ở chú thích `cungCuon` (`lib/ai.ts`) — mỗi dòng của bảng có một bài kiểm

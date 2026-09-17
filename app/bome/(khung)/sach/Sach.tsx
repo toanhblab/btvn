@@ -166,13 +166,16 @@ export default function Sach({
                 <span className="material-symbols-outlined text-primary shrink-0" aria-hidden="true">menu_book</span>
                 <input
                   defaultValue={b.name}
-                  key={`${b.id}:name:${b.name}`}
+                  key={b.id}
                   maxLength={MAX_CHU_TEN_SACH}
                   aria-label={T('Tên sách')}
                   onBlur={async (e) => {
                     // O CHU khong khoa theo busy (khac nut bam / o chon ben duoi):
                     // khoa mot o dang go la cuop con tro va sap ban phim dien thoai,
                     // nen bo me bam sang o ten cuon khac trong luc luu la mat chu.
+                    // Cung ly do, `key` KHONG kem b.name: ten doi thi key doi, React
+                    // thao the dang go ra lam lai — bo me go tiep ngay sau khi roi o
+                    // la mat chu va sap ban phim.
                     //
                     // The input luon phai hien DUNG ten may chu dang giu: key khong
                     // doi nen React giu nguyen the, defaultValue bi bo qua. May chu

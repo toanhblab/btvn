@@ -1162,15 +1162,54 @@ export async function bookTrungTen(familyId: string, name: string, exceptId?: st
   return row !== null;
 }
 
+/**
+ * Nha nay da co cuon cung ten — do CHI MUC `books_family_name_uniq` (migration
+ * 022) tu choi, khong phai do `bookTrungTen`. Xay ra khi hai lan ghi chen nhau,
+ * sau khi phep kiem trong ma da cho qua. Route bat rieng loi nay de bo me van
+ * doc dung cau "Nhà mình đã có cuốn này rồi." thay vi 500.
+ */
+export class LoiTrungTenSach extends Error {
+  constructor() {
+    super('books_family_name_uniq');
+    this.name = 'LoiTrungTenSach';
+  }
+}
+
+/**
+ * Loi "trung khoa" cua chi muc ten sach. Neon (HTTP) va PGlite khong dung mot
+ * dang loi, nen soi ca ma loi 23505 lan ten rang buoc trong message/detail.
+ */
+function laLoiTrungTenSach(e: unknown): boolean {
+  if (typeof e !== 'object' || e === null) return false;
+  const o = e as { code?: unknown; constraint?: unknown; message?: unknown; detail?: unknown };
+  const chu = [o.constraint, o.message, o.detail]
+    .filter((x): x is string => typeof x === 'string')
+    .join(' ')
+    .toLowerCase();
+  if (chu.includes('books_family_name_uniq')) return true;
+  return o.code === '23505' && chu.includes('books');
+}
+
+async function ghiSach<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (e) {
+    if (laLoiTrungTenSach(e)) throw new LoiTrungTenSach();
+    throw e;
+  }
+}
+
 /** Them mot cuon. childIds da qua locChildIdsGiaoCho o route (null = ca nha). */
 export async function createBook(
   familyId: string,
   input: { name: string; subject: TenMon | null; childIds: string[] | null }
 ): Promise<Book> {
   const id = newId('book');
-  await query(
-    `INSERT INTO books (id, family_id, name, subject, child_ids) VALUES ($1,$2,$3,$4,$5)`,
-    [id, familyId, input.name, input.subject, input.childIds]
+  await ghiSach(() =>
+    query(
+      `INSERT INTO books (id, family_id, name, subject, child_ids) VALUES ($1,$2,$3,$4,$5)`,
+      [id, familyId, input.name, input.subject, input.childIds]
+    )
   );
   return (await getBook(familyId, id))!;
 }
@@ -1189,9 +1228,11 @@ export async function updateBook(
     sets.push(`child_ids = $${params.length}::text[]`);
   }
   if (sets.length) {
-    await query(
-      `UPDATE books SET ${sets.join(', ')} WHERE id = $1 AND family_id = $2 AND archived_at IS NULL`,
-      params
+    await ghiSach(() =>
+      query(
+        `UPDATE books SET ${sets.join(', ')} WHERE id = $1 AND family_id = $2 AND archived_at IS NULL`,
+        params
+      )
     );
   }
   return getBook(familyId, id);
