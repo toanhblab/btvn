@@ -402,12 +402,22 @@ tách theo dòng như cũ rồi **gộp các dòng liền nhau cùng cuốn**. B
 đủ nằm ở chú thích `cungCuon` (`lib/ai.ts`) — mỗi dòng của bảng có một bài kiểm
 hành vi trong `lib/tach-theo-sach.test.ts`; tóm tắt:
 
-- **Cả hai dòng nhắc một cuốn đã khai** (so tên bỏ dấu, ưu tiên tên dài nhất): gộp
-  khi **cùng một cuốn** *và* **cùng môn** *và* không bên nào là việc độc lập. Cùng
-  một quyển vở không có nghĩa là cùng một môn — *"Vở ô ly: chép bài toán trang 3"*
-  và *"Vở ô ly: viết chính tả trang 4"* ra **hai** thẻ. Bằng chứng "cùng cuốn" chỉ
-  bỏ qua đúng một thứ: **ngôn ngữ** đoán được (*"Poth Math tr. 44"* không dấu nên bị
-  đoán là tiếng Anh). Nhánh này không đòi dấu hiệu trang — tên cuốn đã là mốc.
+- **Cả hai dòng nhắc một cuốn đã khai**: gộp khi **cùng một cuốn** *và* **môn không
+  chọi nhau** *và* không bên nào là việc độc lập. Cùng một quyển vở không có nghĩa
+  là cùng một môn — *"Vở ô ly: chép bài toán trang 3"* và *"Vở ô ly: viết chính tả
+  trang 4"* ra **hai** thẻ. Nhưng **"Khác" nghĩa là chưa đoán ra môn, không phải
+  môn khác**: *"Vở ô ly trang 4"* không lộ môn nào cả nên nó gộp vào dòng cùng cuốn,
+  và thẻ gộp mang **môn đã biết** (dòng "Khác" đứng trước hay sau đều vậy). Bằng
+  chứng "cùng cuốn" chỉ bỏ qua đúng một thứ: **ngôn ngữ** đoán được (*"Poth Math
+  tr. 44"* không dấu nên bị đoán là tiếng Anh). Nhánh này không đòi dấu hiệu trang
+  — tên cuốn đã là mốc.
+- **Nhận tên cuốn theo TỪ, không theo chuỗi con** (`sachTrongDong`): tên sách phải
+  là một chuỗi từ liền nhau trong dòng. Bỏ dấu là để nhận ra chữ cô gõ không dấu
+  (*"tieng viet tap 1"*), nhưng bỏ dấu rồi thì hai từ khác nhau có thể thành một —
+  cuốn *"Toán"* và chữ *"toàn"* đều ra `toan` — nên một từ chỉ khớp khi **đúng
+  nguyên dạng có dấu**, hoặc khi **chính nó không có dấu nào**. Vì thế *"đọc toàn bộ
+  câu chuyện"* không bị gán cuốn *"Toán"*. Bỏ sót một cách nhắc lỏng lẻo chỉ là
+  không gộp được; gán nhầm cuốn là con lấy sai quyển ra làm.
 - **Không dòng nào nhắc cuốn nào**: gộp khi cùng môn (khác "Khác"), **cả hai** đều
   chỉ trang / số bài (`DAU_HIEU_TRANG`: "trang 41", "tr. 5", "bài 3", "page 12",
   "Ex 2"…) và cùng ngôn ngữ đoán được.
@@ -429,14 +439,19 @@ con trỏ trong ô đề bài (bố mẹ chạm vào chỗ muốn cắt rồi b�
 thì thẻ mới để trống; thẻ mới chép môn / ghi chú / giọng / thời lượng / cờ video,
 tệp đính kèm ở lại thẻ gốc (`lib/banNhap.ts`, hai hàm thuần).
 
-**Luật thời lượng của cả app:** số phút được phép sai theo hướng **thừa**, không
-bao giờ theo hướng **thiếu** — thiếu thì đồng hồ ở màn của con reo giữa chừng và
-con mất +1 "xong sớm" cho một bài nó làm đúng hạn, còn thừa thì chỉ là đồng hồ còn
-dư giờ. Vì thế **gộp thì cộng** (`gopDong` của đường lùi và "Gộp với bài trên" ở
-màn Kiểm tra lại đều cộng hai số rồi `clampDuration`, và trần 60 không hạ xuống
-thấp hơn số bố mẹ đã gõ tay — ô đó nhận tới 180), còn **tách thì chép** nguyên số
-sang cả hai nửa, không chia tỉ lệ: không biết con trỏ cắt vào chỗ nặng hay nhẹ,
-mà chép là sai theo hướng thừa. Bố mẹ sửa lại số phút ngay tại dòng đó.
+**Thời lượng khi gộp / tách:** sai theo hướng **thừa** còn hơn sai theo hướng
+**thiếu** — thiếu thì đồng hồ ở màn của con reo giữa chừng và con mất +1 "xong sớm"
+cho một bài nó làm đúng hạn, còn thừa thì chỉ là đồng hồ còn dư giờ. Vì thế **gộp
+thì cộng** hai số, còn **tách thì chép** nguyên số sang cả hai nửa, không chia tỉ
+lệ: không biết con trỏ cắt vào chỗ nặng hay nhẹ, mà chép là sai theo hướng thừa.
+Bố mẹ sửa lại số phút ngay tại dòng đó.
+
+Hai **trần khác nhau**, đừng dùng lẫn: ước lượng do **máy** sinh ra (AI và
+`gopDong` của đường lùi) kẹp ở `clampDuration`, trần 60; số **bố mẹ tự gõ** ở màn
+Kiểm tra lại đi theo trần của chính ô nhập, `sanitizeDuration` = 180, nên "Gộp với
+bài trên" cộng 45 + 30 ra **75** chứ không phải 60 — kẹp về 60 ở đó chính là tự làm
+thiếu. Cả hai phép cộng đều không hạ xuống thấp hơn số đang có trên một trong hai
+thẻ.
 
 Hồi quy: `lib/tach-theo-sach.test.ts` (prompt, khối
 sách, fetch giả, splitByRule), `lib/banNhap.test.ts` (gộp / tách),

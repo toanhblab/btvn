@@ -24,6 +24,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Book } from './types.ts';
+import { iconFor } from './types.ts';
 
 // hasAI doc bien moi truong LUC NAP module -> dat truoc khi import
 process.env.NOUS_API_KEY = 'test-key';
@@ -223,6 +224,40 @@ test('cung mot cuon nhung KHAC mon -> hai the, moi the giu dung mon cua no', () 
   const gop = splitByRule('Vở ô ly: viết chính tả trang 3\nVở ô ly: chính tả trang 4', undefined, [VO]);
   assert.equal(gop.length, 1);
   assert.equal(gop[0].subject, 'Tiếng Việt');
+});
+
+test('cung cuon, mot dong CHUA doan ra mon ("Khác") -> van gop, bai gop mang mon da biet', () => {
+  const VO = sach('Vở ô ly');   // cuon chua chon mon, nen dong khong lo mon thi ra "Khác"
+  const co = 'Vở ô ly: viết chính tả bài 2 trang 3';
+  const khong = 'Vở ô ly trang 4';
+
+  for (const text of [`${co}\n${khong}`, `${khong}\n${co}`]) {
+    const ds = splitByRule(text, undefined, [VO]);
+    assert.equal(ds.length, 1, `MOT the cho mot quyen vo: ${text}`);
+    assert.equal(ds[0].subject, 'Tiếng Việt', 'dong "Khác" khong duoc nuot mon da doan ra');
+    assert.equal(ds[0].icon, iconFor('Tiếng Việt'));
+    assert.equal(ds[0].note, 'Vở ô ly');
+  }
+
+  // Hai dong deu chua doan ra mon: van mot the, mon "Khác"
+  const deuKhong = splitByRule(`${khong}\nVở ô ly trang 5`, undefined, [VO]);
+  assert.equal(deuKhong.length, 1);
+  assert.equal(deuKhong[0].subject, 'Khác');
+});
+
+test('ten sach khop theo TU, khong phai chuoi con: "toàn bộ" khong bi nhan la cuon "Toán"', () => {
+  const TOAN = sach('Toán', 'Toán');
+
+  const nham = splitByRule('Tiếng Việt: đọc toàn bộ câu chuyện trang 7', undefined, [TOAN]);
+  assert.equal(nham[0].note, null, 'bo dau xong "toàn" cung ra "toan", nhung khong phai cuon "Toán"');
+  assert.equal(nham[0].subject, 'Tiếng Việt');
+
+  // Van nhan dung khi dong nhac that
+  assert.equal(splitByRule('Toán trang 41', undefined, [TOAN])[0].note, 'Toán');
+  // Co go khong dau thi van nhan ra (khong con gi de phan biet)
+  assert.equal(splitByRule('toan trang 41', undefined, [TOAN])[0].note, 'Toán');
+  // Ten nam giua mot tu dai hon thi khong tinh
+  assert.equal(splitByRule('Nhạc: hát bài Toánca trang 2', undefined, [TOAN])[0].note, null);
 });
 
 test('viec doc lap (quay video, khong chi trang) KHONG bi nuot vao bai cua cuon dang gop', () => {

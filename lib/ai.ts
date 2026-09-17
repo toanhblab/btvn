@@ -389,16 +389,45 @@ const chuanHoa = (s: string): string =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase()
     .replace(/\s+/g, ' ').trim();
 
+/** Tach thanh TU, giu song song ca dang co dau (chu thuong) lan dang bo dau. */
+const tachTu = (s: string): { co: string; khong: string }[] =>
+  s.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+    .map((t) => ({ co: t, khong: chuanHoa(t) }));
+
+/**
+ * Dong nay co nhac ten cuon sach khong — so theo TU lien nhau, khong phai chuoi
+ * con: "Vở ô ly" phai la ba tu dung canh nhau trong dong.
+ *
+ * Bo dau la de nhan ra chu co go khong dau ("tieng viet tap 1"), nhung bo dau roi
+ * thi hai tu KHAC NHAU co the thanh mot: cuon "Toán" va chu "toàn" deu ra "toan",
+ * nen chi so chuoi bo dau (ke ca co bien tu) thi dong "đọc toàn bộ câu chuyện" bi
+ * gan nham cuon "Toán" — ma `note` chinh la dong con doc de lay dung quyen ra lam.
+ * Vi the mot tu chi khop khi: dung nguyen dang co dau, HOAC chinh no khong co dau
+ * nao (luc do khong con gi de phan biet, coi nhu co go tat). Bo sot mot cach nhac
+ * long leo chi la khong gop duoc; gan nham cuon la con lay sai quyen.
+ */
+function nhacTen(tuDong: { co: string; khong: string }[], tuTen: { co: string; khong: string }[]): boolean {
+  if (tuTen.length === 0) return false;
+  for (let i = 0; i + tuTen.length <= tuDong.length; i++) {
+    const khop = tuTen.every((t, j) => {
+      const u = tuDong[i + j];
+      return u.khong === t.khong && (u.co === t.co || u.co === u.khong);
+    });
+    if (khop) return true;
+  }
+  return false;
+}
+
 /**
  * Cuon sach (bo me da khai) duoc nhac trong dong nay — uu tien ten DAI nhat: bo me
  * khai ca "Toán" lan "Vở bài tập Toán" thi dong "Vở bài tập Toán trang 12" phai
  * ra cuon thu hai. Ten duoi 3 ky tu bo qua: khop bua.
  */
 function sachTrongDong(line: string, sach: Book[]): Book | null {
-  const l = chuanHoa(line);
+  const tuDong = tachTu(line);
   const khop = sach
-    .map((b) => ({ b, ten: chuanHoa(b.name) }))
-    .filter(({ ten }) => ten.length >= 3 && l.includes(ten))
+    .map((b) => ({ b, ten: chuanHoa(b.name), tu: tachTu(b.name) }))
+    .filter(({ ten, tu }) => ten.length >= 3 && nhacTen(tuDong, tu))
     .sort((x, y) => y.ten.length - x.ten.length);
   return khop[0]?.b ?? null;
 }
@@ -425,6 +454,17 @@ interface DongTho {
 const viecDocLap = (d: DongTho): boolean => d.requiresVideo && !d.coTrang;
 
 /**
+ * Mon cua hai dong khong CHOI nhau. "Khác" o day nghia la CHUA DOAN RA mon, khong
+ * phai "mon khac" — dong "Vở ô ly trang 4" khong lo mon nao ca. Mot ben chua doan
+ * ra thi khong co gi mau thuan; hai ben doan ra hai mon khac nhau moi la choi.
+ */
+const monKhongChoi = (a: DongTho, b: DongTho): boolean =>
+  a.subject === b.subject || a.subject === 'Khác' || b.subject === 'Khác';
+
+/** Mon DA DOAN RA cua bai gop: ben nao biet thi lay ben do, dong "Khác" khong nuot mon dung. */
+const monDaBiet = (a: DongTho, b: DongTho): string => (a.subject === 'Khác' ? b.subject : a.subject);
+
+/**
  * Hai dong lien nhau co phai CUNG MOT CUON khong — ban tho cua nguyen tac "mot
  * cuon sach = mot bai" (issue #64) khi khong goi duoc AI.
  *
@@ -434,10 +474,13 @@ const viecDocLap = (d: DongTho): boolean => d.requiresVideo && !d.coTrang;
  *
  *   Nhanh CO TEN SACH — ca hai dong nhac toi cuon bo me da khai:
  *     1. cung MOT cuon (so theo id, khong phai theo ten);
- *     2. cung MON (subject bang nhau) — dong khong lo mon lay mon cua cuon nen
- *        thuong bang nhau, nhung cung mot quyen vo KHONG co nghia la cung mot mon:
- *        "Vở ô ly: chép bài toán trang 3" va "Vở ô ly: viết chính tả trang 4" la
- *        hai the (Toán / Tiếng Việt), khong duoc thanh mot the Toán;
+ *     2. mon KHONG CHOI nhau (monKhongChoi): bang nhau, HOAC mot ben la "Khác".
+ *        Cung mot quyen vo KHONG co nghia la cung mot mon — "Vở ô ly: chép bài
+ *        toán trang 3" va "Vở ô ly: viết chính tả trang 4" la hai the (Toán /
+ *        Tiếng Việt), khong duoc thanh mot the Toán. Nhung "Khác" la CHUA DOAN RA
+ *        mon chu khong phai mon khac: "Vở ô ly trang 4" khong lo mon nao ca, nen
+ *        no gop vao dong cung cuon va bai gop mang mon DA BIET (monDaBiet), du
+ *        dong "Khác" dung truoc hay dung sau;
  *     3. khong ben nao la VIEC DOC LAP (viecDocLap: doi quay / doc to ma khong chi
  *        trang nao).
  *   Bang chung "cung mot cuon da khai" manh hon nhanh duoi, nhung no bo qua DUNG
@@ -470,22 +513,24 @@ const viecDocLap = (d: DongTho): boolean => d.requiresVideo && !d.coTrang;
 function cungCuon(a: DongTho, b: DongTho): boolean {
   if (a.book || b.book) {
     if (a.book?.id !== b.book?.id) return false;
-    return a.subject === b.subject && !viecDocLap(a) && !viecDocLap(b);
+    return monKhongChoi(a, b) && !viecDocLap(a) && !viecDocLap(b);
   }
   return a.subject === b.subject && a.subject !== 'Khác' && a.coTrang && b.coTrang && a.lang === b.lang;
 }
 
 /**
- * Gop dong `b` vao `a`: noi de bai; CONG uoc luong cua hai phan (ba trang gop lam
- * mot the thi the do phai duoc ba lan thoi gian, khong phai mot — cung luat voi
- * duong AI, xem lib/types.ts, va voi nut "Gop voi bai tren" o lib/banNhap.ts:
- * thoi luong duoc sai theo huong THUA, khong bao gio theo huong THIEU); mot trong
- * hai phai quay video thi bai gop phai quay; co dong tieng Viet thi doc giong Viet.
+ * Gop dong `b` vao `a`: noi de bai; giu mon DA DOAN RA cua mot trong hai (icon
+ * tinh theo mon do luc xuat ra); CONG uoc luong cua hai phan (ba trang gop lam
+ * mot the thi the do phai duoc ba lan thoi gian, khong phai mot — uoc luong may
+ * sinh ra deu di theo tran cua clampDuration, xem lib/types.ts, va sai theo huong
+ * THUA con hon thieu); mot trong hai phai quay video thi bai gop phai quay; co
+ * dong tieng Viet thi doc giong Viet.
  */
 function gopDong(a: DongTho, b: DongTho): DongTho {
   return {
     ...a,
     content: `${a.content}; ${b.content}`,
+    subject: monDaBiet(a, b),
     phut: a.phut + b.phut,
     requiresVideo: a.requiresVideo || b.requiresVideo,
     lang: a.lang === 'vi' || b.lang === 'vi' ? 'vi' : 'en',

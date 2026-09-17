@@ -47,17 +47,19 @@ test('gop len: tep dinh kem lay hop khong trung URL, co quay video la HOAC cua h
   assert.equal(gop.requiresVideo, true);
 });
 
-test('gop len: thoi luong CONG hai the, kep tran 60, khong bao gio thap hon so bo me da go', () => {
+test('gop len: thoi luong CONG hai the, kep tran 180 cua o nhap, khong thap hon so bo me da go', () => {
   const gop = (a: string, b: string) =>
     gopLenBanNhap([banNhap('A', { durationStr: a }), banNhap('B', { durationStr: b })], 1)[0].durationStr;
 
   assert.equal(gop('24', '8'), '32', 'the om viec cua ca hai thi dong ho phai du gio cho ca hai');
-  assert.equal(gop('45', '30'), '60', 'kep o tran cua AI');
+  assert.equal(gop('45', '30'), '75', 'so bo me go di theo tran 180 cua o nhap, khong phai tran 60 cua AI');
+  assert.equal(gop('120', '90'), '180', 'kep o tran cua chinh o nhap');
   // O de trong / so hong = mac dinh 10, nhu luc luu
   assert.equal(gop('', '8'), '18');
   assert.equal(gop('24', ''), '34');
-  // Bo me go tay 100 (o nay nhan toi 180): gop khong duoc ha xuong 60
-  assert.equal(gop('100', '8'), '100');
+  assert.equal(gop('100', '8'), '108');
+  // Ban nhap cu mang so tren ca tran: gop khong duoc HA THAP hon so dang co
+  assert.equal(gop('200', '8'), '200');
 });
 
 test('gop roi tach: con tro cu cua the da gop KHONG cat nham the dung o cho cua no', () => {

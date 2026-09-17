@@ -11,16 +11,19 @@
  * thi sau mot lan gop, the DOM cu duoc dung lai cho ban nhap KHAC ma van giu con
  * tro cu — bam "Tach bai nay" se cat mot the khac o cho bo me chua he cham vao.
  *
- * LUAT THOI LUONG cua ca app, ap o day va o gopDong (lib/ai.ts): thoi luong duoc
- * phep sai theo huong THUA, khong bao gio theo huong THIEU. Thieu la hong that —
- * dong ho o man cua con reo giua chung va con mat +1 "xong som" (lib/diem.ts) cho
- * mot bai no lam dung han. Thua chi la dong ho con du gio, khong ai bi gi. Vi the
- * GOP thi CONG hai so (va khong bao gio ha thap hon so bo me da go), con TACH thi
- * CHEP nguyen so sang ca hai nua.
+ * THOI LUONG o hai phep nay: sai theo huong THUA con hon sai theo huong THIEU.
+ * Thieu la hong that — dong ho o man cua con reo giua chung va con mat +1 "xong
+ * som" (lib/diem.ts) cho mot bai no lam dung han. Thua chi la dong ho con du gio.
+ * Vi the GOP thi CONG hai so, con TACH thi CHEP nguyen so sang ca hai nua.
+ *
+ * So o day la so BO ME DANG GO, khong phai uoc luong may sinh ra, nen no di theo
+ * tran cua CHINH O NHAP: sanitizeDuration, 180 phut. Tran 60 (DURATION_MAX,
+ * clampDuration) chi ap cho uoc luong do AI / duong lui sinh ra — dung no o day
+ * thi 45 + 30 ra 60, tuc la tu lam thieu dung thu nay muon tranh.
  */
 
 import type { DraftAssignment } from './types';
-import { clampDuration, DURATION_DEFAULT } from './types';
+import { DURATION_DEFAULT, sanitizeDuration } from './types';
 
 /** Mot the o man Kiem tra lai. `durationStr` giu dang chuoi de bo me xoa trong o roi go so moi. */
 export type BanNhap = DraftAssignment & { durationStr: string; ma: string };
@@ -40,10 +43,10 @@ const phutCuaThe = (d: BanNhap): number => {
  * Gop the thu `i` vao the ngay tren — AI hay tach nham mot bai thanh hai dong.
  * The con lai GIU NGUYEN ma cua no, nen con tro dang o the nao van thuoc the do.
  *
- * Thoi luong CONG hai the roi kep bang clampDuration (tran 60, nhu gopDong cua
- * duong lui): mot the om viec cua ca hai thi dong ho phai du gio cho ca hai. Tran
- * 60 khong duoc ha thap hon so bo me DA GO tay (o nay nhan toi 180) — ha xuong la
- * sai theo huong thieu, dung thu app tranh.
+ * Thoi luong CONG hai the roi kep bang sanitizeDuration (tran 180 cua chinh o
+ * nhap): mot the om viec cua ca hai thi dong ho phai du gio cho ca hai. Tran do
+ * cung khong duoc ha thap hon so bo me DA GO o mot trong hai the — ha xuong la
+ * sai theo huong thieu.
  */
 export function gopLenBanNhap(ds: BanNhap[], i: number): BanNhap[] {
   return ds.reduce<BanNhap[]>((acc, d, j) => {
@@ -55,7 +58,7 @@ export function gopLenBanNhap(ds: BanNhap[], i: number): BanNhap[] {
         ...(d.media ?? []).filter((m) => !(prev.media ?? []).some((x) => x.url === m.url)),
       ];
       const phut = Math.max(
-        clampDuration(phutCuaThe(prev) + phutCuaThe(d)),
+        sanitizeDuration(phutCuaThe(prev) + phutCuaThe(d)),
         phutCuaThe(prev),
         phutCuaThe(d),
       );
