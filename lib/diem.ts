@@ -99,3 +99,35 @@ export function xepHang<T extends { points: number }>(list: T[]): (T & { rank: n
   // competition ranking").
   return sorted.map((c) => ({ ...c, rank: sorted.findIndex((x) => x.points === c.points) + 1 }));
 }
+
+/**
+ * Ti le thoi luong con phai lam truoc khi duoc bam "Da lam xong" (issue #72).
+ *
+ * Truoc day con bam "Bat dau lam" xong la tick xong duoc ngay — bai 10 phut
+ * xong trong 2 giay, van an +1 "xong som". Gio phai troi qua it nhat mot NUA
+ * thoi luong cua chinh bai do. Khoang 50%-100% van la "xong som" (xongSom o
+ * tren), nen luat thuong cu khong doi: cua so an +1 chi hep lai con nua sau.
+ */
+export const TI_LE_TOI_THIEU_DE_XONG = 0.5;
+
+/**
+ * Con phai cho them BAO NHIEU GIAY nua moi duoc bam "Da lam xong"; 0 = bam duoc.
+ *
+ * Dung DUNG mot moc voi luat "xong som": moc con bam "Bat dau lam"
+ * (DongHoLamBai.tsx -> startedAt -> assignments.started_at). Nen han che cung
+ * y het: moc do do MAY CON gui len nen hang rao nay chan bam nham va bam voi,
+ * khong chan duoc nguoi co tinh sua — chap nhan, vi +1 xong som cung tin cung
+ * mot moc.
+ *
+ * `startedAtMs === null` (con chua bam "Bat dau lam", hoac bai khong co dong ho
+ * nhu dong nhiem vu hang ngay) -> 0: GIU NGUYEN hanh vi cu, khong khoa gi.
+ */
+export function giayConPhaiCho(
+  startedAtMs: number | null,
+  nowMs: number,
+  durationMinutes: number
+): number {
+  if (startedAtMs === null) return 0;
+  const canMs = durationMinutes * 60_000 * TI_LE_TOI_THIEU_DE_XONG;
+  return Math.max(0, Math.ceil((startedAtMs + canMs - nowMs) / 1000));
+}

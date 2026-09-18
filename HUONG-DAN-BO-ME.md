@@ -279,6 +279,11 @@ Con mở app trên máy của mình (máy đã gắn vào nhà thì vào thẳng
   mỗi 5 phút, hết giờ chỉ kêu nhẹ chứ **không phạt gì cả**.
 - **Đã làm xong** — tick xong bài. Bài nào có 🎥 thì con **quay video ngay trong
   app**; gửi video xong tức là bài đó đã xong (không có nút tick riêng).
+  Con bấm **"Bắt đầu làm"** rồi thì nút này **xám lại cho tới khi trôi được một
+  nửa thời lượng của bài** (bài 10 phút thì phải qua 5 phút), kèm dòng chữ
+  "Còn N phút nữa mới bấm xong được nhé!" — để con không bấm xong ngay khi vừa
+  bấm bắt đầu. Con **chưa** bấm "Bắt đầu làm" thì nút vẫn bấm được như trước, và
+  bài phải quay video cũng không bị chặn (nộp video là xong).
 - **Cô gửi kèm bài này** — phim, ghi âm, ảnh bố mẹ đính kèm. Tệp bố mẹ tải lên thì
   con xem, nghe ngay tại đây; còn dòng **"Mở Google Drive để xem"** thì con bấm
   vào là máy mở sang Google Drive.

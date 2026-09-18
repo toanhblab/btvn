@@ -52,6 +52,16 @@ export default function ChiTietBai({
   // may chu khong tra ve.
   const [diemVuaCong, setDiemVuaCong] = useState<DiemVuaCong | null>(null);
   const [voiceWarning, setVoiceWarning] = useState('');
+  /**
+   * Hang rao 50% (issue #72): con phai lam it nhat nua thoi luong cua bai roi
+   * moi bam "Da lam xong" duoc. So giay con phai cho do CHINH <DongHoLamBai>
+   * bao xuong (no da co san nhip 500ms va giu moc bat dau) — khong them bo dem
+   * thu hai o day. 0 = mo nut.
+   */
+  const [giayPhaiCho, setGiayPhaiCho] = useState(0);
+  // Bai phai quay video duoc MIEN: ban quay tu no la bang chung da lam, va viec
+  // nay khong dung den luong quay/nop video. May chu mien cung dieu kien nay.
+  const khoaXong = !assignment.requiresVideo && giayPhaiCho > 0;
 
   /* De hay tron hai thu tieng ("Viết các từ: apple, banana") -> tach thanh doan
      vi/en, moi doan doc bang dung giong; tu tieng Anh phat am chuan cho be hoc theo. */
@@ -128,8 +138,11 @@ export default function ChiTietBai({
           nextDone ? { status: 'done', startedAt: mocBatDau() } : { status: 'todo' }
         ),
       });
-      if (!res.ok) throw new Error();
       const data = await res.json().catch(() => ({}));
+      // Nut da khoa san khi chua du 50% nen loi nay hiem — nhung neu may chu tu
+      // choi (dong ho hai may lech nhau) thi noi dung cau CUA MAY CHU, khong
+      // nuot thanh "Chua luu duoc" chung chung.
+      if (!res.ok) throw new Error(data.error ?? '');
       setDone(nextDone);
       if (nextDone) {
         setDiemVuaCong(data.diem ?? null);
@@ -147,8 +160,8 @@ export default function ChiTietBai({
         }
         setShowSuccess(true);
       } else router.push(`/con/${childId}`);
-    } catch {
-      alert(T('Chưa lưu được. Con thử lại nhé!'));
+    } catch (e) {
+      alert((e instanceof Error && e.message) || T('Chưa lưu được. Con thử lại nhé!'));
     } finally {
       setSaving(false);
     }
@@ -270,7 +283,11 @@ export default function ChiTietBai({
             {/* Dong ho lam bai: nut "Bat dau lam" -> dem nguoc + nhac giong noi.
                 Bai da xong thi thoi, khong can gio giac gi nua. */}
             {!done && (
-              <DongHoLamBai assignmentId={assignment.id} minutes={assignment.durationMinutes} />
+              <DongHoLamBai
+                assignmentId={assignment.id}
+                minutes={assignment.durationMinutes}
+                onConPhaiCho={setGiayPhaiCho}
+              />
             )}
           </div>
 
@@ -368,15 +385,30 @@ export default function ChiTietBai({
               {T('Quay video xong là hoàn thành bài này')}
             </p>
           ) : !done ? (
-            <button
-              onClick={() => setStatus(true)}
-              disabled={saving}
-              className="btn-3d-success text-white rounded-[32px] flex items-center justify-center
-                         gap-4 px-8 h-24 w-full xl:w-[560px] disabled:opacity-60"
-            >
-              <span className="material-symbols-outlined text-5xl icon-fill">check_circle</span>
-              <span className="text-k-headline whitespace-nowrap">{T('Đã làm xong')}</span>
-            </button>
+            <>
+              <button
+                onClick={() => setStatus(true)}
+                disabled={saving || khoaXong}
+                className={`btn-3d-success text-white rounded-[32px] flex items-center justify-center
+                           gap-4 px-8 h-24 w-full xl:w-[560px] disabled:opacity-60
+                           ${khoaXong ? 'grayscale' : ''}`}
+              >
+                <span className="material-symbols-outlined text-5xl icon-fill">
+                  {khoaXong ? 'lock' : 'check_circle'}
+                </span>
+                <span className="text-k-headline whitespace-nowrap">{T('Đã làm xong')}</span>
+              </button>
+              {/* Vi sao nut xam: chu ngan, mot dong, dem nguoc theo chinh dong ho
+                  o tren. Duoi mot phut thi doc theo giay cho khoi mai mai "Con 1
+                  phut". */}
+              {khoaXong && (
+                <p className="text-k-body text-on-surface-variant text-center">
+                  {giayPhaiCho >= 60
+                    ? T('Còn {n} phút nữa mới bấm xong được nhé!', { n: Math.ceil(giayPhaiCho / 60) })
+                    : T('Còn {n} giây nữa mới bấm xong được nhé!', { n: giayPhaiCho })}
+                </p>
+              )}
+            </>
           ) : (
             // Tick nham phai bo duoc (PRD 4.3)
             <button
