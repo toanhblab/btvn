@@ -90,6 +90,23 @@ vào bộ nhớ lúc mở, nên script ghi vào thư mục đó trong lúc máy 
 hiện lên trang — màn vẫn vẽ dữ liệu cũ mà không báo gì, và một lượt rà cả chục cỡ
 màn coi như kiểm đúng một bộ dữ liệu.
 
+Dừng `next dev` thì giết theo CỔNG (`lsof -ti:<cổng> | xargs kill`), **không bao
+giờ `pkill -f "next dev"`**: mẫu đó khớp cả dòng lệnh của tiến trình `claude` đang
+chạy một brief có chữ "next dev" — ba phiên worker của #75 chết oan vì một worker
+khác khởi động lại dev server kiểu đó. Cần giả đồng hồ cho `next dev` (kiểm cửa
+sổ 0h-7h giờ nhà) thì `TZ=UTC NODE_OPTIONS="--import <tệp đè Date>"`; mọi tiến
+trình con của Next đều kế thừa nó (xem PR của #75).
+
+"Hôm nay" của app là **`todayISO()` (`lib/store.ts`) tính theo `MUI_GIO_NHA`** qua
+`ngayNhaISO` trong `lib/muiGio.ts` (tệp không import gì để hai script seed `.mjs`
+cũng nạp được). Đừng lấy ngày bằng `new Date()` + `getDate()` trên đường máy chủ:
+hàm Vercel chạy `TZ=UTC`, nhà ở +07, nên 0h-7h sáng giờ nhà "hôm nay" của máy chủ
+là hôm qua — bài đã xong hôm qua hiện lại trên iPad của con (issue #75), và máy dev
++07 không bao giờ lộ. Test cho lớp lỗi này phải chạy trong tiến trình node có `TZ`
+khác (mẫu ở `lib/man-con-mui-gio.test.ts`, `lib/ngay.test.ts`). PGlite trả cột
+`DATE` thành `Date` nửa đêm UTC — đọc bằng `toISOString().slice(0, 10)`, không
+`getDate()`.
+
 Lái trình duyệt vào `next dev` thì mở bằng **`http://localhost:<cổng>`**, đừng
 dùng `127.0.0.1`. Next 16 chặn "cross-origin dev request" nên mọi tệp
 `/_next/static/**` trả 403 khi host là `127.0.0.1`: trang vẫn dựng xong ở phía

@@ -9,6 +9,7 @@ import type {
 import { DURATION_DEFAULT, HW_SOURCE_DEFAULT, hwSourceOf, nhomNhiemVuOf } from './types';
 import { veTrenManCuaCon } from './nhomNhiemVu';
 import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu';
+import { ngayNhaISO } from './muiGio';
 import { ngonNguOf, type NgonNgu } from './i18n/ngonNgu';
 import type { Key, Tham } from './i18n/chu';
 import {
@@ -16,12 +17,15 @@ import {
   SQL_TRANG_THAI_DOI_THUONG, SQL_TRU_DIEM, nhanhDuyet,
 } from './sqlDiem';
 
-/** Ngay hom nay theo gio dia phuong, YYYY-MM-DD (toISOString la UTC nen lech mui gio). */
+/**
+ * "Hom nay" cua app, YYYY-MM-DD, theo MUI GIO NHA (khong theo dong ho cua may
+ * chay): ham Vercel o TZ=UTC nen tu 00:00 den 07:00 sang gio nha, dong ho may chu
+ * van la hom qua — bai da xong hom qua hien lai tren iPad cua con (issue #75).
+ * Moi noi can "hom nay" (man con, man bo me, taoNhiemVuNgay, celebrate, API tao
+ * bai) deu qua ham nay; luat + test o lib/muiGio.ts va lib/man-con-mui-gio.test.ts.
+ */
 export function todayISO(offsetDays = 0): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  return ngayNhaISO(new Date(), offsetDays);
 }
 
 export function newId(prefix: string): string {
@@ -264,12 +268,14 @@ interface AssignmentRow {
   chore_category: string | null;
 }
 
-/** Neon tra due_date dang string, PGlite tra Date — chuan hoa ve YYYY-MM-DD. */
+/**
+ * Neon tra due_date dang string, PGlite tra Date — chuan hoa ve YYYY-MM-DD.
+ * PGlite dung `new Date('YYYY-MM-DD')`, tuc NUA DEM UTC cua ngay do, nen phai doc
+ * bang getUTC*: getDate() theo mui gio may chay lui mat mot ngay o mui gio am
+ * (test lib/man-con-mui-gio.test.ts chay PGlite voi TZ=America/New_York).
+ */
 function dateStr(v: string | Date): string {
-  if (v instanceof Date) {
-    const p = (n: number) => String(n).padStart(2, '0');
-    return `${v.getFullYear()}-${p(v.getMonth() + 1)}-${p(v.getDate())}`;
-  }
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
   return String(v).slice(0, 10);
 }
 

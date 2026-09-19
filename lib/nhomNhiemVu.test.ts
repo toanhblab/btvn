@@ -314,3 +314,22 @@ test('#62: dong NHIEM VU giu nguyen — chi hom nay, ke ca sau khi bo bai ngay m
   ];
   assert.deepEqual(ids(dongTrenManCuaCon(items, HOM_NAY)), ['nv_nay', 'nv_nay_xong']);
 });
+
+/**
+ * #75 — dung vi du cua captain trong issue: hom nay 19/09/2026 thi bai DA XONG
+ * cua 17/09 (va 18/09) an; bai chua xong cua ngay cu va moi bai cua hom nay hien.
+ * Luat nay da dung tu #62 — cai sai o #75 la MOC "hom nay" (todayISO lay theo
+ * dong ho may chu UTC), ghim rieng o lib/man-con-mui-gio.test.ts. Bai nay giu
+ * cho luat loc khong bi sua nham khi sua moc.
+ */
+test('#75: hom nay 19/09 — bai da xong 17/09 va 18/09 an, bai no 18/09 va bai 19/09 hien', () => {
+  const HOM_NAY_75 = '2026-09-19';
+  const items = [
+    dong({ id: 'xong_17', dueDate: '2026-09-17', choreId: null, status: 'done' }),
+    dong({ id: 'xong_18', dueDate: '2026-09-18', choreId: null, status: 'done' }),
+    dong({ id: 'no_18', dueDate: '2026-09-18', choreId: null, status: 'todo' }),
+    dong({ id: 'nay_todo', dueDate: HOM_NAY_75, choreId: null, status: 'todo' }),
+    dong({ id: 'nay_done', dueDate: HOM_NAY_75, choreId: null, status: 'done' }),
+  ];
+  assert.deepEqual(ids(dongTrenManCuaCon(items, HOM_NAY_75)), ['nay_done', 'nay_todo', 'no_18']);
+});
