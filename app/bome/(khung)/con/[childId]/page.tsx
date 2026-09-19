@@ -219,37 +219,45 @@ export default async function ChiTietCon({
             {choreItems.map((c) => {
               const xong = c.status === 'done';
               return (
-                <li key={c.id} className="flex items-center gap-1.5">
-                  <span
-                    className={`material-symbols-outlined text-base shrink-0 ${
-                      xong ? 'text-success icon-fill' : 'text-outline-variant'
-                    }`}
-                  >
-                    {xong ? 'check_circle' : 'radio_button_unchecked'}
-                  </span>
-                  <span className="shrink-0" aria-hidden>{c.icon}</span>
-                  <span
-                    className={`text-p-body-sm flex-1 min-w-0 ${
-                      xong ? 'text-on-surface-variant line-through' : 'text-on-surface'
-                    }`}
-                  >
-                    {c.content}
-                  </span>
-                  {/* Nhom + sao cua dong (sao la so da chep luc tao; dong cu truoc
-                      migration 016 khong co sao thi khong hien) */}
-                  {c.choreNhom && (
-                    <span className="text-p-label text-outline shrink-0" title={T(NHOM_NHIEM_VU[c.choreNhom].label)}>
-                      {NHOM_NHIEM_VU[c.choreNhom].icon}
+                <li key={c.id} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`material-symbols-outlined text-base shrink-0 ${
+                        xong ? 'text-success icon-fill' : 'text-outline-variant'
+                      }`}
+                    >
+                      {xong ? 'check_circle' : 'radio_button_unchecked'}
                     </span>
-                  )}
-                  {c.stars !== null && (
-                    <span className="text-p-label px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed shrink-0">
-                      {c.stars} ⭐
+                    <span className="shrink-0" aria-hidden>{c.icon}</span>
+                    <span
+                      className={`text-p-body-sm flex-1 min-w-0 ${
+                        xong ? 'text-on-surface-variant line-through' : 'text-on-surface'
+                      }`}
+                    >
+                      {c.content}
                     </span>
-                  )}
+                    {/* Nhom + sao cua dong (sao la so da chep luc tao; dong cu truoc
+                        migration 016 khong co sao thi khong hien) */}
+                    {c.choreNhom && (
+                      <span className="text-p-label text-outline shrink-0" title={T(NHOM_NHIEM_VU[c.choreNhom].label)}>
+                        {NHOM_NHIEM_VU[c.choreNhom].icon}
+                      </span>
+                    )}
+                    {c.stars !== null && (
+                      <span className="text-p-label px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed shrink-0">
+                        {c.stars} ⭐
+                      </span>
+                    )}
+                  </div>
                   {/* Dong nhiem vu cung la mot dong assignments (migration 013)
-                      nen bo tick di dung mot duong voi bai tap */}
-                  {xong && <BoTick id={c.id} />}
+                      nen bo tick di dung mot duong voi bai tap. Nut nam o hang
+                      RIENG nhu o the bai tap: nhet vao cung hang thi ten nhiem vu
+                      bi ep xuong ba dong tren dien thoai. */}
+                  {xong && (
+                    <div className="flex pl-6">
+                      <BoTick id={c.id} />
+                    </div>
+                  )}
                 </li>
               );
             })}
