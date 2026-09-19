@@ -35,6 +35,13 @@ type Ctx = { params: Promise<{ id: string }> };
  * Ca hai duong deu phai thuoc dung nha: duong tick khong can PIN nhung van can
  * may da gan voi nha do, khong thi con nha nay tick duoc bai nha khac neu doan
  * ra id.
+ *
+ * Nut "Chưa xong" cua bo me (issue #74) di CHINH duong dau, khong can nhanh moi:
+ * `viewingFamilyId` uu tien phien bo me nen may co PIN cung qua duoc, va ca hai
+ * hang rao cua con (50% thoi luong, bai bat buoc quay video) chi chan khi
+ * status = 'done' nen chieu done -> todo khong cham vao chung. Chieu nguoc lai —
+ * bo me danh dau XONG ho con — co y KHONG mo: no se la duong vong qua dung hai
+ * hang rao do.
  */
 export async function PATCH(req: Request, { params }: Ctx) {
   const T = await chu();
