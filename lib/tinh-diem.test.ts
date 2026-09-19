@@ -196,6 +196,17 @@ async function ghiDiem(asgId: string, familyId = 'fam_cu') {
 }
 
 /**
+ * Mo phong setStatus(done = false) (lib/store.ts): bo me bam "Chưa xong" o man
+ * chi tiet con (issue #74), hoac con tu bo tick. Xoa moc xong, GIU moc bat dau.
+ */
+async function boTick(asgId: string) {
+  await db.query(
+    `UPDATE assignments SET status = 'todo', completed_at = NULL WHERE id = $1`,
+    [asgId]
+  );
+}
+
+/**
  * Ca cu tick cua con: danh dau xong luc `nowMs` kem moc bat dau `startedAtMs`
  * (null = khong bam dong ho), roi route ghi diem.
  */
@@ -581,6 +592,65 @@ test('bo tick nhiem vu: KHONG rut sao; tick lai: khong cong lan hai (unique inde
     `SELECT COUNT(*) AS n FROM score_events WHERE assignment_id = $1 AND kind = 'task_done'`, [viec]
   );
   assert.equal(Number(n), 1, 'dung MOT dong task_done cho dong nhiem vu nay');
+});
+
+/**
+ * Issue #74 — bo me bam "Chưa xong" tren man chi tiet con.
+ *
+ * Loi hua cua tinh nang do: BO TICK KHONG THU HOI DIEM, va tick lai cung khong
+ * cong lan hai. Test nay dat ca ba loai diem (xong som, ngay xong het, sao nhiem
+ * vu) vao CUNG mot ngay roi cho bo me bo tick het — so du phai dung nguyen, va
+ * moi loai chi co DUNG MOT dong score_events tu dau den cuoi.
+ *
+ * Khong co doan code nao "chan rut diem" ca: score_events la bang chi ghi them
+ * (moi dong deu duong) va "cong mot lan" nam o ba unique index partial. Test nay
+ * la thu ghim loi hua do lai, de ai do them mot duong rut diem thi thay do.
+ */
+test('bo me bo tick (issue #74): KHONG rut lai diem nao, tick lai cung khong cong lan hai', async () => {
+  const NGAY = '2026-09-23';
+  const truoc = await soDu('con_c');
+  const bai = await themBai('con_c', NGAY, { phut: 5 });
+  const viec = await themBai('con_c', NGAY, { chore: 'chr_1', sao: 3 });
+
+  // Con lam: bai xong som (+1), viec nha (+3), va vi la dong cuoi cua ngay -> +10
+  assert.deepEqual(await tickXong(bai, Date.now() - 1 * PHUT, Date.now(), 'fam_cu'),
+    { xongSom: DIEM_XONG_SOM, ngayXong: 0, nhiemVu: 0 }, 'con viec nha chua tick nen chua +10');
+  assert.deepEqual(await tickXong(viec, null), { xongSom: 0, ngayXong: DIEM_NGAY_XONG, nhiemVu: 3 });
+  const dayDu = truoc + DIEM_XONG_SOM + DIEM_NGAY_XONG + 3;
+  assert.equal(await soDu('con_c'), dayDu);
+
+  // Bo me bam "Chưa xong" ca hai dong
+  await boTick(bai);
+  await boTick(viec);
+  assert.equal(await soDu('con_c'), dayDu, 'bo tick KHONG rut lai diem nao');
+  const [{ status }] = await rows(`SELECT status FROM assignments WHERE id = $1`, [bai]);
+  assert.equal(status, 'todo', 'dong that su quay ve chua xong');
+  const [{ completed_at }] = await rows(`SELECT completed_at FROM assignments WHERE id = $1`, [bai]);
+  assert.equal(completed_at, null, 'moc xong bi xoa de con lam lai tu dau');
+
+  // Con lam lai: khong dong nao duoc cong lan hai
+  assert.deepEqual(await tickXong(bai, Date.now() - 1 * PHUT), { xongSom: 0, ngayXong: 0, nhiemVu: 0 });
+  assert.deepEqual(await tickXong(viec, null), { xongSom: 0, ngayXong: 0, nhiemVu: 0 });
+  assert.equal(await soDu('con_c'), dayDu, 'tick lai khong cong doi');
+
+  const [{ n_som }] = await rows(
+    `SELECT COUNT(*) AS n_som FROM score_events WHERE assignment_id = $1 AND kind = 'early_finish'`, [bai]);
+  const [{ n_sao }] = await rows(
+    `SELECT COUNT(*) AS n_sao FROM score_events WHERE assignment_id = $1 AND kind = 'task_done'`, [viec]);
+  const [{ n_ngay }] = await rows(
+    `SELECT COUNT(*) AS n_ngay FROM score_events
+      WHERE child_id = 'con_c' AND kind = 'day_complete' AND event_date = '${NGAY}'`);
+  assert.deepEqual([Number(n_som), Number(n_sao), Number(n_ngay)], [1, 1, 1],
+    'dung MOT dong cho moi loai diem, ke ca sau mot vong bo tick / tick lai');
+
+  // Va khong co dong diem AM nao duoc sinh ra o bat ky dau (dau la thuoc tinh
+  // cua BANG: score_events chi cong, score_penalties chi tru)
+  const [{ n_am }] = await rows(
+    `SELECT COUNT(*) AS n_am FROM score_events WHERE child_id = 'con_c' AND points <= 0`);
+  assert.equal(Number(n_am), 0);
+  const [{ n_phat }] = await rows(
+    `SELECT COUNT(*) AS n_phat FROM score_penalties WHERE child_id = 'con_c'`);
+  assert.equal(Number(n_phat), 0, 'bo tick khong duoc bien thanh mot lan tru diem');
 });
 
 test('hai request tick cung luc cho cung mot nhiem vu: chi MOT ben cong sao', async () => {

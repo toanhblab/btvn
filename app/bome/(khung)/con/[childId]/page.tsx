@@ -3,9 +3,12 @@ import { notFound, redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
 import { getChild, listAssignments, taoNhiemVuNgay, todayISO } from '@/lib/store';
 import {
-  HW_SOURCES, NHOM_NHIEM_VU, trangThaiVideo, type Assignment, type TrangThaiVideo,
+  HW_SOURCES, NHOM_NHIEM_VU, trangThaiVideo,
+  type Assignment, type HwSource, type TrangThaiVideo,
 } from '@/lib/types';
 import XoaBai from './XoaBai';
+import BoTick from './BoTick';
+import { ChipNoiGiao, ChonNgay, duongDan, type BoLocMan } from './BoLoc';
 import { chu } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
@@ -17,17 +20,45 @@ const LOP_THE_VIDEO: Record<TrangThaiVideo, string> = {
   'chua-quay': 'bg-secondary-container text-on-secondary-container',
 };
 
+/**
+ * `?nguon=` -> mot ma nguon HOP LE, hoac khong loc gi.
+ *
+ * KHONG dung hwSourceOf o day: ham do degrade gia tri la ve primary_school, dung
+ * cho mot bai dang duoc GHI vao DB, nhung o day gia tri la nghia la "khong hieu
+ * bo loc nay" — im lang doi sang Nguyen Sieu thi bo me nhin danh sach da loc ma
+ * tuong la ca danh sach.
+ */
+function locNguon(v: string | undefined): HwSource | undefined {
+  return v && v in HW_SOURCES ? (v as HwSource) : undefined;
+}
+
+/** `?ngay=` -> mot ngay CO THAT dang YYYY-MM-DD, hoac khong loc gi. */
+function locNgay(v: string | undefined): string | undefined {
+  if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return undefined;
+  const d = new Date(`${v}T00:00:00Z`);
+  // '2026-02-31' dung dang ma khong co that -> Date tu don sang 03-03, doi chieu
+  // lai chuoi de bat
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v ? v : undefined;
+}
+
+/** dd/mm — ngay ngan gon de nhet vao tieu de tien do, khong phai ca chuoi ISO. */
+const ngayNgan = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+
 /** Chi tiet hoc tap cua mot con — nen tu stitch-parent 09. */
 export default async function ChiTietCon({
   params,
   searchParams,
 }: {
   params: Promise<{ childId: string }>;
-  searchParams: Promise<{ pham_vi?: string }>;
+  searchParams: Promise<{ pham_vi?: string; nguon?: string; ngay?: string }>;
 }) {
   const { childId } = await params;
-  const { pham_vi } = await searchParams;
-  const tuanNay = pham_vi === 'tuan';
+  const { pham_vi, nguon, ngay } = await searchParams;
+  const nguonLoc = locNguon(nguon);
+  const ngayLoc = locNgay(ngay);
+  // Chon mot ngay cu the thi hai chip Hom nay / Tuan nay deu tat: danh sach dang
+  // hien khong phai pham vi cua chip nao ca.
+  const tuanNay = !ngayLoc && pham_vi === 'tuan';
   const T = await chu();
 
   const familyId = await parentFamilyId();
@@ -63,25 +94,43 @@ export default async function ChiTietCon({
   // phai thay dung thu con dang thay, khong thi "0/3 xong" mai du con khong co
   // gi de tick.
   //
-  // Tab "Hom nay": MOT cau duy nhat roi tach hai phan bang choreId, vi hai ben
-  // chi khac moi co includeChores. Tab "Tuan nay": pham vi ngay khac nhau nen
+  // Tab "Hom nay" khong loc gi: MOT cau duy nhat roi tach hai phan bang choreId,
+  // vi hai ben chi khac moi co includeChores. Moi truong hop KHAC (tuan nay, hay
+  // co bo loc cua issue #74) thi pham vi cua hai ben khong con trung nhau nen
   // phai hai cau, cho chay song song — Neon la HTTP nen cho cau nay xong moi goi
   // cau kia la cong them mot vong khong can thiet (nhu chu thich o man cua con).
+  //
+  // Hai bo loc (nguon, ngay) chi ap cho DANH SACH BAI TAP va tien do cua chinh
+  // no. Khoi nhiem vu hang ngay giu nguyen "hom nay, khong loc": no la viec cua
+  // buoi toi, khong co noi giao, va issue #74 chi xin loc bai tap.
+  const mocNgay = ngayLoc ?? today;
   let items: Assignment[];
   let choreItems: Assignment[];
-  if (tuanNay) {
-    const [tuan, homNay] = await Promise.all([
-      listAssignments(familyId, { childId, from: todayISO(-6), to: todayISO(6) }),
-      listAssignments(familyId, { childId, date: today, includeChores: true }),
-    ]);
-    items = tuan;
-    choreItems = homNay.filter((a) => a.choreId != null);
-  } else {
+  if (!tuanNay && !ngayLoc && !nguonLoc) {
     const homNay = await listAssignments(familyId, { childId, date: today, includeChores: true });
     items = homNay.filter((a) => a.choreId == null);
     choreItems = homNay.filter((a) => a.choreId != null);
+  } else {
+    const phamViNgay = ngayLoc
+      ? { date: ngayLoc }
+      : tuanNay
+        ? { from: todayISO(-6), to: todayISO(6) }
+        : { date: today };
+    const [bai, homNay] = await Promise.all([
+      listAssignments(familyId, { childId, ...phamViNgay, ...(nguonLoc ? { source: nguonLoc } : {}) }),
+      listAssignments(familyId, { childId, date: today, includeChores: true }),
+    ]);
+    items = bai;
+    choreItems = homNay.filter((a) => a.choreId != null);
   }
   const soViecXong = choreItems.filter((a) => a.status === 'done').length;
+
+  // Ba bo loc di CUNG nhau: moi link doi mot cai phai cho theo hai cai kia.
+  const loc: BoLocMan = {
+    phamVi: tuanNay ? 'tuan' : undefined,
+    nguon: nguonLoc,
+    ngay: ngayLoc,
+  };
 
   const done = items.filter((a) => a.status === 'done').length;
   const pct = items.length ? Math.round((done / items.length) * 100) : 0;
@@ -119,10 +168,12 @@ export default async function ChiTietCon({
         </Link>
       </header>
 
-      <div className="flex gap-2 mb-4">
+      {/* Hai chip pham vi: bam mot trong hai la BO bo loc mot ngay (ve lai khoang
+          ngay), nhung GIU nguyen noi giao dang chon. */}
+      <div className="flex gap-2 mb-3">
         {[
-          [T('Hôm nay'), `/bome/con/${child.id}`, !tuanNay],
-          [T('Tuần này'), `/bome/con/${child.id}?pham_vi=tuan`, tuanNay],
+          [T('Hôm nay'), duongDan(child.id, { nguon: nguonLoc }), !tuanNay && !ngayLoc],
+          [T('Tuần này'), duongDan(child.id, { phamVi: 'tuan', nguon: nguonLoc }), tuanNay],
         ].map(([label, href, active]) => (
           <Link
             key={label as string}
@@ -137,9 +188,18 @@ export default async function ChiTietCon({
         ))}
       </div>
 
+      <ChipNoiGiao childId={child.id} loc={loc} T={T} />
+      <ChonNgay childId={child.id} loc={loc} moc={mocNgay} T={T} />
+
       <section className="mb-5">
         <div className="flex justify-between text-p-body-sm text-on-surface-variant mb-1.5">
-          <span>{tuanNay ? T('Tiến độ tuần này') : T('Tiến độ hôm nay')}</span>
+          <span>
+            {ngayLoc
+              ? T('Tiến độ ngày {ngay}', { ngay: ngayNgan(ngayLoc) })
+              : tuanNay
+                ? T('Tiến độ tuần này')
+                : T('Tiến độ hôm nay')}
+          </span>
           <span>{T('{done}/{total} bài đã xong', { done, total: items.length })}</span>
         </div>
         <div className="h-2.5 rounded-full bg-surface-container-high overflow-hidden">
@@ -187,6 +247,9 @@ export default async function ChiTietCon({
                       {c.stars} ⭐
                     </span>
                   )}
+                  {/* Dong nhiem vu cung la mot dong assignments (migration 013)
+                      nen bo tick di dung mot duong voi bai tap */}
+                  {xong && <BoTick id={c.id} />}
                 </li>
               );
             })}
@@ -196,7 +259,13 @@ export default async function ChiTietCon({
 
       {items.length === 0 ? (
         <p className="text-p-body text-on-surface-variant text-center py-10">
-          {tuanNay ? T('Tuần này chưa có bài nào.') : T('Hôm nay chưa giao bài nào cho {name}.', { name: child.name })}
+          {nguonLoc
+            ? T('Không có bài nào ở {noi}.', { noi: T(HW_SOURCES[nguonLoc].label) })
+            : ngayLoc
+              ? T('Ngày {ngay} chưa có bài nào.', { ngay: ngayNgan(ngayLoc) })
+              : tuanNay
+                ? T('Tuần này chưa có bài nào.')
+                : T('Hôm nay chưa giao bài nào cho {name}.', { name: child.name })}
         </p>
       ) : (
         Object.entries(groups).map(([subject, list]) => (
@@ -279,6 +348,14 @@ export default async function ChiTietCon({
                           <span className="text-p-label text-outline">{a.dueDate}</span>
                         )}
                       </div>
+                      {/* Nut bo tick nam o mot hang RIENG duoi cac the: nhet vao
+                          hang the thi no lan giua dam nhan nho va bo me khong
+                          nhan ra day la thu bam duoc (issue #74). */}
+                      {a.status === 'done' && (
+                        <div className="mt-2 flex">
+                          <BoTick id={a.id} />
+                        </div>
+                      )}
                     </div>
                     {/* Sua duoc sau khi giao: doi de bai, han, video… (/bome/bai/<id>) */}
                     <Link
