@@ -277,7 +277,7 @@ export default function SuaBai({
           <label className="text-p-label uppercase text-on-surface-variant block mb-1">
             {T('Thời lượng làm bài (phút)')}
           </label>
-          {/* Dong ho o man cua con dem nguoc tu so nay. AI uoc 5-15;
+          {/* Dong ho o man cua con dem nguoc tu so nay. AI uoc 5-60;
               bo me sua tay thi duoc ghi ngoai khoang do (toi da 180). */}
           <input
             type="number"

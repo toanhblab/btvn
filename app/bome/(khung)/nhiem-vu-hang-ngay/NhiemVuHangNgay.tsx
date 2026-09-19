@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import {
-  docChildIds, ICON_NHIEM_VU_GOI_Y, ICON_NHIEM_VU_MAC_DINH, MAX_CHU_VIEC_NHA, MAX_SAO_NHIEM_VU,
+  ICON_NHIEM_VU_GOI_Y, ICON_NHIEM_VU_MAC_DINH, MAX_CHU_VIEC_NHA, MAX_SAO_NHIEM_VU,
   NHOM_NHIEM_VU, NHOM_NHIEM_VU_MAC_DINH, SAO_NHIEM_VU_MAC_DINH,
   type Child, type DailyChore, type NhomNhiemVu,
 } from '@/lib/types';
 import { useT } from '@/lib/i18n/client';
+import GiaoCho, { chuaGiaoAi } from '../GiaoCho';
 
 /** Hang chip chon nhom — dung cho ca the dang co va o them moi. */
 function ChonNhom({ value, onChange, busy }: { value: NhomNhiemVu; onChange: (n: NhomNhiemVu) => void; busy: boolean }) {
@@ -31,71 +32,6 @@ function ChonNhom({ value, onChange, busy }: { value: NhomNhiemVu; onChange: (n:
       ))}
     </div>
   );
-}
-
-/**
- * Hang chip "Giao cho": Cả nhà + tung con (avatar tron nho + ten).
- *
- * Mang RONG (`[]`) la mot trang thai that trong DB: xoa con cuoi cung duoc giao
- * mot nhiem vu thi deleteChild go id do ra, con lai mang rong (xem lib/store.ts).
- * Luc do khong chip nao sang va nhiem vu khong sinh dong cho ai — phai noi ro,
- * khong thi bo me chi thay mot the "Đang bật" im lang.
- */
-function GiaoCho({ value, onChange, busy, cacCon }: {
-  value: string[] | null; onChange: (v: string[] | null) => void; busy: boolean; cacCon: Child[];
-}) {
-  const T = useT();
-  return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-p-body-sm text-on-surface-variant mr-0.5">{T('Giao cho:')}</span>
-      <button
-        type="button"
-        aria-pressed={value === null}
-        disabled={busy}
-        onClick={() => onChange(null)}
-        className={`min-h-9 px-3 rounded-full text-p-body-sm font-bold border disabled:opacity-60
-                    ${value === null
-                      ? 'bg-primary text-on-primary border-primary'
-                      : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant'}`}
-      >
-        {T('Cả nhà')}
-      </button>
-      {cacCon.map((ch) => {
-        const chon = value !== null && value.includes(ch.id);
-        const sauKhiBam = docChildIds(value, ch.id);
-        return (
-          <button
-            key={ch.id}
-            type="button"
-            aria-pressed={chon}
-            disabled={busy}
-            onClick={() => {
-              if (sauKhiBam !== value) onChange(sauKhiBam);
-            }}
-            className={`min-h-9 pl-1 pr-3 rounded-full text-p-body-sm font-bold border flex items-center gap-1.5
-                        disabled:opacity-60
-                        ${chon
-                          ? 'bg-primary text-on-primary border-primary'
-                          : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant'}`}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ch.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
-            {ch.name}
-          </button>
-        );
-      })}
-      {chuaGiaoAi(value) && (
-        <p className="w-full text-p-body-sm text-error font-bold">
-          {T('Chưa giao cho ai — chọn "Cả nhà" hoặc một con')}
-        </p>
-      )}
-    </div>
-  );
-}
-
-/** Nhiem vu dang bat nhung khong giao cho ai: co bat cung khong con nao thay. */
-function chuaGiaoAi(childIds: string[] | null): boolean {
-  return childIds !== null && childIds.length === 0;
 }
 
 /**
@@ -288,7 +224,7 @@ export default function NhiemVuHangNgay({
               <ChonNhom value={c.nhom} onChange={(nhom) => sua(c, { nhom })} busy={busy} />
 
               {/* Hang 3: giao cho */}
-              <GiaoCho value={c.childIds} onChange={(childIds) => sua(c, { childIds })} busy={busy} cacCon={cacCon} />
+              <GiaoCho value={c.childIds} onChange={(childIds) => sua(c, { childIds })} busy={busy} cacCon={cacCon} nhan={T('Giao cho:')} />
 
               {/* Hang 4: thu tu + bat/tat + xoa */}
               <div className="flex items-center gap-1">
@@ -395,7 +331,7 @@ export default function NhiemVuHangNgay({
           </label>
         </div>
         <ChonNhom value={themNhom} onChange={setThemNhom} busy={busy} />
-        <GiaoCho value={themChildIds} onChange={setThemChildIds} busy={busy} cacCon={cacCon} />
+        <GiaoCho value={themChildIds} onChange={setThemChildIds} busy={busy} cacCon={cacCon} nhan={T('Giao cho:')} />
         <button
           onClick={them}
           disabled={busy || themTen.trim() === '' || !(Number(themSao) >= 1 && Number(themSao) <= MAX_SAO_NHIEM_VU)}

@@ -1,0 +1,31 @@
+-- Mot nha khong the co hai cuon sach dang dung CUNG TEN (issue #64).
+--
+-- Luat nay da co tu 021 nhung chi nam trong ma: route doc `bookTrungTen` roi moi
+-- INSERT o cau SAU. Hai lan them cung ten chen nhau (bo me bam Enter hai nhip o
+-- man them sach, hay hai may cung mo /bome/sach) thi ca hai cung doc "chua co"
+-- va ca hai cung vao. Hau qua khong tu sua duoc: hai dong giong nhau TUNG CHU
+-- tren man cai dat, bo me khong biet bo dong nao; ca hai cung di vao khoi "SÁCH /
+-- VỞ / NGUỒN BÀI TẬP" cua loi nhac AI va cung chiem cho trong MAX_SACH_TRONG_PROMPT;
+-- va tu do khong doi ten dong nao duoc nua vi `bookTrungTen` bao trung voi dong kia.
+--
+-- Nen tinh duy nhat phai nam o CSDL, dung tien le cua du an (score_events cong
+-- diem mot lan, video_cleanups mot luot xoa that moi ngay): CHI MUC DUY NHAT MOT
+-- PHAN. Phep kiem trong ma van giu nguyen — no la thu cho bo me cau tieng Viet
+-- "Nhà mình đã có cuốn này rồi." thay vi mot loi rang buoc; chi muc nay la hang
+-- rao cuoi cho hai lan ghi chen nhau, va route doi loi 23505 ve dung cau bao do.
+--
+-- Hai chi tiet phai khop chinh xac, doi mot ben la hang rao lech:
+--
+-- 1. Bieu thuc khoa `lower(regexp_replace(name, '\s+', ' ', 'g'))` la Y HET cau so
+--    trong `bookTrungTen` (lib/store.ts), va ten luu xuong da qua `lamSachTenSach`
+--    (lib/types.ts: NFC + gom khoang trang + trim). Chi muc khong ep NFC duoc
+--    (Postgres khong co ham chuan hoa Unicode dung duoc trong chi muc bat bien),
+--    nen viec ep NFC van thuoc ve duong ghi — moi duong them / sua ten sach phai
+--    di qua `lamSachTenSach`.
+--
+-- 2. `WHERE archived_at IS NULL` — bo sach la DANH DAU DA BO chu khong xoa dong
+--    (021). Khoa ca dong da bo thi bo mot cuon roi khai lai dung ten do se bi tu
+--    choi, ma man hinh thi khong con dong nao de bo me hieu vi sao.
+CREATE UNIQUE INDEX IF NOT EXISTS books_family_name_uniq
+  ON books (family_id, lower(regexp_replace(name, '\s+', ' ', 'g')))
+  WHERE archived_at IS NULL;

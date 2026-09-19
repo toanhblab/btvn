@@ -3,10 +3,10 @@ import {
   DIEM_NGAY_XONG, DIEM_XONG_SOM, ngayDuocTinhDiem, ngayHoanThanh, xongSom,
 } from './diem';
 import type {
-  Assignment, AttachedMedia, Child, ChildColor, DailyChore, DiemVuaCong, DraftAssignment, HwSource,
-  Lang, MediaKind, NhomNhiemVu, Penalty, Redemption, RedemptionStatus, Reward, Status,
+  Assignment, AttachedMedia, Book, Child, ChildColor, DailyChore, DiemVuaCong, DraftAssignment, HwSource,
+  Lang, MediaKind, NhomNhiemVu, Penalty, Redemption, RedemptionStatus, Reward, Status, TenMon,
 } from './types';
-import { DURATION_DEFAULT, HW_SOURCE_DEFAULT, hwSourceOf, nhomNhiemVuOf } from './types';
+import { DURATION_DEFAULT, HW_SOURCE_DEFAULT, hwSourceOf, monSachOf, nhomNhiemVuOf } from './types';
 import { veTrenManCuaCon } from './nhomNhiemVu';
 import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu';
 import { ngonNguOf, type NgonNgu } from './i18n/ngonNgu';
@@ -236,6 +236,13 @@ export async function deleteChild(familyId: string, id: string): Promise<void> {
   // dong nao, bam mot con la ve ['id'] va luu duoc.
   await query(
     `UPDATE daily_chores SET child_ids = array_remove(child_ids, $1)
+      WHERE family_id = $2 AND child_ids IS NOT NULL`,
+    [id, familyId]
+  );
+  // Cung bat bien cho sach cua nha (issue #64, migrations/021): hang "Sach cua"
+  // tren /bome/sach cung doc nguyen mang roi gui lai qua locChildIdsGiaoCho.
+  await query(
+    `UPDATE books SET child_ids = array_remove(child_ids, $1)
       WHERE family_id = $2 AND child_ids IS NOT NULL`,
     [id, familyId]
   );
@@ -1078,6 +1085,170 @@ export async function moveChore(familyId: string, id: string, huong: -1 | 1): Pr
       [c.id, familyId, k + 1]
     );
   }
+}
+
+
+/* ---------------- Sach / vo / nguon bai tap cua cac con (issue #64) ----------------
+ *
+ * Luoc do + ly do o migrations/021_sach_cua_nha.sql. Mot danh sach cua NHA, moi
+ * cuon co the gioi han cho vai con (child_ids, null = ca nha) — cung khuon voi
+ * daily_chores. Dung o hai cho: man /bome/sach (bo me sua) va POST /api/extract
+ * (dua vao loi nhac AI, lib/ai.ts). Man cua con khong doc bang nay.
+ *
+ * Sach da BO (archived_at khong null) bi loai o MOI duong doc — ke ca duong dua
+ * vao AI: bo mot cuon la AI thoi nhan no tu lan tach sau. Khac rewards (xoa that)
+ * vi ly do ghi o migration 021.
+ */
+
+interface BookRow { id: string; name: string; subject: string | null; child_ids: string[] | null }
+
+const BOOK_COLS = 'id, name, subject, child_ids';
+
+const toBook = (r: BookRow): Book => ({
+  id: r.id,
+  name: r.name,
+  subject: monSachOf(r.subject),
+  childIds: r.child_ids === null ? null : [...r.child_ids],
+});
+
+/**
+ * Sach cua nha, theo thu tu bo me them vao.
+ *
+ * `childIds` (tuy chon): chi lay sach DUNG cho it nhat mot con trong danh sach —
+ * sach ca nha (child_ids NULL) luon co mat, sach rieng thi phai giao cho mot
+ * trong cac con do. POST /api/extract truyen dung nhom con bo me dang giao bai,
+ * de AI khong dem sach cua be mau giao ra doan bai cua hai be lop 1. Mang rong /
+ * khong truyen = lay het.
+ */
+export async function listBooks(
+  familyId: string,
+  opts: { childIds?: string[] } = {}
+): Promise<Book[]> {
+  const theoCon = opts.childIds && opts.childIds.length > 0 ? opts.childIds : null;
+  const rows = await query<BookRow>(
+    `SELECT ${BOOK_COLS} FROM books
+      WHERE family_id = $1 AND archived_at IS NULL
+        AND ($2::text[] IS NULL OR child_ids IS NULL OR child_ids && $2::text[])
+      ORDER BY created_at ASC, id ASC`,
+    [familyId, theoCon]
+  );
+  return rows.map(toBook);
+}
+
+/** Tra null neu sach thuoc nha khac hoac da bo — dung lam luon lop kiem tra so huu. */
+export async function getBook(familyId: string, id: string): Promise<Book | null> {
+  const r = await queryOne<BookRow>(
+    `SELECT ${BOOK_COLS} FROM books WHERE id = $1 AND family_id = $2 AND archived_at IS NULL`,
+    [id, familyId]
+  );
+  return r ? toBook(r) : null;
+}
+
+/**
+ * Da co cuon CUNG TEN (khong phan biet hoa/thuong, bo khoang trang thua) dang
+ * dung trong nha chua? Bo me hay khai lai mot cuon da co; hai dong cung ten lam
+ * loi nhac AI dai vo ich va man cai dat roi. `exceptId` de doi ten mot cuon
+ * khong tu bao trung voi chinh no.
+ */
+export async function bookTrungTen(familyId: string, name: string, exceptId?: string): Promise<boolean> {
+  const row = await queryOne<{ id: string }>(
+    `SELECT id FROM books
+      WHERE family_id = $1 AND archived_at IS NULL
+        AND lower(regexp_replace(name, '\\s+', ' ', 'g')) = lower(regexp_replace($2, '\\s+', ' ', 'g'))
+        AND ($3::text IS NULL OR id <> $3)
+      LIMIT 1`,
+    [familyId, name, exceptId ?? null]
+  );
+  return row !== null;
+}
+
+/**
+ * Nha nay da co cuon cung ten — do CHI MUC `books_family_name_uniq` (migration
+ * 022) tu choi, khong phai do `bookTrungTen`. Xay ra khi hai lan ghi chen nhau,
+ * sau khi phep kiem trong ma da cho qua. Route bat rieng loi nay de bo me van
+ * doc dung cau "Nhà mình đã có cuốn này rồi." thay vi 500.
+ */
+export class LoiTrungTenSach extends Error {
+  constructor() {
+    super('books_family_name_uniq');
+    this.name = 'LoiTrungTenSach';
+  }
+}
+
+/**
+ * Loi "trung khoa" cua chi muc ten sach. Neon (HTTP) va PGlite khong dung mot
+ * dang loi, nen soi ca ma loi 23505 lan ten rang buoc trong message/detail.
+ */
+function laLoiTrungTenSach(e: unknown): boolean {
+  if (typeof e !== 'object' || e === null) return false;
+  const o = e as { code?: unknown; constraint?: unknown; message?: unknown; detail?: unknown };
+  const chu = [o.constraint, o.message, o.detail]
+    .filter((x): x is string => typeof x === 'string')
+    .join(' ')
+    .toLowerCase();
+  if (chu.includes('books_family_name_uniq')) return true;
+  return o.code === '23505' && chu.includes('books');
+}
+
+async function ghiSach<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (e) {
+    if (laLoiTrungTenSach(e)) throw new LoiTrungTenSach();
+    throw e;
+  }
+}
+
+/** Them mot cuon. childIds da qua locChildIdsGiaoCho o route (null = ca nha). */
+export async function createBook(
+  familyId: string,
+  input: { name: string; subject: TenMon | null; childIds: string[] | null }
+): Promise<Book> {
+  const id = newId('book');
+  await ghiSach(() =>
+    query(
+      `INSERT INTO books (id, family_id, name, subject, child_ids) VALUES ($1,$2,$3,$4,$5)`,
+      [id, familyId, input.name, input.subject, input.childIds]
+    )
+  );
+  return (await getBook(familyId, id))!;
+}
+
+export async function updateBook(
+  familyId: string,
+  id: string,
+  patch: { name?: string; subject?: TenMon | null; childIds?: string[] | null }
+): Promise<Book | null> {
+  const sets: string[] = [];
+  const params: unknown[] = [id, familyId];
+  if (patch.name !== undefined)    { params.push(patch.name);    sets.push(`name = $${params.length}`); }
+  if (patch.subject !== undefined) { params.push(patch.subject); sets.push(`subject = $${params.length}`); }
+  if (patch.childIds !== undefined) {
+    params.push(patch.childIds);
+    sets.push(`child_ids = $${params.length}::text[]`);
+  }
+  if (sets.length) {
+    await ghiSach(() =>
+      query(
+        `UPDATE books SET ${sets.join(', ')} WHERE id = $1 AND family_id = $2 AND archived_at IS NULL`,
+        params
+      )
+    );
+  }
+  return getBook(familyId, id);
+}
+
+/**
+ * DANH DAU DA BO, khong xoa dong that (migrations/021). Sau lenh nay
+ * listBooks/getBook khong tra ve cuon do nua: bien khoi /bome/sach va khoi loi
+ * nhac AI. Bai cu khong mat gi — ten sach da nam trong assignments.note.
+ */
+export async function deleteBook(familyId: string, id: string): Promise<void> {
+  await query(
+    `UPDATE books SET archived_at = now()
+      WHERE id = $1 AND family_id = $2 AND archived_at IS NULL`,
+    [id, familyId]
+  );
 }
 
 

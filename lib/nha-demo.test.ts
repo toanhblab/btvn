@@ -55,6 +55,7 @@ const BANG_THEO_NHA: Record<string, string> = {
   submissions: `SELECT * FROM submissions WHERE family_id = $1 ORDER BY id`,
   assignments: `SELECT a.* FROM assignments a JOIN children c ON c.id = a.child_id WHERE c.family_id = $1 ORDER BY a.id`,
   daily_chores: `SELECT * FROM daily_chores WHERE family_id = $1 ORDER BY id`,
+  books: `SELECT * FROM books WHERE family_id = $1 ORDER BY id`,
   rewards: `SELECT * FROM rewards WHERE family_id = $1 ORDER BY id`,
   score_events: `SELECT e.* FROM score_events e JOIN children c ON c.id = e.child_id WHERE c.family_id = $1 ORDER BY e.id`,
   reward_redemptions: `SELECT r.* FROM reward_redemptions r JOIN children c ON c.id = r.child_id WHERE c.family_id = $1 ORDER BY r.id`,
@@ -104,6 +105,7 @@ before(async () => {
      VALUES ('that_asg_1', 'that_minh', 'Toán', '🔢', 'Bài 3 trang 34', $1, 'todo'),
             ('that_asg_2', 'that_an', 'Vẽ', '🎨', 'Vẽ ngôi nhà', $1, 'done')`, [ngayLech(0)]);
   await db.query(`INSERT INTO rewards (id, family_id, name, icon, cost) VALUES ('that_rwd', $1, 'Ăn kem', '🍦', 30)`, [THAT]);
+  await store.createBook(THAT, { name: 'Poth Math', subject: 'Toán', childIds: null });
   await db.query(`INSERT INTO score_events (id, child_id, kind, points, event_date) VALUES ('that_sev', 'that_minh', 'day_complete', 10, $1)`, [ngayLech(-1)]);
   await db.query(`INSERT INTO reward_redemptions (id, child_id, reward_id, reward_name, reward_icon, cost) VALUES ('that_rdm', 'that_minh', 'that_rwd', 'Ăn kem', '🍦', 30)`);
   await db.query(`INSERT INTO score_penalties (id, child_id, points, reason) VALUES ('that_pen', 'that_an', 1, 'Cãi bố mẹ')`);
@@ -193,6 +195,14 @@ test('KHONG co duong nao tu nha demo nhin sang nha khac (moi ham doc cua store),
   assert.equal(await store.getRedemption(demo, 'that_rdm'), null);
   const choreThat = (await store.listChores(THAT))[0];
   assert.equal(await store.getChore(demo, choreThat.id), null);
+  // Sach cua nha (issue #64): nha demo khong khai cuon nao, va khong thay / khong
+  // sua duoc sach cua nha that
+  assert.deepEqual(await store.listBooks(demo), []);
+  const sachThat = (await store.listBooks(THAT))[0];
+  assert.equal(sachThat.name, 'Poth Math');
+  assert.equal(await store.getBook(demo, sachThat.id), null);
+  assert.equal(await store.updateBook(demo, sachThat.id, { name: 'Hack' }), null);
+  assert.equal((await store.listBooks(THAT))[0].name, 'Poth Math');
   assert.equal(await store.daCongDiemNgay(demo, 'that_minh', ngayLech(-1)), false);
   assert.equal(await store.soDiem(demo, 'that_minh'), 0);
   assert.equal(await store.countPendingRedemptions(demo), 1);
