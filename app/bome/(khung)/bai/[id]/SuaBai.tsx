@@ -14,9 +14,9 @@ import { MUI_GIO_NHA } from '@/lib/ngay';
  * Gio nop video hien ra o day duoc SSR (trang la force-dynamic) roi hydrate lai
  * o may bo me. Ham Vercel chay TZ=UTC, iPad cua bo me la +07 — khong chot mui
  * gio thi hai ben ra hai chuoi khac nhau: React bao hydration mismatch va bo me
- * doc phai gio lech 7 tieng o lan ve dau. Chot theo mui gio nha, dung gia dinh
- * "gio may chu la gio nha" ma todayISO() (lib/store.ts) da dung — MUI_GIO_NHA
- * nam o lib/ngay.ts vi cac man in NGAY (dong tru ⭐, doi thuong) dung chung no.
+ * doc phai gio lech 7 tieng o lan ve dau. Chot theo mui gio nha — cung
+ * MUI_GIO_NHA ma todayISO() (lib/store.ts, tu issue #75) va cac man in NGAY
+ * (dong tru ⭐, doi thuong) dung; dinh nghia o lib/muiGio.ts, re-export qua lib/ngay.
  *
  * Chot mui gio moi la nua chuyen. toLocaleString('vi-VN') con lay THU TU va dau
  * phan cach tu ban CLDR cua chinh may chay: Node moi tra "01:00:51 28/8/2026"

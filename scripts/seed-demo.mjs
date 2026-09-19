@@ -58,12 +58,20 @@ async function sha256(text) {
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** Ngay theo lich may chay, YYYY-MM-DD, lech `days` ngay — cung khuon todayISO cua app. */
+/**
+ * YYYY-MM-DD theo MUI GIO NHA, lech `days` ngay — CUNG HAM voi todayISO cua app
+ * (lib/muiGio.ts, issue #75): `npm run build` chay tren Vercel o TZ=UTC, tinh
+ * theo lich may chay thi build trong khoang 00:00-07:00 sang gio nha nap "hom
+ * nay" cua demo thanh hom qua. Nap dong + try/catch cung ly do voi phuThuoc();
+ * loi (Node khong tu bo kieu) doi den luc goi moi nem, roi vao catch o cuoi tep.
+ */
+let ngayNhaISO = null;
+try {
+  ({ ngayNhaISO } = await import('../lib/muiGio.ts'));
+} catch { /* bao o ngayLech */ }
 export function ngayLech(days) {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  const p = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  if (!ngayNhaISO) throw new Error('Khong nap duoc lib/muiGio.ts (can Node tu bo kieu .ts, >= 22.18)');
+  return ngayNhaISO(new Date(), days);
 }
 
 /**

@@ -11,6 +11,7 @@
 
 import { chayMigrations, moKetNoi, CONN } from './db.mjs';
 import { SQL_TAO_NHIEM_VU_NGAY } from '../lib/sqlNhiemVu.ts';
+import { ngayNhaISO } from '../lib/muiGio.ts';
 
 const FORCE = process.argv.includes('--force');
 if (CONN && !FORCE) {
@@ -30,12 +31,8 @@ async function sha256(text) {
 
 const id = (prefix) => `${prefix}_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`;
 
-function dateOffset(days) {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  const p = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
+/** YYYY-MM-DD theo MUI GIO NHA lech `days` ngay — cung ham voi todayISO cua app (lib/muiGio.ts). */
+const dateOffset = (days) => ngayNhaISO(new Date(), days);
 
 const db = await moKetNoi();
 const query = db.query;

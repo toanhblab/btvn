@@ -10,6 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { ngayNhaISO } from './muiGio.ts';
 import { ngayGanNhatCoBai, ngayNha } from './ngay.ts';
 
 test('bo qua ngay khong co bai, lay dung 3 ngay gan nhat CO bai (co le/cuoi tuan xen giua)', () => {
@@ -82,4 +83,28 @@ test('moc 17:00Z van la ngay hom sau; 16:59:59Z con la hom nay (ranh gioi +07)',
 test('khuon vi-VN: ngay/thang khong co so 0 dan dau, nam du bon so', () => {
   assert.equal(ngayNha('2026-01-05T03:00:00Z'), '5/1/2026');
   assert.equal(ngayNha('2026-12-31T20:00:00Z'), '1/1/2027', 'sang nam moi theo gio nha');
+});
+
+/**
+ * ngayNhaISO (issue #75) — "hom nay" cua app (todayISO) tinh theo mui gio nha,
+ * khong theo dong ho may chay. Intl chot timeZone nen ket qua khong phu thuoc TZ
+ * cua tien trinh; man cua con chay tron trong tien trinh TZ khac ghim o
+ * lib/man-con-mui-gio.test.ts.
+ */
+test('#75: 23:30Z la ngay HOM SAU theo gio nha; 16:59:59Z con la hom nay (ranh gioi +07)', () => {
+  assert.equal(ngayNhaISO(new Date('2026-09-18T23:30:00Z')), '2026-09-19');
+  assert.equal(ngayNhaISO(new Date('2026-09-18T17:00:00.000Z')), '2026-09-19');
+  assert.equal(ngayNhaISO(new Date('2026-09-18T16:59:59.999Z')), '2026-09-18');
+});
+
+test('#75: lech ngay tinh tren ngay DA quy ve gio nha, qua ca ranh thang/nam', () => {
+  const sang19 = new Date('2026-09-18T23:30:00Z');
+  assert.equal(ngayNhaISO(sang19, -1), '2026-09-18');
+  assert.equal(ngayNhaISO(sang19, -2), '2026-09-17');
+  assert.equal(ngayNhaISO(sang19, 7), '2026-09-26');
+  // 00:30 sang 1/10 gio nha = 17:30Z ngay 30/9
+  assert.equal(ngayNhaISO(new Date('2026-09-30T17:30:00Z')), '2026-10-01');
+  assert.equal(ngayNhaISO(new Date('2026-09-30T17:30:00Z'), -1), '2026-09-30');
+  assert.equal(ngayNhaISO(new Date('2026-12-31T17:30:00Z'), -1), '2026-12-31');
+  assert.equal(ngayNhaISO(new Date('2026-12-31T17:30:00Z')), '2027-01-01');
 });

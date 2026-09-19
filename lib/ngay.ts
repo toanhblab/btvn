@@ -6,6 +6,7 @@
  */
 
 import { T_VI, type Key, type T as TDich } from './i18n/chu';
+import { soNgayNha } from './muiGio';
 
 /** YYYY-MM-DD -> Date GIO DIA PHUONG. new Date('2026-09-02') la nua dem UTC nen
     o mui gio am se lui mat mot ngay — tach tay cho chac. */
@@ -63,30 +64,21 @@ export function ngayGanNhatCoBai(dueDates: string[], mocNgay: string, limit = 3)
 }
 
 /**
- * Mui gio nha — MOT ban duy nhat cho moi cho in moc thoi gian lay tu DB
- * (score_penalties.created_at, reward_redemptions.decided_at, gio nop video...).
+ * Mui gio nha — dinh nghia o lib/muiGio.ts (tep khong import gi, de hai script
+ * seed .mjs cung nap duoc); re-export o day vi cac man in NGAY va SuaBai.tsx
+ * van import tu lib/ngay.
  *
  * Cac man do la force-dynamic nen chuoi duoc dung o HAM Vercel (TZ=UTC) roi
  * hydrate lai o may bo me / iPad (+07). Khong chot mui gio thi lan tru luc 06:30
  * sang 9/9 gio nha (23:30Z ngay 8/9) hien ra "8/9/2026": con doc thanh bi tru tu
  * hom qua, va moi lan tru trong khoang 00:00-07:00 deu lech mot ngay. Khong lo
- * ra o may dev vi may o day chay dung +07.
+ * ra o may dev vi may o day chay dung +07. Cung mot lop loi do voi "hom nay" cua
+ * app (`todayISO`, issue #75) — xem chu thich dau lib/muiGio.ts.
  */
-export const MUI_GIO_NHA = 'Asia/Ho_Chi_Minh';
-
-/**
- * Chi lay TUNG SO roi tu ghep theo khuon cua minh: toLocaleDateString('vi-VN')
- * con lay thu tu va dau phan cach tu ban CLDR cua chinh may chay nen may chu va
- * iPad ra hai chuoi khac nhau cho cung mot moc (chu thich day du o
- * app/bome/(khung)/bai/[id]/SuaBai.tsx, cho hien GIO nop video).
- */
-const SO_NGAY_NHA = new Intl.DateTimeFormat('en-US', {
-  timeZone: MUI_GIO_NHA, year: 'numeric', month: '2-digit', day: '2-digit',
-});
+export { MUI_GIO_NHA, ngayNhaISO } from './muiGio';
 
 /** Moc ISO tu DB -> "9/9/2026" theo mui gio nha (khong so 0 dan dau, nhu vi-VN). */
 export function ngayNha(iso: string): string {
-  const p: Record<string, string> = {};
-  for (const { type, value } of SO_NGAY_NHA.formatToParts(new Date(iso))) p[type] = value;
+  const p = soNgayNha(new Date(iso));
   return `${Number(p.day)}/${Number(p.month)}/${p.year}`;
 }
