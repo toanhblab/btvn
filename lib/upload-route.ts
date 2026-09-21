@@ -1,14 +1,17 @@
 /**
- * Than chung cua cac route nhan tep tai len (/api/upload-media, /api/nop-video).
+ * Than chung cua cac route nhan tep tai len (/api/upload-media, /api/nop-video,
+ * va /api/nhan-bai-zalo/tep-token — cua cho zalo-agent, xem `kiemDuongDan` va
+ * `kiemTruocKhiNhan` ben duoi).
  *
- * Hai route phai TACH RIENG vi khac nhau ba diem — xac thuc (PIN bo me vs cookie
- * thiet bi cua con), loai tep nhan, va tran dung luong — nhung phan con lai (chon
- * che do theo content-type, chot 501 khi tren Vercel ma chua bat Blob, dat ten
- * tep khi ghi vao .data/uploads, cap ve cho client upload) thi y het nhau.
+ * Hai route dau phai TACH RIENG vi khac nhau ba diem — xac thuc (PIN bo me vs
+ * cookie thiet bi cua con), loai tep nhan, va tran dung luong — nhung phan con
+ * lai (chon che do theo content-type, chot 501 khi tren Vercel ma chua bat
+ * Blob, dat ten tep khi ghi vao .data/uploads, cap ve cho client upload) thi y
+ * het nhau.
  *
  * Gop vao day vi ten tep local `<32 hex><duoi>` la mot HOP DONG voi hai ben doc
- * no — GET /api/tep va laUrlTepAppCap trong lib/media.ts. De hai route tu dat ten
- * thi doi hop dong phai sua hai cho va rat de sot mot cho.
+ * no — GET /api/tep va laUrlTepAppCap trong lib/media.ts. De tung route tu dat
+ * ten thi doi hop dong phai sua tung cho va rat de sot mot cho.
  */
 
 import { NextResponse } from 'next/server';

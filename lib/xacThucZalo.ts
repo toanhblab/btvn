@@ -1,6 +1,7 @@
 /**
- * Xac thuc cua nhan bai tu Zalo — MOT ban dung chung cho ca hai route
- * (`POST /api/nhan-bai-zalo` va `GET /api/nhan-bai-zalo/cau-hinh`).
+ * Xac thuc cua nhan bai tu Zalo — MOT ban dung chung cho ca BA route
+ * (`POST /api/nhan-bai-zalo`, `GET /api/nhan-bai-zalo/cau-hinh` va
+ * `POST /api/nhan-bai-zalo/tep-token`).
  *
  * Cung khuon voi `/api/don-video` (CRON_SECRET): khoa nam trong bien moi truong,
  * gui qua `Authorization: Bearer <...>`. KHONG dung chung CRON_SECRET — hai ben

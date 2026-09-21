@@ -403,9 +403,11 @@ một chạm rồi con mới thấy. Bốn điều phải biết TRƯỚC khi đ
   gửi lại mỗi 30 phút mãi mãi. Khuôn đúng là khuôn `lib/media.ts` đã chọn cho
   video con nộp — `POST /api/nhan-bai-zalo/tep-token` phát vé (thân chung
   `xuLyTaiTep`), agent tải thẳng lên Blob, gói tin chỉ mang `url`. Đổi lại `url`
-  là đầu vào ngoài: `laUrlBlobZaloCuaNguon` đòi host Blob của mình + đúng họ
-  `zalo/<nguon_id>/<ngày>/`, rồi `head()` hỏi kho xem tệp có thật và nặng bao
-  nhiêu — số byte vào CSDL lấy TỪ KHO, không từ số agent khai. Cửa phát vé chốt
+  là đầu vào ngoài: `phanLoaiUrlBlobZalo` đòi ĐÚNG mã kho Blob của mình (rút từ
+  `BLOB_READ_WRITE_TOKEN`; `*.blob.vercel-storage.com` là tên miền CHUNG của mọi
+  kho Vercel) + đúng họ `zalo/<nguon_id>/<ngày>/`, rồi `head()` hỏi kho xem tệp
+  có thật và nặng bao nhiêu — số byte vào CSDL lấy TỪ KHO, không từ số agent
+  khai. Cửa phát vé chốt
   đường dẫn bằng ĐÚNG hàm đó (`laDuongDanTepZalo`), đừng để hai bên lệch nhau.
 - **Cửa dành cho MÁY thì hẹp hơn màn của người, ở hai chỗ.** (1) `GET cau-hinh`
   loại BA NHÀ DEMO bằng đúng hàng rào 9 của `lib/donVideo.ts`

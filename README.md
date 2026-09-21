@@ -244,7 +244,7 @@ bằng AI là chưa hoạt động. Đặt vào `.env.local`:
 | `PIN_SECRET` | Dùng chuỗi mặc định — **phải đổi trước khi deploy** | Tự đặt |
 | `BTVN_PGLITE_DIR` | PGlite ở `.data/pg` | Chỉ để test / thử trên DB tạm (`memory://` = trong RAM) |
 | `CRON_SECRET` | `/api/don-video` trả 401 cho mọi request, tức **việc dọn video không chạy** | Tự đặt, ≥16 ký tự; Vercel tự gửi nó trong header `Authorization` khi gọi cron |
-| `ZALO_INTAKE_SECRET` | Hai cửa `/api/nhan-bai-zalo*` trả **503** cho mọi request, tức **bài từ Zalo không vào được** | Tự đặt, ≥24 ký tự; nạp cùng chuỗi đó vào Keychain của zalo-agent — xem "Bài từ Zalo" |
+| `ZALO_INTAKE_SECRET` | Ba cửa `/api/nhan-bai-zalo*` trả **503** cho mọi request, tức **bài từ Zalo không vào được** | Tự đặt, ≥24 ký tự; nạp cùng chuỗi đó vào Keychain của zalo-agent — xem "Bài từ Zalo" |
 | `DON_VIDEO_CHAY_THAT` | Việc dọn video **chỉ chạy thử**: liệt kê ra log, không xoá gì | Đặt `1` để bật xoá thật — xem "Dọn video quá hạn" |
 | `DON_VIDEO_MAX_MOI_LUOT` | Tối đa 20 tệp mỗi lượt | Hạ xuống được, không nâng lên được; đặt mà không phải số nguyên dương thì `/api/don-video` trả **400 và không dọn gì** (đọc không ra thì từ chối, không lùi về trần mặc định) |
 
@@ -267,9 +267,9 @@ Lược đồ và lý do từng bảng ở `migrations/021_nhan_bai_tu_zalo.sql`
 (đọc gói tin, luật hạn nộp, luật tệp) ở `lib/zalo.ts`; phần chạm CSDL và kho
 tệp ở `lib/nhanBaiZalo.ts`.
 
-### Hai cửa cho máy, không cho người
+### Ba cửa cho máy, không cho người
 
-Cả hai dùng `Authorization: Bearer <ZALO_INTAKE_SECRET>` (biến **riêng**,
+Cả ba dùng `Authorization: Bearer <ZALO_INTAKE_SECRET>` (biến **riêng**,
 không dùng chung `CRON_SECRET`: hai bên gọi là hai hệ khác nhau, lộ một khoá
 không được kéo theo cái kia). Chuỗi trả về là chuỗi **máy đọc**, không qua lớp
 dịch — cùng tinh thần với `/api/don-video`.
@@ -453,9 +453,10 @@ và trả `/api/tep/<tên>` — cùng khuôn với hai đường tải tệp đ�
 chấp nhận dạng URL đó **chỉ khi** máy chủ thật sự chưa có `BLOB_READ_WRITE_TOKEN`,
 để trên Vercel không có lối vòng qua phần kiểm tiền tố.
 
-**Việc dọn thật chưa có.** Mỗi tệp được ghi sẵn `han_xoa` (30 ngày) trong
-`bai_tu_zalo.dinh_kem`, nhưng `lib/donVideo.ts` cố ý chỉ đi theo
-`assignments.submitted_video_url` và chỉ nhận thư mục `nop-bai/` — nới cái đó
+**Việc dọn thật chưa có.** Mỗi tệp được ghi sẵn `han_xoa` (30 ngày kể từ **ngày
+nhận**, không phải `ngay_trong_tin` — cùng bậc với video con nộp, vốn đo từ lúc
+tệp vào kho) trong `bai_tu_zalo.dinh_kem`, nhưng `lib/donVideo.ts` cố ý chỉ đi
+theo `assignments.submitted_video_url` và chỉ nhận thư mục `nop-bai/` — nới cái đó
 ra là tháo hàng rào 3 của một đường xoá không lùi được. Dọn tệp Zalo là một
 lượt quét **khác**, việc sau.
 
@@ -581,9 +582,9 @@ app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 PIN; bố mẹ duyệt — cần PIN), tep (đọc tệp đã ghi ở
                 .data/uploads khi dev), don-video (cron dọn video quá hạn, xác
                 thực bằng CRON_SECRET), nhan-bai-zalo + nhan-bai-zalo/cau-hinh
-                (cửa cho zalo-agent, xác thực bằng ZALO_INTAKE_SECRET — KHÔNG
-                đi qua PIN/cookie), nguon-zalo (bố mẹ khai nhóm, cần PIN),
-                bai-zalo (bố mẹ duyệt / bỏ một tin, cần PIN)
+                + nhan-bai-zalo/tep-token (ba cửa cho zalo-agent, xác thực bằng
+                ZALO_INTAKE_SECRET — KHÔNG đi qua PIN/cookie), nguon-zalo (bố mẹ
+                khai nhóm, cần PIN), bai-zalo (bố mẹ duyệt / bỏ một tin, cần PIN)
 app/_components/ BanPhimPin — bàn phím số dùng chung cho 4 chỗ nhập PIN
 lib/i18n/       lớp dịch: ngonNgu (bộ ngôn ngữ + PIN demo), chu (T), en/ja/ko (từ
                 điển, khoá = câu tiếng Việt), server (chu()), client (useT)
@@ -595,9 +596,9 @@ lib/            db (Neon|PGlite), store (truy vấn theo familyId), auth (PIN +
                 + trừ điểm + duyệt đổi thưởng, dùng chung với test), ngay (mốc
                 ngày + múi giờ nhà), donVideo (luật + hàng rào dọn video quá
                 hạn), media + upload-route (giới hạn tệp, tên/URL tệp, thân
-                chung hai route tải lên), zalo (hợp đồng gói tin từ Zalo — hàm
+                chung ba route tải lên), zalo (hợp đồng gói tin từ Zalo — hàm
                 thuần, không import gì lúc chạy), nhanBaiZalo (nguồn + tin +
-                duyệt), xacThucZalo (khoá của hai cửa nhận bài), avatar, ai,
+                duyệt), xacThucZalo (khoá của ba cửa nhận bài), avatar, ai,
                 types
 proxy.ts        chặn /bome/* khi chưa nhập PIN
 migrations/     từng bước thay đổi lược đồ, chạy theo thứ tự tên tệp (bám PRD mục 7)
@@ -989,5 +990,5 @@ chung.
    không) và **điện thoại thật**. Không thay thế được bằng máy tính.
 5. Muốn bài từ Zalo chạy: đặt `ZALO_INTAKE_SECRET` trên Vercel rồi Redeploy, và
    nạp **cùng chuỗi đó** vào Keychain `com.toanhblab.zalo-agent` account
-   `btvn-intake-secret` trên Mac mini. Thiếu biến thì hai cửa
+   `btvn-intake-secret` trên Mac mini. Thiếu biến thì ba cửa
    `/api/nhan-bai-zalo*` trả 503 và zalo-agent báo ngay, không âm thầm hỏng.
