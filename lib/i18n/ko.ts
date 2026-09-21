@@ -612,6 +612,7 @@ export const KO: Record<Key, string> = {
   'tệp hỏng': '파일이 손상되었습니다',
   'tệp không nằm trong kho của app': '앱 보관소에 없는 파일입니다',
   'kho tệp không tìm thấy tệp này': '앱 보관소에서 이 파일을 찾지 못했습니다',
+  'cô gửi nhiều tệp hơn mức app nhận': '선생님이 앱이 받는 개수보다 많은 파일을 보냈습니다',
   'tệp không nằm trong kho tệp của app này': '이 앱 자체 보관소에 없는 파일입니다',
   '(không đọc được tên nhóm)': '(그룹 이름을 읽을 수 없습니다)',
   '(không đọc được tên người gửi)': '(보낸 사람 이름을 읽을 수 없습니다)',

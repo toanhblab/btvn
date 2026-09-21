@@ -220,12 +220,61 @@ test('thieu url -> bo rieng voi ly do tep-hong; QUA NHIEU TEP van hong ca goi', 
   const khongTen = doc({ ...GOI_MAU, dinh_kem: [tepMau({ ten: '', url: '' })] });
   assert.ok('goi' in khongTen);
   assert.equal(khongTen.goi.bo_qua[0].ten, '#1');
-  // Mot goi 200 tep la mot goi SAI, khong phai mot tin co vai tep hong
-  const nhieu = doc({
-    ...GOI_MAU,
-    dinh_kem: Array.from({ length: MAX_TEP_MOI_GOI + 1 }, () => GOI_MAU.dinh_kem[0]),
-  });
-  assert.ok('loi' in nhieu && nhieu.loi === 'qua-nhieu-tep');
+});
+
+/* ---------------- Qua nhieu tep: bo TEP DU, khong hong ca tin ---------------- */
+
+const anhSo = (n: number) => Array.from({ length: n }, (_, i) => tepMau({
+  ten: `anh-${i + 1}.jpg`, loai: 'image/jpeg',
+  url: `${KHO}/zalo/nzl_cambridge/2026-09-18/anh-${i + 1}.jpg`,
+}));
+
+test('goi 12 anh hop le: giu 10 tep dau, 2 tep du vao bo_qua — tin KHONG hong', () => {
+  // Mot tin co gui 12 tam anh la tin HOP LE co nhieu tep hon muc app xu. Tra 400
+  // cho ca goi la khoa vinh vien tin do (agent gui lai moi 30 phut), va tu khi
+  // tep duoc tai len TRUOC qua ve thi no con de lai 12 tep mo coi moi luot.
+  const kq = doc({ ...GOI_MAU, dinh_kem: anhSo(12) });
+  assert.ok('goi' in kq, JSON.stringify(kq));
+  assert.equal(kq.goi.dinh_kem.length, MAX_TEP_MOI_GOI);
+  const du = kq.goi.bo_qua.filter((t) => t.ly_do === 'qua-nhieu-tep');
+  assert.equal(du.length, 2);
+  // Ten hien va chi_tiet: dung tep bi cat, va tong so tep trong tin
+  assert.deepEqual(du.map((t) => t.ten), ['anh-11.jpg', 'anh-12.jpg']);
+  assert.deepEqual(du.map((t) => t.chi_tiet), ['12', '12']);
+  // Muoi tep giu lai phai la muoi tep DAU, khong phai mot tap bat ky
+  assert.deepEqual(kq.goi.dinh_kem.map((t) => t.thu_tu), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+});
+
+test('THU TU: loc tung tep TRUOC, cat theo tran SAU — tep hong khong chiem suat cua tep lanh', () => {
+  // 12 tep, 3 trong so do sai loai. Loc truoc thi con 9 tep lanh -> KHONG ai bi
+  // cat. Cat truoc thi 10 tep dau (gom ca 3 tep .docx) chiem het suat va 2 tep
+  // anh lanh o cuoi bi bo oan — dao thu tu la bai nay do.
+  const tep = anhSo(12);
+  for (const i of [0, 4, 9]) {
+    tep[i] = tepMau({ ten: `worksheet-${i}.docx`, loai: 'application/zip',
+                      url: `${KHO}/zalo/nzl_cambridge/2026-09-18/w-${i}.docx` });
+  }
+  const kq = doc({ ...GOI_MAU, dinh_kem: tep });
+  assert.ok('goi' in kq, JSON.stringify(kq));
+  assert.equal(kq.goi.dinh_kem.length, 9);
+  assert.equal(kq.goi.bo_qua.filter((t) => t.ly_do === 'loai-khong-nhan').length, 3);
+  assert.equal(kq.goi.bo_qua.filter((t) => t.ly_do === 'qua-nhieu-tep').length, 0);
+});
+
+test('du ba truong bat buoc thi docGoiTin KHONG BAO GIO tra loi, dinh kem the nao cung vay', () => {
+  const dayDu = { nguon_id: 'nzl_cambridge', ma_tin: 'm', nguyen_van: 'co giao bai' };
+  for (const dinhKem of [
+    undefined, null, [], 'khong-phai-mang', 42,
+    anhSo(200),
+    Array.from({ length: 30 }, () => tepMau({ loai: 'application/zip' })),
+    Array.from({ length: 30 }, () => tepMau({ url: '' })),
+    Array.from({ length: 30 }, () => tepMau({ kich_thuoc: MAX_BYTES_MOI_TEP + 1 })),
+    [null, undefined, {}, 'rac'],
+  ]) {
+    const kq = doc({ ...dayDu, dinh_kem: dinhKem });
+    assert.ok('goi' in kq, `dinh_kem=${JSON.stringify(dinhKem)?.slice(0, 60)}: ${JSON.stringify(kq)}`);
+    assert.ok(kq.goi.dinh_kem.length <= MAX_TEP_MOI_GOI);
+  }
 });
 
 test('ma_nhom la truong TUY CHON: co thi doc ra, khong thi null', () => {

@@ -38,6 +38,7 @@
 
 import { test, before, beforeEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 
 process.env.BTVN_PGLITE_DIR = 'memory://';
 delete process.env.DATABASE_URL; delete process.env.POSTGRES_URL;
@@ -310,19 +311,44 @@ test('401 khi thieu hoac sai khoa, va KHONG lo ly do nao', async () => {
 });
 
 test('400 khi THIEU TRUONG bat buoc — chan TRUOC khi cham CSDL va kho tep', async () => {
-  const thieu = await goiCua({ ma_tin: 'm', nguyen_van: 'x' });
-  assert.equal(thieu.status, 400);
-  assert.equal((await thieu.json()).loi, 'thieu-nguon-id');
-
-  const quaNhieuTep = await goiCua({
-    ...GOI_MAU,
-    dinh_kem: Array.from({ length: 11 }, () => GOI_MAU.dinh_kem[0]),
-  });
-  assert.equal(quaNhieuTep.status, 400);
-  assert.equal((await quaNhieuTep.json()).loi, 'qua-nhieu-tep');
-
+  for (const [nhan, goi] of [
+    ['thieu-nguon-id', { ma_tin: 'm', nguyen_van: 'x' }],
+    ['thieu-ma-tin', { nguon_id: NGUON, nguyen_van: 'x' }],
+    ['thieu-nguyen-van', { nguon_id: NGUON, ma_tin: 'm' }],
+  ] as const) {
+    const res = await goiCua(goi);
+    assert.equal(res.status, 400, nhan);
+    assert.equal((await res.json()).loi, nhan);
+  }
   assert.equal(await demBaiCuaNguon(), 0);
   assert.equal(daHoiKho.length, 0, 'goi hong khong duoc dung toi kho tep');
+});
+
+test('goi QUA NHIEU TEP van vao (201): 10 tep dau duoc nhan, tep du bao ra o tep_bo_qua', async () => {
+  // Truoc day ca goi an 400 — ma agent da tai het tep len kho TRUOC do (qua ve),
+  // nen moi luot quet lai de thanh mot bo tep mo coi moi ma tin thi khong bao gio
+  // vao. Gio no di dung luat "mot tep la khong lam hong ca tin".
+  const tep = Array.from({ length: 12 }, (_, i) => {
+    const url = `${KHO}/zalo/${NGUON}/2026-09-18/anh-${i + 1}.jpg`;
+    tepTrenKho.set(url, 1024);
+    return { ten: `anh-${i + 1}.jpg`, loai: 'image/jpeg', kich_thuoc: 1024, url,
+             gui_luc: GOI_MAU.dinh_kem[0].gui_luc };
+  });
+
+  const res = await goiCua({ ...GOI_MAU, ma_tin: 'tin_nhieu_tep', dinh_kem: tep });
+  assert.equal(res.status, 201);
+  const than = await res.json();
+  assert.ok(than.so_bai_nhap > 0, 'bo me van phai co bai de duyet');
+  assert.deepEqual(
+    than.tep_bo_qua.map((t: { ten: string; ly_do: string }) => [t.ten, t.ly_do]),
+    [['anh-11.jpg', 'qua-nhieu-tep'], ['anh-12.jpg', 'qua-nhieu-tep']]);
+
+  const [dong] = await db.query(`SELECT dinh_kem FROM bai_tu_zalo WHERE ma_tin = 'tin_nhieu_tep'`);
+  assert.equal((dong.dinh_kem as unknown[]).length, 10);
+
+  // Va bo me DOC LAI duoc ly do o muc cho duyet
+  const [muc] = await zaloStore.listBaiChoDuyet(FAM);
+  assert.deepEqual(muc.bai.tepBoQua.map((t) => t.ly_do), ['qua-nhieu-tep', 'qua-nhieu-tep']);
 });
 
 test('mot tep .zip cua co KHONG lam hong ca tin: 201, tin vao du, tep do bao ra', async () => {
@@ -1156,6 +1182,75 @@ test('"Tách lại" bi tu choi tren tin DA DUYET / DA BO, va bai THAT cua tin da
   // Va nha khac khong voi toi duoc
   assert.deepEqual(
     await zaloStore.tachLaiBaiZalo(FAM_KHAC, bai_zalo_id), { ok: false, loi: 'khong-thay' });
+});
+
+/* ---------------- 5e. Kho khong doc ra ma kho ---------------- */
+
+/**
+ * `MA_KHO` duoc doc MOT LAN luc nap module, nen ca nay phai chay trong mot TIEN
+ * TRINH KHAC voi token sai khuon — cung cach lib/man-con-mui-gio.test.ts doi TZ.
+ * Tra ve `{ status, loi }` cua mot yeu cau XIN VE hop le.
+ */
+function xinVeVoiToken(token: string): { status: number; loi: string } {
+  const HOOK = new URL('../scripts/test-hook.mjs', import.meta.url).pathname;
+  const url = (x: string) => JSON.stringify(new URL(x, import.meta.url).href);
+  const kichBan = `
+    process.env.BTVN_PGLITE_DIR = 'memory://';
+    delete process.env.DATABASE_URL; delete process.env.POSTGRES_URL;
+    delete process.env.DATABASE_URL_UNPOOLED; delete process.env.POSTGRES_URL_NON_POOLING;
+    process.env.BLOB_READ_WRITE_TOKEN = ${JSON.stringify(token)};
+    process.env.ZALO_INTAKE_SECRET = 'khoa';
+    const { query, queryTx } = await import(${url('./db.ts')});
+    const { chayMigrations } = await import(${url('../scripts/db.mjs')});
+    await chayMigrations({
+      query: (t, p = []) => query(t, p),
+      chayGoi: async (cau) => { await queryTx(cau); },
+    });
+    const { POST } = await import(${url('../app/api/nhan-bai-zalo/tep-token/route.ts')});
+    const tham = new URLSearchParams({
+      nguon_id: 'nzl_cambridge', ma_tin: 'tin_moi',
+      tin_gui_luc: '2026-09-18T20:03:17+07:00', tep_gui_luc: '2026-09-18T20:03:21+07:00',
+    });
+    const res = await POST(new Request('http://localhost/api/nhan-bai-zalo/tep-token?' + tham, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer khoa' },
+      body: JSON.stringify({ type: 'blob.generate-client-token', payload: {
+        pathname: 'zalo/nzl_cambridge/2026-09-18/video.mp4',
+        callbackUrl: 'http://localhost/api/nhan-bai-zalo/tep-token',
+        clientPayload: null, multipart: false,
+      } }),
+    }));
+    const than = await res.json().catch(() => ({}));
+    process.stdout.write(JSON.stringify({ status: res.status, loi: than.loi ?? '' }));
+    process.exit(0);
+  `;
+  const out = execFileSync(
+    process.execPath,
+    ['--import', HOOK, '--input-type=module', '--eval', kichBan],
+    { encoding: 'utf8' }
+  );
+  return JSON.parse(out);
+}
+
+test('token co nhung KHONG rut ra ma kho: cua ve TU CHOI KY (501), khong de cua nhan tin bo tep', async () => {
+  // Cua nhan tin tu choi MOI url Blob khi khong co ma kho hop le. Neu cua ve van
+  // ky thi agent day het tep cua co len kho, cua nhan tin bo sach voi 'ngoai-kho',
+  // va dong `bai_tu_zalo` da ghi nen moi lan quet lai an 409: tep nam tren kho
+  // mai ma khong `dinh_kem` nao tro toi, tuc khong `han_xoa` va khong luot don
+  // nao thu hoi duoc. Hai cua phai tu choi CUNG mot tap.
+  for (const token of [
+    'vercel_blob_rw_test',                  // thieu phan bi mat
+    'vercel_blob_rw_kho_bi-mat-co-gach',    // bi mat co ky tu ngoai [A-Za-z0-9]
+    'blob_rw_kho_bimat',                    // khuon khac hoan toan
+  ]) {
+    assert.deepEqual(xinVeVoiToken(token), { status: 501, loi: 'kho-khong-doc-duoc' }, token);
+  }
+
+  // Doi chieu: cung yeu cau do voi token DUNG khuon thi KHONG bi 501 o day nua
+  // (no di tiep, va nguon 'nzl_cambridge' khong co trong CSDL rong cua tien trinh
+  // con nen dung o 404 — dieu can ghim la no KHONG con dung o hang rao kho).
+  assert.deepEqual(xinVeVoiToken('vercel_blob_rw_kho_bimatgia'),
+    { status: 404, loi: 'khong-co-nguon' });
 });
 
 /* ---------------- 6. Khong nhin sang nha khac ---------------- */

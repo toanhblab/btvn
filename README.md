@@ -319,7 +319,7 @@ kèm câu đã dịch — giao diện bố mẹ/con đọc trường đó.
 | Mã | Khi nào |
 | --- | --- |
 | `201` | Xong. `{ bai_zalo_id, so_bai_nhap, con: [{ id, ten }], tep_bo_qua: [{ ten, ly_do }] }` |
-| `400` | Gói hỏng: **thiếu trường bắt buộc** (`nguon_id` / `ma_tin` / `nguyen_van`), hoặc quá 10 tệp |
+| `400` | Gói hỏng: **thiếu trường bắt buộc** (`nguon_id` / `ma_tin` / `nguyen_van`) — chỉ ba mã này, không còn mã nào liên quan tới tệp |
 | `401` | Thiếu hoặc sai khoá — **không nói là cái nào** |
 | `404` | `nguon_id` không có, nguồn đang tắt, hoặc nguồn chưa gắn con nào |
 | `409` | `ma_tin` đã có cho nguồn đó — **không tạo gì**. zalo-agent chạy lại mỗi 30 phút nên đây là đường bình thường, không phải lỗi |
@@ -327,7 +327,11 @@ kèm câu đã dịch — giao diện bố mẹ/con đọc trường đó.
 | `503` | Máy chủ **chưa đặt `ZALO_INTAKE_SECRET`** |
 
 `POST /api/nhan-bai-zalo/tep-token?nguon_id=&ma_tin=&tin_gui_luc=&tep_gui_luc=`
-dùng **cùng khoá** đó. **Cả bốn tham số đều bắt buộc** — `tin_gui_luc` là giờ gửi
+dùng **cùng khoá** đó, và thêm `501 kho-khong-doc-duoc` khi máy chủ có
+`BLOB_READ_WRITE_TOKEN` nhưng **không rút được mã kho** từ nó: lúc đó cửa nhận
+tin từ chối mọi url Blob, nên ký vé chỉ để agent đẩy tệp lên kho rồi bước sau bỏ
+sạch với `ngoai-kho` và 409 khoá vĩnh viễn. Cả hai cửa hỏi **cùng một hàm**
+(`trangThaiKhoZalo`), không chép lại điều kiện. **Cả bốn tham số đều bắt buộc** — `tin_gui_luc` là giờ gửi
 của TIN, `tep_gui_luc` là giờ gửi của chính tệp sắp tải lên (ISO 8601, nhớ
 percent-encode dấu `+` của múi giờ thành `%2B`). Mốc **không đọc được** cũng là
 `422 thieu-gio-gui`, không phải "cứ cho qua": quên `%2B` thì `URLSearchParams`
@@ -379,7 +383,7 @@ agent tự khai quá 25MB, thiếu `url`, `url` không phải tệp của kho m�
 `zalo/<nguồn>/`, hay kho báo không có tệp đó — thì **bỏ riêng tệp đó** và ghi vào
 `tep_bo_qua` (`[{ ten, ly_do, chi_tiet? }]`, `ly_do` ∈ `loai-khong-nhan` /
 `qua-nang` / `tep-hong` / `url-khong-nhan` / `khong-thay-trong-kho` /
-`ngoai-cua-so` / `thieu-gio-gui` / `ngoai-kho`) — tin vẫn
+`ngoai-cua-so` / `thieu-gio-gui` / `ngoai-kho` / `qua-nhieu-tep`) — tin vẫn
 vào, bố mẹ vẫn có bài để duyệt, và mục chờ duyệt **hiện** danh sách tệp bị bỏ để
 họ không tưởng là cô quên gửi. Trước đây cả gói trả 400, mà agent gửi lại mỗi 30
 phút nên một tờ `.docx` là khoá vĩnh viễn tin giao bài đó. Cột
@@ -413,7 +417,13 @@ chọn đường tải thẳng cho video con nộp, nên bài từ Zalo đi cùn
 chỉ mang `url`.
 
 Chỉ ảnh / âm thanh / video / pdf, tối đa **25MB mỗi tệp**, tối đa 10 tệp một
-gói. Cả `gioi_han` của `GET cau-hinh` nói đủ những điều đó **cộng cách tải**, để
+gói — và **quá 10 tệp KHÔNG làm hỏng cả tin**: mười tệp đầu (sau khi đã loại
+tệp sai loại / thiếu `url` / quá nặng) vào bình thường, phần dư báo trong
+`tep_bo_qua` với `ly_do: 'qua-nhieu-tep'`. Một tin cô gửi 12 tấm ảnh là tin
+**hợp lệ** có nhiều tệp hơn mức app xử, không phải gói sai; mà từ khi tệp được
+tải lên **trước** qua vé thì một `400` ở đây còn tệ hơn — agent đẩy hết 12 tệp
+lên kho rồi mới biết, không dòng `dinh_kem` nào trỏ tới chúng nên không
+`han_xoa`, và 30 phút sau nó tải lại cả 12 tệp rồi lại ăn `400`. Cả `gioi_han` của `GET cau-hinh` nói đủ những điều đó **cộng cách tải**, để
 zalo-agent biết **trước** thay vì gửi lên rồi đọc `tep_bo_qua`:
 
 ```json

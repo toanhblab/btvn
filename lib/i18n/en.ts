@@ -636,6 +636,7 @@ export const EN = {
   'tệp hỏng': 'broken file',
   'tệp không nằm trong kho của app': 'file is not in the app storage',
   'kho tệp không tìm thấy tệp này': 'the app storage cannot find this file',
+  'cô gửi nhiều tệp hơn mức app nhận': 'the teacher sent more files than the app accepts',
   'tệp không nằm trong kho tệp của app này': 'the file is not in this app\'s own storage',
   '(không đọc được tên nhóm)': '(group name unreadable)',
   '(không đọc được tên người gửi)': '(sender name unreadable)',

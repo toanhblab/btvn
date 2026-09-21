@@ -612,6 +612,7 @@ export const JA: Record<Key, string> = {
   'tệp hỏng': 'ファイルが壊れています',
   'tệp không nằm trong kho của app': 'アプリの保管庫にないファイルです',
   'kho tệp không tìm thấy tệp này': 'アプリの保管庫でこのファイルが見つかりません',
+  'cô gửi nhiều tệp hơn mức app nhận': '先生がアプリの受け取り上限を超える数のファイルを送りました',
   'tệp không nằm trong kho tệp của app này': 'このアプリ自身の保管庫にないファイルです',
   '(không đọc được tên nhóm)': '(グループ名を読み取れません)',
   '(không đọc được tên người gửi)': '(送信者名を読み取れません)',

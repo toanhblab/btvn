@@ -264,7 +264,8 @@ export type LyDoBoTep =
   | 'khong-thay-trong-kho'
   | 'ngoai-cua-so'
   | 'thieu-gio-gui'
-  | 'ngoai-kho';
+  | 'ngoai-kho'
+  | 'qua-nhieu-tep';
 
 export interface TepBoQua {
   ten: string;
@@ -295,15 +296,14 @@ export interface GoiTinZalo {
  * zalo-agent goi, khong phai nguoi), nen khong qua lop dich. Cung tinh than
  * voi /api/don-video.
  *
- * Danh sach nay CHI con nhung thu lam ca goi vo nghia: thieu truong bat buoc,
- * hoac nhieu tep hon tran (mot goi 200 tep la mot goi sai, khong phai mot tin
- * co vai tep hong). MOT TEP HONG KHONG CON O DAY — xem `docGoiTin`.
+ * Danh sach nay CHI con BA loi thieu truong bat buoc — khong co gi de luu, va
+ * mot goi thieu `nguon_id`/`ma_tin` thi cung khong xin duoc ve nen khong sinh
+ * tep mo coi. MOI CHUYEN LIEN QUAN TOI TEP khong con o day: xem `docGoiTin`.
  */
 export type LoiGoiTin =
   | 'thieu-nguon-id'
   | 'thieu-ma-tin'
-  | 'thieu-nguyen-van'
-  | 'qua-nhieu-tep';
+  | 'thieu-nguyen-van';
 
 export const MAX_CHU_NGUYEN_VAN = 20_000;
 
@@ -331,6 +331,17 @@ function mocISO(v: unknown): string | null {
  * VINH VIEN tin giao bai do: khong co ban nhap, khong co muc cho duyet, khong
  * ai biet vi sao.
  *
+ * QUA `MAX_TEP_MOI_GOI` TEP cung di theo dung luat do, khong con la 400. Mot tin
+ * co gui 12 tam anh la tin HOP LE co nhieu tep hon muc app xu, khong phai goi
+ * sai — ma tu khi tep duoc tai len TRUOC (qua ve) thi mot 400 o day con te hon
+ * truoc: agent da day het 12 tep len kho roi moi biet, khong dong `bai_tu_zalo`
+ * nao tro toi chung nen khong `han_xoa` va khong luot don nao thu hoi duoc, roi
+ * 30 phut sau no tai lai ca 12 tep va lai an 400.
+ *
+ * THU TU la hop dong: loc TUNG TEP truoc (sai loai / thieu url / qua nang van
+ * vao `bo_qua` y nhu cu), CHI PHAN CON LAI moi bi cat theo `MAX_TEP_MOI_GOI`.
+ * Dao thu tu la tep hong chiem mat suat cua tep lanh.
+ *
  * `url` chi duoc kiem HINH DANG o day (co mat, khong qua dai). Kiem "tep nay co
  * phai cua kho minh khong" nam o lib/nhanBaiZalo.ts, vi no phai biet may chu da
  * bat Vercel Blob hay chua.
@@ -348,7 +359,6 @@ export function docGoiTin(
   if (!nguyenVan) return { loi: 'thieu-nguyen-van' };
 
   const tho = Array.isArray(b.dinh_kem) ? b.dinh_kem : [];
-  if (tho.length > MAX_TEP_MOI_GOI) return { loi: 'qua-nhieu-tep' };
 
   const dinhKem: TepTrongGoi[] = [];
   const boQua: TepBoQua[] = [];
@@ -383,6 +393,14 @@ export function docGoiTin(
       gui_luc: mocISO(o.gui_luc),
       url,
       thu_tu: i,
+    });
+  }
+
+  for (const t of dinhKem.splice(MAX_TEP_MOI_GOI)) {
+    boQua.push({
+      ten: tenHienTep(t.ten, t.thu_tu),
+      ly_do: 'qua-nhieu-tep',
+      chi_tiet: String(tho.length),
     });
   }
 

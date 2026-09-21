@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { moCuaNhanTin } from '@/lib/nhanBaiZalo';
+import { moCuaNhanTin, trangThaiKhoZalo } from '@/lib/nhanBaiZalo';
 import { kiemCuaSoChoVe, laDuongDanTepZalo, LOAI_TEP_NHAN, MAX_BYTES_MOI_TEP } from '@/lib/zalo';
 import { xuLyTaiTep } from '@/lib/upload-route';
 import { xacThucZalo } from '@/lib/xacThucZalo';
@@ -36,7 +36,12 @@ export const maxDuration = 60;
  *      no tu choi DUNG tap tin ma buoc sau cung tu choi: mot bo tep ky duoc ve
  *      roi bi 404 o buoc gui tin la tep mo coi khong `han_xoa`, khong luot don
  *      nao thu hoi duoc (kho 1GB da dung 219MB).
- *   3. CUA SO NHAN TEP. `tin_gui_luc` va `tep_gui_luc` la tham so BAT BUOC:
+ *   3. KHO PHAI DOC RA DUOC MA KHO. `trangThaiKhoZalo()` — CUNG ham ma
+ *      `kiemUrlTep` cua cua nhan tin hoi — tra 'kho-khong-doc-duoc' khi co
+ *      `BLOB_READ_WRITE_TOKEN` nhung khong rut duoc ma kho. Luc do cua nhan tin
+ *      tu choi MOI url Blob, nen ky ve o day la day tep cua co len kho de buoc
+ *      sau bo sach voi `ngoai-kho`, roi 409 khoa vinh vien. Tu choi 501 cho som.
+ *   4. CUA SO NHAN TEP. `tin_gui_luc` va `tep_gui_luc` la tham so BAT BUOC:
  *      thieu mot cai la khong biet tep co vao duoc khong, va "khong biet" o day
  *      khong duoc thanh "cu phat ve" — 422 `thieu-gio-gui`. Tep ngoai
  *      `cua_so_dinh_kem_phut` cua nguon cung 422. Luat gio nam o MOT ham
@@ -64,7 +69,8 @@ export const maxDuration = 60;
  *   404  nguon_id khong co, nguon dang tat, hoac nguon chua gan con nao
  *   409  `ma_tin` da co cho nguon do
  *   422  thieu `tin_gui_luc` / `tep_gui_luc`, hoac tep gui ngoai cua so cua nguon
- *   501  chua bat Vercel Blob (tren Vercel), hoac che do dev khong dung duoc
+ *   501  chua bat Vercel Blob (tren Vercel), khong doc ra ma kho, hoac che do
+ *        dev khong dung duoc
  *   503  may chu chua dat ZALO_INTAKE_SECRET
  */
 export async function POST(req: Request) {
@@ -82,6 +88,9 @@ export async function POST(req: Request) {
   return xuLyTaiTep(req, {
     auth: async () => xacThucZalo(req).ok,
     kiemTruocKhiNhan: async () => {
+      if (trangThaiKhoZalo() === 'kho-khong-doc-duoc') {
+        return NextResponse.json({ loi: 'kho-khong-doc-duoc' }, { status: 501 });
+      }
       if (!nguonId) return NextResponse.json({ loi: 'thieu-nguon-id' }, { status: 400 });
       if (!maTin) return NextResponse.json({ loi: 'thieu-ma-tin' }, { status: 400 });
       const cong = await moCuaNhanTin(nguonId, maTin);

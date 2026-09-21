@@ -119,6 +119,7 @@ function LyDoBoTepChu({ ly_do }: { ly_do: LyDoBoTep }) {
     'ngoai-cua-so': T('cô gửi ngoài khoảng thời gian nhận tệp'),
     'thieu-gio-gui': T('tệp không có giờ gửi để đối chiếu'),
     'ngoai-kho': T('tệp không nằm trong kho tệp của app này'),
+    'qua-nhieu-tep': T('cô gửi nhiều tệp hơn mức app nhận'),
   };
   return <>{chu[ly_do]}</>;
 }

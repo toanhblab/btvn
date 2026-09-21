@@ -71,6 +71,31 @@ const hasBlob = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 /** Ma kho Blob CUA MINH — `null` la khong co kho hop le, va khi do moi url Blob bi tu choi. */
 const MA_KHO = maKhoBlob(process.env.BLOB_READ_WRITE_TOKEN);
 
+/**
+ * Kho tep cua may chu nay dang o trang thai nao — MOT cau tra loi cho CA HAI
+ * cua danh cho may, de chung khong bao gio lech nhau.
+ *
+ *   'khong-co-kho'        dev chua bat Blob. Duong lui `/api/tep/<ten>` con dung.
+ *   'kho-san-sang'        co token VA doc ra duoc ma kho.
+ *   'kho-khong-doc-duoc'  co token nhung KHONG ra ma kho (token chi-doc, phan bi
+ *                         mat co ky tu ngoai [A-Za-z0-9], hay khuon doi trong
+ *                         tuong lai).
+ *
+ * Trang thai thu ba la ly do ham nay ton tai. `kiemUrlTep` tu choi MOI url Blob
+ * khi khong co ma kho — dung, vi doc khong ra thi phai tu choi. Nhung neu cua VE
+ * van ky binh thuong thi agent day het tep cua co len kho roi cua nhan tin moi
+ * bo sach chung voi `ngoai-kho`: dong `bai_tu_zalo` da ghi nen moi lan quet lai
+ * an 409, tep nam tren kho mai ma khong `dinh_kem` nao tro toi — tuc khong
+ * `han_xoa`, khong luot don nao thu hoi duoc. Nen cua ve phai HOI CUNG CAU HOI
+ * NAY va tu choi ky (501), chu khong chep lai dieu kien `MA_KHO === null`.
+ */
+export type TrangThaiKhoZalo = 'khong-co-kho' | 'kho-san-sang' | 'kho-khong-doc-duoc';
+
+export function trangThaiKhoZalo(): TrangThaiKhoZalo {
+  if (!hasBlob) return 'khong-co-kho';
+  return MA_KHO ? 'kho-san-sang' : 'kho-khong-doc-duoc';
+}
+
 /* ---------------- Nguon Zalo (cau hinh) ---------------- */
 
 export interface NguonZalo {
@@ -445,7 +470,9 @@ export async function moCuaNhanTin(
  *     kho khong chan nham no o may dev (o do khong co ma kho nao ca).
  */
 function kiemUrlTep(url: string, nguonId: string): 'nhan' | 'ngoai-kho' | 'url-khong-nhan' {
-  if (!hasBlob && url.startsWith('/api/tep/') && laUrlTepAppCap(url)) return 'nhan';
+  if (trangThaiKhoZalo() === 'khong-co-kho' && url.startsWith('/api/tep/') && laUrlTepAppCap(url)) {
+    return 'nhan';
+  }
   const loai = phanLoaiUrlBlobZalo(url, nguonId, MA_KHO);
   if (loai === 'kho-minh') return 'nhan';
   return loai === 'kho-la' ? 'ngoai-kho' : 'url-khong-nhan';
