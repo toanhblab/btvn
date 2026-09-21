@@ -379,7 +379,7 @@ agent tự khai quá 25MB, thiếu `url`, `url` không phải tệp của kho m�
 `zalo/<nguồn>/`, hay kho báo không có tệp đó — thì **bỏ riêng tệp đó** và ghi vào
 `tep_bo_qua` (`[{ ten, ly_do, chi_tiet? }]`, `ly_do` ∈ `loai-khong-nhan` /
 `qua-nang` / `tep-hong` / `url-khong-nhan` / `khong-thay-trong-kho` /
-`ngoai-cua-so` / `thieu-gio-gui`) — tin vẫn
+`ngoai-cua-so` / `thieu-gio-gui` / `ngoai-kho`) — tin vẫn
 vào, bố mẹ vẫn có bài để duyệt, và mục chờ duyệt **hiện** danh sách tệp bị bỏ để
 họ không tưởng là cô quên gửi. Trước đây cả gói trả 400, mà agent gửi lại mỗi 30
 phút nên một tờ `.docx` là khoá vĩnh viễn tin giao bài đó. Cột
@@ -423,9 +423,14 @@ zalo-agent biết **trước** thay vì gửi lên rồi đọc `tep_bo_qua`:
 ```
 
 `url` là **đầu vào từ bên ngoài** nên cửa nhận chốt nó hai tầng, và cả hai đều
-cần: `laUrlBlobZaloCuaNguon` (lib/zalo.ts) đòi tệp phải nằm trên host Blob của
-chính mình, đúng họ `zalo/<nguon_id>/<yyyy-mm-dd>/` với **đúng một** đoạn tên
-cuối — chặn tệp của lớp khác, chặn `nop-bai/` của video con nộp, chặn địa chỉ
+cần: `phanLoaiUrlBlobZalo` (lib/zalo.ts) đòi tệp phải nằm trên **kho Blob của
+chính mình** — ghim theo mã kho rút từ `BLOB_READ_WRITE_TOKEN`
+(`vercel_blob_rw_<maKho>_…`, xem `maKhoBlob`), vì
+`*.blob.vercel-storage.com` là tên miền **chung** của mọi kho Vercel Blob chứ
+không phải của riêng mình; url của kho khác bị bỏ với lý do `ngoai-kho`, và token
+sai khuôn thì coi như **không có kho hợp lệ** nên mọi url Blob đều bị từ chối
+(đọc không ra nghĩa là từ chối, cùng tinh thần với `tranNguoiDat`). Rồi đúng họ
+`zalo/<nguon_id>/<yyyy-mm-dd>/` với **đúng một** đoạn tên cuối — chặn tệp của lớp khác, chặn `nop-bai/` của video con nộp, chặn địa chỉ
 ngoài mà trình duyệt bố mẹ sẽ tải về khi mở mục chờ duyệt. Rồi `head()` hỏi lại
 kho: tệp có thật không, và nặng bao nhiêu — **số byte ghi vào CSDL lấy từ kho,
 không lấy từ `kich_thuoc` agent khai**. Cửa phát vé chốt đường dẫn bằng **đúng**

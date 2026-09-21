@@ -196,8 +196,9 @@ Bốn việc bố mẹ làm được:
 
 - **Sửa đề bài ngay tại chỗ** — gõ vào ô rồi bấm ra ngoài là lưu.
 - **"Sửa kỹ"** — mở màn sửa bài đầy đủ (đổi môn, hạn, giọng đọc, đính kèm),
-  giống hệt sửa một bài bình thường. Thùng rác bên cạnh để bỏ riêng một bài app
-  tách nhầm.
+  giống hệt sửa một bài bình thường. Màn đó có dòng *"Bài này đang chờ duyệt,
+  con chưa thấy"* để bố mẹ biết mình đang sửa một bản nháp; bấm Lưu là quay về
+  đúng mục chờ duyệt. Thùng rác bên cạnh để bỏ riêng một bài app tách nhầm.
 - **"Duyệt N bài cho các con"** — một chạm, tất cả bài của tin đó thành bài thật
   và hiện ngay trên máy các con.
 - **"Không phải bài"** — cô nhắn chuyện khác (nhắc nộp tiền, thông báo nghỉ)?
@@ -205,6 +206,17 @@ Bốn việc bố mẹ làm được:
 
 > Chưa bấm Duyệt thì con **không thấy gì cả** — không hiện trên máy con, không
 > tính vào "Đang chờ" ở Trang chủ, và không ảnh hưởng gì tới ⭐ của con.
+
+**Nếu app báo "Tách bài chưa xong".** Thỉnh thoảng tin của cô vào đủ nhưng app
+chưa kịp cắt nó ra thành từng bài (mạng lỗi giữa lúc đang lưu). Lúc đó mục đó
+hiện một khung đỏ **"Tách bài chưa xong"** kèm nút **"Tách lại"** — bấm nút đó
+là app làm lại, rồi danh sách bài hiện ra như thường. Bấm được nhiều lần, không
+sợ bài bị nhân đôi.
+
+> **Đừng bấm "Không phải bài" trong trường hợp này.** Nút đó nói với app rằng
+> tin này không phải bài tập, nên từ đó **máy ở nhà sẽ không đưa tin đó vào lại
+> nữa** — muốn có bài thì chỉ còn cách tự gõ tay. Nguyên văn tin của cô vẫn nằm
+> ngay trên khung đỏ, nên cứ **"Tách lại"** trước đã.
 
 **Khai nhóm Zalo của lớp.** Vào **Cài đặt → "Nhóm Zalo của lớp"**, kéo xuống mục
 **"Nhóm Zalo"** rồi bấm **"Thêm nhóm Zalo"**:

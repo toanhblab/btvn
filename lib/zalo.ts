@@ -263,7 +263,8 @@ export type LyDoBoTep =
   | 'url-khong-nhan'
   | 'khong-thay-trong-kho'
   | 'ngoai-cua-so'
-  | 'thieu-gio-gui';
+  | 'thieu-gio-gui'
+  | 'ngoai-kho';
 
 export interface TepBoQua {
   ten: string;
@@ -510,32 +511,81 @@ export function laDuongDanTepZalo(duongDan: unknown, nguonId: string): boolean {
   return goc === 'zalo' && nguon === sachDoan(nguonId) && laNgayISO(ngay) && ten.length > 0;
 }
 
+const HAU_TO_KHO_BLOB = 'blob.vercel-storage.com';
+
 /**
- * URL nay co phai MOT TEP TREN KHO CUA APP MINH, dung ho cua nguon nay khong?
+ * Ma kho Vercel Blob CUA MINH, rut tu `BLOB_READ_WRITE_TOKEN`
+ * (`vercel_blob_rw_<maKho>_<bi mat>`). `null` = khong co kho hop le.
+ *
+ * Ham THUAN, khong doc env: lib/zalo.ts la tep hop dong ma man bo me cung nap.
+ * Nguoi goi truyen token vao.
+ *
+ * Token sai khuon tra `null`, va nguoi goi phai hieu `null` la TU CHOI moi url
+ * Blob — khong bao gio la "nhan tat". Cung tinh than voi `tranNguoiDat`
+ * (lib/donVideo.ts): tren duong khong lui duoc, doc khong ra nghia la tu choi.
+ */
+export function maKhoBlob(token: string | null | undefined): string | null {
+  if (typeof token !== 'string') return null;
+  const m = /^vercel_blob_rw_([A-Za-z0-9]+)_[A-Za-z0-9]+$/.exec(token.trim());
+  return m ? m[1].toLowerCase() : null;
+}
+
+/**
+ * `url` nay la gi doi voi ho tep cua nguon nay?
+ *
+ *   'kho-minh'    tep tren kho CUA MINH, dung ho `zalo/<nguon>/<ngay>/<ten>`.
+ *   'kho-la'      url tren Vercel Blob nhung KHONG phai kho cua minh.
+ *   'khong-nhan'  moi thu con lai: dia chi ngoai, sai ho, `nop-bai/`, url hong.
  *
  * Cua nhan khong co cookie va `url` do zalo-agent gui len, nen day la thu duy
- * nhat chan viec mot goi tro `url` sang chu khac: tep cua nha khac (`zalo/<nguon
- * khac>/`), video con nop (`nop-bai/`), hay mot dia chi ngoai ma trinh duyet cua
- * bo me se tai ve khi mo muc cho duyet. Cung tinh than voi `laUrlTepAppCap`
- * (lib/media.ts) o duong PATCH cua con: chot DANG URL vi khong chot duoc nguoi goi.
+ * nhat chan viec mot goi tro `url` sang cho khac. Cung tinh than voi
+ * `laUrlTepAppCap` (lib/media.ts) o duong PATCH cua con: chot DANG URL vi khong
+ * chot duoc nguoi goi.
+ *
+ * VI SAO 'kho-la' la mot loai RIENG: `*.blob.vercel-storage.com` la ten mien
+ * CHUNG cua moi kho Vercel Blob, khong phai cua rieng minh. Nhan ca ho la mot
+ * url cua kho nguoi khac di duoc vao `dinh_kem`, roi trinh duyet cua bo me va
+ * man cua con dung `<img>`/`<video>` tai no ve tu mot nguon thu ba. Phep hoi
+ * kho (`head()`) khong bat duoc: voi kho la no bao loi quyen, ma "loi tam thoi
+ * thi GIU tep" la nhanh CO CHU DINH — nen phai chan o day, truoc khi hoi kho.
  */
-export function laUrlBlobZaloCuaNguon(url: unknown, nguonId: string): boolean {
-  if (typeof url !== 'string' || !url || url.length > 2048) return false;
+export type LoaiUrlTepZalo = 'kho-minh' | 'kho-la' | 'khong-nhan';
+
+export function phanLoaiUrlBlobZalo(
+  url: unknown,
+  nguonId: string,
+  maKho: string | null
+): LoaiUrlTepZalo {
+  if (typeof url !== 'string' || !url || url.length > 2048) return 'khong-nhan';
   let u: URL;
   try {
     u = new URL(url);
   } catch {
-    return false;
+    return 'khong-nhan';
   }
-  if (u.protocol !== 'https:' || !/(^|\.)blob\.vercel-storage\.com$/.test(u.hostname)) return false;
+  if (u.protocol !== 'https:') return 'khong-nhan';
+  if (!new RegExp(`(^|\\.)${HAU_TO_KHO_BLOB.replace(/\./g, '\\.')}$`).test(u.hostname)) {
+    return 'khong-nhan';
+  }
+  // Nhan dau tien cua hostname la ma kho: `<maKho>.public.blob…` hoac `<maKho>.blob…`
+  const nhan = u.hostname.slice(0, -HAU_TO_KHO_BLOB.length).replace(/\.$/, '').split('.');
+  if (!maKho || nhan[0] !== maKho) return 'kho-la';
+
   let duongDan = u.pathname;
   try {
     duongDan = decodeURIComponent(duongDan);
   } catch {
-    return false;
+    return 'khong-nhan';
   }
-  return laDuongDanTepZalo(duongDan, nguonId);
+  return laDuongDanTepZalo(duongDan, nguonId) ? 'kho-minh' : 'khong-nhan';
 }
+
+/** Tep tren kho CUA MINH, dung ho cua nguon nay — xem `phanLoaiUrlBlobZalo`. */
+export const laUrlBlobZaloCuaNguon = (
+  url: unknown,
+  nguonId: string,
+  maKho: string | null
+): boolean => phanLoaiUrlBlobZalo(url, nguonId, maKho) === 'kho-minh';
 
 /** Duoi tep mac dinh khi ten tu Zalo khong co duoi nhan ra duoc. */
 const DUOI_MAC_DINH: Record<LoaiTepZalo, string> = {

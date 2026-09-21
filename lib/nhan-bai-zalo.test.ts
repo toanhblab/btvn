@@ -43,7 +43,9 @@ process.env.BTVN_PGLITE_DIR = 'memory://';
 delete process.env.DATABASE_URL; delete process.env.POSTGRES_URL;
 delete process.env.DATABASE_URL_UNPOOLED; delete process.env.POSTGRES_URL_NON_POOLING;
 delete process.env.NOUS_API_KEY;            // ep duong lui splitByRule, ket qua on dinh
-process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_rw_test';
+// Dung khuon `vercel_blob_rw_<maKho>_<bi mat>` va KHOP voi host cua `KHO`:
+// token sai khuon la khong co ma kho, va khi do moi url Blob bi tu choi.
+process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_rw_kho_bimatgia';
 
 /**
  * Kho tep gia. `tepTrenKho` la "nhung tep agent da tai len" — cua nhan hoi kho
@@ -135,7 +137,7 @@ mock.module('./store.ts', {
 });
 const zaloStore = await import('./nhanBaiZalo.ts');
 const { veTrenManCuaCon } = await import('./nhomNhiemVu.ts');
-const { GOI_MAU, KHO } = await import('./zalo.test.ts');
+const { GOI_MAU, KHO, KHO_LA } = await import('./zalo.test.ts');
 const { POST } = await import('../app/api/nhan-bai-zalo/route.ts');
 const { GET: GET_CAU_HINH } = await import('../app/api/nhan-bai-zalo/cau-hinh/route.ts');
 const { POST: POST_TOKEN } = await import('../app/api/nhan-bai-zalo/tep-token/route.ts');
@@ -463,6 +465,46 @@ test('hai tep KHONG TEN bi bo o hai buoc khac nhau van ra hai nhan khac nhau', a
   const [muc] = await zaloStore.listBaiChoDuyet(FAM);
   assert.deepEqual(muc.bai.tepBoQua.map((t) => t.ten), ['#1', '#2'],
     'bo me phai phan biet duoc hai tep trong danh sach "khong vao duoc"');
+});
+
+test('tep cua KHO BLOB KHAC bi bo voi ly do ngoai-kho — ten mien chung khong phai kho cua minh', async () => {
+  const url = `${KHO_LA}/zalo/${NGUON}/2026-09-18/video.mp4`;
+  // Dung san tep tren "kho la" de chung minh KHONG phai `head()` chan no: neu
+  // chi dua vao `head()` thi loi quyen cua kho la roi vao nhanh "loi tam thoi
+  // thi GIU tep" va url do di thang vao `dinh_kem`.
+  tepTrenKho.set(url, 1024);
+  const res = await goiCua({
+    ...GOI_MAU,
+    ma_tin: 'tin_kho_la',
+    dinh_kem: [{ ten: 'video.mp4', loai: 'video/mp4', kich_thuoc: 1024, url,
+                 gui_luc: GOI_MAU.dinh_kem[0].gui_luc }],
+  });
+
+  assert.equal(res.status, 201, 'mot url la khong duoc lam hong ca tin');
+  const than = await res.json();
+  assert.deepEqual(than.tep_bo_qua.map((t: { ly_do: string }) => t.ly_do), ['ngoai-kho']);
+  assert.ok(than.so_bai_nhap > 0);
+  assert.ok(!daHoiKho.includes(url), 'chan TRUOC khi hoi kho, khong de head() quyet dinh');
+
+  const [dong] = await db.query(`SELECT dinh_kem FROM bai_tu_zalo WHERE ma_tin = 'tin_kho_la'`);
+  assert.deepEqual(dong.dinh_kem, [], 'url cua kho nguoi khac khong duoc vao dinh_kem');
+});
+
+test('url dung kho MINH + kho loi tam thoi -> van GIU tep (nhanh co chu dinh con nguyen)', async () => {
+  const url = `${KHO}/zalo/${NGUON}/2026-09-18/video-cua-minh.mp4`;
+  tepTrenKho.set(url, 2_000_000);
+  khoNemLoi = new BlobServiceRateLimited(5);
+  const res = await goiCua({
+    ...GOI_MAU,
+    ma_tin: 'tin_kho_minh_loi',
+    dinh_kem: [{ ten: 'video-cua-minh.mp4', loai: 'video/mp4', kich_thuoc: 1024, url,
+                 gui_luc: GOI_MAU.dinh_kem[0].gui_luc }],
+  });
+  assert.equal(res.status, 201);
+  assert.deepEqual((await res.json()).tep_bo_qua, [], 'phep ghim ma kho khong duoc lam mat nhanh nay');
+  const [dong] = await db.query(
+    `SELECT dinh_kem FROM bai_tu_zalo WHERE ma_tin = 'tin_kho_minh_loi'`);
+  assert.equal((dong.dinh_kem as unknown[]).length, 1);
 });
 
 /* ---------------- 5c. Cua so nhan tep ---------------- */
@@ -1033,6 +1075,20 @@ test('cua phat ve KHONG chan su kien "tep da len kho" cua Vercel Blob — no kho
   assert.equal(xinVeKhongKhoa.status, 401);
   assert.deepEqual(await xinVeKhongKhoa.json(), { loi: 'unauthorized' });
   assert.deepEqual(veDaKy, []);
+});
+
+test('goi thieu nguoi_gui / nhom_zalo: luu chuoi RONG, khong lay ten da cau hinh lap vao', async () => {
+  // Rang buoc cua captain: nhan dien co chi dua vao TEN HIEN THI, nen trung ten
+  // hay doi ten la vo AM THAM. Lay `nguon.tenCo` lap vao cho trong la che dung
+  // cai tin hieu ay — man cho duyet phai nhan duoc chuoi rong de noi "khong doc
+  // duoc", chu khong nhan mot cai ten nhin nhu that.
+  const res = await goiCua({ ...GOI_MAU, ma_tin: 'tin_khuyet_ten', nguoi_gui: '', nhom_zalo: '' });
+  assert.equal(res.status, 201);
+
+  const [muc] = await zaloStore.listBaiChoDuyet(FAM);
+  assert.equal(muc.bai.nguoiGui, '');
+  assert.equal(muc.bai.nhomZalo, '', 'khong duoc dien ten nhom da cau hinh vao day');
+  assert.notEqual(muc.bai.nguoiGui, muc.nguon.tenCo);
 });
 
 /* ---------------- 5d. Tach bai hong giua chung ---------------- */

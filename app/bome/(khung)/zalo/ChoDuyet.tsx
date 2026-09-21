@@ -118,6 +118,7 @@ function LyDoBoTepChu({ ly_do }: { ly_do: LyDoBoTep }) {
     'khong-thay-trong-kho': T('kho tệp không tìm thấy tệp này'),
     'ngoai-cua-so': T('cô gửi ngoài khoảng thời gian nhận tệp'),
     'thieu-gio-gui': T('tệp không có giờ gửi để đối chiếu'),
+    'ngoai-kho': T('tệp không nằm trong kho tệp của app này'),
   };
   return <>{chu[ly_do]}</>;
 }
@@ -346,11 +347,20 @@ export default function ChoDuyet({
             <section key={m.bai.id} className="bg-surface-container-low rounded-card p-3 flex flex-col gap-3">
               {/* Ai gui, o dau, luc nao — ba thu bo me can de tin ai tin nay */}
               <header className="flex flex-col gap-0.5">
+                {/*
+                  KHONG lui ve ten da cau hinh (`m.nguon.tenCo` / `tenNhom`).
+                  Rang buoc cua captain: nhan dien co chi dua vao TEN HIEN THI,
+                  nen trung ten hay doi ten la vo AM THAM — muc nhap phai hien
+                  ten NGUOI GUI THAT de bo me nhin thay. Lay ten minh tu go lap
+                  vao do la che dung cai tin hieu ay.
+                */}
                 <p className="text-p-body text-on-surface font-bold break-words">
-                  {m.bai.nhomZalo || m.nguon.tenNhom}
+                  {m.bai.nhomZalo || T('(không đọc được tên nhóm)')}
                 </p>
                 <p className="text-p-body-sm text-on-surface-variant break-words">
-                  {T('Cô {ten}', { ten: m.bai.nguoiGui || m.nguon.tenCo })}
+                  {m.bai.nguoiGui
+                    ? T('Cô {ten}', { ten: m.bai.nguoiGui })
+                    : T('(không đọc được tên người gửi)')}
                   {m.bai.guiLuc ? ` · ${gioNha(m.bai.guiLuc)}` : ''}
                   {m.bai.ngayHocSo !== null ? ` · ${T('ngày học thứ {n}', { n: m.bai.ngayHocSo })}` : ''}
                 </p>
@@ -397,11 +407,20 @@ export default function ChoDuyet({
                 </div>
               )}
 
-              {/* Bai da tach, theo tung con */}
+              {/*
+                Bai da tach, theo tung con. Cau "Bấm Không phải bài" CHI dung cho
+                ca bo me da tu xoa het bai nhap — o ca TACH HONG thi khoi canh bao
+                o tren da moi ho bam "Tách lại", va `boBaiZalo` dat trang thai
+                'bo' khien `moCuaNhanTin` tra `trung-ma-tin` cho moi lan quet lai:
+                tin cua co khong bao gio vao lai duoc. Hien ca hai la chi vao dung
+                cai nut pha mat duong khoi phuc.
+              */}
               {theoCon.length === 0 ? (
-                <p className="text-p-body-sm text-error">
-                  {T('Không còn bài nào trong tin này. Bấm "Không phải bài" để bỏ.')}
-                </p>
+                m.bai.trangThaiTach !== 'loi' && (
+                  <p className="text-p-body-sm text-error">
+                    {T('Không còn bài nào trong tin này. Bấm "Không phải bài" để bỏ.')}
+                  </p>
+                )
               ) : (
                 theoCon.map(({ con, bai }) => (
                   <div key={con.id} className="flex flex-col gap-1.5">

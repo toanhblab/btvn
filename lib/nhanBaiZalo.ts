@@ -47,8 +47,8 @@ import { boDau, laUrlTepAppCap } from './media';
 import { taoT, type T } from './i18n/chu';
 import { ngonNguOf, type NgonNgu } from './i18n/ngonNgu';
 import {
-  baiNhapTho, docNhanDien, hanNopBai, kiemCuaSoDinhKem, laUrlBlobZaloCuaNguon, loaiTepZalo,
-  tenHienTep, tenTepZalo,
+  baiNhapTho, docNhanDien, hanNopBai, kiemCuaSoDinhKem, loaiTepZalo, maKhoBlob,
+  phanLoaiUrlBlobZalo, tenHienTep, tenTepZalo,
   CACH_TAI_TEP, DUONG_TOKEN_TEP, LOAI_TEP_NHAN, MAX_BYTES_MOI_TEP, MAX_MB_MOI_TEP,
   MAX_TEP_MOI_GOI, SO_NGAY_GIU_TEP_ZALO, congNgay,
   type GoiTinZalo, type NhanDienZalo, type TepBoQua, type TepZaloDaLuu,
@@ -68,6 +68,8 @@ import {
 } from './zalo';
 
 const hasBlob = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+/** Ma kho Blob CUA MINH — `null` la khong co kho hop le, va khi do moi url Blob bi tu choi. */
+const MA_KHO = maKhoBlob(process.env.BLOB_READ_WRITE_TOKEN);
 
 /* ---------------- Nguon Zalo (cau hinh) ---------------- */
 
@@ -429,18 +431,24 @@ export async function moCuaNhanTin(
 }
 
 /**
- * URL nay co phai mot tep app minh dang giu, dung ho cua nguon nay khong?
+ * URL nay co dung duoc khong, va neu khong thi BO voi ly do nao?
  *
- * Hai dang, va dang thu hai CO DIEU KIEN:
- *   - Kho that (Vercel Blob): `zalo/<nguon>/<yyyy-mm-dd>/<ten>` tren host Blob.
+ * Tra ve LUON ma `ly_do` de nguoi goi khong phai dich lai lan hai.
+ *
+ * Hai dang duoc nhan, va dang thu hai CO DIEU KIEN:
+ *   - Kho that (Vercel Blob): `zalo/<nguon>/<yyyy-mm-dd>/<ten>` tren kho CUA
+ *     MINH (`phanLoaiUrlBlobZalo` chot ca ma kho, khong chi ten mien chung).
  *   - Dev chua bat Blob: `/api/tep/<32 hex><duoi>` — tep do `xuLyTaiTep` ghi vao
  *     `.data/uploads` qua che do multipart. CHI nhan khi may chu THAT SU chua co
  *     BLOB_READ_WRITE_TOKEN: tren Vercel ma van nhan dang nay thi co mot loi
- *     vong qua het phan kiem tien to o tren.
+ *     vong qua het phan kiem tien to o tren. Duong nay di TRUOC nen phep ghim ma
+ *     kho khong chan nham no o may dev (o do khong co ma kho nao ca).
  */
-function urlTepNhanDuoc(url: string, nguonId: string): boolean {
-  if (laUrlBlobZaloCuaNguon(url, nguonId)) return true;
-  return !hasBlob && url.startsWith('/api/tep/') && laUrlTepAppCap(url);
+function kiemUrlTep(url: string, nguonId: string): 'nhan' | 'ngoai-kho' | 'url-khong-nhan' {
+  if (!hasBlob && url.startsWith('/api/tep/') && laUrlTepAppCap(url)) return 'nhan';
+  const loai = phanLoaiUrlBlobZalo(url, nguonId, MA_KHO);
+  if (loai === 'kho-minh') return 'nhan';
+  return loai === 'kho-la' ? 'ngoai-kho' : 'url-khong-nhan';
 }
 
 /**
@@ -501,8 +509,9 @@ async function nhanTepDaTai(
       boQua.push({ ten: tenHien, ly_do: 'loai-khong-nhan', chi_tiet: t.loai });
       continue;
     }
-    if (!urlTepNhanDuoc(t.url, goi.nguon_id)) {
-      boQua.push({ ten: tenHien, ly_do: 'url-khong-nhan', chi_tiet: t.url.slice(0, 200) });
+    const urlOk = kiemUrlTep(t.url, goi.nguon_id);
+    if (urlOk !== 'nhan') {
+      boQua.push({ ten: tenHien, ly_do: urlOk, chi_tiet: t.url.slice(0, 200) });
       continue;
     }
     const cuaSo = kiemCuaSoDinhKem(goi.gui_luc, t.gui_luc, cuaSoPhut);
@@ -642,6 +651,11 @@ export async function nhanTinZalo(goi: GoiTinZalo): Promise<KetQuaNhanTin> {
     console.warn('[nhan-bai-zalo] bo tep', goi.nguon_id, goi.ma_tin, tepBoQua);
   }
 
+  // `nguoi_gui` va `nhom_zalo` luu Y NGUYEN thu zalo-agent doc duoc, KE CA chuoi
+  // rong. Dung lay `nguon.tenCo` / `nguon.tenNhom` lap vao: rang buoc cua captain
+  // la nhan dien co chi dua vao TEN HIEN THI, nen trung ten hay doi ten la vo AM
+  // THAM — muc cho duyet phai hien ten THAT de bo me nhin thay. Lay ten minh tu
+  // go lap vao cho trong la che dung cai tin hieu ay, o tang sau nhat.
   const baiId = newId('bzl');
   const them = await query<{ id: string }>(
     `INSERT INTO bai_tu_zalo
@@ -651,7 +665,7 @@ export async function nhanTinZalo(goi: GoiTinZalo): Promise<KetQuaNhanTin> {
      ON CONFLICT (nguon_id, ma_tin) DO NOTHING
      RETURNING id`,
     [baiId, nguon.id, goi.ma_tin, goi.gui_luc, goi.nguoi_gui,
-     goi.nhom_zalo || nguon.tenNhom, goi.ngay_hoc_so, goi.ngay_trong_tin, goi.nguyen_van,
+     goi.nhom_zalo, goi.ngay_hoc_so, goi.ngay_trong_tin, goi.nguyen_van,
      JSON.stringify(tep), JSON.stringify(tepBoQua),
      goi.nhan_dien === null ? null : JSON.stringify(goi.nhan_dien)]
   );

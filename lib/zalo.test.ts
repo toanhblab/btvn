@@ -32,7 +32,7 @@ import assert from 'node:assert/strict';
 import {
   MAX_BYTES_MOI_TEP, MAX_TEP_MOI_GOI, congNgay, docGoiTin, docNhanDien, hanNopBai,
   kiemCuaSoDinhKem, laDuongDanTepZalo, laNgayISO, laUrlBlobZaloCuaNguon, loaiTepZalo,
-  matCoNhanDien, tenHienTep, tenTepZalo,
+  maKhoBlob, matCoNhanDien, phanLoaiUrlBlobZalo, tenHienTep, tenTepZalo,
 } from './zalo.ts';
 import { ngayNhaISO } from './muiGio.ts';
 
@@ -49,8 +49,15 @@ export const TIN_NGAY_40 =
   '*Góc xem phim (quan trọng): con tiếp tục xem bộ phim “The Pet Lovers Club” mà cô đã gửi trong nhóm film\n' +
   'Cô cảm ơn bố mẹ!';
 
-/** Host kho tep — tep da nam san tren do truoc khi goi tin duoc gui. */
-export const KHO = 'https://kho.public.blob.vercel-storage.com';
+/**
+ * Kho tep CUA MINH. `MA_KHO` la thu `maKhoBlob` rut ra tu `BLOB_READ_WRITE_TOKEN`
+ * (`vercel_blob_rw_<maKho>_<bi mat>`), va hostname cua kho mang dung ma do —
+ * nen mot url `*.blob.vercel-storage.com` cua kho KHAC khong qua duoc.
+ */
+export const MA_KHO = 'kho';
+export const KHO = `https://${MA_KHO}.public.blob.vercel-storage.com`;
+/** Kho cua NGUOI KHAC — cung ten mien chung, khac ma kho. */
+export const KHO_LA = 'https://kholakhac.public.blob.vercel-storage.com';
 
 /**
  * Goi zalo-agent gui len cho tin tren — hai video den sau tin 4 giay.
@@ -104,7 +111,7 @@ test('goi mau that (ngay hoc thu 40, hai video): doc ra du moi truong', () => {
   assert.equal(g.ngay_trong_tin, '2026-09-18');
   assert.equal(g.dinh_kem.length, 2);
   assert.equal(g.bo_qua.length, 0);
-  assert.ok(g.dinh_kem.every((t) => laUrlBlobZaloCuaNguon(t.url, 'nzl_cambridge')), 'url cua goi mau');
+  assert.ok(g.dinh_kem.every((t) => laUrlBlobZaloCuaNguon(t.url, 'nzl_cambridge', MA_KHO)), 'url cua goi mau');
   // Xuong dong PHAI giu nguyen: man bo me ve nguyen van bang whitespace-pre-wrap
   // de doi chieu voi danh sach bai da tach — do thang thanh mot doan la hong
   // dung viec man do sinh ra de lam.
@@ -303,11 +310,33 @@ test('congNgay chay tren lich UTC — khong phu thuoc TZ cua may chay, va qua du
 
 /* ---------------- Tep: ten va thu muc tren kho ---------------- */
 
+test('maKhoBlob: rut ma kho tu token, token sai khuon thi KHONG co kho hop le', () => {
+  assert.equal(maKhoBlob('vercel_blob_rw_Abc123_bimat'), 'abc123');
+  // Doc khong ra thi TU CHOI, khong lui ve "nhan tat" — cung tinh than voi
+  // `tranNguoiDat` tren duong xoa khong lui duoc.
+  for (const xau of ['', 'vercel_blob_rw_test', 'vercel_blob_rw__x', 'rac', null, undefined]) {
+    assert.equal(maKhoBlob(xau), null, String(xau));
+  }
+});
+
 test('url cua tep phai la tep CUA KHO MINH, dung ho zalo/<nguon>/<ngay>/', () => {
   const ok = `${KHO}/zalo/nzl_cambridge/2026-09-18/video-abc123.mp4`;
-  assert.ok(laUrlBlobZaloCuaNguon(ok, 'nzl_cambridge'));
+  assert.ok(laUrlBlobZaloCuaNguon(ok, 'nzl_cambridge', MA_KHO));
   // Ten tep bi `addRandomSuffix` doi van phai qua — ve chi chot THU MUC
-  assert.ok(laUrlBlobZaloCuaNguon(`${KHO}/zalo/nzl_cambridge/2026-09-18/x-9f2.pdf`, 'nzl_cambridge'));
+  assert.ok(laUrlBlobZaloCuaNguon(`${KHO}/zalo/nzl_cambridge/2026-09-18/x-9f2.pdf`, 'nzl_cambridge', MA_KHO));
+  // `<maKho>.blob…` (khong co `public`) cung la kho cua minh
+  assert.ok(laUrlBlobZaloCuaNguon(
+    `https://${MA_KHO}.blob.vercel-storage.com/zalo/nzl_cambridge/2026-09-18/v.mp4`,
+    'nzl_cambridge', MA_KHO));
+
+  // KHO CUA NGUOI KHAC: cung ten mien chung `*.blob.vercel-storage.com`, nen
+  // phep kiem cu (chi so hau to) cho qua. Day la loai RIENG de cua nhan bo tep
+  // voi ly do 'ngoai-kho' thay vi de nhanh "loi tam thoi thi GIU tep" nhan no.
+  const laKho = `${KHO_LA}/zalo/nzl_cambridge/2026-09-18/video.mp4`;
+  assert.equal(phanLoaiUrlBlobZalo(laKho, 'nzl_cambridge', MA_KHO), 'kho-la');
+  assert.ok(!laUrlBlobZaloCuaNguon(laKho, 'nzl_cambridge', MA_KHO));
+  // Khong co ma kho hop le -> moi url Blob deu bi tu choi, KE CA host cua minh
+  assert.equal(phanLoaiUrlBlobZalo(ok, 'nzl_cambridge', null), 'kho-la');
 
   for (const xau of [
     // Nguon KHAC: mot khoa hop le khong duoc tro sang ho cua lop khac
@@ -328,7 +357,7 @@ test('url cua tep phai la tep CUA KHO MINH, dung ho zalo/<nguon>/<ngay>/', () =>
     `${KHO}/zalo/nzl_cambridge/../nzl_starters/video.mp4`,
     '', 'khong-phai-url', null, 123,
   ]) {
-    assert.ok(!laUrlBlobZaloCuaNguon(xau, 'nzl_cambridge'), String(xau));
+    assert.ok(!laUrlBlobZaloCuaNguon(xau, 'nzl_cambridge', MA_KHO), String(xau));
   }
 });
 

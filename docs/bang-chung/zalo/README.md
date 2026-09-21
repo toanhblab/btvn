@@ -1,13 +1,18 @@
 # Bằng chứng: cửa nhận bài từ Zalo + màn duyệt của bố mẹ
 
-> **Chụp lại 2026-09-21, vòng sửa sau review.** Hai tấm `*-zalo-3-nguon-zalo.png`
-> và toàn bộ bảng hit-test ở dưới được chụp/đo LẠI trên cây mã hiện tại
-> (`next dev -p 3177`), sau hai thay đổi đụng màn này: dòng **"Mã nhóm"** trên
-> thẻ nguồn, và việc tệp không còn đi trong thân request. Những tấm còn lại
-> (`*-bome-tong-quan`, `*-cai-dat`, `zalo-1-nguyen-van`, `zalo-2-bai-nhap`,
-> `luong-duyet-390.gif`) **không đụng tới** ở vòng này: phần màn chúng chụp
-> không đổi — khối "tệp cô gửi không vào được" chỉ hiện khi CÓ tệp bị bỏ, và
-> lượt chụp lại này không có tệp nào bị bỏ.
+> **Ảnh trong pack này được chụp ở BA thời điểm khác nhau — đọc nhãn từng tấm.**
+> Sáu tấm `*-zalo-4-tach-hong`, `*-zalo-5-sua-bai-nhap`,
+> `*-zalo-6-ten-khuyet-va-ngoai-kho` là MỚI NHẤT (`next dev -p 3190`, xem mục
+> "Vòng sửa cuối" ở dưới). Hai tấm `*-zalo-3-nguon-zalo.png` chụp ở vòng sửa
+> trước đó, sau khi thêm dòng **"Mã nhóm"** và sau khi tệp không còn đi trong
+> thân request. Những tấm còn lại (`*-bome-tong-quan`, `*-cai-dat`,
+> `zalo-1-nguyen-van`, `zalo-2-bai-nhap`, `luong-duyet-390.gif`) là **ảnh của
+> lượt chụp ĐẦU** và chưa được chụp lại.
+>
+> Nói thẳng những gì ảnh CŨ không có, thay vì để chúng đứng dưới một nhãn "mới":
+> `zalo-1-nguyen-van` và `zalo-2-bai-nhap` chụp TRƯỚC khi có khối "Tách bài chưa
+> xong" + nút "Tách lại", và trước hai lý do bỏ tệp `ngoai-cua-so` /
+> `thieu-gio-gui`. Ba tấm số 4/5/6 ở dưới chụp đúng những trạng thái đó.
 >
 > Lượt chụp lại đi qua **đúng hợp đồng mới**, không phải đường cũ: hai tệp được
 > tải lên trước bằng `POST /api/nhan-bai-zalo/tep-token?nguon_id=…&ma_tin=…`
@@ -88,3 +93,76 @@ biết nó không đè lên nút nào.
 Phép đo gỡ `<nextjs-portal>` (huy hiệu của `next dev` ở góc dưới trái) trước
 khi chạy: nó là một lớp phủ THẬT nhưng chỉ có ở dev, và nó ăn mất 9 điểm của
 mục "Trang chủ" trên thanh điều hướng dưới.
+
+## Vòng sửa cuối: tách hỏng, tên khuyết, tệp ngoài kho
+
+Chụp/đo 2026-09-21 trên `next dev -p 3190` **của chính worktree này** (máy này
+còn một `next dev` khác ở cổng 3100 thuộc bản checkout khác — ảnh chụp từ nó sẽ
+không phải mã của nhánh này). Dữ liệu là **dữ liệu xấu nhất**
+(`node scripts/du-lieu-xau-nhat.mjs`: 4 con, tên dài, ⭐ ba chữ số), nạp xong thì
+khởi động lại dev. Cỡ điện thoại dùng
+`emulate --viewport "390x844x3,mobile,touch"` và `innerWidth` được kiểm lại là
+**390** trước mỗi lượt chụp (`resize` cho ra 500px — lỗi #56 lọt qua đúng vì thế).
+
+Ba tin được đưa vào qua **đúng cửa nhận thật** (`POST /api/nhan-bai-zalo`):
+
+| `ma_tin` | Trạng thái dựng ra |
+| --- | --- |
+| `chup_ok` | tin bình thường, 20 bài nháp cho 4 con |
+| `chup_tach_hong` | `ket_qua_tach.trang_thai = 'loi'`, 0 bài nháp |
+| `chup_ngoai_kho` | `nguoi_gui` và `nhom_zalo` RỖNG, tệp trỏ sang kho Blob khác |
+
+Tin thứ ba đi thẳng qua cửa nhận và trả về đúng hợp đồng — tin vẫn vào, chỉ tệp
+bị bỏ:
+
+```json
+{ "bai_zalo_id": "bzl_0b53d0dc450a419c", "so_bai_nhap": 8,
+  "tep_bo_qua": [{ "ten": "video-mau.mp4", "ly_do": "ngoai-kho",
+    "chi_tiet": "https://kholakhac.public.blob.vercel-storage.com/zalo/nzl_cambridge/2026-09-18/video-mau.mp4" }] }
+```
+
+Ảnh:
+
+| Tấm | Màn | Cỡ |
+| --- | --- | --- |
+| `sau-390-zalo-4-tach-hong.png` | `/bome/zalo`, tin tách hỏng | 390×844 |
+| `sau-1440-zalo-4-tach-hong.png` | `/bome/zalo`, tin tách hỏng | 1440×900 |
+| `sau-390-zalo-5-sua-bai-nhap.png` | `/bome/bai/<id>` của một bài NHÁP | 390×844 |
+| `sau-1440-zalo-5-sua-bai-nhap.png` | `/bome/bai/<id>` của một bài NHÁP | 1440×900 |
+| `sau-390-zalo-6-ten-khuyet-va-ngoai-kho.png` | `/bome/zalo`, cả ba tin | 390×844 |
+| `sau-1440-zalo-6-ten-khuyet-va-ngoai-kho.png` | `/bome/zalo`, cả ba tin | 1440×900 |
+
+Đo TRONG TRANG, không nhìn ảnh mà kết luận (`document.body.innerText`):
+
+| Điều phải đúng | 390 | 1440 |
+| --- | --- | --- |
+| Có "Tách bài chưa xong" + "Tách lại" | ✓ | ✓ |
+| Số lần hiện "Không còn bài nào trong tin này…" | **0** | **0** |
+| Có "(không đọc được tên nhóm)" | ✓ | — |
+| Có "(không đọc được tên người gửi)" | ✓ | — |
+| Có "tệp không nằm trong kho tệp của app này" | ✓ | — |
+| Tràn ngang (`scrollWidth > innerWidth`) | không | không |
+
+Hàng thứ hai là chính cái lỗi vòng này sửa: trước đó màn vừa mời bố mẹ bấm
+"Tách lại" vừa bảo họ bấm "Không phải bài" — mà nút sau đặt `trang_thai = 'bo'`
+và từ đó mọi lượt quét lại của zalo-agent bị `trung-ma-tin` chặn, tức tin của cô
+không bao giờ vào lại được.
+
+Màn `/bome/bai/<id>` của một bài nháp: banner **"Bài này đang chờ duyệt, con chưa
+thấy."** hiện, và **cả hai** đường quay lại trong trang (mũi tên và điều hướng
+sau khi Lưu) trỏ về `/bome/zalo` — đo bằng cách đọc `href` của mọi `<a>`: chỉ có
+`["/bome/zalo", "/bome/zalo"]`, không còn `/bome/con/<childId>` (màn đó lọc bỏ
+dòng nháp nên bố mẹ rơi vào ngõ cụt).
+
+Hit-test lại `/bome/zalo` với cả ba tin (lưới 3×3 mỗi phần tử):
+
+| Cỡ | Phần tử bấm được đủ điểm | Tràn ngang |
+| --- | --- | --- |
+| 390×844 | **115 / 116** | không |
+| 1440×900 | **117 / 117** | không |
+
+Phần tử duy nhất không đủ điểm ở 390 là mục **"Trang chủ"** trên thanh điều
+hướng dưới (5/9), và thứ che nó là `<nextjs-portal>` — huy hiệu dev tools của
+`next dev`, **chỉ có ở dev, không có trên bản deploy**. Lượt đo này CỐ Ý không gỡ
+nó ra để con số nói đúng những gì trình duyệt thấy; xem mục hit-test ở trên, nơi
+lượt đo trước gỡ nó và được 25/25.
