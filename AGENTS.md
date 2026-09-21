@@ -379,6 +379,25 @@ Link Google Drive bố mẹ dán vào bài (#28/#60, và ở màn Kiểm tra l�
 hình dạng dữ liệu; thêm chỗ dán thứ ba thì lặp đúng khuôn đó, đừng mở rộng sang
 link http bất kỳ hay thêm kind/migration. Hồi quy ở `lib/link-drive-kiem-tra-lai.test.ts`.
 
+Bài cô giao trên nhóm Zalo (migration 021, `lib/zalo.ts` + `lib/nhanBaiZalo.ts`,
+chi tiết ở README mục "Bài từ Zalo") vào app ở trạng thái **NHÁP** — bố mẹ duyệt
+một chạm rồi con mới thấy. Hai điều phải biết TRƯỚC khi đụng vào mã:
+
+- **Dòng nháp nằm trong CHÍNH bảng `assignments`** (`trang_thai_duyet`, DEFAULT
+  `'that'` nên mọi dòng và mọi câu INSERT cũ không phải sửa), để bố mẹ sửa nó
+  bằng đúng đường sửa bài đã có. Đổi lại, **mọi câu ĐỌC `assignments` phải nói rõ
+  nó muốn gì**: hàng rào là `CHI_BAI_THAT` trong `lib/store.ts`, mặc định loại
+  dòng nháp, nơi gọi phải xin `keCaNhap` mới thấy — cùng khuôn `includeChores`
+  của #36. Chỗ dễ sót nhất KHÔNG phải màn con mà là `congDiemNgayNeuXong`: một
+  dòng nháp `'todo'` không ai tick được sẽ âm thầm khoá +10 của cả ngày. Thêm
+  một câu đọc mới thì hỏi nó thuộc bên nào, đừng để mặc định của SQL trả lời.
+- **`nguon_id` là thứ quyết định NHÀ.** Cửa nhận không có cookie (zalo-agent gọi
+  bằng khoá `ZALO_INTAKE_SECRET`, không phải trình duyệt) nên familyId suy ra từ
+  nguồn; mọi đường ghi sau đó đi qua `saveSubmission`, vốn tự lọc childIds theo
+  nhà. Thêm một cửa máy-gọi nào nữa thì giữ đúng khuôn này, đừng nhận familyId
+  từ thân request. Thiếu biến trên máy chủ trả **503 chứ không 401** — gộp hai
+  cái là một bản deploy thiếu biến sẽ báo "sai khoá".
+
 Dọn video quá hạn (`lib/donVideo.ts`, cron `vercel.json` → `/api/don-video`) là
 đường **XOÁ TỆP THẬT, KHÔNG LÙI ĐƯỢC** duy nhất trong repo — trước đó app không
 xoá gì bao giờ. Luật: xoá khi **cả hai** đúng — quá `SO_NGAY_GIU_VIDEO` (5) ngày
@@ -391,7 +410,9 @@ nhầm nhất là (1) **chạy thử là mặc định** — `DON_VIDEO_CHAY_THA
 `del()`, vì sau khi tệp biến mất thì sổ cái là bản sao duy nhất của đường dẫn;
 (3) `laUrlVideoConNop` **chặt hơn** `laUrlTepAppCap` có chủ ý (chỉ host Blob +
 thư mục `nop-bai/`) — bỏ sót chỉ là không dọn được, nới ra là xoá nhầm link
-Drive / ảnh / nhà demo. Chống cron gọi trùng nằm ở **chỉ mục UNIQUE từng phần**
+Drive / ảnh / nhà demo / **tệp cô gửi ở `zalo/`** (migration 021 ghi sẵn
+`han_xoa` cho chúng nhưng CHƯA có lượt dọn nào; dọn là một lượt quét KHÁC, đừng
+nới thư mục của lượt này ra để tiện). Chống cron gọi trùng nằm ở **chỉ mục UNIQUE từng phần**
 `(run_date) WHERE che_do = 'that'`, không ở code. `lib/donVideo.test.ts` ghim cả
 luật lẫn chín hàng rào, tên bài mang đúng số của hàng rào; bài "sổ cái ghi trước
 khi phá" kiểm bằng cách cho `del()` giả đọc thẳng CSDL ngay lúc nó bị gọi — sửa

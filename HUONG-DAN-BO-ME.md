@@ -169,6 +169,55 @@ Bỏ một cuốn (nút thùng rác, app hỏi lại một nhịp) thì cuốn �
 và từ lần tách sau app không dùng nó nữa; bài đã giao vẫn giữ nguyên tên sách trong
 ghi chú. Danh sách này chỉ bố mẹ thấy, các con không thấy.
 
+### Bài cô đăng trên Zalo tự vào app
+
+Cô giáo đăng bài tập lên nhóm Zalo của lớp thì bài **tự vào app**, bố mẹ không
+phải chụp ảnh hay dán lại nữa. Nhưng bài đó **chưa hiện cho con ngay**: nó nằm
+chờ ở mục **"Bài cô vừa giao, chờ duyệt"**, bố mẹ đọc rồi bấm **Duyệt** thì con
+mới thấy.
+
+Khi có tin mới, **Trang chủ** hiện một thẻ tím *"1 tin cô giao bài, chờ duyệt"*.
+Bấm vào đó, hoặc vào **Cài đặt → "Nhóm Zalo của lớp"** bất cứ lúc nào.
+
+Mỗi tin hiện đủ để bố mẹ yên tâm:
+
+- **Tên nhóm Zalo, tên cô, ngày giờ cô gửi** — nhìn là biết đúng lớp, đúng cô.
+- **Nguyên văn tin của cô**, y như trên Zalo, giữ nguyên xuống dòng. Tin dài thì
+  thu gọn lại, bấm **"Xem cả tin"** để đọc hết.
+- **Tệp cô gửi kèm** — ảnh xem được, phim và ghi âm bấm là phát ngay tại đây.
+- **Danh sách bài app đã tách sẵn, theo từng con**, xếp đúng thứ tự cô viết để
+  bố mẹ dò cho nhanh.
+
+Ba việc bố mẹ làm được:
+
+- **Sửa đề bài ngay tại chỗ** — gõ vào ô rồi bấm ra ngoài là lưu.
+- **"Sửa kỹ"** — mở màn sửa bài đầy đủ (đổi môn, hạn, giọng đọc, đính kèm),
+  giống hệt sửa một bài bình thường. Thùng rác bên cạnh để bỏ riêng một bài app
+  tách nhầm.
+- **"Duyệt N bài cho các con"** — một chạm, tất cả bài của tin đó thành bài thật
+  và hiện ngay trên máy các con.
+- **"Không phải bài"** — cô nhắn chuyện khác (nhắc nộp tiền, thông báo nghỉ)?
+  Bấm nút này, các bài nháp bị bỏ đi và app không đưa lại tin đó nữa.
+
+> Chưa bấm Duyệt thì con **không thấy gì cả** — không hiện trên máy con, không
+> tính vào "Đang chờ" ở Trang chủ, và không ảnh hưởng gì tới ⭐ của con.
+
+**Khai nhóm Zalo của lớp.** Vào **Cài đặt → "Nhóm Zalo của lớp"**, kéo xuống mục
+**"Nhóm Zalo"** rồi bấm **"Thêm nhóm Zalo"**:
+
+- **Tên nhóm** — gõ **đúng như trên Zalo**, kể cả dấu và khoảng trắng.
+- **Tên cô giáo** — đúng tên hiển thị của cô trên Zalo.
+- **Con học lớp này** — bấm chọn một hay nhiều con. Hai con học cùng lớp thì
+  chọn cả hai, mỗi con vẫn nhận một bản bài riêng để tự tick.
+- Ô **"90 phút"** là khoảng thời gian sau tin mà app còn nhận tệp cô gửi thêm.
+  Để nguyên 90 là hợp với hầu hết lớp: video mẫu cô gửi ngay sau tin, còn file
+  nhận xét từng bé thì mấy tiếng sau — 90 phút tách đúng hai loại.
+
+Mỗi nhóm có một **công tắc bật/tắt** và một dòng **"Nhận bài gần nhất"**. Dòng
+đó là cách biết nhóm còn chạy hay đã hỏng: mấy hôm liền không đổi mà lớp vẫn có
+bài thì gọi người cài giúp. Nghỉ hè hay chuyển lớp thì **tắt** nhóm đi, đừng lo
+mất — tin cũ vẫn giữ nguyên, bật lại lúc nào cũng được.
+
 ### Xem con làm tới đâu
 
 Màn **Trang chủ** cho biết ngay: **Hoàn thành / Đang chờ / Quá hạn** trong khối
