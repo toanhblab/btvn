@@ -192,7 +192,7 @@ Mỗi tin hiện đủ để bố mẹ yên tâm:
 - **Danh sách bài app đã tách sẵn, theo từng con**, xếp đúng thứ tự cô viết để
   bố mẹ dò cho nhanh.
 
-Ba việc bố mẹ làm được:
+Bốn việc bố mẹ làm được:
 
 - **Sửa đề bài ngay tại chỗ** — gõ vào ô rồi bấm ra ngoài là lưu.
 - **"Sửa kỹ"** — mở màn sửa bài đầy đủ (đổi môn, hạn, giọng đọc, đính kèm),
@@ -215,7 +215,10 @@ Ba việc bố mẹ làm được:
   chọn cả hai, mỗi con vẫn nhận một bản bài riêng để tự tick.
 - Ô **"90 phút"** là khoảng thời gian sau tin mà app còn nhận tệp cô gửi thêm.
   Để nguyên 90 là hợp với hầu hết lớp: video mẫu cô gửi ngay sau tin, còn file
-  nhận xét từng bé thì mấy tiếng sau — 90 phút tách đúng hai loại.
+  nhận xét từng bé thì mấy tiếng sau — 90 phút tách đúng hai loại. App **thật sự
+  bỏ** tệp cô gửi ngoài khoảng đó: nó vẫn hiện trong ô "tệp không vào được" với
+  lý do *"cô gửi ngoài khoảng thời gian nhận tệp"*, để bố mẹ biết mà nới số phút
+  lên nếu lớp của con hay gửi muộn.
 
 Mỗi nhóm có một **công tắc bật/tắt**, một dòng **"Mã nhóm"** và một dòng
 **"Nhận bài gần nhất"**. Mã nhóm bố mẹ **không phải gõ** — máy ở nhà tự điền khi

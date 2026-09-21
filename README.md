@@ -321,6 +321,7 @@ kèm câu đã dịch — giao diện bố mẹ/con đọc trường đó.
 | `401` | Thiếu hoặc sai khoá — **không nói là cái nào** |
 | `404` | `nguon_id` không có, nguồn đang tắt, hoặc nguồn chưa gắn con nào |
 | `409` | `ma_tin` đã có cho nguồn đó — **không tạo gì**. zalo-agent chạy lại mỗi 30 phút nên đây là đường bình thường, không phải lỗi |
+| `422` | **Chỉ cửa vé**: tệp gửi ngoài `cua_so_dinh_kem_phut` của nguồn — không phát vé, để agent khỏi tải lên thứ cửa nhận tin sẽ bỏ |
 | `503` | Máy chủ **chưa đặt `ZALO_INTAKE_SECRET`** |
 
 `POST /api/nhan-bai-zalo/tep-token?nguon_id=&ma_tin=` dùng **cùng khoá** đó,
@@ -357,7 +358,8 @@ thêm một bản của cả bộ tệp mà không dòng `dinh_kem` nào trỏ t
 agent tự khai quá 25MB, thiếu `url`, `url` không phải tệp của kho mình / sai họ
 `zalo/<nguồn>/`, hay kho báo không có tệp đó — thì **bỏ riêng tệp đó** và ghi vào
 `tep_bo_qua` (`[{ ten, ly_do, chi_tiet? }]`, `ly_do` ∈ `loai-khong-nhan` /
-`qua-nang` / `tep-hong` / `url-khong-nhan` / `khong-thay-trong-kho`) — tin vẫn
+`qua-nang` / `tep-hong` / `url-khong-nhan` / `khong-thay-trong-kho` /
+`ngoai-cua-so` / `thieu-gio-gui`) — tin vẫn
 vào, bố mẹ vẫn có bài để duyệt, và mục chờ duyệt **hiện** danh sách tệp bị bỏ để
 họ không tưởng là cô quên gửi. Trước đây cả gói trả 400, mà agent gửi lại mỗi 30
 phút nên một tờ `.docx` là khoá vĩnh viễn tin giao bài đó. Cột
@@ -455,7 +457,14 @@ và hạ chữ thường ngay lúc ghi (`docMauNhanDien` dùng chung `boDau` c�
 
 `cua_so_dinh_kem_phut` (mặc định 90) là khoảng sau tin mà tệp gửi trong đó
 được coi là tệp của bài: video mẫu tới sau tin 4 giây, còn tệp nhận xét từng
-bé tới sau ~4 tiếng — cửa sổ 90 phút tách đúng hai loại.
+bé tới sau ~4 tiếng — cửa sổ 90 phút tách đúng hai loại. Cửa sổ được kiểm ở
+**cả hai phía**: zalo-agent lọc trước (nó là bên duy nhất nhìn thấy dòng thời
+gian của Zalo), rồi btvn kiểm lại bằng `kiemCuaSoDinhKem` (lib/zalo.ts) — cửa
+vé trả `422` để agent khỏi tải lên, cửa nhận tin bỏ riêng tệp đó vào
+`tep_bo_qua` với lý do `ngoai-cua-so`. Ba biên có chủ ý, ghi ở chú thích của
+hàm đó: tin **không có** `gui_luc` thì bỏ qua phép kiểm và nhận tệp (đừng biến
+"không biết" thành "bỏ hết"); tệp không có `gui_luc` thì `thieu-gio-gui`; tệp
+gửi **trước** tin cũng là ngoài cửa sổ.
 
 **Không có nút xoá nguồn**, có ý: một nguồn đã nhận bài là cha của những dòng
 giữ nguyên văn tin của cô — bản sao duy nhất của chúng. Muốn dừng thì **tắt**.

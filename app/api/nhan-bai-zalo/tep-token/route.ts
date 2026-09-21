@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { moCuaNhanTin } from '@/lib/nhanBaiZalo';
-import { laDuongDanTepZalo, LOAI_TEP_NHAN, MAX_BYTES_MOI_TEP } from '@/lib/zalo';
+import { kiemCuaSoDinhKem, laDuongDanTepZalo, LOAI_TEP_NHAN, MAX_BYTES_MOI_TEP } from '@/lib/zalo';
 import { xuLyTaiTep } from '@/lib/upload-route';
 import { xacThucZalo } from '@/lib/xacThucZalo';
 
@@ -35,6 +35,12 @@ export const maxDuration = 60;
  *      no tu choi DUNG tap tin ma buoc sau cung tu choi: mot bo tep ky duoc ve
  *      roi bi 404 o buoc gui tin la tep mo coi khong `han_xoa`, khong luot don
  *      nao thu hoi duoc (kho 1GB da dung 219MB).
+ *   3. CUA SO NHAN TEP. Goi kem `tin_gui_luc` + `tep_gui_luc` thi tep nam ngoai
+ *      `cua_so_dinh_kem_phut` cua nguon bi tu choi 422 — cung ly do voi 409 o
+ *      tren: dung de agent tai len mot tep ma cua nhan tin se bo. THIEU hai tham
+ *      so do thi giu hanh vi cu, de mot ban zalo-agent cu khong vo; cua nhan tin
+ *      van kiem lai bang CHINH `kiemCuaSoDinhKem`, nen bo qua o day khong mo
+ *      duoc duong nao.
  *
  * MOT TEN TRUONG LOI: `loi`, giong hai cua kia — ke ca nhung ma do than chung
  * `xuLyTaiTep` sinh ra (`tenTruongLoi`). Cua nay la cua cho MAY, ma may thi doc
@@ -55,6 +61,7 @@ export const maxDuration = 60;
  *   401  xin ve ma thieu hoac sai khoa (khong noi la cai nao)
  *   404  nguon_id khong co, nguon dang tat, hoac nguon chua gan con nao
  *   409  `ma_tin` da co cho nguon do
+ *   422  tep gui ngoai cua so nhan tep cua nguon
  *   501  chua bat Vercel Blob (tren Vercel), hoac che do dev khong dung duoc
  *   503  may chu chua dat ZALO_INTAKE_SECRET
  */
@@ -67,6 +74,8 @@ export async function POST(req: Request) {
   const q = new URL(req.url).searchParams;
   const nguonId = (q.get('nguon_id') ?? '').trim();
   const maTin = (q.get('ma_tin') ?? '').trim();
+  const tinGuiLuc = (q.get('tin_gui_luc') ?? '').trim();
+  const tepGuiLuc = (q.get('tep_gui_luc') ?? '').trim();
 
   return xuLyTaiTep(req, {
     auth: async () => xacThucZalo(req).ok,
@@ -74,11 +83,19 @@ export async function POST(req: Request) {
       if (!nguonId) return NextResponse.json({ loi: 'thieu-nguon-id' }, { status: 400 });
       if (!maTin) return NextResponse.json({ loi: 'thieu-ma-tin' }, { status: 400 });
       const cong = await moCuaNhanTin(nguonId, maTin);
-      if (cong.ok) return null;
-      return NextResponse.json(
-        { loi: cong.loi },
-        { status: cong.loi === 'trung-ma-tin' ? 409 : 404 }
-      );
+      if (!cong.ok) {
+        return NextResponse.json(
+          { loi: cong.loi },
+          { status: cong.loi === 'trung-ma-tin' ? 409 : 404 }
+        );
+      }
+      if (tinGuiLuc && tepGuiLuc) {
+        const cuaSo = kiemCuaSoDinhKem(tinGuiLuc, tepGuiLuc, cong.nguon.cuaSoDinhKemPhut);
+        if (cuaSo !== 'trong-cua-so') {
+          return NextResponse.json({ loi: cuaSo }, { status: 422 });
+        }
+      }
+      return null;
     },
     tenTruongLoi: 'loi',
     duoiMacDinh: (mime) => {

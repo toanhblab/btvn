@@ -116,6 +116,8 @@ function LyDoBoTepChu({ ly_do }: { ly_do: LyDoBoTep }) {
     'tep-hong': T('tệp hỏng'),
     'url-khong-nhan': T('tệp không nằm trong kho của app'),
     'khong-thay-trong-kho': T('kho tệp không tìm thấy tệp này'),
+    'ngoai-cua-so': T('cô gửi ngoài khoảng thời gian nhận tệp'),
+    'thieu-gio-gui': T('tệp không có giờ gửi để đối chiếu'),
   };
   return <>{chu[ly_do]}</>;
 }

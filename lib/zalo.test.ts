@@ -30,8 +30,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  MAX_BYTES_MOI_TEP, MAX_TEP_MOI_GOI, congNgay, docGoiTin, docNhanDien, duongDanBlobZalo,
-  hanNopBai, laDuongDanTepZalo, laNgayISO, laUrlBlobZaloCuaNguon, loaiTepZalo,
+  MAX_BYTES_MOI_TEP, MAX_TEP_MOI_GOI, congNgay, docGoiTin, docNhanDien, hanNopBai,
+  kiemCuaSoDinhKem, laDuongDanTepZalo, laNgayISO, laUrlBlobZaloCuaNguon, loaiTepZalo,
   matCoNhanDien, tenTepZalo,
 } from './zalo.ts';
 import { ngayNhaISO } from './muiGio.ts';
@@ -286,16 +286,6 @@ test('congNgay chay tren lich UTC — khong phu thuoc TZ cua may chay, va qua du
 
 /* ---------------- Tep: ten va thu muc tren kho ---------------- */
 
-test('thu muc Blob la zalo/<nguon>/<ngay>/ va KHONG cham nop-bai/ cua video con nop', () => {
-  const d = duongDanBlobZalo('nzl_cambridge', '2026-09-18', 'video mau (1).mp4');
-  assert.ok(d.startsWith('zalo/nzl_cambridge/2026-09-18/'), d);
-  assert.ok(!d.includes('nop-bai/'), d);
-  // Ky tu la trong ten bi thay, khong de lot '..' hay '/' xuong duong dan
-  const hiem = duongDanBlobZalo('../../evil', '2026-09-18', '../../../etc/passwd');
-  assert.ok(!hiem.includes('..'), hiem);
-  assert.equal(hiem.split('/').length, 4, hiem);
-});
-
 test('url cua tep phai la tep CUA KHO MINH, dung ho zalo/<nguon>/<ngay>/', () => {
   const ok = `${KHO}/zalo/nzl_cambridge/2026-09-18/video-abc123.mp4`;
   assert.ok(laUrlBlobZaloCuaNguon(ok, 'nzl_cambridge'));
@@ -325,15 +315,80 @@ test('url cua tep phai la tep CUA KHO MINH, dung ho zalo/<nguon>/<ngay>/', () =>
   }
 });
 
-test('cua phat ve va cua nhan tin chot duong dan bang CUNG mot ham', () => {
-  // `duongDanBlobZalo` sinh ra duong dan ma `laDuongDanTepZalo` phai nhan —
-  // lech nhau la agent xin ve cho mot duong dan roi gui len mot duong dan khac.
-  const d = duongDanBlobZalo('nzl_cambridge', '2026-09-18', 'video mẫu (1).mp4');
-  assert.ok(laDuongDanTepZalo(d, 'nzl_cambridge'), d);
-  assert.ok(!laDuongDanTepZalo(d, 'nzl_starters'), d);
-  // Dang co dau '/' dau (pathname cua URL) cung phai nhan
-  assert.ok(laDuongDanTepZalo(`/${d}`, 'nzl_cambridge'));
-  assert.ok(!laDuongDanTepZalo('nop-bai/x.mp4', 'nzl_cambridge'));
+test('laDuongDanTepZalo: khuon zalo/<nguon>/<ngay>/<mot doan> — btvn chi DUYET, agent moi dat ten', () => {
+  // btvn khong sinh duong dan nua; day la hop dong ma zalo-agent phai dat theo,
+  // va no duoc doc o hai cho phai giong nhau (cua phat ve chan pathname truoc khi
+  // ky, cua nhan tin doi chieu `url`). Nen doi chieu thang voi duong dan viet tay.
+  for (const dung of [
+    'zalo/nzl_cambridge/2026-09-18/video-mau.mp4',
+    // `addRandomSuffix` doi ten tep: ve chi chot THU MUC
+    'zalo/nzl_cambridge/2026-09-18/video-mau-abc123.mp4',
+    // Dang co dau '/' dau (pathname cua URL) cung phai nhan
+    '/zalo/nzl_cambridge/2026-09-18/x.pdf',
+  ]) {
+    assert.ok(laDuongDanTepZalo(dung, 'nzl_cambridge'), dung);
+    assert.ok(!laDuongDanTepZalo(dung, 'nzl_starters'), `${dung} khong duoc qua o nguon khac`);
+  }
+
+  for (const xau of [
+    'nop-bai/x.mp4',                                   // ho cua video con nop
+    'zalo/nzl_starters/2026-09-18/video.mp4',          // ho cua nguon khac
+    'zalo/nzl_cambridge/2026-09-18/them/video.mp4',    // thu muc long nhau
+    'zalo/nzl_cambridge/video.mp4',                    // thieu ngay
+    'zalo/nzl_cambridge/2026-02-30/video.mp4',         // ngay khong co that
+    'zalo/nzl_cambridge/2026-09-18/',                  // thieu ten tep
+    'zalo/nzl_cambridge/../nzl_starters/video.mp4',    // lach ra ngoai ho
+    'video.mp4', '', null, 123,
+  ]) {
+    assert.ok(!laDuongDanTepZalo(xau, 'nzl_cambridge'), String(xau));
+  }
+
+  // Mot `nguon_id` mang ky tu la khong keo duong dan ra khoi ho duoc: `sachDoan`
+  // thay chung TRUOC khi so, va khuon van doi dung bon doan.
+  for (const xau of [
+    'zalo/../../evil/2026-09-18/passwd',
+    'zalo/../../../etc/passwd',
+    '../../evil/2026-09-18/x.mp4',
+  ]) {
+    assert.ok(!laDuongDanTepZalo(xau, '../../evil'), xau);
+    assert.ok(!laDuongDanTepZalo(xau, 'nzl_cambridge'), xau);
+  }
+});
+
+/* ---------------- Cua so nhan tep ---------------- */
+
+test('cua so nhan tep: video mau sau tin 4 GIAY thi nhan, tep nhan xet sau 4 TIENG thi khong', () => {
+  const tin = '2026-09-18T20:03:17+07:00';
+  // Hai ca THAT do tren tin cua co (migration 021)
+  assert.equal(kiemCuaSoDinhKem(tin, '2026-09-18T20:03:21+07:00', 90), 'trong-cua-so');
+  assert.equal(kiemCuaSoDinhKem(tin, '2026-09-19T00:15:00+07:00', 90), 'ngoai-cua-so');
+
+  // Hai dau khoang tinh la TRONG cua so
+  assert.equal(kiemCuaSoDinhKem(tin, tin, 90), 'trong-cua-so');
+  assert.equal(kiemCuaSoDinhKem(tin, '2026-09-18T21:33:17+07:00', 90), 'trong-cua-so');
+  assert.equal(kiemCuaSoDinhKem(tin, '2026-09-18T21:33:18+07:00', 90), 'ngoai-cua-so');
+
+  // Mui gio khac nhau van so dung mot moc tuyet doi
+  assert.equal(kiemCuaSoDinhKem(tin, '2026-09-18T13:03:21Z', 90), 'trong-cua-so');
+
+  // Tep co TU TRUOC tin khong phai tep cua bai nay
+  assert.equal(kiemCuaSoDinhKem(tin, '2026-09-18T20:03:16+07:00', 90), 'ngoai-cua-so');
+
+  // Bo me noi so phut ra thi tep muon lot vao
+  assert.equal(kiemCuaSoDinhKem(tin, '2026-09-19T00:15:00+07:00', 1440), 'trong-cua-so');
+});
+
+test('cua so nhan tep: khong co moc thi KHONG bo tep, thieu gio tep thi bao rieng', () => {
+  const tin = '2026-09-18T20:03:17+07:00';
+  // TIN khong co gui_luc: khong co moc nao de tinh, dung bien "khong biet" thanh
+  // "bo het tep cua tin"
+  assert.equal(kiemCuaSoDinhKem(null, null, 90), 'trong-cua-so');
+  assert.equal(kiemCuaSoDinhKem(null, '2026-09-19T00:15:00+07:00', 90), 'trong-cua-so');
+  assert.equal(kiemCuaSoDinhKem('khong-phai-moc', '2026-09-19T00:15:00+07:00', 90), 'trong-cua-so');
+
+  // TEP khong co gui_luc ma tin thi co: khong doi chieu duoc
+  assert.equal(kiemCuaSoDinhKem(tin, null, 90), 'thieu-gio-gui');
+  assert.equal(kiemCuaSoDinhKem(tin, 'hong', 90), 'thieu-gio-gui');
 });
 
 test('ten tep tu Zalo khong co duoi thi dat theo loai + thu tu', () => {

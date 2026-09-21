@@ -612,6 +612,8 @@ export const JA: Record<Key, string> = {
   'tệp hỏng': 'ファイルが壊れています',
   'tệp không nằm trong kho của app': 'アプリの保管庫にないファイルです',
   'kho tệp không tìm thấy tệp này': 'アプリの保管庫でこのファイルが見つかりません',
+  'cô gửi ngoài khoảng thời gian nhận tệp': 'ファイル受け取り時間の範囲外に送られました',
+  'tệp không có giờ gửi để đối chiếu': '照合する送信時刻がないファイルです',
   'Sửa kỹ': '詳しく編集',
   'Bỏ bài "{name}"': '「{name}」を削除',
   '{n} bài': '{n}件',

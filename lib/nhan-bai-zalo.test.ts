@@ -28,7 +28,9 @@
  *      `ma_tin` chua co), va su kien `blob.upload-completed` do may chu Vercel
  *      Blob goi ve KHONG bi chan — no khong mang khoa Bearer; goi mang url cua
  *      nguon KHAC / ngoai kho thi tep do bi bo va BAO RA ma tin van vao; so byte
- *      lay tu KHO chu khong tu con so agent khai.
+ *      lay tu KHO chu khong tu con so agent khai; mot loi TAM THOI cua kho khong
+ *      duoc lam mat tep; va CUA SO NHAN TEP cua nguon duoc AP that — o ca cua
+ *      phat ve (422) lan cua nhan tin (`tep_bo_qua`).
  *   6. KHONG NHIN SANG NHA KHAC. `nguon_id` la thu quyet dinh nha, nen mot
  *      nguon cua nha A khong bao gio tao duoc bai cho con nha B — va nguon cua
  *      NHA DEMO khong bao gio lot vao cua danh cho may.
@@ -51,14 +53,25 @@ process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_rw_test';
 const tepTrenKho = new Map<string, number>();
 /** Moi lan `head` duoc goi — de kiem cua nhan co hoi kho that khong. */
 const daHoiKho: string[] = [];
+/**
+ * Dat mot loi vao day thi `head()` NEM no thay vi tra loi. Dung de phan biet hai
+ * cau tra loi rat khac nhau ma bo kiem cu gop lam mot: "kho noi ro khong co tep"
+ * (BlobNotFoundError) va "khong hoi duoc kho luc nay" (rate-limit, 5xx).
+ */
+let khoNemLoi: unknown = null;
+/** Lop loi THAT cua @vercel/blob — `instanceof` chi dung khi dung chinh lop do. */
+const { BlobNotFoundError, BlobServiceRateLimited } = await import('@vercel/blob');
 mock.module('@vercel/blob', {
   namedExports: {
+    BlobNotFoundError,
+    BlobServiceRateLimited,
     put: async () => { throw new Error('cua nhan bai Zalo khong duoc tu tai tep len kho'); },
     del: async () => {},
     head: async (url: string) => {
       daHoiKho.push(url);
+      if (khoNemLoi) throw khoNemLoi;
       const size = tepTrenKho.get(url);
-      if (size === undefined) throw new Error('BlobNotFound');
+      if (size === undefined) throw new BlobNotFoundError();
       return { url, size };
     },
   },
@@ -215,6 +228,7 @@ before(async () => {
 
 beforeEach(async () => {
   daHoiKho.length = 0;
+  khoNemLoi = null;
   veDaKy.length = 0;
   suKienHoanTat.length = 0;
   tepTrenKho.clear();
@@ -290,6 +304,7 @@ test('mot tep .zip cua co KHONG lam hong ca tin: 201, tin vao du, tep do bao ra'
       GOI_MAU.dinh_kem[0],
       {
         ten: 'worksheet.docx', loai: 'application/zip', kich_thuoc: 4096,
+        gui_luc: GOI_MAU.dinh_kem[0].gui_luc,
         url: `${KHO}/zalo/${NGUON}/2026-09-18/worksheet-abc.docx`,
       },
     ],
@@ -317,7 +332,8 @@ test('tep cua NGUON KHAC / ngoai kho bi bo, tin van vao — url la dau vao tu be
     const res = await goiCua({
       ...GOI_MAU,
       ma_tin: `tin_url_${i}`,
-      dinh_kem: [{ ten: `${nhan}.mp4`, loai: 'video/mp4', kich_thuoc: 1024, url }],
+      dinh_kem: [{ ten: `${nhan}.mp4`, loai: 'video/mp4', kich_thuoc: 1024, url,
+                   gui_luc: GOI_MAU.dinh_kem[0].gui_luc }],
     });
     assert.equal(res.status, 201, nhan);
     const than = await res.json();
@@ -334,7 +350,8 @@ test('url dung ho nhung KHO khong co tep -> bo va bao ra, khong ghi mot dinh_kem
   const res = await goiCua({
     ...GOI_MAU,
     ma_tin: 'tin_thieu_tep',
-    dinh_kem: [{ ten: 'chua-tai-len.mp4', loai: 'video/mp4', kich_thuoc: 1024, url }],
+    dinh_kem: [{ ten: 'chua-tai-len.mp4', loai: 'video/mp4', kich_thuoc: 1024, url,
+                 gui_luc: GOI_MAU.dinh_kem[0].gui_luc }],
   });
   assert.equal(res.status, 201);
   assert.deepEqual((await res.json()).tep_bo_qua.map((t: { ly_do: string }) => t.ly_do),
@@ -349,7 +366,8 @@ test('so byte lay tu KHO, khong tu con so agent khai', async () => {
     ...GOI_MAU,
     ma_tin: 'tin_byte',
     // Agent khai 1KB cho mot tep 3MB — con so nay di vao CSDL nen khong duoc tin
-    dinh_kem: [{ ten: 'video-that.mp4', loai: 'video/mp4', kich_thuoc: 1024, url }],
+    dinh_kem: [{ ten: 'video-that.mp4', loai: 'video/mp4', kich_thuoc: 1024, url,
+                 gui_luc: GOI_MAU.dinh_kem[0].gui_luc }],
   });
   assert.equal(res.status, 201);
   const [dong] = await db.query(`SELECT dinh_kem FROM bai_tu_zalo WHERE ma_tin = 'tin_byte'`);
@@ -364,10 +382,117 @@ test('kho bao tep NANG HON 25MB thi bo, du agent khai vua du', async () => {
   const res = await goiCua({
     ...GOI_MAU,
     ma_tin: 'tin_nang',
-    dinh_kem: [{ ten: 'phim-dai.mp4', loai: 'video/mp4', kich_thuoc: 1024, url }],
+    dinh_kem: [{ ten: 'phim-dai.mp4', loai: 'video/mp4', kich_thuoc: 1024, url,
+                 gui_luc: GOI_MAU.dinh_kem[0].gui_luc }],
   });
   assert.equal(res.status, 201);
   assert.deepEqual((await res.json()).tep_bo_qua.map((t: { ly_do: string }) => t.ly_do), ['qua-nang']);
+});
+
+test('kho loi TAM THOI thi GIU tep theo so agent khai — chi BlobNotFoundError moi la "khong co"', async () => {
+  const url = `${KHO}/zalo/${NGUON}/2026-09-18/video-ket-mang.mp4`;
+  tepTrenKho.set(url, 2_000_000);
+  // Kho con song, chi dang chan bot yeu cau. Gop no vao nhanh "khong co tep" la
+  // MAT VINH VIEN video cua co: tin van 201 nen dong `bai_tu_zalo` da ghi, va
+  // agent gui lai sau 30 phut chi nhan 409.
+  khoNemLoi = new BlobServiceRateLimited(5);
+  const res = await goiCua({
+    ...GOI_MAU,
+    ma_tin: 'tin_kho_loi',
+    dinh_kem: [{ ten: 'video-ket-mang.mp4', loai: 'video/mp4', kich_thuoc: 1024, url,
+                 gui_luc: GOI_MAU.dinh_kem[0].gui_luc }],
+  });
+  assert.equal(res.status, 201);
+  assert.deepEqual((await res.json()).tep_bo_qua, [], 'mot cu rate-limit khong duoc bo tep cua co');
+  const [dong] = await db.query(`SELECT dinh_kem FROM bai_tu_zalo WHERE ma_tin = 'tin_kho_loi'`);
+  const dinhKem = dong.dinh_kem as { bytes: number }[];
+  assert.equal(dinhKem.length, 1);
+  assert.equal(dinhKem[0].bytes, 1024, 'lui ve so agent khai (da kep theo tran o docGoiTin)');
+});
+
+/* ---------------- 5c. Cua so nhan tep ---------------- */
+
+test('cua so nhan tep duoc AP: video mau sau tin 4 GIAY vao, tep nhan xet sau 4 TIENG bi bo', async () => {
+  const trongCuaSo = `${KHO}/zalo/${NGUON}/2026-09-18/video-mau.mp4`;
+  const ngoaiCuaSo = `${KHO}/zalo/${NGUON}/2026-09-18/nhan-xet-be-khac.mp4`;
+  tepTrenKho.set(trongCuaSo, 1024);
+  tepTrenKho.set(ngoaiCuaSo, 1024);
+
+  const res = await goiCua({
+    ...GOI_MAU,
+    ma_tin: 'tin_cua_so',
+    dinh_kem: [
+      // Ca THAT: video mau cua co toi sau tin 4 giay
+      { ten: 'video-mau.mp4', loai: 'video/mp4', kich_thuoc: 1024, url: trongCuaSo,
+        gui_luc: '2026-09-18T20:03:21+07:00' },
+      // Ca THAT: tep nhan xet tung be toi sau ~4 tieng — dung loai tep ma luat
+      // cua captain sinh ra de loai
+      { ten: 'nhan-xet-be-khac.mp4', loai: 'video/mp4', kich_thuoc: 1024, url: ngoaiCuaSo,
+        gui_luc: '2026-09-19T00:15:00+07:00' },
+    ],
+  });
+
+  assert.equal(res.status, 201, 'mot tep ngoai cua so khong duoc lam hong ca tin');
+  const than = await res.json();
+  assert.ok(than.so_bai_nhap > 0, 'bo me van phai co bai de duyet');
+  assert.deepEqual(than.tep_bo_qua.map((t: { ten: string; ly_do: string }) => [t.ten, t.ly_do]),
+    [['nhan-xet-be-khac.mp4', 'ngoai-cua-so']]);
+
+  const [dong] = await db.query(`SELECT dinh_kem FROM bai_tu_zalo WHERE ma_tin = 'tin_cua_so'`);
+  assert.deepEqual((dong.dinh_kem as { url: string }[]).map((t) => t.url), [trongCuaSo]);
+  assert.ok(!daHoiKho.includes(ngoaiCuaSo), 'tep da loai thi khong ton them mot luot hoi kho');
+
+  // Va bo me DOC LAI duoc ly do o muc cho duyet
+  const [muc] = await zaloStore.listBaiChoDuyet(FAM);
+  assert.deepEqual(muc.bai.tepBoQua.map((t) => t.ly_do), ['ngoai-cua-so']);
+});
+
+test('cua so nhan tep: tin KHONG co gio gui thi van nhan tep; tep thieu gio gui thi bao rieng', async () => {
+  const url = `${KHO}/zalo/${NGUON}/2026-09-18/video-mau.mp4`;
+  tepTrenKho.set(url, 1024);
+  const tep = { ten: 'video-mau.mp4', loai: 'video/mp4', kich_thuoc: 1024, url };
+
+  // Khong co moc thi khong tinh duoc cua so — dung bien "khong biet" thanh "bo het"
+  const khongMoc = await goiCua({
+    ...GOI_MAU, ma_tin: 'tin_khong_moc', gui_luc: null,
+    dinh_kem: [{ ...tep, gui_luc: '2026-09-19T00:15:00+07:00' }],
+  });
+  assert.equal(khongMoc.status, 201);
+  assert.deepEqual((await khongMoc.json()).tep_bo_qua, []);
+  const [dongA] = await db.query(`SELECT dinh_kem FROM bai_tu_zalo WHERE ma_tin = 'tin_khong_moc'`);
+  assert.equal((dongA.dinh_kem as unknown[]).length, 1);
+
+  // Tin CO moc ma tep thi khong: khong doi chieu duoc, bao ra bang ly do rieng
+  const thieuGio = await goiCua({ ...GOI_MAU, ma_tin: 'tin_thieu_gio', dinh_kem: [tep] });
+  assert.equal(thieuGio.status, 201);
+  assert.deepEqual((await thieuGio.json()).tep_bo_qua.map((t: { ly_do: string }) => t.ly_do),
+    ['thieu-gio-gui']);
+});
+
+test('cua phat ve tu choi 422 tep ngoai cua so — agent khoi tai len thu cua nhan tin se bo', async () => {
+  const duongDan = `zalo/${NGUON}/2026-09-18/nhan-xet-be-khac.mp4`;
+  const tin = '2026-09-18T20:03:17%2B07:00';
+
+  const ngoai = await xinVe(
+    `nguon_id=${NGUON}&ma_tin=tin_ve_cua_so&tin_gui_luc=${tin}&tep_gui_luc=2026-09-19T00:15:00%2B07:00`,
+    thanXinVe(duongDan));
+  assert.equal(ngoai.status, 422);
+  assert.equal((await ngoai.json()).loi, 'ngoai-cua-so');
+  assert.deepEqual(veDaKy, []);
+
+  // Trong cua so thi ve van duoc ky
+  const trong = await xinVe(
+    `nguon_id=${NGUON}&ma_tin=tin_ve_cua_so&tin_gui_luc=${tin}&tep_gui_luc=2026-09-18T20:03:21%2B07:00`,
+    thanXinVe(duongDan));
+  assert.equal(trong.status, 200);
+  assert.deepEqual(veDaKy, [duongDan]);
+
+  // Ban zalo-agent CU khong gui hai tham so do: giu hanh vi cu, dung lam no vo.
+  // Cua nhan tin van kiem lai nen bo qua o day khong mo duong nao.
+  veDaKy.length = 0;
+  const khongKhai = await xinVe(`nguon_id=${NGUON}&ma_tin=tin_ve_cua_so`, thanXinVe(duongDan));
+  assert.equal(khongKhai.status, 200);
+  assert.deepEqual(veDaKy, [duongDan]);
 });
 
 test('404 khi nguon khong co / dang tat / chua gan con nao', async () => {

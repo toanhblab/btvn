@@ -612,6 +612,8 @@ export const KO: Record<Key, string> = {
   'tệp hỏng': '파일이 손상되었습니다',
   'tệp không nằm trong kho của app': '앱 보관소에 없는 파일입니다',
   'kho tệp không tìm thấy tệp này': '앱 보관소에서 이 파일을 찾지 못했습니다',
+  'cô gửi ngoài khoảng thời gian nhận tệp': '파일 받는 시간 범위를 벗어나 보냈습니다',
+  'tệp không có giờ gửi để đối chiếu': '대조할 보낸 시각이 없는 파일입니다',
   'Sửa kỹ': '자세히 고치기',
   'Bỏ bài "{name}"': '"{name}" 삭제',
   '{n} bài': '{n}개',

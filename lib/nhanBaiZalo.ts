@@ -36,7 +36,7 @@
  *    khong dong `dinh_kem` nao tro toi va khong luot don nao thu hoi duoc.
  */
 
-import { head } from '@vercel/blob';
+import { BlobNotFoundError, head } from '@vercel/blob';
 import { query, queryOne } from './db';
 import {
   listAssignments, newId, saveSubmission, taoNhiemVuNgayNeuChuaQua, todayISO,
@@ -47,7 +47,8 @@ import { boDau, laUrlTepAppCap } from './media';
 import { taoT, type T } from './i18n/chu';
 import { ngonNguOf, type NgonNgu } from './i18n/ngonNgu';
 import {
-  baiNhapTho, docNhanDien, hanNopBai, laUrlBlobZaloCuaNguon, loaiTepZalo, tenTepZalo,
+  baiNhapTho, docNhanDien, hanNopBai, kiemCuaSoDinhKem, laUrlBlobZaloCuaNguon, loaiTepZalo,
+  tenTepZalo,
   CACH_TAI_TEP, DUONG_TOKEN_TEP, LOAI_TEP_NHAN, MAX_BYTES_MOI_TEP, MAX_MB_MOI_TEP,
   MAX_TEP_MOI_GOI, SO_NGAY_GIU_TEP_ZALO, congNgay,
   type GoiTinZalo, type NhanDienZalo, type TepBoQua, type TepZaloDaLuu,
@@ -419,7 +420,9 @@ function urlTepNhanDuoc(url: string, nguonId: string): boolean {
 }
 
 /**
- * So byte THAT cua mot tep tren kho. `null` = kho bao khong co tep do.
+ * So byte THAT cua mot tep tren kho. `null` = kho NOI RO no khong co tep do;
+ * `undefined` = khong hoi duoc, nguoi goi dung so agent khai (da kep theo tran o
+ * `docGoiTin`).
  *
  * Hoi kho chu khong tin `kich_thuoc` agent khai: con so do di vao
  * `bai_tu_zalo.dinh_kem` va la thu duy nhat noi mot tep nang bao nhieu, nen mot
@@ -427,27 +430,39 @@ function urlTepNhanDuoc(url: string, nguonId: string): boolean {
  * cau hoi "tep nay co THAT tren kho khong" — agent tai len that bai roi van gui
  * url len thi day la cho duy nhat bat duoc.
  *
- * Duong dev (`/api/tep/...`) khong hoi duoc: tra `undefined` de nguoi goi dung
- * so agent khai (da kep theo tran o `docGoiTin`).
+ * CHI `BlobNotFoundError` moi la cau tra loi "khong co". Loi TAM THOI cua kho
+ * (`BlobServiceNotAvailable`, `BlobServiceRateLimited`, `BlobRequestAbortedError`,
+ * fetch hong) KHONG tra loi cau hoi do, va gop chung vao mot nhanh la mot cu
+ * rate-limit thoang qua lam MAT VINH VIEN video cua co: tin van 201 nen dong
+ * `bai_tu_zalo` da ghi, va agent gui lai sau 30 phut chi nhan 409. Lui ve so
+ * agent khai va GIU tep — mot con so hoi lech con hon mot tep bien mat.
+ *
+ * Duong dev (`/api/tep/...`) khong hoi duoc kho: cung tra `undefined`.
  */
 async function soByteTrenKho(url: string): Promise<number | null | undefined> {
   if (!hasBlob || !url.startsWith('https://')) return undefined;
   try {
     const t = await head(url);
     return typeof t?.size === 'number' ? t.size : null;
-  } catch {
-    return null;
+  } catch (e) {
+    if (e instanceof BlobNotFoundError) return null;
+    console.warn('[nhan-bai-zalo] hoi kho loi, dung so agent khai', url, e);
+    return undefined;
   }
 }
 
 /**
- * Doi chieu tung tep cua goi voi kho tep. Tep nao truot thi BO QUA va bao ra
- * (xem chu thich dau tep) — mot video khong doi chieu duoc khong duoc phep lam
- * mat ca tin giao bai.
+ * Doi chieu tung tep cua goi voi CUA SO NHAN TEP cua nguon roi voi kho tep. Tep
+ * nao truot thi BO QUA va bao ra (xem chu thich dau tep) — mot video khong doi
+ * chieu duoc khong duoc phep lam mat ca tin giao bai.
+ *
+ * Cua so kiem TRUOC khi hoi kho: mot tep nhan xet tung be (toi sau tin ~4 tieng)
+ * da bi loai thi khong can mot luot `head()` cho no nua.
  */
 async function nhanTepDaTai(
   goi: GoiTinZalo,
-  ngay: string
+  ngay: string,
+  cuaSoPhut: number
 ): Promise<{ tep: TepZaloDaLuu[]; boQua: TepBoQua[] }> {
   const tep: TepZaloDaLuu[] = [];
   const boQua: TepBoQua[] = [];
@@ -464,6 +479,11 @@ async function nhanTepDaTai(
     }
     if (!urlTepNhanDuoc(t.url, goi.nguon_id)) {
       boQua.push({ ten: tenHien, ly_do: 'url-khong-nhan', chi_tiet: t.url.slice(0, 200) });
+      continue;
+    }
+    const cuaSo = kiemCuaSoDinhKem(goi.gui_luc, t.gui_luc, cuaSoPhut);
+    if (cuaSo !== 'trong-cua-so') {
+      boQua.push({ ten: tenHien, ly_do: cuaSo, chi_tiet: t.gui_luc ?? undefined });
       continue;
     }
     const tuKho = await soByteTrenKho(t.url);
@@ -590,7 +610,7 @@ export async function nhanTinZalo(goi: GoiTinZalo): Promise<KetQuaNhanTin> {
 
   const homNay = todayISO();
   const ngayTep = goi.ngay_trong_tin ?? homNay;
-  const { tep, boQua } = await nhanTepDaTai(goi, ngayTep);
+  const { tep, boQua } = await nhanTepDaTai(goi, ngayTep, nguon.cuaSoDinhKemPhut);
   const tepBoQua = [...goi.bo_qua, ...boQua];
   if (tepBoQua.length > 0) {
     // Log may chu: mot ban deploy thieu BLOB_READ_WRITE_TOKEN bo SACH tep cua

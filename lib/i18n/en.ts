@@ -636,6 +636,8 @@ export const EN = {
   'tệp hỏng': 'broken file',
   'tệp không nằm trong kho của app': 'file is not in the app storage',
   'kho tệp không tìm thấy tệp này': 'the app storage cannot find this file',
+  'cô gửi ngoài khoảng thời gian nhận tệp': 'sent outside the file window',
+  'tệp không có giờ gửi để đối chiếu': 'the file has no send time to check against',
   'Sửa kỹ': 'Edit in full',
   'Bỏ bài "{name}"': 'Drop "{name}"',
   '{n} bài': '{n} tasks',

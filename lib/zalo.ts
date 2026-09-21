@@ -228,11 +228,12 @@ export interface TepTrongGoi {
 }
 
 /**
- * Mot tep KHONG duoc giu lai, kem ly do — MOT danh sach duy nhat cho ca hai cho
- * co the bo tep: luc doc goi (sai loai, agent khai qua 25MB, thieu url) va luc
- * doi chieu voi kho tep (url khong phai cua kho minh / sai tien to cua nguon,
- * hoac kho bao khong co tep do). Luu cung dong `bai_tu_zalo` va hien o muc cho
- * duyet, de bo me biet co mot tep cua co khong vao duoc chu khong phai doan.
+ * Mot tep KHONG duoc giu lai, kem ly do — MOT danh sach duy nhat cho ba cho co
+ * the bo tep: luc doc goi (sai loai, agent khai qua 25MB, thieu url), luc doi
+ * chieu voi CUA SO NHAN TEP cua nguon (`kiemCuaSoDinhKem`), va luc doi chieu voi
+ * kho tep (url khong phai cua kho minh / sai tien to cua nguon, hoac kho bao
+ * khong co tep do). Luu cung dong `bai_tu_zalo` va hien o muc cho duyet, de bo
+ * me biet co mot tep cua co khong vao duoc chu khong phai doan.
  *
  * `ly_do` la MA MAY DOC: cua nay do zalo-agent goi nen than 201 khong qua lop
  * dich; man bo me tu chon cau cho tung ma.
@@ -242,7 +243,9 @@ export type LyDoBoTep =
   | 'qua-nang'
   | 'tep-hong'
   | 'url-khong-nhan'
-  | 'khong-thay-trong-kho';
+  | 'khong-thay-trong-kho'
+  | 'ngoai-cua-so'
+  | 'thieu-gio-gui';
 
 export interface TepBoQua {
   ten: string;
@@ -384,37 +387,63 @@ export function docGoiTin(
 }
 
 /**
- * Thu muc tren Vercel Blob: `zalo/<nguon>/<yyyy-mm-dd>/<ten>` (hop dong captain
- * chot). Tien to rieng, KHONG trung `nop-bai/` cua video con nop — `laUrlVideoConNop`
- * (lib/donVideo.ts) chi nhan `nop-bai/` nen mot luot don video khong bao gio
- * cham vao tep o day. Doi tien to nay la phai xem lai ca hai ben.
+ * Tep nay co nam trong CUA SO NHAN TEP cua nguon khong?
+ *
+ * Luat cua captain: chi lay tep DE BAI di kem tin, khong lay tep nhan xet tung
+ * be. Hai loai do chi phan biet duoc bang THOI GIAN — do tren tin that: video
+ * mau toi sau tin 4 giay, con tep nhan xet tung be toi sau ~4 tieng (migration
+ * 021). `cua_so_dinh_kem_phut` cua nguon (mac dinh 90) la vach giua, va bo me
+ * sua duoc no ngay tren man `/bome/zalo` — nen no phai duoc AP, khong phai mot
+ * con so chi gui cho may o nha.
+ *
+ * Kiem o CA HAI phia va phai la MOT ham: cua phat ve tu choi 422 truoc khi agent
+ * tai tep len, cua nhan tin bo rieng tep do vao `tep_bo_qua`.
+ *
+ * Ba bien, xu ly CO CHU DINH chu khong de roi tu nhien:
+ *   - TIN khong co `gui_luc` (truong nullable, `mocISO` tra null khi hong): KHONG
+ *     co moc de tinh cua so, nen BO QUA phep kiem va nhan tep. Dung bien "khong
+ *     biet" thanh "bo het tep cua tin".
+ *   - TEP khong co `gui_luc` ma tin thi co: khong doi chieu duoc -> 'thieu-gio-gui'.
+ *   - TEP gui TRUOC tin: theo khoang [tin, tin + cua so] thi no nam ngoai, nen bi
+ *     bo voi cung ly do 'ngoai-cua-so'. CO Y — mot tep co tu truoc khong phai tep
+ *     cua bai nay.
+ * Hai dau khoang tinh la TRONG cua so (tep toi dung giay cuoi cung van vao).
  */
+export type KetQuaCuaSo = 'trong-cua-so' | 'ngoai-cua-so' | 'thieu-gio-gui';
+
+export function kiemCuaSoDinhKem(
+  tinGuiLuc: string | null,
+  tepGuiLuc: string | null,
+  cuaSoPhut: number
+): KetQuaCuaSo {
+  const moc = tinGuiLuc ? Date.parse(tinGuiLuc) : NaN;
+  if (Number.isNaN(moc)) return 'trong-cua-so';
+  const cua = tepGuiLuc ? Date.parse(tepGuiLuc) : NaN;
+  if (Number.isNaN(cua)) return 'thieu-gio-gui';
+  return cua >= moc && cua <= moc + cuaSoPhut * 60_000 ? 'trong-cua-so' : 'ngoai-cua-so';
+}
+
 // Ten tep tu Zalo la chuoi tu do (co giao dat), nen chi giu bo ky tu an toan
 // va GOP moi day dau cham lai thanh mot: `/` da bi thay roi nhung de nguyen
 // `..` trong mot doan duong dan la mot thu khong ai muon phai suy nghi lai.
 const sachDoan = (s: string) =>
   s.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/\.{2,}/g, '.').replace(/^[-.]+|[-.]+$/g, '') || 'tep';
 
-export function duongDanBlobZalo(nguonId: string, ngay: string, ten: string): string {
-  return `${thuMucBlobZalo(nguonId, ngay)}${sachDoan(ten)}`;
-}
-
-/** `zalo/<nguon>/<yyyy-mm-dd>/` — thu muc cua mot nguon trong mot ngay. */
-export function thuMucBlobZalo(nguonId: string, ngay: string): string {
-  return `zalo/${sachDoan(nguonId)}/${ngay}/`;
-}
-
 /**
  * Duong dan nay co nam dung trong ho tep cua nguon nay khong?
  *
- * Dung o HAI CHO va phai la MOT luat: cua phat ve (`POST
- * /api/nhan-bai-zalo/tep-token` chan pathname truoc khi ky) va cua nhan tin
- * (doi chieu `url` cua tung tep trong goi). Lech nhau la agent xin ve cho mot
- * duong dan roi gui len mot duong dan khac.
+ * `zalo/<nguon>/<yyyy-mm-dd>/<mot doan ten>` (hop dong captain chot) — dung mot
+ * doan cuoi, khong thu muc long nhau, va NGAY phai la ngay lich that: khong thi
+ * `zalo/<nguon>/../..` hay mot cay thu muc do agent tu dat se lot qua. Tien to
+ * `zalo/` la tien to RIENG, khong trung `nop-bai/` cua video con nop —
+ * `laUrlVideoConNop` (lib/donVideo.ts) chi nhan `nop-bai/` nen mot luot don video
+ * khong bao gio cham vao tep o day.
  *
- * `zalo/<nguon>/<yyyy-mm-dd>/<mot doan ten>` — dung mot doan cuoi, khong thu muc
- * long nhau, va NGAY phai la ngay lich that: khong thi `zalo/<nguon>/../..` hay
- * mot cay thu muc do agent tu dat se lot qua.
+ * btvn KHONG sinh duong dan — zalo-agent tu dat roi tai thang len kho. Day la
+ * phia DUYET, va no duoc goi o HAI CHO phai giong nhau: cua phat ve (`POST
+ * /api/nhan-bai-zalo/tep-token` chan pathname truoc khi ky) va cua nhan tin (doi
+ * chieu `url` cua tung tep trong goi, qua `laUrlBlobZaloCuaNguon`). Lech nhau la
+ * agent xin ve cho mot duong dan roi gui len mot duong dan khac.
  */
 export function laDuongDanTepZalo(duongDan: unknown, nguonId: string): boolean {
   if (typeof duongDan !== 'string' || !duongDan) return false;
