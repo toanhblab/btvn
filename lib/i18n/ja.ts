@@ -585,4 +585,62 @@ export const JA: Record<Key, string> = {
   'Khai sách của các con': '子どもたちの教材を登録',
   'để máy nhận đúng tên sách.': 'すると教材名を正しく見分けられます。',
   'Tách bài này': 'この宿題を分ける',
+
+  /* ---- Bai tu Zalo (migration 021) ---- */
+  'Bài từ Zalo': 'Zaloからの宿題',
+  'Về Trang chủ': 'ホームに戻る',
+  'Cô đăng bài lên nhóm Zalo của lớp thì bài tự vào đây, kèm nguyên văn tin cô gửi. Bố mẹ đọc, sửa nếu cần, rồi bấm Duyệt — lúc đó các con mới thấy bài trên máy của mình.':
+    '先生がクラスのZaloグループに宿題を投稿すると、メッセージの全文と一緒にここに入ります。読んで、必要なら直して、「承認」を押してください。押して初めて子どもの端末に表示されます。',
+  'Bài cô vừa giao, chờ duyệt': '先生が出したばかりの宿題（承認待ち）',
+  'Chưa có tin nào chờ duyệt. Cô đăng bài lên nhóm Zalo thì bài sẽ hiện ở đây.':
+    '承認待ちはありません。先生がZaloグループに投稿するとここに表示されます。',
+  'Cô {ten}': '{ten}先生',
+  'ngày học thứ {n}': '第{n}回の授業',
+  'Luật khớp': 'ルールに一致',
+  'Jev cho là giao bài ({n}%), luật không khớp — soi kỹ':
+    'Jevは宿題だと判断（{n}%）、ルールは不一致 — よく確認してください',
+  'Chưa qua Jev': 'Jev未確認',
+  'Xem cả tin ({n} chữ)': 'メッセージ全文を表示（{n}文字）',
+  'Thu gọn tin': 'メッセージを折りたたむ',
+  'Tệp cô gửi kèm ({n})': '先生が送ったファイル（{n}件）',
+  'Mở tệp': 'ファイルを開く',
+  'Sửa kỹ': '詳しく編集',
+  'Bỏ bài "{name}"': '「{name}」を削除',
+  '{n} bài': '{n}件',
+  'hạn {date}': '期限 {date}',
+  'Không còn bài nào trong tin này. Bấm "Không phải bài" để bỏ.':
+    'このメッセージに課題が残っていません。「宿題ではない」を押して破棄してください。',
+  'Duyệt {n} bài cho các con': '{n}件を子どもたちに承認',
+  'Không phải bài': '宿題ではない',
+  'Bỏ tin này thì {n} bài nháp bị xoá và các con không bao giờ thấy chúng. Nguyên văn tin vẫn được giữ để máy ở nhà không đưa lại tin này nữa.':
+    'このメッセージを破棄すると下書きの{n}件が削除され、子どもたちには表示されません。メッセージ本文は残るので、家のパソコンが同じものを再び送ることはありません。',
+  'Bỏ tin này': 'このメッセージを破棄',
+  '{n} tin cô giao bài, chờ duyệt': '承認待ちの宿題メッセージが{n}件',
+  'Duyệt thì các con mới thấy bài': '承認すると子どもたちに表示されます',
+  'Nhóm Zalo': 'Zaloグループ',
+  'Nhóm Zalo của lớp': 'クラスのZaloグループ',
+  'Mỗi nhóm là một lớp. Máy ở nhà đọc đúng những nhóm khai ở đây, nên thêm lớp mới thì chỉ cần gõ vào đây, không phải cài lại gì.':
+    '1グループが1クラスです。家のパソコンはここに登録したグループだけを読みます。クラスを増やすときはここに入力するだけで、再設定は不要です。',
+  'bài cô đăng tự vào đây, bố mẹ duyệt rồi con mới thấy':
+    '先生の投稿がここに入り、承認すると子どもに表示されます',
+  '{n} nhóm': '{n}グループ',
+  'Chưa khai nhóm nào': 'グループ未登録',
+  'Chưa khai nhóm Zalo nào. Thêm một nhóm thì bài cô đăng trong nhóm đó sẽ tự vào đây.':
+    'Zaloグループがまだありません。追加すると、そのグループへの先生の投稿がここに入ります。',
+  'Con học lớp này:': 'このクラスの子ども:',
+  'Chọn ít nhất một con học lớp này.': 'このクラスの子どもを1人以上選んでください。',
+  'Tên nhóm Zalo': 'Zaloグループ名',
+  'Tên nhóm Zalo, gõ đúng như trên Zalo': 'Zaloグループ名（Zaloの表示どおりに入力）',
+  'Tên cô giáo hiện trên Zalo': 'Zaloに表示される先生の名前',
+  'Nhận tệp cô gửi trong bao nhiêu phút sau tin': 'メッセージから何分以内のファイルを受け取るか',
+  'Nhận bài gần nhất: {luc}': '最後の受信: {luc}',
+  'Chưa nhận bài nào từ nhóm này': 'このグループからの受信はまだありません',
+  'Thêm nhóm Zalo': 'Zaloグループを追加',
+  'Thêm nhóm': 'グループを追加',
+  'Chưa nhập tên nhóm Zalo.': 'Zaloグループ名を入力してください。',
+  'Chưa nhập tên cô giáo.': '先生の名前を入力してください。',
+  'Cửa sổ nhận tệp phải từ 1 đến 1440 phút.': 'ファイル受信の時間は1〜1440分で指定してください。',
+  'Không tìm thấy nhóm Zalo này.': 'このZaloグループが見つかりません。',
+  'Không tìm thấy tin này.': 'このメッセージが見つかりません。',
+  'Tin này đã được xử lý rồi.': 'このメッセージはすでに処理済みです。',
 };

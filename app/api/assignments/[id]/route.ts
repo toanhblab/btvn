@@ -129,7 +129,12 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
   const familyId = await parentFamilyId();
   if (!familyId) return NextResponse.json({ error: T('Cần mã PIN của bố mẹ.') }, { status: 401 });
-  const truoc = await getAssignment(familyId, id);
+  // `keCaNhap`: bo me sua duoc ca bai NHAP tu Zalo, va do chinh la buoc "sửa
+  // từng bài trước khi duyệt" o man cho duyet — no di qua DUNG duong nay chu
+  // khong co duong sua rieng. Nhanh CUA CON o tren KHONG co co nay, nen bai
+  // nhap van vo hinh voi may cua con du co doan ra id (getAssignment tra null
+  // -> 404). Xem `CHI_BAI_THAT` trong lib/store.ts.
+  const truoc = await getAssignment(familyId, id, { keCaNhap: true });
   if (!truoc) {
     return NextResponse.json({ error: T('Không tìm thấy bài tập.') }, { status: 404 });
   }
@@ -154,12 +159,17 @@ export async function PATCH(req: Request, { params }: Ctx) {
         kind: m.kind === 'audio' || m.kind === 'image' ? m.kind : 'video',
       }));
   }
-  const assignment = await updateAssignment(familyId, id, body);
+  const assignment = await updateAssignment(familyId, id, body, { keCaNhap: true });
 
   // Doi han chot: dong nhiem vu cua ngay MOI (hang rao +10) va xet lai ngay CU
   // vua bot mot dong — ca hai luat nam trong xuLySauKhiDoiHanChot (lib/store.ts)
   // de bo test PGlite voi tay den duoc.
-  if (assignment && assignment.dueDate !== truoc.dueDate) {
+  //
+  // Bai NHAP thi bo qua: no chua nam trong ngay nao ca (`congDiemNgayNeuXong`
+  // khong dem dong nhap), nen doi han cua no khong the lam ngay cu hay ngay moi
+  // doi trang thai. `duyetBaiZalo` goi `taoNhiemVuNgayNeuChuaQua` khi bai thanh
+  // that — do moi la luc ngay do co mot bai cua con.
+  if (assignment && !assignment.laNhap && assignment.dueDate !== truoc.dueDate) {
     await xuLySauKhiDoiHanChot(familyId, truoc.childId, truoc.dueDate, assignment.dueDate);
   }
   return NextResponse.json({ assignment });
@@ -172,14 +182,18 @@ export async function DELETE(_req: Request, { params }: Ctx) {
   if (!familyId) return NextResponse.json({ error: T('Cần mã PIN của bố mẹ.') }, { status: 401 });
 
   const { id } = await params;
-  const bai = await getAssignment(familyId, id);
+  // `keCaNhap`: bo tung bai o muc cho duyet (AI tach nham mot dong thanh hai
+  // bai) di chung duong nay. Nut "Không phải bài" bo CA muc thi o
+  // /api/bai-zalo/:id.
+  const bai = await getAssignment(familyId, id, { keCaNhap: true });
   if (!bai) {
     return NextResponse.json({ error: T('Không tìm thấy bài tập.') }, { status: 404 });
   }
-  await deleteAssignment(familyId, id);
+  await deleteAssignment(familyId, id, { keCaNhap: true });
 
   // Xoa dong cuoi con 'todo' cua mot ngay -> ngay do vua thanh hoan thanh, cung
-  // ly do nhu nhanh doi dueDate o tren.
-  await congDiemNgayNeuXong(familyId, bai.childId, bai.dueDate);
+  // ly do nhu nhanh doi dueDate o tren. Bai NHAP thi khong: no chua bao gio
+  // duoc dem vao ngay nao, bo no di khong doi tap dang duoc xet.
+  if (!bai.laNhap) await congDiemNgayNeuXong(familyId, bai.childId, bai.dueDate);
   return NextResponse.json({ ok: true });
 }

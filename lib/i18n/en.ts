@@ -609,6 +609,64 @@ export const EN = {
   'Khai sách của các con': "List your kids' books",
   'để máy nhận đúng tên sách.': 'so it recognises book names correctly.',
   'Tách bài này': 'Split this task',
+
+  /* ---- Bai tu Zalo (migration 021) ---- */
+  'Bài từ Zalo': 'Homework from Zalo',
+  'Về Trang chủ': 'Back to Home',
+  'Cô đăng bài lên nhóm Zalo của lớp thì bài tự vào đây, kèm nguyên văn tin cô gửi. Bố mẹ đọc, sửa nếu cần, rồi bấm Duyệt — lúc đó các con mới thấy bài trên máy của mình.':
+    "When the teacher posts homework in the class Zalo group, it lands here with her message quoted in full. Read it, edit if needed, then tap Approve — only then do the kids see it on their device.",
+  'Bài cô vừa giao, chờ duyệt': 'Just posted by the teacher, waiting for you',
+  'Chưa có tin nào chờ duyệt. Cô đăng bài lên nhóm Zalo thì bài sẽ hiện ở đây.':
+    'Nothing waiting. When the teacher posts in the Zalo group, it will show up here.',
+  'Cô {ten}': 'Teacher {ten}',
+  'ngày học thứ {n}': 'school day {n}',
+  'Luật khớp': 'Matches the rule',
+  'Jev cho là giao bài ({n}%), luật không khớp — soi kỹ':
+    'Jev thinks this is homework ({n}%), the rule disagrees — check carefully',
+  'Chưa qua Jev': 'Not checked by Jev',
+  'Xem cả tin ({n} chữ)': 'Show the whole message ({n} characters)',
+  'Thu gọn tin': 'Collapse the message',
+  'Tệp cô gửi kèm ({n})': 'Files from the teacher ({n})',
+  'Mở tệp': 'Open file',
+  'Sửa kỹ': 'Edit in full',
+  'Bỏ bài "{name}"': 'Drop "{name}"',
+  '{n} bài': '{n} tasks',
+  'hạn {date}': 'due {date}',
+  'Không còn bài nào trong tin này. Bấm "Không phải bài" để bỏ.':
+    'No tasks left in this message. Tap "Not homework" to drop it.',
+  'Duyệt {n} bài cho các con': 'Approve {n} tasks for the kids',
+  'Không phải bài': 'Not homework',
+  'Bỏ tin này thì {n} bài nháp bị xoá và các con không bao giờ thấy chúng. Nguyên văn tin vẫn được giữ để máy ở nhà không đưa lại tin này nữa.':
+    'Dropping this message deletes {n} draft tasks and the kids never see them. The message itself is kept so the home machine will not bring it back.',
+  'Bỏ tin này': 'Drop this message',
+  '{n} tin cô giao bài, chờ duyệt': '{n} homework messages waiting for you',
+  'Duyệt thì các con mới thấy bài': 'The kids see the tasks once you approve',
+  'Nhóm Zalo': 'Zalo groups',
+  'Nhóm Zalo của lớp': "The class Zalo group",
+  'Mỗi nhóm là một lớp. Máy ở nhà đọc đúng những nhóm khai ở đây, nên thêm lớp mới thì chỉ cần gõ vào đây, không phải cài lại gì.':
+    'One group per class. The machine at home reads exactly the groups listed here, so adding a class only takes typing it in — nothing to reinstall.',
+  'bài cô đăng tự vào đây, bố mẹ duyệt rồi con mới thấy':
+    'what the teacher posts lands here; the kids see it after you approve',
+  '{n} nhóm': '{n} groups',
+  'Chưa khai nhóm nào': 'No groups yet',
+  'Chưa khai nhóm Zalo nào. Thêm một nhóm thì bài cô đăng trong nhóm đó sẽ tự vào đây.':
+    'No Zalo groups yet. Add one and whatever the teacher posts there lands here.',
+  'Con học lớp này:': 'Kids in this class:',
+  'Chọn ít nhất một con học lớp này.': 'Pick at least one child in this class.',
+  'Tên nhóm Zalo': 'Zalo group name',
+  'Tên nhóm Zalo, gõ đúng như trên Zalo': 'Zalo group name, exactly as it appears in Zalo',
+  'Tên cô giáo hiện trên Zalo': "Teacher's display name in Zalo",
+  'Nhận tệp cô gửi trong bao nhiêu phút sau tin': 'Accept files sent within this many minutes after the message',
+  'Nhận bài gần nhất: {luc}': 'Last received: {luc}',
+  'Chưa nhận bài nào từ nhóm này': 'Nothing received from this group yet',
+  'Thêm nhóm Zalo': 'Add a Zalo group',
+  'Thêm nhóm': 'Add group',
+  'Chưa nhập tên nhóm Zalo.': 'Please enter the Zalo group name.',
+  'Chưa nhập tên cô giáo.': "Please enter the teacher's name.",
+  'Cửa sổ nhận tệp phải từ 1 đến 1440 phút.': 'The file window must be between 1 and 1440 minutes.',
+  'Không tìm thấy nhóm Zalo này.': 'Zalo group not found.',
+  'Không tìm thấy tin này.': 'Message not found.',
+  'Tin này đã được xử lý rồi.': 'This message has already been handled.',
 } as const;
 
 export type Key = keyof typeof EN;

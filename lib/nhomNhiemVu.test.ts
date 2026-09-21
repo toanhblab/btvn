@@ -41,6 +41,9 @@ function dong(p: {
     durationMinutes: 10, requiresVideo: false, submittedVideoUrl: null, submittedVideoAt: null,
     choreId: p.choreId === undefined ? 'chr' : p.choreId,
     startedAt: null, stars: 1, choreNhom: p.choreNhom === undefined ? 'after_study' : p.choreNhom,
+    // Bai nhap tu Zalo khong bao gio toi duoc ham nay: `listAssignments` va
+    // `progressUpcoming` da loc no ra tu truoc (lib/store.ts, `CHI_BAI_THAT`).
+    zaloBaiId: null, laNhap: false,
   };
 }
 

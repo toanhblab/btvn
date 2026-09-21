@@ -273,6 +273,8 @@ interface AssignmentRow {
   stars: number | string | null;
   /** Tu LEFT JOIN daily_chores (xem ASSIGNMENT_SELECT) — null neu khong phai viec nha. */
   chore_category: string | null;
+  zalo_bai_id: string | null;
+  trang_thai_duyet: string;
 }
 
 /**
@@ -309,6 +311,8 @@ const toAssignment = (r: AssignmentRow, media: AttachedMedia[]): Assignment => (
   startedAt: r.started_at ? new Date(r.started_at).toISOString() : null,
   stars: r.stars === null || r.stars === undefined ? null : Number(r.stars),
   choreNhom: r.chore_id === null || r.chore_category === null ? null : nhomNhiemVuOf(r.chore_category),
+  zaloBaiId: r.zalo_bai_id,
+  laNhap: r.trang_thai_duyet === 'nhap',
 });
 
 /**
@@ -322,6 +326,26 @@ const ASSIGNMENT_SELECT = `a.*, dc.category AS chore_category`;
 const ASSIGNMENT_FROM = `assignments a
      JOIN children c ON c.id = a.child_id
      LEFT JOIN daily_chores dc ON dc.id = a.chore_id`;
+
+/**
+ * Dong NHAP tu Zalo (migration 021) — bai cua co giao vua vao, bo me CHUA duyet.
+ *
+ * Bai nhap nam trong CHINH bang assignments de bo me sua no bang dung cac duong
+ * sua bai da co, nhung no KHONG duoc coi la bai cua con o bat ky dau: khong hien
+ * tren man cua con, khong duoc tick, khong vao mot con so tom tat nao, va — cai
+ * de vo nhat — khong duoc chan +10 "ngay xong" (`congDiemNgayNeuXong`): mot dong
+ * 'todo' cua ngay hom nay ma khong ai tick duoc la khoa luon +10 cua ngay do.
+ *
+ * Nen MOI cau doc assignments o tep nay deu phai noi RO no muon gi, cung khuon
+ * voi `includeChores` (issue #36): mac dinh la KHONG thay dong nhap, chi hai
+ * duong cua bo me (man duyet, va duong sua/xoa mot bai theo id) xin ro. Danh
+ * sach day du cac cho doc — ke ca ngoai tep nay — o PR cua migration 021.
+ *
+ * `$`-free: chen vao WHERE duoc o moi cau, khong an tham so nao.
+ */
+const CHI_BAI_THAT = `a.trang_thai_duyet = 'that'`;
+/** Cung dieu kien nhung cho UPDATE/DELETE khong co bi danh (nhu OF_FAMILY). */
+const CHI_BAI_THAT_KHONG_BI_DANH = `trang_thai_duyet = 'that'`;
 
 /**
  * Tep dinh kem (video, ghi am, anh) cua mot loat bai, tra ve map
@@ -376,6 +400,13 @@ export async function listAssignments(
      * `progressUpcoming` ben duoi, co y.
      */
     keCaBaiChuaXongTruocDo?: boolean;
+    /**
+     * Bai NHAP tu Zalo chua duyet (migration 021) — mac dinh loai het, xem
+     * `CHI_BAI_THAT`. CHI man "Bài cô vừa giao, chờ duyệt" cua bo me xin true.
+     */
+    keCaNhap?: boolean;
+    /** Chi lay bai cua mot tin Zalo — dung cho man duyet. */
+    zaloBaiId?: string;
   }
 ): Promise<Assignment[]> {
   const where: string[] = ['c.family_id = $1'];
@@ -396,6 +427,8 @@ export async function listAssignments(
   // bo me go tay nen "Tiếng Anh" o nha nay co the la "English" o nha khac.
   if (opts.source)  { params.push(opts.source);  where.push(`a.source = $${params.length}`); }
   if (!opts.includeChores) where.push(`a.chore_id IS NULL`);
+  if (!opts.keCaNhap) where.push(CHI_BAI_THAT);
+  if (opts.zaloBaiId) { params.push(opts.zaloBaiId); where.push(`a.zalo_bai_id = $${params.length}`); }
 
   // dc.sort_order trong ORDER BY: moi dong viec nha deu mang cung subject
   // (VIEC_NHA_SUBJECT) nen neu khong co no, khoa phan dinh cuoi cung la a.id —
@@ -404,20 +437,37 @@ export async function listAssignments(
   // Sap o ngay ranh gioi nay de moi noi doc deu duoc dung thu tu, khong phai
   // sap lai o tung man. Bai tap that co sort_order NULL nen NULLS FIRST giu
   // chung dung truoc neu bo me tinh co go ten mon trung voi "Việc nhà".
+  // `a.zalo_thu_tu` di NGAY SAU due_date va TRUOC subject, chi co nghia voi dong
+  // tu Zalo (moi dong khac la NULL -> NULLS LAST khong doi gi): man cho duyet
+  // dat nguyen van tin canh danh sach bai da tach, nen thu tu phai la thu tu CO
+  // GIAO VIET, khong phai thu tu ten mon. Xem migrations/021.
   const rows = await query<AssignmentRow>(
     `SELECT ${ASSIGNMENT_SELECT} FROM ${ASSIGNMENT_FROM}
      WHERE ${where.join(' AND ')}
-     ORDER BY a.due_date ASC, a.subject ASC, dc.sort_order ASC NULLS FIRST, a.id ASC`,
+     ORDER BY a.due_date ASC, a.zalo_thu_tu ASC NULLS LAST, a.subject ASC,
+              dc.sort_order ASC NULLS FIRST, a.id ASC`,
     params
   );
   const media = await mediaByAssignment(rows.map((r) => r.id));
   return rows.map((r) => toAssignment(r, media.get(r.id) ?? []));
 }
 
-export async function getAssignment(familyId: string, id: string): Promise<Assignment | null> {
+/**
+ * Mot bai theo id, TRONG NHA DO.
+ *
+ * `keCaNhap` mac dinh false, va do la hang rao chinh cua bai nhap tu Zalo tren
+ * duong cua con: `PATCH /api/assignments/:id` (tick, nop video) doc bai bang
+ * ham nay TRUOC roi 404 neu khong thay, nen con khong cham vao bai nhap duoc du
+ * co doan ra id. Chi duong cua BO ME (sua truoc khi duyet, duyet, bo) xin true.
+ */
+export async function getAssignment(
+  familyId: string,
+  id: string,
+  opts: { keCaNhap?: boolean } = {}
+): Promise<Assignment | null> {
   const r = await queryOne<AssignmentRow>(
     `SELECT ${ASSIGNMENT_SELECT} FROM ${ASSIGNMENT_FROM}
-     WHERE a.id = $1 AND c.family_id = $2`,
+     WHERE a.id = $1 AND c.family_id = $2 ${opts.keCaNhap ? '' : `AND ${CHI_BAI_THAT}`}`,
     [id, familyId]
   );
   if (!r) return null;
@@ -431,6 +481,12 @@ export async function getAssignment(familyId: string, id: string): Promise<Assig
  *
  * childIds duoc loc lai theo nha truoc khi ghi: neu goi API voi id con nha khac
  * thi bai do khong duoc tao ra.
+ *
+ * Duong bai tu Zalo (migration 021) dung CHINH ham nay, chi khac `zaloBaiId`:
+ * mot tin cua co la mot "dot nhap" y het mot lan bo me chup anh dan vao, va viec
+ * nhan MOT dot ra N bai x M con thi giong het. Truyen `zaloBaiId` thi ca dot ghi
+ * o trang thai NHAP (khong ai thay ngoai man duyet) va moi bai tro ve dong
+ * `bai_tu_zalo` de man duyet gom lai theo tin.
  */
 export async function saveSubmission(input: {
   familyId: string;
@@ -441,7 +497,13 @@ export async function saveSubmission(input: {
   /** Noi giao ca dot bai nay — moi bai sinh ra deu mang nguon nay. */
   source: HwSource;
   drafts: DraftAssignment[];
+  /**
+   * Co mat = ca dot nay den tu mot tin Zalo, ghi o trang thai NHAP cho bo me
+   * duyet. Vang mat = duong bo me nhap tay, bai THAT ngay (hanh vi cu).
+   */
+  zaloBaiId?: string;
 }): Promise<Assignment[]> {
+  const laNhap = input.zaloBaiId !== undefined;
   const mine = new Set((await listChildren(input.familyId)).map((c) => c.id));
   const childIds = input.childIds.filter((id) => mine.has(id));
   if (childIds.length === 0) return [];
@@ -463,15 +525,19 @@ export async function saveSubmission(input: {
   const coverImage = input.imageUrls[0] ?? null;
 
   for (const childId of childIds) {
-    for (const d of input.drafts) {
+    for (const [di, d] of input.drafts.entries()) {
       const id = newId('asg');
       await query(
         `INSERT INTO assignments
            (id, submission_id, child_id, subject, icon, content, note, lang, due_date, source, image_url,
-            duration_minutes, requires_video)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+            duration_minutes, requires_video, zalo_bai_id, zalo_thu_tu, trang_thai_duyet)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
         [id, subId, childId, d.subject, d.icon, d.content, d.note, d.lang, input.dueDate, input.source, coverImage,
-         d.durationMinutes ?? 10, d.requiresVideo ?? false]
+         d.durationMinutes ?? 10, d.requiresVideo ?? false,
+         // Thu tu CHI ghi cho dot tu Zalo: duong bo me nhap tay da co man "Kiểm
+         // tra lại" de bo me tu xep truoc khi luu, con dot tu Zalo thi khong ai
+         // xep — thu tu cua co la thu tu duy nhat co that.
+         input.zaloBaiId ?? null, laNhap ? di : null, laNhap ? 'nhap' : 'that']
       );
       // Moi con mot ban bai rieng nen tep dinh kem cung ghi rieng cho tung ban —
       // xoa bai cua con nay khong duoc lam mat tep o bai cua con kia.
@@ -482,7 +548,7 @@ export async function saveSubmission(input: {
           [newId('med'), id, m.url, m.name, m.kind, mi]
         );
       }
-      const a = await getAssignment(input.familyId, id);
+      const a = await getAssignment(input.familyId, id, { keCaNhap: laNhap });
       if (a) created.push(a);
     }
   }
@@ -495,7 +561,13 @@ export async function saveSubmission(input: {
   // cung khong ve dong cua ngay mai nua — xem lib/nhomNhiemVu.ts): no dang GAC
   // +10 cua ngay mai. Ly do day du + hang rao ngay da qua o
   // `taoNhiemVuNgayNeuChuaQua` ben duoi.
-  await taoNhiemVuNgayNeuChuaQua(input.familyId, input.dueDate, childIds);
+  //
+  // Dot NHAP thi CHUA goi: ngay do chua phai mot ngay cua con (dong nhap khong
+  // hien, khong tick duoc, va `congDiemNgayNeuXong` khong dem no nen khong co gi
+  // de gac). Bo me bam Duyet thi `duyetBaiZalo` goi — dung luc dot bai tro thanh
+  // that. Bo me bam "Không phải bài" thi khong con gi, va khong de lai mot dong
+  // nhiem vu thua cho mot ngay chang co bai nao.
+  if (!laNhap) await taoNhiemVuNgayNeuChuaQua(input.familyId, input.dueDate, childIds);
 
   return created;
 }
@@ -528,12 +600,13 @@ export async function setStatus(
           SET status = 'done',
               completed_at = COALESCE(completed_at, now()),
               started_at = COALESCE($3::timestamptz, started_at)
-        WHERE id = $1 AND ${OF_FAMILY}`,
+        WHERE id = $1 AND ${OF_FAMILY} AND ${CHI_BAI_THAT_KHONG_BI_DANH}`,
       [id, familyId, startedAtMs === null ? null : new Date(startedAtMs).toISOString()]
     );
   } else {
     await query(
-      `UPDATE assignments SET status = 'todo', completed_at = NULL WHERE id = $1 AND ${OF_FAMILY}`,
+      `UPDATE assignments SET status = 'todo', completed_at = NULL
+        WHERE id = $1 AND ${OF_FAMILY} AND ${CHI_BAI_THAT_KHONG_BI_DANH}`,
       [id, familyId]
     );
   }
@@ -552,7 +625,14 @@ export async function updateAssignment(
   > & {
     /** Co mat = THAY CA DANH SACH tep dinh kem cua bai bang danh sach nay. */
     media?: AttachedMedia[];
-  }
+  },
+  /**
+   * Bo me duoc sua bai NHAP tu Zalo truoc khi duyet, nen duong cua bo me
+   * (`PATCH /api/assignments/:id`, nhanh co PIN) truyen true. Cau UPDATE khong
+   * loc theo `trang_thai_duyet` — chi cau DOC lai o cuoi ham can biet, va do
+   * cung la cho tra ve null neu nguoi goi khong xin.
+   */
+  opts: { keCaNhap?: boolean } = {}
 ): Promise<Assignment | null> {
   const map: Record<string, string> = {
     subject: 'subject', icon: 'icon', content: 'content',
@@ -593,7 +673,7 @@ export async function updateAssignment(
     }
   }
 
-  return getAssignment(familyId, id);
+  return getAssignment(familyId, id, opts);
 }
 
 /**
@@ -626,7 +706,7 @@ export async function submitVideo(
                    completed_at = COALESCE(completed_at, now()),
                    started_at = COALESCE($4::timestamptz, started_at)`
               : ''}
-      WHERE id = $1 AND ${OF_FAMILY}`,
+      WHERE id = $1 AND ${OF_FAMILY} AND ${CHI_BAI_THAT_KHONG_BI_DANH}`,
     markDone
       ? [id, familyId, url, startedAtMs === null ? null : new Date(startedAtMs).toISOString()]
       : [id, familyId, url]
@@ -634,15 +714,28 @@ export async function submitVideo(
   return getAssignment(familyId, id);
 }
 
-export async function deleteAssignment(familyId: string, id: string): Promise<void> {
-  await query(`DELETE FROM assignments WHERE id = $1 AND ${OF_FAMILY}`, [id, familyId]);
+/**
+ * Xoa mot bai. `keCaNhap` cho duong "Không phải bài" cua man duyet Zalo xoa ca
+ * ban nhap; duong xoa cua bo me o man bai tap thi khong (no khong nhin thay bai
+ * nhap, va mot cu bam nham o do khong duoc phep dong vao muc cho duyet).
+ */
+export async function deleteAssignment(
+  familyId: string,
+  id: string,
+  opts: { keCaNhap?: boolean } = {}
+): Promise<void> {
+  await query(
+    `DELETE FROM assignments
+      WHERE id = $1 AND ${OF_FAMILY} ${opts.keCaNhap ? '' : `AND ${CHI_BAI_THAT_KHONG_BI_DANH}`}`,
+    [id, familyId]
+  );
 }
 
 export async function countAssignments(familyId: string): Promise<number> {
   const r = await queryOne<{ n: number | string }>(
     `SELECT COUNT(*) AS n FROM assignments a
      JOIN children c ON c.id = a.child_id
-     WHERE c.family_id = $1`,
+     WHERE c.family_id = $1 AND ${CHI_BAI_THAT}`,
     [familyId]
   );
   return Number(r?.n ?? 0);
@@ -657,12 +750,19 @@ export async function countAssignments(familyId: string): Promise<number> {
  * chua bat Vercel Blob thi anh nam duoi dang base64 ngay trong DB nen rat nang.
  * submission_images tu di theo nho ON DELETE CASCADE.
  *
+ * Bai NHAP tu Zalo chua duyet thi KHONG xoa: chung khong nam trong danh sach
+ * bai tap ma nut nay noi toi (`countAssignments` cung khong dem chung, nen so
+ * bo me doc tren nut hoi lai va so bi xoa van la mot). Muc cho duyet co nut
+ * "Không phải bài" cua rieng no.
+ *
  * @returns so bai da xoa
  */
 export async function deleteAllAssignments(familyId: string): Promise<number> {
   const n = await countAssignments(familyId);
   await query(
-    `DELETE FROM assignments WHERE child_id IN (SELECT id FROM children WHERE family_id = $1)`,
+    `DELETE FROM assignments
+      WHERE child_id IN (SELECT id FROM children WHERE family_id = $1)
+        AND ${CHI_BAI_THAT_KHONG_BI_DANH}`,
     [familyId]
   );
   await query(`DELETE FROM submissions WHERE family_id = $1`, [familyId]);
@@ -724,7 +824,8 @@ export async function progressUpcoming(familyId: string): Promise<ChildProgress[
        JOIN children c ON c.id = a.child_id
        WHERE c.family_id = $1
          AND (a.due_date >= $2 OR (a.status = 'todo' AND a.chore_id IS NULL))
-         AND a.due_date <= $2`,
+         AND a.due_date <= $2
+         AND ${CHI_BAI_THAT}`,
       [familyId, today]
     ),
     soDiemTheoCon(familyId),
@@ -864,8 +965,13 @@ export async function taoNhiemVuNgay(
  *
  * Test ghim ca ba nhanh (tao cho ngay mai / khong tao cho ngay da qua / cai gia
  * neu khong tao) o lib/tinh-diem.test.ts.
+ *
+ * Duong thu ba di qua day: bo me DUYET mot tin tu Zalo (`duyetBaiZalo` trong
+ * lib/nhanBaiZalo.ts). Ngay cua bai do do CO GIAO chon (ngay trong tin + 1) chu
+ * khong phai hom nay, nen no thuoc dung nhom "ngay khong phai hom nay" ma ham
+ * nay sinh ra de gac — dung goi `taoNhiemVuNgay` thang tu do.
  */
-async function taoNhiemVuNgayNeuChuaQua(
+export async function taoNhiemVuNgayNeuChuaQua(
   familyId: string,
   date: string,
   childIds: string[] | null
@@ -1315,6 +1421,12 @@ export async function daCongDiemNgay(familyId: string, childId: string, date: st
  * (PATCH cua bo me, xet cho ngay CU). Khong co no thi ngay con lam xong that
  * nhung dong cuoi bi bo me xoa se khong bao gio duoc cong.
  *
+ * Bai NHAP tu Zalo (migration 021) bi loai khoi cau doc: no la dong 'todo' ma
+ * KHONG AI TICK DUOC (man cua con khong ve), nen dem no vao la khoa vinh vien
+ * +10 cua ca ngay do — mot tin cua co vao luc 20h ma bo me chua kip duyet se am
+ * tham cuop mat 10 ⭐ cua ca hai con. Duyet xong thi dong thanh that va vao dem
+ * binh thuong.
+ *
  * @returns ngayXong    DIEM_NGAY_XONG neu VUA cong o lan nay, 0 neu khong.
  * @returns ngayTinhDiem  ngay nay co duoc tinh diem khong (khong hoi to) — de
  *   nguoi goi khoi phai doc lai families.score_since bang mot vong thua nua.
@@ -1332,7 +1444,8 @@ export async function congDiemNgayNeuXong(
        FROM assignments a
        JOIN children c ON c.id = a.child_id
        JOIN families f ON f.id = c.family_id
-      WHERE a.child_id = $1 AND a.due_date = $2 AND c.family_id = $3`,
+      WHERE a.child_id = $1 AND a.due_date = $2 AND c.family_id = $3
+        AND ${CHI_BAI_THAT}`,
     [childId, dueDate, familyId]
   );
   // Khong con dong nao (bo me xoa het bai cua ngay do, hay con khong thuoc nha

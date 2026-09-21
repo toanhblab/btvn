@@ -6,7 +6,7 @@
  */
 
 import { T_VI, type Key, type T as TDich } from './i18n/chu';
-import { soNgayNha } from './muiGio';
+import { MUI_GIO_NHA as MUI_GIO_NHA_CHOT, soNgayNha } from './muiGio';
 
 /** YYYY-MM-DD -> Date GIO DIA PHUONG. new Date('2026-09-02') la nua dem UTC nen
     o mui gio am se lui mat mot ngay — tach tay cho chac. */
@@ -81,4 +81,43 @@ export { MUI_GIO_NHA, ngayNhaISO } from './muiGio';
 export function ngayNha(iso: string): string {
   const p = soNgayNha(new Date(iso));
   return `${Number(p.day)}/${Number(p.month)}/${p.year}`;
+}
+
+/**
+ * Moc ISO -> "18/09/2026 20:03" theo mui gio nha — dung o nhung cho phai in CA
+ * GIO: gio con nop video (SuaBai) va gio co gui tin tren Zalo (man duyet bai tu
+ * Zalo; captain yeu cau ro "lưu ý có cả ngày giờ gửi").
+ *
+ * Hai lop chot, ca hai deu can, va deu la loi DA XAY RA:
+ *
+ * 1. CHOT MUI GIO. Ca hai cho tren nam trong component KHACH dung san o may chu
+ *    (ham Vercel TZ=UTC) roi hydrate lai o may bo me (+07). Khong chot thi hai
+ *    ben ra hai chuoi khac nhau: React bao hydration mismatch va bo me doc phai
+ *    gio lech 7 tieng o lan ve dau.
+ *
+ * 2. CHOT KHUON. `toLocaleString('vi-VN')` lay THU TU va dau phan cach tu ban
+ *    CLDR cua CHINH MAY CHAY: Node moi tra "01:00:51 28/8/2026" (CLDR 42 doi
+ *    tieng Viet sang gio-truoc) con Safari iPad cu tra "28/8/2026, 01:00:51" —
+ *    cung mot moc, cung mui gio, hai chuoi khac nhau. Nen chi lay TUNG SO qua
+ *    `formatToParts` roi tu ghep.
+ *
+ * `giay` de in ca giay (man sua bai dung, vi hai lan nop cach nhau vai giay
+ * nhin phai phan biet duoc); mac dinh chi den phut.
+ */
+const SO_GIO_NHA = new Intl.DateTimeFormat('en-US', {
+  timeZone: MUI_GIO_NHA_CHOT,
+  year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', second: '2-digit',
+  // hour12 co tu doi Intl dau tien va theo spec no de len tren hourCycle. Safari
+  // 14.0 (iPadOS 14.0-14.4) BO QUA hourCycle, quay ve h12 va them phan dayPeriod
+  // — khong dat hour12 thi 19:30 tu nhien thanh 07:30 tren may cua bo me.
+  hour12: false, hourCycle: 'h23',
+});
+
+export function gioNha(iso: string, giay = false): string {
+  const p: Record<string, string> = {};
+  for (const { type, value } of SO_GIO_NHA.formatToParts(new Date(iso))) p[type] = value;
+  // Vai ban ICU cu tra gio '24' cho nua dem thay vi '00'
+  const gio = p.hour === '24' ? '00' : p.hour;
+  return `${p.day}/${p.month}/${p.year} ${gio}:${p.minute}${giay ? `:${p.second}` : ''}`;
 }

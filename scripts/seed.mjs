@@ -46,6 +46,7 @@ console.log('✓ Da tao bang');
 for (const t of [
   'score_penalties', 'reward_redemptions', 'score_events', 'rewards',
   'daily_chore_checks', 'daily_chores', 'books',
+  'bai_tu_zalo', 'nguon_zalo_con', 'nguon_zalo',
   'assignments', 'submission_images', 'submissions', 'children', 'families',
 ]) {
   await query(`DELETE FROM ${t}`);
@@ -190,7 +191,29 @@ for (const [icon, name, cost] of rewards) {
   );
 }
 
+// 8. Hai nhom Zalo cua lop (migration 021). Id CO DINH, khong ngau nhien nhu
+//     cac bang khac: cua nhan bai nhan `nguon_id` trong than goi, nen kiem tay
+//     bang curl / chay thu zalo-agent phai go duoc id ma khong phai tra DB truoc.
+//     Ten nhom + ten co lay dung hai lop that cua captain; con thi map sang ba be
+//     mau cua DB nay (hai be sinh doi mot lop, be nho mot lop).
+const nguonZalo = [
+  { id: 'nzl_cambridge', ten: 'Cambridge 1.27 - Smart Kids Education', co: 'Thu Huyền', con: ['minh', 'an'] },
+  { id: 'nzl_starters',  ten: 'Cam Starters 26 - Smart Kids Education', co: 'hangnga',   con: ['bena'] },
+];
+for (const g of nguonZalo) {
+  // mau_nhan_dien / cua_so_dinh_kem_phut / dang_bat lay DEFAULT cua DB
+  // (migrations/021) dung nhu mot nguon bo me vua them o man /bome/zalo.
+  await query(
+    `INSERT INTO nguon_zalo (id, family_id, ten_nhom, ten_co) VALUES ($1,$2,$3,$4)`,
+    [g.id, familyId, g.ten, g.co]
+  );
+  for (const c of g.con) {
+    await query(`INSERT INTO nguon_zalo_con (nguon_id, child_id) VALUES ($1,$2)`, [g.id, c]);
+  }
+}
+
 console.log(`✓ 1 gia đình, ${children.length} con, ${n} bài tập, ${chores.length + nhiemVuNha.length} nhiệm vụ hàng ngày (${nNhiemVu} dòng), ${rewards.length} phần thưởng`);
 console.log(`  PIN bố mẹ      : ${PIN}`);
 console.log(`  Link cho iPad  : /nha/${slug}`);
+console.log(`  Nguồn Zalo     : ${nguonZalo.map((g) => g.id).join(', ')}`);
 process.exit(0);

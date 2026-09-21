@@ -15,7 +15,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const familyId = await parentFamilyId();
   if (!familyId) redirect('/bome/pin');
 
-  const assignment = await getAssignment(familyId, id);
+  // `keCaNhap`: man cho duyet (/bome/zalo) dan sang day de bo me sua ky mot bai
+  // NHAP truoc khi bam duyet — khong dung mot man sua thu hai cho ban nhap.
+  const assignment = await getAssignment(familyId, id, { keCaNhap: true });
   if (!assignment) notFound();
 
   const child = await getChild(familyId, assignment.childId);

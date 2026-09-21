@@ -585,4 +585,62 @@ export const KO: Record<Key, string> = {
   'Khai sách của các con': '아이들의 교재를 등록',
   'để máy nhận đúng tên sách.': '하면 교재 이름을 정확히 알아봅니다.',
   'Tách bài này': '이 숙제 나누기',
+
+  /* ---- Bai tu Zalo (migration 021) ---- */
+  'Bài từ Zalo': 'Zalo에서 온 숙제',
+  'Về Trang chủ': '홈으로',
+  'Cô đăng bài lên nhóm Zalo của lớp thì bài tự vào đây, kèm nguyên văn tin cô gửi. Bố mẹ đọc, sửa nếu cần, rồi bấm Duyệt — lúc đó các con mới thấy bài trên máy của mình.':
+    '선생님이 반 Zalo 그룹에 숙제를 올리면 메시지 원문과 함께 여기로 들어옵니다. 읽어 보고 필요하면 고친 뒤 승인을 누르세요. 그때부터 아이 기기에 보입니다.',
+  'Bài cô vừa giao, chờ duyệt': '선생님이 방금 내준 숙제 (승인 대기)',
+  'Chưa có tin nào chờ duyệt. Cô đăng bài lên nhóm Zalo thì bài sẽ hiện ở đây.':
+    '대기 중인 메시지가 없습니다. 선생님이 Zalo 그룹에 올리면 여기에 표시됩니다.',
+  'Cô {ten}': '{ten} 선생님',
+  'ngày học thứ {n}': '{n}번째 수업일',
+  'Luật khớp': '규칙 일치',
+  'Jev cho là giao bài ({n}%), luật không khớp — soi kỹ':
+    'Jev는 숙제로 판단({n}%), 규칙은 불일치 — 꼼꼼히 확인하세요',
+  'Chưa qua Jev': 'Jev 미확인',
+  'Xem cả tin ({n} chữ)': '메시지 전체 보기 ({n}자)',
+  'Thu gọn tin': '메시지 접기',
+  'Tệp cô gửi kèm ({n})': '선생님이 보낸 파일 ({n}개)',
+  'Mở tệp': '파일 열기',
+  'Sửa kỹ': '자세히 고치기',
+  'Bỏ bài "{name}"': '"{name}" 삭제',
+  '{n} bài': '{n}개',
+  'hạn {date}': '기한 {date}',
+  'Không còn bài nào trong tin này. Bấm "Không phải bài" để bỏ.':
+    '이 메시지에 남은 숙제가 없습니다. "숙제 아님"을 눌러 버리세요.',
+  'Duyệt {n} bài cho các con': '{n}개를 아이들에게 승인',
+  'Không phải bài': '숙제 아님',
+  'Bỏ tin này thì {n} bài nháp bị xoá và các con không bao giờ thấy chúng. Nguyên văn tin vẫn được giữ để máy ở nhà không đưa lại tin này nữa.':
+    '이 메시지를 버리면 임시 숙제 {n}개가 삭제되고 아이들은 보지 못합니다. 메시지 원문은 남겨 두어 집 컴퓨터가 같은 메시지를 다시 보내지 않습니다.',
+  'Bỏ tin này': '이 메시지 버리기',
+  '{n} tin cô giao bài, chờ duyệt': '승인 대기 중인 숙제 메시지 {n}건',
+  'Duyệt thì các con mới thấy bài': '승인해야 아이들에게 보입니다',
+  'Nhóm Zalo': 'Zalo 그룹',
+  'Nhóm Zalo của lớp': '반 Zalo 그룹',
+  'Mỗi nhóm là một lớp. Máy ở nhà đọc đúng những nhóm khai ở đây, nên thêm lớp mới thì chỉ cần gõ vào đây, không phải cài lại gì.':
+    '그룹 하나가 반 하나입니다. 집 컴퓨터는 여기 등록한 그룹만 읽으니, 반을 늘릴 때는 여기에 입력만 하면 됩니다.',
+  'bài cô đăng tự vào đây, bố mẹ duyệt rồi con mới thấy':
+    '선생님이 올린 글이 여기로 들어오고, 승인하면 아이에게 보입니다',
+  '{n} nhóm': '{n}개 그룹',
+  'Chưa khai nhóm nào': '등록된 그룹 없음',
+  'Chưa khai nhóm Zalo nào. Thêm một nhóm thì bài cô đăng trong nhóm đó sẽ tự vào đây.':
+    '등록된 Zalo 그룹이 없습니다. 하나 추가하면 그 그룹에 올라온 선생님 글이 여기로 들어옵니다.',
+  'Con học lớp này:': '이 반에 다니는 아이:',
+  'Chọn ít nhất một con học lớp này.': '이 반에 다니는 아이를 한 명 이상 고르세요.',
+  'Tên nhóm Zalo': 'Zalo 그룹 이름',
+  'Tên nhóm Zalo, gõ đúng như trên Zalo': 'Zalo 그룹 이름 (Zalo에 보이는 그대로)',
+  'Tên cô giáo hiện trên Zalo': 'Zalo에 표시되는 선생님 이름',
+  'Nhận tệp cô gửi trong bao nhiêu phút sau tin': '메시지 이후 몇 분 안에 온 파일까지 받을지',
+  'Nhận bài gần nhất: {luc}': '마지막 수신: {luc}',
+  'Chưa nhận bài nào từ nhóm này': '이 그룹에서 아직 받은 것이 없습니다',
+  'Thêm nhóm Zalo': 'Zalo 그룹 추가',
+  'Thêm nhóm': '그룹 추가',
+  'Chưa nhập tên nhóm Zalo.': 'Zalo 그룹 이름을 입력하세요.',
+  'Chưa nhập tên cô giáo.': '선생님 이름을 입력하세요.',
+  'Cửa sổ nhận tệp phải từ 1 đến 1440 phút.': '파일 수신 시간은 1~1440분이어야 합니다.',
+  'Không tìm thấy nhóm Zalo này.': 'Zalo 그룹을 찾을 수 없습니다.',
+  'Không tìm thấy tin này.': '메시지를 찾을 수 없습니다.',
+  'Tin này đã được xử lý rồi.': '이 메시지는 이미 처리되었습니다.',
 };
