@@ -10,8 +10,11 @@
  * o may captain.
  *
  * Nhung dieu de vo ma khong ai thay, kiem o day:
- *   1. Goi hong phai bi CHAN o day, truoc khi cham CSDL: thieu truong, tep sai
- *      loai, tep qua 25MB, qua nhieu tep.
+ *   1. Goi hong phai bi CHAN o day, truoc khi cham CSDL — nhung CHI khi ca goi
+ *      hong: thieu truong bat buoc, hay qua 10 tep. MOT TEP hong (sai loai, qua
+ *      25MB, base64 hong) thi bo rieng tep do va tin VAN vao: co gui kem mot to
+ *      .docx la tin giao bai do bi khoa vinh vien, vi zalo-agent gui lai moi 30
+ *      phut va lan nao cung 400.
  *   2. So byte cua tep tinh TU CHUOI base64, khong decode — mot goi 200MB
  *      khong duoc phep thanh Buffer trong ham serverless truoc khi bi tu choi.
  *   3. Han nop = ngay trong tin + 1, va KHONG BAO GIO la ngay qua khu.
@@ -28,6 +31,7 @@ import {
   MAX_BYTES_MOI_TEP, MAX_TEP_MOI_GOI, bytesCuaBase64, congNgay, docGoiTin, docNhanDien,
   duongDanBlobZalo, hanNopBai, laNgayISO, loaiTepZalo, matCoNhanDien, tenTepZalo,
 } from './zalo.ts';
+import { ngayNhaISO } from './muiGio.ts';
 
 /** Nguyen van tin cua co — ngay hoc thu 40, thu 6 (18/9/2026). */
 export const TIN_NGAY_40 =
@@ -106,23 +110,45 @@ test('thieu truong bat buoc -> ma loi ro, khong doan bua', () => {
   assert.deepEqual(doc(null), { loi: 'thieu-nguon-id' });
 });
 
-test('tep sai loai bi tu choi ca goi (chi anh / am thanh / video / pdf)', () => {
+test('loai tep nhan: anh / am thanh / video / pdf; loai khac bi BO RIENG, tin van vao', () => {
   const goi = (loai: string) => doc({
     ...GOI_MAU,
     dinh_kem: [{ ten: 'x', loai, noi_dung_base64: Buffer.from('x').toString('base64') }],
   });
   for (const ok of ['image/jpeg', 'image/heic', 'audio/mpeg', 'audio/x-m4a', 'video/quicktime', 'application/pdf']) {
-    assert.ok('goi' in goi(ok), ok);
+    const kq = goi(ok);
+    assert.ok('goi' in kq && kq.goi.dinh_kem.length === 1 && kq.goi.bo_qua.length === 0, ok);
   }
   for (const xau of ['application/zip', 'text/html', 'application/octet-stream', '', 'video']) {
     const kq = goi(xau);
-    assert.ok('loi' in kq && kq.loi === 'tep-sai-loai', xau);
+    assert.ok('goi' in kq, `${xau}: mot tep la khong duoc lam hong ca tin`);
+    assert.equal(kq.goi.dinh_kem.length, 0, xau);
+    assert.deepEqual(kq.goi.bo_qua.map((t) => t.ly_do), ['loai-khong-nhan'], xau);
   }
   // Tham so charset khong duoc lam hong phep do
   assert.equal(loaiTepZalo('IMAGE/PNG; charset=binary'), 'image');
 });
 
-test('tep qua 25MB bi tu choi, va so byte tinh tu CHUOI base64 chu khong decode', () => {
+test('.docx cua co khong lam mat tin: bai van tach duoc, chi rieng tep bi bo', () => {
+  const kq = doc({
+    ...GOI_MAU,
+    dinh_kem: [
+      GOI_MAU.dinh_kem[0],
+      { ten: 'worksheet.docx', loai: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        noi_dung_base64: Buffer.from('doc').toString('base64') },
+    ],
+  });
+  assert.ok('goi' in kq, JSON.stringify(kq));
+  assert.equal(kq.goi.nguyen_van, TIN_NGAY_40, 'nguyen van tin phai con nguyen');
+  assert.deepEqual(kq.goi.dinh_kem.map((t) => t.ten), [GOI_MAU.dinh_kem[0].ten]);
+  assert.deepEqual(kq.goi.bo_qua, [{
+    ten: 'worksheet.docx',
+    ly_do: 'loai-khong-nhan',
+    chi_tiet: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  }]);
+});
+
+test('tep qua 25MB bi bo rieng, va so byte tinh tu CHUOI base64 chu khong decode', () => {
   // 4 ky tu base64 = 3 byte; khong co dau '=' nen khong tru gi
   assert.equal(bytesCuaBase64('AAAA'), 3);
   assert.equal(bytesCuaBase64('AAA='), 2);
@@ -132,17 +158,38 @@ test('tep qua 25MB bi tu choi, va so byte tinh tu CHUOI base64 chu khong decode'
   const to = 'A'.repeat(soKyTu);
   assert.ok(bytesCuaBase64(to) > MAX_BYTES_MOI_TEP);
   const kq = doc({ ...GOI_MAU, dinh_kem: [{ ten: 'to.mp4', loai: 'video/mp4', noi_dung_base64: to }] });
-  assert.ok('loi' in kq && kq.loi === 'tep-qua-nang', JSON.stringify(kq).slice(0, 120));
+  assert.ok('goi' in kq, JSON.stringify(kq).slice(0, 120));
+  assert.equal(kq.goi.dinh_kem.length, 0);
+  assert.equal(kq.goi.bo_qua[0].ly_do, 'qua-nang');
+  assert.equal(kq.goi.bo_qua[0].ten, 'to.mp4');
 });
 
-test('tep rong / khong co noi dung -> tep-hong; qua nhieu tep -> qua-nhieu-tep', () => {
+test('tep rong -> bo rieng voi ly do tep-hong; QUA NHIEU TEP van hong ca goi', () => {
   const rong = doc({ ...GOI_MAU, dinh_kem: [{ ten: 'x.mp4', loai: 'video/mp4', noi_dung_base64: '' }] });
-  assert.ok('loi' in rong && rong.loi === 'tep-hong');
+  assert.ok('goi' in rong);
+  assert.deepEqual(rong.goi.bo_qua, [{ ten: 'x.mp4', ly_do: 'tep-hong' }]);
+  // Tep khong co ten van phai co gi do de bo me doc
+  const khongTen = doc({ ...GOI_MAU, dinh_kem: [{ loai: 'video/mp4', noi_dung_base64: '' }] });
+  assert.ok('goi' in khongTen);
+  assert.equal(khongTen.goi.bo_qua[0].ten, '#1');
+  // Mot goi 200 tep la mot goi SAI, khong phai mot tin co vai tep hong
   const nhieu = doc({
     ...GOI_MAU,
     dinh_kem: Array.from({ length: MAX_TEP_MOI_GOI + 1 }, () => GOI_MAU.dinh_kem[0]),
   });
   assert.ok('loi' in nhieu && nhieu.loi === 'qua-nhieu-tep');
+});
+
+test('ma_nhom la truong TUY CHON: co thi doc ra, khong thi null', () => {
+  const co = doc({ ...GOI_MAU, ma_nhom: 'g6948518348545773767' });
+  assert.ok('goi' in co, JSON.stringify(co));
+  assert.equal(co.goi.ma_nhom, 'g6948518348545773767');
+  const khong = doc(GOI_MAU);
+  assert.ok('goi' in khong);
+  assert.equal(khong.goi.ma_nhom, null, 'khong gui thi khong bia ra ma');
+  const la = doc({ ...GOI_MAU, ma_nhom: 123 });
+  assert.ok('goi' in la);
+  assert.equal(la.goi.ma_nhom, null);
 });
 
 test('truong la thi degrade, khong nem: ngay/moc/so hong ve null', () => {
@@ -173,6 +220,29 @@ test('laNgayISO tu choi ngay Date tu chuan hoa duoc ("2026-02-30")', () => {
 test('han nop: khong co ngay trong tin -> lui ve ngay GUI + 1; khong co ca hai -> hom nay + 1', () => {
   assert.equal(hanNopBai(null, '2026-09-18T20:03:17+07:00', '2026-09-18'), '2026-09-19');
   assert.equal(hanNopBai(null, null, '2026-09-18'), '2026-09-19');
+});
+
+test('han nop: nhanh "lui ve ngay GUI" phai CHAY THAT khi ngay gui KHAC hom nay', () => {
+  // zalo-agent offline qua dem roi quet lai: tin gui 2026-09-17 luc 22h gio nha,
+  // trong tin khong doc ra ngay, hom nay la 2026-09-19.
+  // Dung: ngay gui + 1 = 18/9, kep len hom nay = 19/9.
+  // Sai (so `laNgayISO` thang tren mot MOC ISO): roi xuong `homNay` + 1 = 20/9,
+  // tuc bai cua con tre mot ngay ma khong bao gi.
+  assert.equal(hanNopBai(null, '2026-09-17T22:00:00+07:00', '2026-09-19'), '2026-09-19');
+  // Tin gui hom qua, chua toi han hom nay -> ngay gui + 1 = hom nay
+  assert.equal(hanNopBai(null, '2026-09-18T20:03:17+07:00', '2026-09-19'), '2026-09-19');
+  // Tin gui NGAY MAI (dong ho may gui chay truoc) -> mai + 1, khong bi kep
+  assert.equal(hanNopBai(null, '2026-09-20T08:00:00+07:00', '2026-09-19'), '2026-09-21');
+  // Moc hong thi ve `homNay` + 1, khong nem
+  assert.equal(hanNopBai(null, 'khong-phai-moc', '2026-09-19'), '2026-09-20');
+});
+
+test('han nop doc ngay gui theo MUI GIO NHA, khong theo TZ cua may chay', () => {
+  // 22h gio nha ngay 18/9 = 15:00 UTC cung ngay; nhung 00:30 gio nha ngay 19/9
+  // la 17:30 UTC ngay 18/9 — doc theo UTC la lui mot ngay (lop loi cua issue #75).
+  const nuaDemGioNha = '2026-09-19T00:30:00+07:00';
+  assert.equal(ngayNhaISO(new Date(nuaDemGioNha)), '2026-09-19');
+  assert.equal(hanNopBai(null, nuaDemGioNha, '2026-09-19'), '2026-09-20');
 });
 
 test('han nop KHONG BAO GIO la ngay qua khu — tin cu gui vao thi han la hom nay', () => {

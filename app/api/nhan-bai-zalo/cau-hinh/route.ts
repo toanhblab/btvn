@@ -12,10 +12,14 @@ export const dynamic = 'force-dynamic';
  * nen captain them mot lop moi chi phai go o man bo me, khong phai sua ma hay
  * deploy lai ben nao.
  *
- * KHONG loc theo nha: cua nay khong co cookie, va mot cai Mac mini phuc vu mot
- * nha — nhung dieu do la mot GIA DINH, khong phai mot bao dam. Neu sau nay co
- * nha thu hai dung zalo-agent thi moi khoa phai la mot khoa rieng theo nha; ghi
- * o day de nguoi sau khong tuong la da co san.
+ * Tra ve nguon cua MOI NHA that (mot khoa, khong phan theo nha): cua nay khong
+ * co cookie, va mot cai Mac mini phuc vu mot nha — nhung dieu do la mot GIA
+ * DINH, khong phai mot bao dam. Neu sau nay co nha thu hai dung zalo-agent thi
+ * moi khoa phai la mot khoa rieng theo nha; ghi o day de nguoi sau khong tuong
+ * la da co san. Rieng BA NHA DEMO thi bi loai han — ly do o `cauHinhChoAgent`.
+ *
+ * Than tra ve con co `gioi_han` (loai tep nhan, tran MB, so tep moi goi) de
+ * zalo-agent biet TRUOC cai gi se bi bo, chu khong phai gui len roi doc bao.
  *
  * Cung khuon xac thuc va cung "chuoi may doc" voi POST cung thu muc.
  */

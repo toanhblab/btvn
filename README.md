@@ -277,7 +277,7 @@ dịch — cùng tinh thần với `/api/don-video`.
 ```bash
 KHOA=... ; URL=http://localhost:3000
 
-# Nguồn đang bật, để zalo-agent biết quét nhóm nào
+# Nguồn đang bật, để zalo-agent biết quét nhóm nào (kèm `gioi_han` của cửa nhận)
 curl -s "$URL/api/nhan-bai-zalo/cau-hinh" -H "Authorization: Bearer $KHOA"
 
 # Một tin giao bài
@@ -285,6 +285,7 @@ curl -s -X POST "$URL/api/nhan-bai-zalo" \
   -H "Authorization: Bearer $KHOA" -H 'Content-Type: application/json' \
   -d '{"nguon_id":"nzl_cambridge","ma_tin":"bb_msg_id_1","gui_luc":"2026-09-18T20:03:17+07:00",
        "nguoi_gui":"Thu Huyền","nhom_zalo":"Cambridge 1.27 - Smart Kids Education",
+       "ma_nhom":"g6948518348545773767",
        "ngay_hoc_so":40,"ngay_trong_tin":"2026-09-18","nguyen_van":"Cô Huyền thân gửi …",
        "nhan_dien":{"luat":true,"jev_xac_suat":0.96},
        "dinh_kem":[{"ten":"video-mau.mp4","loai":"video/mp4",
@@ -295,8 +296,8 @@ Mã trả về — **hợp đồng**, đổi là đổi cả hai bên:
 
 | Mã | Khi nào |
 | --- | --- |
-| `201` | Xong. `{ bai_zalo_id, so_bai_nhap, con: [{ id, ten }] }` |
-| `400` | Gói hỏng: thiếu trường, tệp sai loại, tệp quá 25MB, quá 10 tệp |
+| `201` | Xong. `{ bai_zalo_id, so_bai_nhap, con: [{ id, ten }], tep_bo_qua: [{ ten, ly_do }] }` |
+| `400` | Gói hỏng: **thiếu trường bắt buộc** (`nguon_id` / `ma_tin` / `nguyen_van`), hoặc quá 10 tệp |
 | `401` | Thiếu hoặc sai khoá — **không nói là cái nào** |
 | `404` | `nguon_id` không có, nguồn đang tắt, hoặc nguồn chưa gắn con nào |
 | `409` | `ma_tin` đã có cho nguồn đó — **không tạo gì**. zalo-agent chạy lại mỗi 30 phút nên đây là đường bình thường, không phải lỗi |
@@ -308,7 +309,22 @@ sẽ báo "sai khoá" và người ta đi soi Keychain trong khi lỗi nằm ở
 **Không bao giờ 500 tay không.** Bản gốc của tin được ghi vào `bai_tu_zalo`
 *trước* khi gọi bộ tách bài, nên bộ tách hỏng (hết quota, mạng lỗi) vẫn còn
 nguyên văn cho bố mẹ đọc và ít nhất một bài nháp thô để sửa. Thứ tự là hợp
-đồng: **409 trước, lưu sau, tách sau cùng**.
+đồng: **409 trước, lưu sau, tách sau cùng**. Và 409 đi trước cả việc **tải
+tệp**: zalo-agent quét lại mỗi 30 phút, không chặn từ đầu thì mỗi lượt lại ghi
+thêm một bản của cả bộ tệp mà không dòng `dinh_kem` nào trỏ tới — tức không
+`han_xoa`, không lượt dọn nào thu hồi được. Rào chống đua thật vẫn là chỉ mục
+`UNIQUE (nguon_id, ma_tin)` + `ON CONFLICT DO NOTHING`, không phải phép
+`SELECT` ngắn mạch đó.
+
+**Một tệp lạ không làm hỏng cả tin.** Tệp sai loại (cô đính kèm một tờ `.docx`),
+quá 25MB hay base64 hỏng thì **bỏ riêng tệp đó** và ghi vào `tep_bo_qua`
+(`[{ ten, ly_do, chi_tiet? }]`, `ly_do` ∈ `loai-khong-nhan` / `qua-nang` /
+`tep-hong` / `chua-bat-kho-tep` / `tai-len-hong`) — tin vẫn vào, bố mẹ vẫn có
+bài để duyệt, và mục chờ duyệt **hiện** danh sách tệp bị bỏ để họ không tưởng là
+cô quên gửi. Trước đây cả gói trả 400, mà agent gửi lại mỗi 30 phút nên một tờ
+`.docx` là khoá vĩnh viễn tin giao bài đó. Cột `bai_tu_zalo.tep_bo_qua`
+(migration 022) giữ danh sách; thân `201` trả cùng danh sách đó và máy chủ ghi
+một dòng `console.warn`.
 
 ### Bài NHÁP nằm trong chính bảng `assignments`
 
@@ -327,7 +343,10 @@ cả ngày. Hồi quy ghim ở `lib/nhan-bai-zalo.test.ts`.
 ### Tệp kèm
 
 Chỉ ảnh / âm thanh / video / pdf, tối đa **25MB mỗi tệp**, tối đa 10 tệp một
-gói. Lên Vercel Blob dưới `zalo/<nguồn>/<ngày>/` — tiền tố **riêng**, không
+gói. Ba con số đó cũng nằm trong `gioi_han` của `GET cau-hinh`
+(`{ loai_tep: ["image/*", "audio/*", "video/*", "application/pdf"], toi_da_mb: 25,
+toi_da_tep_moi_goi: 10 }`) để zalo-agent biết **trước** thay vì gửi lên rồi đọc
+`tep_bo_qua`. Lên Vercel Blob dưới `zalo/<nguồn>/<ngày>/` — tiền tố **riêng**, không
 chạm `nop-bai/` của video con nộp, nên một lượt dọn video không bao giờ đụng
 vào chúng (`laUrlVideoConNop` trong `lib/donVideo.ts` chỉ nhận `nop-bai/`).
 Dev chưa bật Blob thì ghi `.data/uploads` và trả `/api/tep/<tên>`, cùng khuôn
@@ -346,6 +365,24 @@ btvn là **nguồn sự thật duy nhất**: zalo-agent đọc lại
 gõ ở màn bố mẹ (**Cài đặt → Nhóm Zalo của lớp**, hoặc `/bome/zalo`), không
 phải sửa mã hay deploy bên nào. Captain nhấn mạnh 2026-09-21: nhóm, con, cô
 giáo **phải config được**, không ghi cứng.
+
+**Ba nhà demo bị loại khỏi cửa này**, bằng đúng hàng rào 9 của `lib/donVideo.ts`
+(`family_id NOT LIKE 'fam\_demo\_%'`). `scripts/seed-demo.mjs` chạy trong
+`npm run build` và seed mỗi nhà demo hai nguồn mang **đúng tên nhóm và tên cô
+của lớp thật** — mà tên nhóm là khoá duy nhất zalo-agent đối chiếu được. Không
+lọc thì một tin của cô ra bốn nguồn không phân biệt nổi: hoặc agent gửi bài (và
+tệp có mặt các cháu) vào cả ba nhà ai cũng mở được bằng PIN demo, hoặc nó chọn
+một nguồn và nhà **thật** không bao giờ nhận được bài. Lọc ở `cauHinhChoAgent`
+chứ không ở chỗ seed (`dang_bat = FALSE`): công tắc bật/tắt nằm ngay trên màn
+bố mẹ của nhà demo, ai bật lên là hở lại — và nhờ vậy màn bố mẹ **vẫn** thấy hai
+nguồn mẫu khi captain đi demo, chỉ cửa dành cho **máy** là không.
+
+`ma_nhom` (mã nhóm của Zalo, `g694851…`) bố mẹ **không phải gõ**: họ khai bằng
+**tên** nhóm, còn mã thì zalo-agent gửi kèm trong gói tin và btvn **điền vào chỗ
+trống** — `WHERE ma_nhom IS NULL`, không bao giờ ghi đè, vì một nguồn đã có mã mà
+bị ghi đè là mọi tin sau đó chạy sang nhầm nhóm mà không ai thấy. Thẻ nguồn ở
+màn bố mẹ hiện mã đó (chỉ đọc); "chưa có" kéo dài là dấu hiệu máy ở nhà chưa vào
+được nhóm.
 
 `mau_nhan_dien` là danh sách chuỗi **không dấu** zalo-agent đối chiếu với tin
 (mặc định `["bai tap ve nha", "ngay hoc thu"]`, đo trên 686 tin thật). Bỏ dấu

@@ -21,7 +21,16 @@
  * 3. Tep len Blob TRUOC khi ghi dong `bai_tu_zalo`, va tep nao hong thi BO QUA
  *    chu khong lam hong ca goi: mot video khong tai duoc khong duoc phep lam
  *    mat ca tin giao bai. Duong nguoc lai (ghi dong roi moi tai) de lai mot
- *    dong `dinh_kem` tro toi tep khong ton tai.
+ *    dong `dinh_kem` tro toi tep khong ton tai. Doi lai, tep bi bo phai duoc
+ *    BAO RA — log may chu, than 201, va cot `bai_tu_zalo.tep_bo_qua` de man cho
+ *    duyet hien; bo im lang thi mot ban deploy thieu BLOB_READ_WRITE_TOKEN van
+ *    tra 201 cho moi tin ma khong tep nao duoc luu.
+ *
+ * 4. Kiem TRUNG `ma_tin` truoc khi tai tep. Hang rao THAT van la chi muc UNIQUE
+ *    (`INSERT ... ON CONFLICT DO NOTHING`), nhung mot phep SELECT ngan mach dat
+ *    truoc do la thu duy nhat chan duoc viec zalo-agent — chay lai moi 30 phut
+ *    — tai lai ca bo tep cua tin cu, moi lan mot ban moi (`addRandomSuffix`)
+ *    khong dong `dinh_kem` nao tro toi va khong luot don nao thu hoi duoc.
  */
 
 import { put } from '@vercel/blob';
@@ -36,8 +45,8 @@ import { taoT, type T } from './i18n/chu';
 import { ngonNguOf, type NgonNgu } from './i18n/ngonNgu';
 import {
   baiNhapTho, docNhanDien, duongDanBlobZalo, hanNopBai, loaiTepZalo, tenTepZalo,
-  SO_NGAY_GIU_TEP_ZALO, congNgay,
-  type GoiTinZalo, type NhanDienZalo, type TepZaloDaLuu,
+  LOAI_TEP_NHAN, MAX_MB_MOI_TEP, MAX_TEP_MOI_GOI, SO_NGAY_GIU_TEP_ZALO, congNgay,
+  type GoiTinZalo, type NhanDienZalo, type TepBoQua, type TepZaloDaLuu,
 } from './zalo';
 
 const hasBlob = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
@@ -229,6 +238,8 @@ export interface BaiTuZalo {
   ngayTrongTin: string | null;
   nguyenVan: string;
   dinhKem: TepZaloDaLuu[];
+  /** Tep cua tin KHONG giu duoc, kem ly do — man cho duyet hien ra. */
+  tepBoQua: TepBoQua[];
   nhanDien: NhanDienZalo | null;
   trangThai: TrangThaiBaiZalo;
   createdAt: string;
@@ -245,7 +256,7 @@ interface BaiRow {
   id: string; nguon_id: string; ma_tin: string; gui_luc: string | Date | null;
   nguoi_gui: string; nhom_zalo: string; ngay_hoc_so: number | string | null;
   ngay_trong_tin: string | Date | null; nguyen_van: string;
-  dinh_kem: unknown; nhan_dien: unknown; trang_thai: string;
+  dinh_kem: unknown; tep_bo_qua: unknown; nhan_dien: unknown; trang_thai: string;
   created_at: string | Date;
 }
 
@@ -266,14 +277,15 @@ const toBai = (r: BaiRow): BaiTuZalo => ({
     : null,
   nguyenVan: r.nguyen_van,
   dinhKem: Array.isArray(r.dinh_kem) ? (r.dinh_kem as TepZaloDaLuu[]) : [],
+  tepBoQua: Array.isArray(r.tep_bo_qua) ? (r.tep_bo_qua as TepBoQua[]) : [],
   nhanDien: docNhanDien(r.nhan_dien),
   trangThai: r.trang_thai as TrangThaiBaiZalo,
   createdAt: new Date(r.created_at).toISOString(),
 });
 
 const BAI_COLS = `b.id, b.nguon_id, b.ma_tin, b.gui_luc, b.nguoi_gui, b.nhom_zalo,
-       b.ngay_hoc_so, b.ngay_trong_tin, b.nguyen_van, b.dinh_kem, b.nhan_dien,
-       b.trang_thai, b.created_at`;
+       b.ngay_hoc_so, b.ngay_trong_tin, b.nguyen_van, b.dinh_kem, b.tep_bo_qua,
+       b.nhan_dien, b.trang_thai, b.created_at`;
 
 /** Tra null neu tin thuoc nha khac — lop kiem tra so huu cua man duyet. */
 export async function getBaiTuZalo(familyId: string, id: string): Promise<BaiTuZalo | null> {
@@ -329,7 +341,12 @@ export async function listBaiChoDuyet(familyId: string): Promise<MucChoDuyet[]> 
 /* ---------------- Cua nhan: luu mot tin ---------------- */
 
 export type KetQuaNhanTin =
-  | { ok: true; baiZaloId: string; soBaiNhap: number; con: { id: string; ten: string }[] }
+  | {
+      ok: true; baiZaloId: string; soBaiNhap: number;
+      con: { id: string; ten: string }[];
+      /** Tep cua goi khong giu duoc — rong la moi tep deu vao. */
+      tepBoQua: TepBoQua[];
+    }
   | { ok: false; loi: 'khong-co-nguon' | 'nguon-tat' | 'trung-ma-tin' | 'nguon-chua-co-con' };
 
 /**
@@ -369,19 +386,26 @@ async function ghiTepCucBo(noiDung: Buffer, ten: string): Promise<string> {
 async function taiTepLenKho(
   goi: GoiTinZalo,
   ngay: string
-): Promise<{ tep: TepZaloDaLuu[]; boQua: string[] }> {
+): Promise<{ tep: TepZaloDaLuu[]; boQua: TepBoQua[] }> {
   const tep: TepZaloDaLuu[] = [];
-  const boQua: string[] = [];
+  const boQua: TepBoQua[] = [];
   if (goi.dinh_kem.length === 0) return { tep, boQua };
   if (!hasBlob && process.env.VERCEL) {
-    for (const t of goi.dinh_kem) boQua.push(`${t.ten || '?'}: chua bat Vercel Blob`);
+    for (const [i, t] of goi.dinh_kem.entries()) {
+      boQua.push({ ten: t.ten || `#${i + 1}`, ly_do: 'chua-bat-kho-tep' });
+    }
     return { tep, boQua };
   }
 
   const hanXoa = congNgay(ngay, SO_NGAY_GIU_TEP_ZALO);
   for (const [i, t] of goi.dinh_kem.entries()) {
     const kind = loaiTepZalo(t.loai);
-    if (!kind) { boQua.push(`${t.ten || i}: loai ${t.loai}`); continue; }
+    // `docGoiTin` da loc loai roi; giu lai day lam lop cuoi cho moi nguoi goi
+    // khac, va de mot dot doi luat o mot ben khong lam ro ri sang ben kia.
+    if (!kind) {
+      boQua.push({ ten: t.ten || `#${i + 1}`, ly_do: 'loai-khong-nhan', chi_tiet: t.loai });
+      continue;
+    }
     const ten = tenTepZalo(t.ten, kind, i);
     try {
       const noiDung = Buffer.from(t.noi_dung_base64, 'base64');
@@ -399,7 +423,10 @@ async function taiTepLenKho(
         bytes: noiDung.byteLength, gui_luc: t.gui_luc, han_xoa: hanXoa,
       });
     } catch (e) {
-      boQua.push(`${ten}: ${e instanceof Error ? e.message : String(e)}`);
+      boQua.push({
+        ten, ly_do: 'tai-len-hong',
+        chi_tiet: e instanceof Error ? e.message : String(e),
+      });
     }
   }
   return { tep, boQua };
@@ -460,11 +487,18 @@ function tepDinhVaoBai(tep: TepZaloDaLuu[]): AttachedMedia[] {
  * tung con cua nguon.
  *
  * THU TU la hop dong, khong phai sap xep cho gon (xem chu thich dau tep):
- *   1. `INSERT ... ON CONFLICT DO NOTHING RETURNING` tren chi muc UNIQUE
+ *   1. Mot `SELECT` ngan mach tren (nguon_id, ma_tin): tin da co thi DUNG NGAY,
+ *      TRUOC khi tai tep. Day khong phai hang rao chong dua — no la hang rao
+ *      DUNG LUONG: zalo-agent quet lai moi 30 phut, khong co buoc nay thi moi
+ *      luot lai ghi them mot ban cua ca bo tep (`addRandomSuffix` nen khong de
+ *      len nhau) ma khong dong `dinh_kem` nao tro toi, tuc khong `han_xoa`,
+ *      khong luot don nao thu hoi duoc — tren mot kho 1GB da dung 219MB.
+ *   2. `INSERT ... ON CONFLICT DO NOTHING RETURNING` tren chi muc UNIQUE
  *      (nguon_id, ma_tin) — khong tra ve dong nao nghia la tin da co, DUNG NGAY
- *      va khong tao gi. Hang rao o CSDL chu khong o code: zalo-agent chay lai
- *      moi 30 phut, hai luot chong nhau la chuyen binh thuong.
- *   2. Tach bai va tao bai nhap. Loi o buoc nay KHONG nem ra ngoai: ban goc da
+ *      va khong tao gi. Hang rao THAT chong dua nam o CSDL chu khong o code:
+ *      hai luot chong nhau van phai ra dung mot dong. GIU no, dung thay bang
+ *      phep SELECT o buoc 1.
+ *   3. Tach bai va tao bai nhap. Loi o buoc nay KHONG nem ra ngoai: ban goc da
  *      an toan roi.
  */
 export async function nhanTinZalo(goi: GoiTinZalo): Promise<KetQuaNhanTin> {
@@ -473,25 +507,48 @@ export async function nhanTinZalo(goi: GoiTinZalo): Promise<KetQuaNhanTin> {
   if (!nguon.dangBat) return { ok: false, loi: 'nguon-tat' };
   if (nguon.childIds.length === 0) return { ok: false, loi: 'nguon-chua-co-con' };
 
+  const daCo = await queryOne<{ id: string }>(
+    `SELECT id FROM bai_tu_zalo WHERE nguon_id = $1 AND ma_tin = $2`,
+    [nguon.id, goi.ma_tin]
+  );
+  if (daCo) return { ok: false, loi: 'trung-ma-tin' };
+
   const homNay = todayISO();
   const ngayTep = goi.ngay_trong_tin ?? homNay;
-  const { tep } = await taiTepLenKho(goi, ngayTep);
+  const { tep, boQua } = await taiTepLenKho(goi, ngayTep);
+  const tepBoQua = [...goi.bo_qua, ...boQua];
+  if (tepBoQua.length > 0) {
+    // Log may chu: mot ban deploy thieu BLOB_READ_WRITE_TOKEN bo SACH tep cua
+    // moi tin ma van tra 201 — khong co dong nay thi khong o dau ghi lai.
+    console.warn('[nhan-bai-zalo] bo tep', goi.nguon_id, goi.ma_tin, tepBoQua);
+  }
 
   const baiId = newId('bzl');
   const them = await query<{ id: string }>(
     `INSERT INTO bai_tu_zalo
        (id, nguon_id, ma_tin, gui_luc, nguoi_gui, nhom_zalo, ngay_hoc_so, ngay_trong_tin,
-        nguyen_van, dinh_kem, nhan_dien)
-     VALUES ($1,$2,$3,$4::timestamptz,$5,$6,$7,$8::date,$9,$10::jsonb,$11::jsonb)
+        nguyen_van, dinh_kem, tep_bo_qua, nhan_dien)
+     VALUES ($1,$2,$3,$4::timestamptz,$5,$6,$7,$8::date,$9,$10::jsonb,$11::jsonb,$12::jsonb)
      ON CONFLICT (nguon_id, ma_tin) DO NOTHING
      RETURNING id`,
     [baiId, nguon.id, goi.ma_tin, goi.gui_luc, goi.nguoi_gui,
      goi.nhom_zalo || nguon.tenNhom, goi.ngay_hoc_so, goi.ngay_trong_tin, goi.nguyen_van,
-     JSON.stringify(tep), goi.nhan_dien === null ? null : JSON.stringify(goi.nhan_dien)]
+     JSON.stringify(tep), JSON.stringify(tepBoQua),
+     goi.nhan_dien === null ? null : JSON.stringify(goi.nhan_dien)]
   );
   if (them.length === 0) return { ok: false, loi: 'trung-ma-tin' };
 
-  await query(`UPDATE nguon_zalo SET lan_nhan_gan_nhat = now() WHERE id = $1`, [nguon.id]);
+  // `ma_nhom` chi DIEN VAO CHO TRONG, khong bao gio de len: bo me khai nguon
+  // bang TEN nhom (thu ho nhin thay tren Zalo) con ma la thu chi zalo-agent doc
+  // duoc sau khi mo dung nhom (migration 021). `WHERE ma_nhom IS NULL` la ca
+  // luat, dat trong CHINH cau UPDATE — mot nguon da co ma ma bi ghi de la moi
+  // tin sau do chay sang nham nhom ma khong ai thay.
+  await query(
+    `UPDATE nguon_zalo SET lan_nhan_gan_nhat = now(),
+            ma_nhom = CASE WHEN ma_nhom IS NULL THEN $2 ELSE ma_nhom END
+      WHERE id = $1`,
+    [nguon.id, goi.ma_nhom]
+  );
 
   // Ngon ngu cua NHA (families.ui_locale) — ten mon do bo tach dat phai theo no,
   // giong duong bo me nhap tay (`POST /api/extract` doc `ngonNguHienTai`). O day
@@ -532,6 +589,7 @@ export async function nhanTinZalo(goi: GoiTinZalo): Promise<KetQuaNhanTin> {
     baiZaloId: baiId,
     soBaiNhap: created.length,
     con: con.map((c) => ({ id: c.id, ten: c.name })),
+    tepBoQua,
   };
 }
 
@@ -627,13 +685,30 @@ export async function boBaiZalo(
   return { ok: true, soBai: xoa.length };
 }
 
-/** Cau hinh cho zalo-agent — dang cua hop dong `GET /api/nhan-bai-zalo/cau-hinh`. */
+/**
+ * Cau hinh cho zalo-agent — dang cua hop dong `GET /api/nhan-bai-zalo/cau-hinh`.
+ *
+ * LOC NHA DEMO ra, bang dung hang rao 9 cua lib/donVideo.ts
+ * (`family_id NOT LIKE 'fam\_demo\_%'`, dau gach duoi la ky tu dai dien cua
+ * LIKE nen phai thoat). Ba nha demo duoc seed lai o MOI ban `npm run build` voi
+ * hai nguon mang DUNG ten nhom va ten co cua lop that, ma ten nhom la khoa duy
+ * nhat zalo-agent doi chieu duoc — khong loc thi mot tin cua co ra bon nguon
+ * khong phan biet noi: hoac agent gui bai (va tep co mat cac chau) vao ca ba
+ * nha ai cung mo duoc bang PIN demo 1111/2222/3333, hoac no chon mot nguon va
+ * nha THAT khong bao gio nhan duoc bai.
+ *
+ * Loc o DAY chu khong o cho seed (`dang_bat = FALSE`): cong tac bat/tat nam
+ * ngay tren man bo me cua nha demo, ai bat len la ho lai. Va cung vi the man bo
+ * me VAN thay hai nguon mau khi captain di demo — chi cua danh cho MAY la khong.
+ */
 export async function cauHinhChoAgent(): Promise<{
   nguon: {
     id: string; nhom_zalo: string; ma_nhom: string | null; ten_co: string;
     mau_nhan_dien: string[]; cua_so_dinh_kem_phut: number;
     con: { id: string; ten: string }[];
   }[];
+  /** Tran cua cua nhan, de zalo-agent biet TRUOC thay vi gui len roi bi bo. */
+  gioi_han: { loai_tep: string[]; toi_da_mb: number; toi_da_tep_moi_goi: number };
 }> {
   const rows = await query<NguonRow & { con: unknown }>(
     `SELECT ${NGUON_SELECT},
@@ -645,6 +720,7 @@ export async function cauHinhChoAgent(): Promise<{
               '[]'::json) AS con
        FROM nguon_zalo n
       WHERE n.dang_bat
+        AND n.family_id NOT LIKE 'fam\\_demo\\_%'
       ORDER BY n.created_at ASC, n.id ASC`
   );
   return {
@@ -657,5 +733,10 @@ export async function cauHinhChoAgent(): Promise<{
       cua_so_dinh_kem_phut: Number(r.cua_so_dinh_kem_phut),
       con: (Array.isArray(r.con) ? r.con : []) as { id: string; ten: string }[],
     })),
+    gioi_han: {
+      loai_tep: [...LOAI_TEP_NHAN],
+      toi_da_mb: MAX_MB_MOI_TEP,
+      toi_da_tep_moi_goi: MAX_TEP_MOI_GOI,
+    },
   };
 }

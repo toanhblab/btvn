@@ -185,6 +185,10 @@ Mỗi tin hiện đủ để bố mẹ yên tâm:
 - **Nguyên văn tin của cô**, y như trên Zalo, giữ nguyên xuống dòng. Tin dài thì
   thu gọn lại, bấm **"Xem cả tin"** để đọc hết.
 - **Tệp cô gửi kèm** — ảnh xem được, phim và ghi âm bấm là phát ngay tại đây.
+- Nếu có tệp nào app **không nhận được** (cô gửi tệp Word, hoặc phim nặng quá),
+  app nói thẳng: *"1 tệp cô gửi không vào được — worksheet.docx — loại tệp app
+  không nhận"*. Bài của cô vẫn vào đủ, chỉ thiếu đúng tệp đó; cần thì mở Zalo
+  tải về rồi bấm **"Sửa kỹ"** để đính kèm vào bài.
 - **Danh sách bài app đã tách sẵn, theo từng con**, xếp đúng thứ tự cô viết để
   bố mẹ dò cho nhanh.
 
@@ -213,9 +217,11 @@ Ba việc bố mẹ làm được:
   Để nguyên 90 là hợp với hầu hết lớp: video mẫu cô gửi ngay sau tin, còn file
   nhận xét từng bé thì mấy tiếng sau — 90 phút tách đúng hai loại.
 
-Mỗi nhóm có một **công tắc bật/tắt** và một dòng **"Nhận bài gần nhất"**. Dòng
-đó là cách biết nhóm còn chạy hay đã hỏng: mấy hôm liền không đổi mà lớp vẫn có
-bài thì gọi người cài giúp. Nghỉ hè hay chuyển lớp thì **tắt** nhóm đi, đừng lo
+Mỗi nhóm có một **công tắc bật/tắt**, một dòng **"Mã nhóm"** và một dòng
+**"Nhận bài gần nhất"**. Mã nhóm bố mẹ **không phải gõ** — máy ở nhà tự điền khi
+nhận bài lần đầu; nó chỉ để phân biệt hai lớp lỡ trùng tên nhóm. Hai dòng đó là
+cách biết nhóm còn chạy hay đã hỏng: mã nhóm mãi vẫn "chưa có", hoặc "Nhận bài
+gần nhất" mấy hôm liền không đổi mà lớp vẫn có bài, thì gọi người cài giúp. Nghỉ hè hay chuyển lớp thì **tắt** nhóm đi, đừng lo
 mất — tin cũ vẫn giữ nguyên, bật lại lúc nào cũng được.
 
 ### Xem con làm tới đâu

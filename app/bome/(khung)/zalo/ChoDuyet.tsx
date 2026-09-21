@@ -7,7 +7,7 @@ import type { MucChoDuyet } from '@/lib/nhanBaiZalo';
 import type { Assignment, Child } from '@/lib/types';
 import { MEDIA_ICON } from '@/lib/media';
 import { gioNha } from '@/lib/ngay';
-import { matCoNhanDien, type TepZaloDaLuu } from '@/lib/zalo';
+import { matCoNhanDien, type LyDoBoTep, type TepBoQua, type TepZaloDaLuu } from '@/lib/zalo';
 import { useT } from '@/lib/i18n/client';
 
 /** Nguyen van dai hon thi thu gon lai, bo me bam "Xem cả tin" moi mo het. */
@@ -95,6 +95,49 @@ function TepKem({ tep }: { tep: TepZaloDaLuu[] }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Tep cua co KHONG vao duoc, kem ly do doc duoc.
+ *
+ * Phai HIEN chu khong duoc bo im lang: bo me doi chieu nguyen van tin ("con xem
+ * video mẫu của cô") voi bo tep ngay ben canh, nen mot tep thieu ma khong noi
+ * gi thi ho tuong co quen gui — trong khi that ra app da tu bo no. Ly do luu
+ * duoi dang MA (cua nhan la cua cho may, than 201 khong qua lop dich); cau chu
+ * chon o day.
+ */
+function LyDoBoTepChu({ ly_do }: { ly_do: LyDoBoTep }) {
+  const T = useT();
+  const chu: Record<LyDoBoTep, string> = {
+    'loai-khong-nhan': T('loại tệp app không nhận'),
+    'qua-nang': T('tệp nặng quá'),
+    'tep-hong': T('tệp hỏng'),
+    'chua-bat-kho-tep': T('kho tệp của app chưa sẵn sàng'),
+    'tai-len-hong': T('tải lên không được'),
+  };
+  return <>{chu[ly_do]}</>;
+}
+
+function TepBiBo({ tep }: { tep: TepBoQua[] }) {
+  const T = useT();
+  if (tep.length === 0) return null;
+  return (
+    <div className="bg-error-container rounded-card p-3 flex flex-col gap-1">
+      <p className="text-p-body-sm text-on-error-container font-bold">
+        {T('{n} tệp cô gửi không vào được', { n: tep.length })}
+      </p>
+      <ul className="flex flex-col gap-0.5">
+        {tep.map((t, i) => (
+          <li key={`${t.ten}:${i}`} className="text-p-body-sm text-on-error-container break-words">
+            {t.ten} — <LyDoBoTepChu ly_do={t.ly_do} />
+          </li>
+        ))}
+      </ul>
+      <p className="text-p-label text-on-error-container">
+        {T('Tin của cô vẫn vào đủ. Cần tệp này thì mở Zalo tải về rồi bấm "Sửa kỹ" để đính kèm.')}
+      </p>
     </div>
   );
 }
@@ -309,6 +352,7 @@ export default function ChoDuyet({
 
               <NguyenVan chu={m.bai.nguyenVan} />
               <TepKem tep={m.bai.dinhKem} />
+              <TepBiBo tep={m.bai.tepBoQua} />
 
               {/* Bai da tach, theo tung con */}
               {theoCon.length === 0 ? (

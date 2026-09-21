@@ -187,6 +187,17 @@ export default function NguonZalo({ initial, cacCon }: { initial: Nguon[]; cacCo
               cacCon={cacCon}
             />
 
+            {/* MA NHOM chi doc: bo me khai nguon bang TEN nhom (thu ho nhin thay
+                tren Zalo), con ma la thu chi may o nha doc duoc sau khi mo dung
+                nhom — no tu dien vao lan nhan bai dau tien. Hien ra vi day la
+                thu duy nhat phan biet duoc hai nguon TRUNG TEN nhom, va vi
+                "chưa có" keo dai la mot dau hieu: may o nha chua vao duoc nhom. */}
+            <p className="text-p-label text-on-surface-variant break-all">
+              {n.maNhom
+                ? T('Mã nhóm: {ma}', { ma: n.maNhom })
+                : T('Mã nhóm: chưa có (máy ở nhà tự điền khi nhận bài lần đầu)')}
+            </p>
+
             <div className="flex items-center gap-2">
               {/* KHONG `truncate`: o be ngang 390px, cong tac chiem gan mot nua
                   hang nen mot dong mot dong se cat mat dung phan GIO — ma gio

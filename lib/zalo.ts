@@ -7,8 +7,9 @@
  * va vi cung tep nay la BAN HOP DONG ma zalo-agent (kho khac, viet Python) phai
  * khop: doi ten truong o day la doi ca hai ben.
  *
- * Tep KHONG import gi luc chay (chi `import type`) — cung ly do voi
- * lib/sqlNhiemVu.ts va lib/muiGio.ts: `node --test` va script .mjs nap duoc.
+ * Tep chi import lib/muiGio.ts luc chay — chinh tep do CO Y khong import gi,
+ * nen ca nhanh nay van la la: `node --test` va script .mjs nap duoc, cung ly do
+ * voi lib/sqlNhiemVu.ts.
  *
  * Ten truong trong goi tin la TIENG VIET KHONG DAU (`ma_tin`, `nguyen_van`,
  * `dinh_kem`...) theo hop dong captain da chot; doi lai, kieu TypeScript trong
@@ -16,6 +17,7 @@
  * la biet no di thang tu goi tin ra hay khong.
  */
 
+import { ngayNhaISO } from './muiGio';
 import type { DraftAssignment } from './types';
 
 /* ---------------- Tep dinh kem ---------------- */
@@ -43,6 +45,16 @@ export const MAX_TEP_MOI_GOI = 10;
  * chac chan sot.
  */
 export type LoaiTepZalo = 'image' | 'audio' | 'video' | 'pdf';
+
+/**
+ * Danh sach loai tep nhan, dang MAY DOC — `GET /api/nhan-bai-zalo/cau-hinh` tra
+ * no ve trong `gioi_han` de zalo-agent biet TRUOC cai gi se bi bo, thay vi gui
+ * len roi doc mot dong "da bo" trong than 201.
+ */
+export const LOAI_TEP_NHAN = ['image/*', 'audio/*', 'video/*', 'application/pdf'] as const;
+
+/** Cung mot tran voi `MAX_BYTES_MOI_TEP`, don vi MB — dang zalo-agent doc. */
+export const MAX_MB_MOI_TEP = MAX_BYTES_MOI_TEP / (1024 * 1024);
 
 export function loaiTepZalo(mime: unknown): LoaiTepZalo | null {
   if (typeof mime !== 'string') return null;
@@ -111,15 +123,31 @@ export function congNgay(ngay: string, n: number): string {
  * bao gio tra ve ngay QUA KHU: bai co han hom qua khong hien tren man cua con
  * o nhom "hom nay" ma tut ngay xuong "bai con no", con bo me thi vua bam duyet
  * xong da thay mot bai qua han.
+ *
+ * `ngayGuiTin` la MOC DAY DU ('2026-09-18T20:03:17+07:00'), khong phai ngay lich
+ * — do la thu zalo-agent gui len. Rut ngay ra bang `ngayNhaISO` (mui gio nha)
+ * chu khong so thang bang `laNgayISO`: so thang thi nhanh giua khong bao gio
+ * chay (mot moc ISO khong khop `^\d{4}-\d{2}-\d{2}$`) va tin cu ve dung
+ * `homNay` + 1, tuc han tre mot ngay ma khong bao gi. Va KHONG dung
+ * `new Date(...).getDate()`: ham Vercel chay TZ=UTC con nha o +07 nen mot tin
+ * gui 22h gio nha se ra ngay hom truoc (cung lop loi voi issue #75).
  */
 export function hanNopBai(
   ngayTrongTin: string | null,
   ngayGuiTin: string | null,
   homNay: string
 ): string {
-  const goc = laNgayISO(ngayTrongTin) ? ngayTrongTin : laNgayISO(ngayGuiTin) ? ngayGuiTin : homNay;
+  const goc = laNgayISO(ngayTrongTin) ? ngayTrongTin : ngayLichCuaMoc(ngayGuiTin) ?? homNay;
   const han = congNgay(goc, 1);
   return han < homNay ? homNay : han;
+}
+
+/** Ngay lich (mui gio nha) cua mot moc ISO; moc hong / thieu thi null. */
+export function ngayLichCuaMoc(moc: string | null): string | null {
+  if (typeof moc !== 'string' || !moc.trim()) return null;
+  if (laNgayISO(moc)) return moc;
+  const d = new Date(moc);
+  return Number.isNaN(d.getTime()) ? null : ngayNhaISO(d);
 }
 
 /* ---------------- Co nhan dien (zalo-agent gui kem) ---------------- */
@@ -166,16 +194,43 @@ export interface TepTrongGoi {
   noi_dung_base64: string;
 }
 
+/**
+ * Mot tep KHONG duoc giu lai, kem ly do — MOT danh sach duy nhat cho ca hai cho
+ * co the bo tep: luc doc goi (sai loai / qua nang / base64 hong) va luc tai len
+ * kho (chua bat kho tep, `put` nem). Luu cung dong `bai_tu_zalo` va hien o muc
+ * cho duyet, de bo me biet co mot tep cua co khong vao duoc chu khong phai doan.
+ *
+ * `ly_do` la MA MAY DOC: cua nay do zalo-agent goi nen than 201 khong qua lop
+ * dich; man bo me tu chon cau cho tung ma.
+ */
+export type LyDoBoTep =
+  | 'loai-khong-nhan'
+  | 'qua-nang'
+  | 'tep-hong'
+  | 'chua-bat-kho-tep'
+  | 'tai-len-hong';
+
+export interface TepBoQua {
+  ten: string;
+  ly_do: LyDoBoTep;
+  /** Them chu cho dong log cua may chu; man bo me khong ve truong nay. */
+  chi_tiet?: string;
+}
+
 export interface GoiTinZalo {
   nguon_id: string;
   ma_tin: string;
   gui_luc: string | null;
   nguoi_gui: string;
   nhom_zalo: string;
+  /** Ma nhom Zalo ('g694851...') zalo-agent doc duoc sau khi mo dung nhom. */
+  ma_nhom: string | null;
   ngay_hoc_so: number | null;
   ngay_trong_tin: string | null;
   nguyen_van: string;
   dinh_kem: TepTrongGoi[];
+  /** Tep cua goi KHONG giu duoc — tin van vao, chi thieu tep do. */
+  bo_qua: TepBoQua[];
   nhan_dien: NhanDienZalo | null;
 }
 
@@ -183,15 +238,16 @@ export interface GoiTinZalo {
  * Ma loi cua goi tin hong — CHUOI MAY DOC, khong hien len man nao (cua nay do
  * zalo-agent goi, khong phai nguoi), nen khong qua lop dich. Cung tinh than
  * voi /api/don-video.
+ *
+ * Danh sach nay CHI con nhung thu lam ca goi vo nghia: thieu truong bat buoc,
+ * hoac nhieu tep hon tran (mot goi 200 tep la mot goi sai, khong phai mot tin
+ * co vai tep hong). MOT TEP HONG KHONG CON O DAY — xem `docGoiTin`.
  */
 export type LoiGoiTin =
   | 'thieu-nguon-id'
   | 'thieu-ma-tin'
   | 'thieu-nguyen-van'
-  | 'qua-nhieu-tep'
-  | 'tep-sai-loai'
-  | 'tep-qua-nang'
-  | 'tep-hong';
+  | 'qua-nhieu-tep';
 
 export const MAX_CHU_NGUYEN_VAN = 20_000;
 
@@ -222,10 +278,16 @@ export function bytesCuaBase64(s: string): number {
  *
  * Tra ve `{ loi }` thay vi nem: cua nhan phai phan biet duoc "goi hong" (400)
  * voi "tach bai hong" (van 201, luu ban goc — xem app/api/nhan-bai-zalo).
+ *
+ * MOT TEP LA KHONG DUOC LAM HONG CA TIN. Tep sai loai (.docx cua co), qua 25MB
+ * hay base64 hong thi BO RIENG tep do va ghi vao `bo_qua`; tin van vao va bo me
+ * van co bai de duyet. Truoc day day tra 400 cho ca goi, ma zalo-agent gui lai
+ * moi 30 phut nen mot to worksheet .docx dinh kem la KHOA VINH VIEN tin giao
+ * bai do: khong co ban nhap, khong co muc cho duyet, khong ai biet vi sao.
  */
 export function docGoiTin(
   body: unknown
-): { goi: GoiTinZalo } | { loi: LoiGoiTin; chiTiet?: string } {
+): { goi: GoiTinZalo } | { loi: LoiGoiTin } {
   const b = (body ?? {}) as Record<string, unknown>;
 
   const nguonId = chuoi(b.nguon_id, 64);
@@ -239,21 +301,30 @@ export function docGoiTin(
   if (tho.length > MAX_TEP_MOI_GOI) return { loi: 'qua-nhieu-tep' };
 
   const dinhKem: TepTrongGoi[] = [];
+  const boQua: TepBoQua[] = [];
   for (const [i, t] of tho.entries()) {
     const o = (t ?? {}) as Record<string, unknown>;
     const loai = chuoi(o.loai, 120);
-    if (!loaiTepZalo(loai)) return { loi: 'tep-sai-loai', chiTiet: `${i}: ${loai || '?'}` };
+    // Tep tu Zalo hay KHONG CO TEN (bong bong video chi co key) — dat ten theo
+    // thu tu de man bo me co gi de hien; duoi tep do loai quyet dinh.
+    const ten = chuoi(o.ten, 200);
+    const tenHien = ten || `#${i + 1}`;
+    if (!loaiTepZalo(loai)) {
+      boQua.push({ ten: tenHien, ly_do: 'loai-khong-nhan', chi_tiet: loai || '?' });
+      continue;
+    }
     const b64 = typeof o.noi_dung_base64 === 'string' ? o.noi_dung_base64 : '';
-    if (!b64) return { loi: 'tep-hong', chiTiet: `${i}` };
-    const bytes = bytesCuaBase64(b64);
-    if (bytes <= 0) return { loi: 'tep-hong', chiTiet: `${i}` };
+    const bytes = b64 ? bytesCuaBase64(b64) : 0;
+    if (bytes <= 0) {
+      boQua.push({ ten: tenHien, ly_do: 'tep-hong' });
+      continue;
+    }
     if (bytes > MAX_BYTES_MOI_TEP) {
-      return { loi: 'tep-qua-nang', chiTiet: `${i}: ${bytes}` };
+      boQua.push({ ten: tenHien, ly_do: 'qua-nang', chi_tiet: String(bytes) });
+      continue;
     }
     dinhKem.push({
-      // Tep tu Zalo hay KHONG CO TEN (bong bong video chi co key) — dat ten
-      // theo thu tu de man bo me co gi de hien; duoi tep do loai quyet dinh.
-      ten: chuoi(o.ten, 200),
+      ten,
       loai,
       gui_luc: mocISO(o.gui_luc),
       noi_dung_base64: b64,
@@ -269,10 +340,12 @@ export function docGoiTin(
       gui_luc: mocISO(b.gui_luc),
       nguoi_gui: chuoi(b.nguoi_gui, 200),
       nhom_zalo: chuoi(b.nhom_zalo, 300),
+      ma_nhom: chuoi(b.ma_nhom, 64) || null,
       ngay_hoc_so: Number.isInteger(soNgayHoc) && soNgayHoc > 0 ? soNgayHoc : null,
       ngay_trong_tin: laNgayISO(b.ngay_trong_tin) ? b.ngay_trong_tin : null,
       nguyen_van: nguyenVan.slice(0, MAX_CHU_NGUYEN_VAN),
       dinh_kem: dinhKem,
+      bo_qua: boQua,
       nhan_dien: docNhanDien(b.nhan_dien),
     },
   };

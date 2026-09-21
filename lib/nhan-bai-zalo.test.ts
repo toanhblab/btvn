@@ -21,10 +21,12 @@
  *      progressUpcoming; bam lan hai tra 'da-xu-ly' chu khong duyet lai.
  *   4. "KHONG PHAI BAI". Bai nhap bi xoa, dong tin O LAI de lan quet sau cua
  *      zalo-agent van bi 409 chan — khong thi bo me phai bo lai moi 30 phut.
- *   5. TEP. Len kho dung thu muc `zalo/<nguon>/<ngay>/`, gan vao tung bai nhap,
- *      va tep sai loai / qua nang bi chan o 400 truoc khi cham CSDL.
+ *   5. TEP. Len kho dung thu muc `zalo/<nguon>/<ngay>/`, gan vao tung bai nhap;
+ *      mot tep sai loai KHONG lam hong ca tin ma bi bo rieng va BAO RA; va mot
+ *      goi trung `ma_tin` KHONG dung toi kho tep mot lan nao.
  *   6. KHONG NHIN SANG NHA KHAC. `nguon_id` la thu quyet dinh nha, nen mot
- *      nguon cua nha A khong bao gio tao duoc bai cho con nha B.
+ *      nguon cua nha A khong bao gio tao duoc bai cho con nha B — va nguon cua
+ *      NHA DEMO khong bao gio lot vao cua danh cho may.
  */
 
 import { test, before, beforeEach, mock } from 'node:test';
@@ -61,12 +63,16 @@ const { GET: GET_CAU_HINH } = await import('../app/api/nhan-bai-zalo/cau-hinh/ro
 const KHOA = 'khoa-dev-gia';
 const FAM = 'fam_zalo';
 const FAM_KHAC = 'fam_khac';
+/** Id nha demo do `idNhaDemo` cua scripts/seed-demo.mjs dat ra — hang rao 9. */
+const FAM_DEMO = 'fam_demo_vi';
 const CON_A = 'con_binh';
 const CON_B = 'con_an';
 const CON_KHAC = 'con_nha_khac';
+const CON_DEMO = 'con_demo';
 const NGUON = 'nzl_cambridge';
 const NGUON_TAT = 'nzl_tat';
 const NGUON_KHAC = 'nzl_nha_khac';
+const NGUON_DEMO = 'nzl_demo';
 
 const db = {
   query: (t: string, p: unknown[] = []) => query<Record<string, unknown>>(t, p),
@@ -91,6 +97,7 @@ before(async () => {
   for (const [fam, ten, slug, pin] of [
     [FAM, 'Nhà mình', 'nha-minh', 'hash-1'],
     [FAM_KHAC, 'Nhà khác', 'nha-khac', 'hash-2'],
+    [FAM_DEMO, 'Nhà demo', 'nha-demo', 'hash-3'],
   ]) {
     await db.query(
       `INSERT INTO families (id, name, slug, parent_pin_hash, score_since)
@@ -100,6 +107,7 @@ before(async () => {
     [CON_A, FAM, 'Huy Bình', 'primary', 1],
     [CON_B, FAM, 'Huy An', 'secondary', 2],
     [CON_KHAC, FAM_KHAC, 'Bé Na', 'primary', 1],
+    [CON_DEMO, FAM_DEMO, 'Bé Demo', 'primary', 1],
   ] as const) {
     await db.query(
       `INSERT INTO children (id, family_id, name, avatar_url, color, grade, sort_order)
@@ -109,6 +117,8 @@ before(async () => {
     [NGUON, FAM, 'Cambridge 1.27 - Smart Kids Education', true],
     [NGUON_TAT, FAM, 'Lớp đã nghỉ', false],
     [NGUON_KHAC, FAM_KHAC, 'Lớp nhà khác', true],
+    // Nha demo duoc seed lai moi ban build voi DUNG ten nhom cua lop that.
+    [NGUON_DEMO, FAM_DEMO, 'Cambridge 1.27 - Smart Kids Education', true],
   ] as const) {
     await db.query(
       `INSERT INTO nguon_zalo (id, family_id, ten_nhom, ten_co, dang_bat)
@@ -116,6 +126,7 @@ before(async () => {
   }
   for (const [nguon, con] of [
     [NGUON, CON_A], [NGUON, CON_B], [NGUON_TAT, CON_A], [NGUON_KHAC, CON_KHAC],
+    [NGUON_DEMO, CON_DEMO],
   ]) {
     await db.query(`INSERT INTO nguon_zalo_con (nguon_id, child_id) VALUES ($1,$2)`, [nguon, con]);
   }
@@ -171,20 +182,41 @@ test('401 khi thieu hoac sai khoa, va KHONG lo ly do nao', async () => {
   assert.equal(await demBaiCuaNguon(), 0);
 });
 
-test('400 khi goi hong — tep sai loai / qua nang bi chan TRUOC khi cham CSDL', async () => {
-  const saiLoai = await goiCua({
-    ...GOI_MAU,
-    dinh_kem: [{ ten: 'x.zip', loai: 'application/zip', noi_dung_base64: 'AAAA' }],
-  });
-  assert.equal(saiLoai.status, 400);
-  assert.equal((await saiLoai.json()).loi, 'tep-sai-loai');
-
+test('400 khi THIEU TRUONG bat buoc — chan TRUOC khi cham CSDL va kho tep', async () => {
   const thieu = await goiCua({ ma_tin: 'm', nguyen_van: 'x' });
   assert.equal(thieu.status, 400);
   assert.equal((await thieu.json()).loi, 'thieu-nguon-id');
 
+  const quaNhieuTep = await goiCua({
+    ...GOI_MAU,
+    dinh_kem: Array.from({ length: 11 }, () => GOI_MAU.dinh_kem[0]),
+  });
+  assert.equal(quaNhieuTep.status, 400);
+  assert.equal((await quaNhieuTep.json()).loi, 'qua-nhieu-tep');
+
   assert.equal(await demBaiCuaNguon(), 0);
   assert.equal(daPut.length, 0, 'goi hong khong duoc dung toi kho tep');
+});
+
+test('mot tep .zip cua co KHONG lam hong ca tin: 201, tin vao du, tep do bao ra', async () => {
+  const res = await goiCua({
+    ...GOI_MAU,
+    dinh_kem: [
+      GOI_MAU.dinh_kem[0],
+      { ten: 'worksheet.docx', loai: 'application/zip', noi_dung_base64: 'AAAA' },
+    ],
+  });
+  assert.equal(res.status, 201, 'mot tep sai loai khoa vinh vien ca tin giao bai');
+  const than = await res.json();
+  assert.ok(than.so_bai_nhap > 0, 'bo me van phai co bai de duyet');
+  assert.deepEqual(than.tep_bo_qua.map((t: { ten: string; ly_do: string }) => [t.ten, t.ly_do]),
+    [['worksheet.docx', 'loai-khong-nhan']]);
+
+  // Va bo me DOC LAI duoc o muc cho duyet, khong phai doan vi sao thieu tep
+  const [muc] = await zaloStore.listBaiChoDuyet(FAM);
+  assert.deepEqual(muc.bai.tepBoQua.map((t) => t.ly_do), ['loai-khong-nhan']);
+  assert.equal(muc.bai.dinhKem.length, 1, 'tep hop le van phai vao du');
+  assert.equal(daPut.length, 1);
 });
 
 test('404 khi nguon khong co / dang tat / chua gan con nao', async () => {
@@ -217,17 +249,18 @@ test('201 lan dau, 409 lan hai voi cung ma_tin — va lan hai KHONG tao them gi'
 
   const soBai = await demBaiCuaNguon();
   const soTin = Number((await db.query(`SELECT COUNT(*) AS n FROM bai_tu_zalo`))[0].n);
-  const soPut = daPut.length;
+  daPut.length = 0;
 
   const hai = await goiCua(GOI_MAU);
   assert.equal(hai.status, 409);
   assert.equal((await hai.json()).loi, 'trung-ma-tin');
   assert.equal(await demBaiCuaNguon(), soBai, 'lan hai tao them bai');
   assert.equal(Number((await db.query(`SELECT COUNT(*) AS n FROM bai_tu_zalo`))[0].n), soTin);
-  // Tep VAN duoc tai len truoc khi biet trung (chap nhan: no re hon mot vong
-  // SELECT tren moi goi that, va tep mo coi khong tro toi dau). Dieu phai giu
-  // la KHONG co dong CSDL nao moi.
-  assert.ok(daPut.length >= soPut);
+  // Goi TRUNG khong duoc cham toi kho tep MOT LAN NAO. zalo-agent quet lai moi
+  // 30 phut, nen mot tin hai video 2MB de tren ba ngay ra ~290MB tep mo coi:
+  // khong `dinh_kem` nao tro toi -> khong `han_xoa` -> khong luot don nao thu
+  // hoi duoc, tren mot kho 1GB da dung 219MB.
+  assert.equal(daPut.length, 0, 'goi trung van tai tep len kho');
 
   // `ma_tin` chi duy nhat TRONG MOT NGUON: cung ma_tin o nguon khac van vao duoc
   const khacNguon = await goiCua({ ...GOI_MAU, nguon_id: NGUON_KHAC });
@@ -251,6 +284,37 @@ test('GET cau-hinh tra ve dung dang hop dong, chi nguon DANG BAT', async () => {
   assert.deepEqual(mot.mau_nhan_dien, ['bai tap ve nha', 'ngay hoc thu']);
   assert.equal(mot.cua_so_dinh_kem_phut, 90);
   assert.deepEqual(mot.con, [{ id: CON_A, ten: 'Huy Bình' }, { id: CON_B, ten: 'Huy An' }]);
+
+  // Tran cua cua nhan: zalo-agent phai biet TRUOC cai gi se bi bo
+  const { gioi_han } = await (await GET_CAU_HINH(
+    new Request('http://localhost/api/nhan-bai-zalo/cau-hinh', {
+      headers: { authorization: `Bearer ${KHOA}` },
+    }))).json();
+  assert.deepEqual(gioi_han.loai_tep, ['image/*', 'audio/*', 'video/*', 'application/pdf']);
+  assert.equal(gioi_han.toi_da_mb, 25);
+  assert.equal(gioi_han.toi_da_tep_moi_goi, 10);
+});
+
+test('nguon cua NHA DEMO khong bao gio lot vao cua danh cho may, nhung man bo me van thay', async () => {
+  const res = await GET_CAU_HINH(new Request('http://localhost/api/nhan-bai-zalo/cau-hinh', {
+    headers: { authorization: `Bearer ${KHOA}` },
+  }));
+  const { nguon } = await res.json();
+  // Nha demo duoc seed lai moi ban build voi DUNG ten nhom cua lop that, ma ten
+  // nhom la khoa duy nhat zalo-agent doi chieu duoc: lot vao day thi bai (va tep
+  // co mat cac chau) chay vao mot nha ai cung mo duoc bang PIN demo, hoac nha
+  // THAT khong bao gio nhan duoc bai.
+  assert.ok(!nguon.some((n: { id: string }) => n.id === NGUON_DEMO),
+    'nguon cua nha demo lot vao cau hinh cua zalo-agent');
+  assert.ok(nguon.some((n: { id: string }) => n.id === NGUON), 'nguon nha that phai con');
+  assert.ok(
+    !nguon.some((n: { nhom_zalo: string }, i: number, ds: { nhom_zalo: string }[]) =>
+      ds.findIndex((x) => x.nhom_zalo === n.nhom_zalo) !== i),
+    'hai nguon trung ten nhom thi zalo-agent khong phan biet noi');
+
+  // Man bo me cua nha demo VAN thay nguon mau — captain di demo phai co gi de xem
+  const cuaDemo = await zaloStore.listNguonZalo(FAM_DEMO);
+  assert.deepEqual(cuaDemo.map((n) => n.id), [NGUON_DEMO]);
 });
 
 /* ---------------- 2. Bai nhap vo hinh voi con ---------------- */
@@ -543,6 +607,27 @@ test('gan con: chi nhan con CUA NHA NAY, va sua nguon cua nha khac khong an', as
   assert.equal(sau.tenNhom, 'Lớp mới');
   assert.equal(sau.dangBat, true);
   await db.query(`DELETE FROM nguon_zalo WHERE id = $1`, [n.id]);
+});
+
+test('ma_nhom: goi mang ma thi dien vao nguon con trong, va KHONG BAO GIO ghi de', async () => {
+  assert.equal((await zaloStore.getNguonZalo(FAM, NGUON))!.maNhom, null);
+
+  const mot = await goiCua({ ...GOI_MAU, ma_nhom: 'g6948518348545773767' });
+  assert.equal(mot.status, 201);
+  assert.equal((await zaloStore.getNguonZalo(FAM, NGUON))!.maNhom, 'g6948518348545773767');
+
+  // Lan sau agent mo nham nhom / doc ra ma khac: nguon da co ma thi giu nguyen,
+  // khong thi moi tin sau do chay sang nham lop ma khong ai thay.
+  const hai = await goiCua({ ...GOI_MAU, ma_tin: 'tin_2', ma_nhom: 'g0000000000000000000' });
+  assert.equal(hai.status, 201);
+  assert.equal((await zaloStore.getNguonZalo(FAM, NGUON))!.maNhom, 'g6948518348545773767');
+
+  // Goi khong mang ma thi khong xoa mat ma dang co
+  const ba = await goiCua({ ...GOI_MAU, ma_tin: 'tin_3' });
+  assert.equal(ba.status, 201);
+  assert.equal((await zaloStore.getNguonZalo(FAM, NGUON))!.maNhom, 'g6948518348545773767');
+
+  await db.query(`UPDATE nguon_zalo SET ma_nhom = NULL WHERE id = $1`, [NGUON]);
 });
 
 test('lan nhan gan nhat duoc ghi khi tin vao — nguon chet am tham thi nhin la thay', async () => {

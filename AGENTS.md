@@ -381,7 +381,7 @@ link http bất kỳ hay thêm kind/migration. Hồi quy ở `lib/link-drive-kie
 
 Bài cô giao trên nhóm Zalo (migration 021, `lib/zalo.ts` + `lib/nhanBaiZalo.ts`,
 chi tiết ở README mục "Bài từ Zalo") vào app ở trạng thái **NHÁP** — bố mẹ duyệt
-một chạm rồi con mới thấy. Hai điều phải biết TRƯỚC khi đụng vào mã:
+một chạm rồi con mới thấy. Ba điều phải biết TRƯỚC khi đụng vào mã:
 
 - **Dòng nháp nằm trong CHÍNH bảng `assignments`** (`trang_thai_duyet`, DEFAULT
   `'that'` nên mọi dòng và mọi câu INSERT cũ không phải sửa), để bố mẹ sửa nó
@@ -397,6 +397,18 @@ một chạm rồi con mới thấy. Hai điều phải biết TRƯỚC khi đ�
   nhà. Thêm một cửa máy-gọi nào nữa thì giữ đúng khuôn này, đừng nhận familyId
   từ thân request. Thiếu biến trên máy chủ trả **503 chứ không 401** — gộp hai
   cái là một bản deploy thiếu biến sẽ báo "sai khoá".
+- **Cửa dành cho MÁY thì hẹp hơn màn của người, ở hai chỗ.** (1) `GET cau-hinh`
+  loại BA NHÀ DEMO bằng đúng hàng rào 9 của `lib/donVideo.ts`
+  (`family_id NOT LIKE 'fam\_demo\_%'`): `seed-demo.mjs` chạy trong `npm run
+  build` và seed mỗi nhà demo hai nguồn mang ĐÚNG tên nhóm của lớp thật, mà tên
+  nhóm là khoá duy nhất zalo-agent đối chiếu được — màn bố mẹ của nhà demo vẫn
+  thấy chúng, chỉ máy là không. (2) `POST` 409 TRƯỚC khi tải tệp: agent quét lại
+  mỗi 30 phút, thiếu bước đó là mỗi lượt ghi thêm một bản tệp không `dinh_kem`
+  nào trỏ tới, tức không `han_xoa` và không lượt dọn nào thu hồi được. Rào chống
+  đua thật vẫn là `ON CONFLICT (nguon_id, ma_tin) DO NOTHING` — đừng thay.
+  Ngược lại, MỘT TỆP lạ (sai loại, quá 25MB) KHÔNG được làm hỏng cả tin: bỏ
+  riêng tệp đó vào `tep_bo_qua` (migration 022, hiện ở mục chờ duyệt) chứ không
+  400 — agent gửi lại mãi thì 400 là khoá vĩnh viễn tin giao bài đó.
 
 Dọn video quá hạn (`lib/donVideo.ts`, cron `vercel.json` → `/api/don-video`) là
 đường **XOÁ TỆP THẬT, KHÔNG LÙI ĐƯỢC** duy nhất trong repo — trước đó app không

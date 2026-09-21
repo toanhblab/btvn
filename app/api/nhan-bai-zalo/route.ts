@@ -20,8 +20,8 @@ export const maxDuration = 60;
  * Than goi + luat lam sach: lib/zalo.ts. Xu ly: lib/nhanBaiZalo.ts.
  *
  * Ma tra ve — hop dong da chot voi zalo-agent, doi la doi ca hai ben:
- *   201  tao xong  { bai_zalo_id, so_bai_nhap, con: [{ id, ten }] }
- *   400  goi hong (thieu truong, tep sai loai / qua 25MB)  { loi, chi_tiet? }
+ *   201  tao xong  { bai_zalo_id, so_bai_nhap, con: [{ id, ten }], tep_bo_qua }
+ *   400  goi hong: THIEU TRUONG bat buoc, hoac qua 10 tep  { loi }
  *   401  thieu hoac sai khoa (khong noi la cai nao)
  *   404  nguon_id khong co, hoac nguon dang tat, hoac nguon chua gan con nao
  *   409  `ma_tin` da co cho nguon do — KHONG tao gi. zalo-agent chay lai moi 30
@@ -31,6 +31,11 @@ export const maxDuration = 60;
  * KHONG BAO GIO 500 TAY KHONG (hop dong): bo tach bai hong thi van 201 — ban
  * goc cua tin da nam trong CSDL va bo me van co bai nhap tho de sua. Chi mot
  * loi CSDL that su moi ra 500, va luc do zalo-agent thu lai an toan nho 409.
+ *
+ * Cung mot luat cho TEP: mot tep sai loai (.docx) hay qua 25MB khong lam hong
+ * ca tin — no bi bo rieng va bao ra trong `tep_bo_qua` cua than 201. Danh sach
+ * loai tep nhan + tran dung luong nam o `gioi_han` cua GET cau-hinh, de
+ * zalo-agent biet TRUOC chu khong phai doan.
  */
 export async function POST(req: Request) {
   const xac = xacThucZalo(req);
@@ -39,7 +44,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const doc = docGoiTin(body);
   if ('loi' in doc) {
-    return NextResponse.json({ loi: doc.loi, chi_tiet: doc.chiTiet }, { status: 400 });
+    return NextResponse.json({ loi: doc.loi }, { status: 400 });
   }
 
   const kq = await nhanTinZalo(doc.goi);
@@ -51,7 +56,10 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json(
-    { bai_zalo_id: kq.baiZaloId, so_bai_nhap: kq.soBaiNhap, con: kq.con },
+    {
+      bai_zalo_id: kq.baiZaloId, so_bai_nhap: kq.soBaiNhap, con: kq.con,
+      tep_bo_qua: kq.tepBoQua,
+    },
     { status: 201 }
   );
 }
