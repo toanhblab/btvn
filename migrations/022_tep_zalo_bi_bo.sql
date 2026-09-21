@@ -13,7 +13,8 @@
 -- doc `dinh_kem` phai loc truoc khi ve.
 --
 -- Hai cho sinh ra no, mot danh sach: luc doc goi (lib/zalo.ts — sai loai, qua
--- nang, base64 hong) va luc tai len kho (lib/nhanBaiZalo.ts — chua bat Vercel
--- Blob tren may chu, `put` nem). Dang: [{ ten, ly_do, chi_tiet? }].
+-- nang, thieu `url`, du ra so voi tran so tep moi goi) va luc doi chieu voi kho
+-- (lib/nhanBaiZalo.ts — url khong phai cua kho minh, kho bao khong co tep, tep
+-- gui ngoai cua so nhan tep). Dang: [{ ten, ly_do, chi_tiet? }].
 ALTER TABLE bai_tu_zalo
   ADD COLUMN IF NOT EXISTS tep_bo_qua JSONB NOT NULL DEFAULT '[]'::jsonb;

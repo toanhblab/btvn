@@ -139,6 +139,7 @@ mock.module('./store.ts', {
 const zaloStore = await import('./nhanBaiZalo.ts');
 const { veTrenManCuaCon } = await import('./nhomNhiemVu.ts');
 const { GOI_MAU, KHO, KHO_LA } = await import('./zalo.test.ts');
+const { SO_NGAY_GIU_TEP_ZALO, congNgay } = await import('./zalo.ts');
 const { POST } = await import('../app/api/nhan-bai-zalo/route.ts');
 const { GET: GET_CAU_HINH } = await import('../app/api/nhan-bai-zalo/cau-hinh/route.ts');
 const { POST: POST_TOKEN } = await import('../app/api/nhan-bai-zalo/tep-token/route.ts');
@@ -985,6 +986,24 @@ test('tep cua goi mau duoc nhan va gan vao TUNG bai nhap', async () => {
   assert.equal(dinhKem.length, 2);
   assert.ok(dinhKem.every((t) => t.kind === 'video' && t.url.startsWith('https://')));
   assert.ok(dinhKem.every((t) => t.han_xoa > '2026-09-18'), 'moi tep phai co han xoa');
+});
+
+test('han xoa dem tu NGAY NHAN, khong tu ngay co go trong tin', async () => {
+  // zalo-agent cai giua ky roi quet bu lich su nhom: mot tin ghi 2026-06-01 ve
+  // toi HOM NAY. Dem tu ngay trong tin thi hai video duoc dong dau han xoa
+  // 2026-07-01 — HET HAN ngay luc ghi, va luot don dau tien xoa video cua co
+  // truoc khi con kip mo. Rang buoc captain la "co han xoa NHU VIDEO", ma video
+  // con nop dem tu luc tep VAO KHO.
+  const res = await goiCua({ ...GOI_MAU, ma_tin: 'tin_quet_bu', ngay_trong_tin: '2026-06-01' });
+  assert.equal(res.status, 201);
+
+  const [dong] = await db.query(`SELECT dinh_kem FROM bai_tu_zalo WHERE ma_tin = 'tin_quet_bu'`);
+  const dinhKem = dong.dinh_kem as { han_xoa: string }[];
+  const mongDoi = congNgay(store.todayISO(), SO_NGAY_GIU_TEP_ZALO);
+  assert.equal(dinhKem.length, 2);
+  assert.deepEqual(dinhKem.map((t) => t.han_xoa), [mongDoi, mongDoi]);
+  assert.ok(mongDoi > store.todayISO(), 'han xoa khong bao gio duoc la ngay da qua');
+  assert.notEqual(mongDoi, congNgay('2026-06-01', SO_NGAY_GIU_TEP_ZALO));
 });
 
 test('khong co tep thi van tao bai binh thuong', async () => {

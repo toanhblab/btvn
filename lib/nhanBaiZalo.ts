@@ -517,15 +517,24 @@ async function soByteTrenKho(url: string): Promise<number | null | undefined> {
  *
  * Cua so kiem TRUOC khi hoi kho: mot tep nhan xet tung be (toi sau tin ~4 tieng)
  * da bi loai thi khong can mot luot `head()` cho no nua.
+ *
+ * `han_xoa` dem tu NGAY NHAN, khong tu `ngay_trong_tin`. Rang buoc captain la
+ * "co han xoa NHU VIDEO", ma video con nop (lib/donVideo.ts) dem tu
+ * `submitted_video_at` — luc tep VAO KHO. `ngay_trong_tin` la ngay CO GO trong
+ * tin, tuc dau vao ngoai: zalo-agent cai giua ky roi quet bu lich su nhom thi
+ * mot tin ghi 2026-06-01 ve toi hom nay se duoc dong dau han xoa 2026-07-01 —
+ * HET HAN ngay luc ghi, va luot don dau tien se xoa video cua co truoc khi con
+ * kip mo. Ngay do van dung cho hai viec khac (thu muc `zalo/<nguon>/<ngay>/` va
+ * `hanNopBai`), chi khong dung cho han xoa — nen ham nay KHONG nhan tham so
+ * ngay nua, de khong ai truyen nham lan sau.
  */
 async function nhanTepDaTai(
   goi: GoiTinZalo,
-  ngay: string,
   cuaSoPhut: number
 ): Promise<{ tep: TepZaloDaLuu[]; boQua: TepBoQua[] }> {
   const tep: TepZaloDaLuu[] = [];
   const boQua: TepBoQua[] = [];
-  const hanXoa = congNgay(ngay, SO_NGAY_GIU_TEP_ZALO);
+  const hanXoa = congNgay(todayISO(), SO_NGAY_GIU_TEP_ZALO);
 
   for (const t of goi.dinh_kem) {
     const tenHien = tenHienTep(t.ten, t.thu_tu);
@@ -668,9 +677,7 @@ export async function nhanTinZalo(goi: GoiTinZalo): Promise<KetQuaNhanTin> {
   if (!cong.ok) return { ok: false, loi: cong.loi };
   const nguon = cong.nguon;
 
-  const homNay = todayISO();
-  const ngayTep = goi.ngay_trong_tin ?? homNay;
-  const { tep, boQua } = await nhanTepDaTai(goi, ngayTep, nguon.cuaSoDinhKemPhut);
+  const { tep, boQua } = await nhanTepDaTai(goi, nguon.cuaSoDinhKemPhut);
   const tepBoQua = [...goi.bo_qua, ...boQua];
   if (tepBoQua.length > 0) {
     // Log may chu: mot ban deploy thieu BLOB_READ_WRITE_TOKEN bo SACH tep cua

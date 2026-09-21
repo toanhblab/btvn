@@ -21,7 +21,8 @@ export const maxDuration = 60;
  *
  * Ma tra ve — hop dong da chot voi zalo-agent, doi la doi ca hai ben:
  *   201  tao xong  { bai_zalo_id, so_bai_nhap, con: [{ id, ten }], tep_bo_qua }
- *   400  goi hong: THIEU TRUONG bat buoc, hoac qua 10 tep  { loi }
+ *   400  goi hong: THIEU TRUONG bat buoc (`nguon_id` / `ma_tin` / `nguyen_van`)
+ *        — BA ma do la tat ca, khong con ma nao lien quan toi TEP  { loi }
  *   401  thieu hoac sai khoa (khong noi la cai nao)
  *   404  nguon_id khong co, hoac nguon dang tat, hoac nguon chua gan con nao
  *   409  `ma_tin` da co cho nguon do — KHONG tao gi. zalo-agent chay lai moi 30
@@ -36,11 +37,12 @@ export const maxDuration = 60;
  * zalo-agent xin ve o `POST /api/nhan-bai-zalo/tep-token` roi tai thang len
  * kho, va `dinh_kem[]` o day chi mang `{ ten, loai, kich_thuoc, gui_luc, url }`.
  *
- * Cung mot luat cho TEP: mot tep sai loai (.docx), qua 25MB, hay `url` khong
- * phai tep cua kho minh khong lam hong ca tin — no bi bo rieng va bao ra trong
- * `tep_bo_qua` cua than 201. Danh sach loai tep nhan, tran dung luong va CACH
- * tai nam o `gioi_han` cua GET cau-hinh, de zalo-agent biet TRUOC chu khong
- * phai doan.
+ * Cung mot luat cho TEP: mot tep sai loai (.docx), qua 25MB, `url` khong phai
+ * tep cua kho minh, gui ngoai cua so nhan tep, hay DU ra so voi
+ * `MAX_TEP_MOI_GOI` deu khong lam hong ca tin — tung tep bi bo rieng va bao ra
+ * trong `tep_bo_qua` cua than 201. Danh sach loai tep nhan, tran dung luong, so
+ * tep toi da va CACH tai nam o `gioi_han` cua GET cau-hinh, de zalo-agent biet
+ * TRUOC chu khong phai doan.
  */
 export async function POST(req: Request) {
   const xac = xacThucZalo(req);

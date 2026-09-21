@@ -10,11 +10,12 @@
  * o may captain.
  *
  * Nhung dieu de vo ma khong ai thay, kiem o day:
- *   1. Goi hong phai bi CHAN o day, truoc khi cham CSDL — nhung CHI khi ca goi
- *      hong: thieu truong bat buoc, hay qua 10 tep. MOT TEP hong (sai loai, qua
- *      25MB, base64 hong) thi bo rieng tep do va tin VAN vao: co gui kem mot to
- *      .docx la tin giao bai do bi khoa vinh vien, vi zalo-agent gui lai moi 30
- *      phut va lan nao cung 400.
+ *   1. Goi hong phai bi CHAN o day, truoc khi cham CSDL — nhung CHI khi thieu
+ *      TRUONG BAT BUOC (`nguon_id` / `ma_tin` / `nguyen_van`). Moi chuyen lien
+ *      quan toi TEP (sai loai, qua 25MB, thieu `url`, du ra so voi tran so tep)
+ *      thi bo rieng TUNG TEP va tin VAN vao: co gui kem mot to .docx ma tra 400
+ *      la tin giao bai do bi khoa vinh vien, vi zalo-agent gui lai moi 30 phut
+ *      va lan nao cung 400.
  *   2. `url` cua tep phai la tep CUA KHO MINH va dung ho `zalo/<nguon>/<ngay>/`.
  *      Tep khong con di trong than request (Vercel chan o 4.5MB) nen `url` la
  *      dau vao tu ben ngoai: no phai chan duoc tep cua nguon khac, `nop-bai/`
@@ -212,7 +213,7 @@ test('agent KHAI qua 25MB thi bo ngay o day, khong phai doi hoi kho tep', () => 
   assert.equal(khaiBua.goi.dinh_kem[0].kich_thuoc, 0);
 });
 
-test('thieu url -> bo rieng voi ly do tep-hong; QUA NHIEU TEP van hong ca goi', () => {
+test('thieu url -> bo rieng voi ly do tep-hong, tin van vao', () => {
   const rong = doc({ ...GOI_MAU, dinh_kem: [tepMau({ url: '' })] });
   assert.ok('goi' in rong);
   assert.deepEqual(rong.goi.bo_qua, [{ ten: 'x.mp4', ly_do: 'tep-hong' }]);
