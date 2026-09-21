@@ -437,10 +437,14 @@ export async function listAssignments(
   // Sap o ngay ranh gioi nay de moi noi doc deu duoc dung thu tu, khong phai
   // sap lai o tung man. Bai tap that co sort_order NULL nen NULLS FIRST giu
   // chung dung truoc neu bo me tinh co go ten mon trung voi "Việc nhà".
-  // `a.zalo_thu_tu` di NGAY SAU due_date va TRUOC subject, chi co nghia voi dong
-  // tu Zalo (moi dong khac la NULL -> NULLS LAST khong doi gi): man cho duyet
-  // dat nguyen van tin canh danh sach bai da tach, nen thu tu phai la thu tu CO
-  // GIAO VIET, khong phai thu tu ten mon. Xem migrations/021.
+  // `a.zalo_thu_tu` di NGAY SAU due_date va TRUOC subject: trong mot ngay, bai
+  // tu Zalo (zalo_thu_tu 0..n) dung TRUOC moi dong khac (NULL -> NULLS LAST),
+  // va giua chung voi nhau thi thu tu la thu tu CO GIAO VIET chu khong phai thu
+  // tu ten mon — man cho duyet dat nguyen van tin canh danh sach bai da tach nen
+  // do la thu tu duy nhat do chieu duoc. CO Y dat truoc `subject`: dat sau thi
+  // ten mon lai xao tung dung cai thu tu vua giu. Doi lai, mot ngay co ca bai bo
+  // me go tay lan bai tu Zalo thi nhom Zalo len dau — chap nhan, khong con so
+  // nao doi theo. Xem migrations/021.
   const rows = await query<AssignmentRow>(
     `SELECT ${ASSIGNMENT_SELECT} FROM ${ASSIGNMENT_FROM}
      WHERE ${where.join(' AND ')}

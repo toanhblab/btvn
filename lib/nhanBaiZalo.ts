@@ -18,13 +18,16 @@
  *    Chuoi gap nhat o day la: 409 truoc, luu sau, tach sau cung — nguoc lai la
  *    goi lai lan hai se tao them mot ban nua.
  *
- * 3. Tep len Blob TRUOC khi ghi dong `bai_tu_zalo`, va tep nao hong thi BO QUA
- *    chu khong lam hong ca goi: mot video khong tai duoc khong duoc phep lam
- *    mat ca tin giao bai. Duong nguoc lai (ghi dong roi moi tai) de lai mot
- *    dong `dinh_kem` tro toi tep khong ton tai. Doi lai, tep bi bo phai duoc
- *    BAO RA — log may chu, than 201, va cot `bai_tu_zalo.tep_bo_qua` de man cho
- *    duyet hien; bo im lang thi mot ban deploy thieu BLOB_READ_WRITE_TOKEN van
- *    tra 201 cho moi tin ma khong tep nao duoc luu.
+ * 3. TEP KHONG DI TRONG THAN REQUEST. zalo-agent xin ve o
+ *    `POST /api/nhan-bai-zalo/tep-token` roi tai THANG len Vercel Blob, va goi
+ *    tin chi mang `url`. Vercel chan than request o 4.5MB nen duong base64 cu
+ *    lam goi mau THAT cua scout (~4.63MB sau base64) bi 413 TRUOC khi ham chay.
+ *    Doi lai, `url` gio la dau vao tu ben ngoai: `laUrlBlobZaloCuaNguon` chot
+ *    no phai la tep CUA KHO MINH va dung ho `zalo/<nguon>/<ngay>/`, roi `head()`
+ *    hoi lai kho xem tep co that va nang bao nhieu — KHONG tin so agent khai.
+ *    Tep nao truot thi BO QUA chu khong lam hong ca goi, va phai duoc BAO RA:
+ *    log may chu, than 201, va cot `bai_tu_zalo.tep_bo_qua` de man cho duyet
+ *    hien; bo im lang thi bo me doi chieu nguyen van tin voi mot bo tep thieu.
  *
  * 4. Kiem TRUNG `ma_tin` truoc khi tai tep. Hang rao THAT van la chi muc UNIQUE
  *    (`INSERT ... ON CONFLICT DO NOTHING`), nhung mot phep SELECT ngan mach dat
@@ -33,20 +36,34 @@
  *    khong dong `dinh_kem` nao tro toi va khong luot don nao thu hoi duoc.
  */
 
-import { put } from '@vercel/blob';
+import { head } from '@vercel/blob';
 import { query, queryOne } from './db';
 import {
   listAssignments, newId, saveSubmission, taoNhiemVuNgayNeuChuaQua, todayISO,
 } from './store';
 import { extractAssignments, hasAI, inferSource, splitByRule } from './ai';
 import { iconFor, type Assignment, type AttachedMedia, type DraftAssignment } from './types';
-import { boDau, duongDanTep } from './media';
+import { boDau, laUrlTepAppCap } from './media';
 import { taoT, type T } from './i18n/chu';
 import { ngonNguOf, type NgonNgu } from './i18n/ngonNgu';
 import {
-  baiNhapTho, docNhanDien, duongDanBlobZalo, hanNopBai, loaiTepZalo, tenTepZalo,
-  LOAI_TEP_NHAN, MAX_MB_MOI_TEP, MAX_TEP_MOI_GOI, SO_NGAY_GIU_TEP_ZALO, congNgay,
+  baiNhapTho, docNhanDien, hanNopBai, laUrlBlobZaloCuaNguon, loaiTepZalo, tenTepZalo,
+  CACH_TAI_TEP, DUONG_TOKEN_TEP, LOAI_TEP_NHAN, MAX_BYTES_MOI_TEP, MAX_MB_MOI_TEP,
+  MAX_TEP_MOI_GOI, SO_NGAY_GIU_TEP_ZALO, congNgay,
   type GoiTinZalo, type NhanDienZalo, type TepBoQua, type TepZaloDaLuu,
+} from './zalo';
+
+/**
+ * Hang so cau hinh nguon o lib/zalo.ts (tep thuan, man bo me nap duoc ma khong
+ * keo theo tang may chu) — xuat lai o day de phia may chu khong phai doi cho
+ * import. Xem chu thich o cho khai bao.
+ */
+export {
+  CUA_SO_DINH_KEM_MAC_DINH, MAU_NHAN_DIEN_MAC_DINH, MAX_CHU_TEN_CO, MAX_CHU_TEN_NHOM,
+  MAX_CUA_SO_DINH_KEM_PHUT, MAX_MAU_NHAN_DIEN,
+} from './zalo';
+import {
+  MAX_MAU_NHAN_DIEN, MAX_CUA_SO_DINH_KEM_PHUT,
 } from './zalo';
 
 const hasBlob = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
@@ -67,15 +84,6 @@ export interface NguonZalo {
   /** Id cac con duoc gan voi nguon nay — tap RONG la "chua gan con nao". */
   childIds: string[];
 }
-
-/** Ten nhom / ten co dai hon thi tran the tren man dien thoai cua bo me. */
-export const MAX_CHU_TEN_NHOM = 80;
-export const MAX_CHU_TEN_CO = 40;
-/** So mau nhan dien toi da — nhieu hon thi khong con la "mau", ma la mot bo loc. */
-export const MAX_MAU_NHAN_DIEN = 8;
-export const MAU_NHAN_DIEN_MAC_DINH = ['bai tap ve nha', 'ngay hoc thu'];
-export const CUA_SO_DINH_KEM_MAC_DINH = 90;
-export const MAX_CUA_SO_DINH_KEM_PHUT = 1440;
 
 interface NguonRow {
   id: string; family_id: string; ten_nhom: string; ma_nhom: string | null; ten_co: string;
@@ -298,6 +306,24 @@ export async function getBaiTuZalo(familyId: string, id: string): Promise<BaiTuZ
   return r ? toBai(r) : null;
 }
 
+/**
+ * Tin nay da nhan roi chua? MOT ban duy nhat cho hai cho hoi: cua phat ve
+ * (`/api/nhan-bai-zalo/tep-token`, hoi TRUOC khi agent tai tep) va `nhanTinZalo`
+ * (hoi TRUOC khi doi chieu tep va ghi dong). Ca hai deu la hang rao DUNG LUONG /
+ * cong suc, khong phai hang rao chong dua — cai do la chi muc UNIQUE
+ * (nguon_id, ma_tin) o `INSERT ... ON CONFLICT DO NOTHING`.
+ *
+ * KHONG loc theo nha, va do la co y: nguoi goi la may, `nguon_id` la thu quyet
+ * dinh nha (xem chu thich dau tep).
+ */
+export async function tinZaloDaCo(nguonId: string, maTin: string): Promise<boolean> {
+  const r = await queryOne<{ id: string }>(
+    `SELECT id FROM bai_tu_zalo WHERE nguon_id = $1 AND ma_tin = $2`,
+    [nguonId, maTin]
+  );
+  return Boolean(r);
+}
+
 export async function demBaiChoDuyet(familyId: string): Promise<number> {
   const r = await queryOne<{ n: number | string }>(
     `SELECT COUNT(*) AS n FROM bai_tu_zalo b
@@ -350,86 +376,115 @@ export type KetQuaNhanTin =
   | { ok: false; loi: 'khong-co-nguon' | 'nguon-tat' | 'trung-ma-tin' | 'nguon-chua-co-con' };
 
 /**
- * Ghi mot tep vao `.data/uploads` va tra ve `/api/tep/<ten>` — duong lui khi
- * dev chua bat Vercel Blob, CUNG khuon voi che do 2 cua lib/upload-route.ts.
+ * URL nay co phai mot tep app minh dang giu, dung ho cua nguon nay khong?
  *
- * Ten phai la `<32 hex><duoi>`: do la HOP DONG voi hai ben doc no
- * (`TEN_TEP_RE` trong lib/media.ts va `GET /api/tep`), khong phai mot lua chon
- * o day. Doi lai, `.data/uploads` khong ai don nen tep o day song mai — chap
- * nhan, day la DB dev.
+ * Hai dang, va dang thu hai CO DIEU KIEN:
+ *   - Kho that (Vercel Blob): `zalo/<nguon>/<yyyy-mm-dd>/<ten>` tren host Blob.
+ *   - Dev chua bat Blob: `/api/tep/<32 hex><duoi>` — tep do `xuLyTaiTep` ghi vao
+ *     `.data/uploads` qua che do multipart. CHI nhan khi may chu THAT SU chua co
+ *     BLOB_READ_WRITE_TOKEN: tren Vercel ma van nhan dang nay thi co mot loi
+ *     vong qua het phan kiem tien to o tren.
  */
-async function ghiTepCucBo(noiDung: Buffer, ten: string): Promise<string> {
-  const { mkdirSync, writeFileSync } = await import('node:fs');
-  const { extname, join } = await import('node:path');
-  const dir = './.data/uploads';
-  mkdirSync(dir, { recursive: true });
-  const duoi = /^\.[a-z0-9]{1,5}$/i.test(extname(ten)) ? extname(ten).toLowerCase() : '.bin';
-  const tenTep = `${crypto.randomUUID().replace(/-/g, '')}${duoi}`;
-  writeFileSync(join(dir, tenTep), noiDung);
-  return duongDanTep(tenTep);
+function urlTepNhanDuoc(url: string, nguonId: string): boolean {
+  if (laUrlBlobZaloCuaNguon(url, nguonId)) return true;
+  return !hasBlob && url.startsWith('/api/tep/') && laUrlTepAppCap(url);
 }
 
 /**
- * Tai cac tep cua goi len kho tep. Tep hong thi BO QUA (xem chu thich dau tep).
+ * So byte THAT cua mot tep tren kho. `null` = kho bao khong co tep do.
  *
- * Ba che do, y het hai route tai tep da co (lib/upload-route.ts):
- *   - Co Vercel Blob        -> len Blob, thu muc `zalo/<nguon>/<ngay>/`.
- *   - Dev chua bat Blob     -> ghi `.data/uploads`, URL `/api/tep/<ten>`. Nho
- *     the ma kiem tay tren may that xem/nghe duoc video mau cua co, khong phai
- *     nhin mot the tep rong.
- *   - TREN VERCEL ma chua bat Blob -> BO QUA va bao ra: dia serverless chi doc,
- *     ghi vao dau cung mat sau request.
+ * Hoi kho chu khong tin `kich_thuoc` agent khai: con so do di vao
+ * `bai_tu_zalo.dinh_kem` va la thu duy nhat noi mot tep nang bao nhieu, nen mot
+ * so khai bua se nam trong CSDL mai mai. Quan trong hon, `head()` con tra loi
+ * cau hoi "tep nay co THAT tren kho khong" — agent tai len that bai roi van gui
+ * url len thi day la cho duy nhat bat duoc.
  *
- * KHONG bao gio nhet base64 vao CSDL nhu anh de bai (/api/upload): mot video
- * 2MB thanh ~2,7MB base64 trong mot cot jsonb ma man bo me doc lai moi lan mo.
+ * Duong dev (`/api/tep/...`) khong hoi duoc: tra `undefined` de nguoi goi dung
+ * so agent khai (da kep theo tran o `docGoiTin`).
  */
-async function taiTepLenKho(
+async function soByteTrenKho(url: string): Promise<number | null | undefined> {
+  if (!hasBlob || !url.startsWith('https://')) return undefined;
+  try {
+    const t = await head(url);
+    return typeof t?.size === 'number' ? t.size : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Doi chieu tung tep cua goi voi kho tep. Tep nao truot thi BO QUA va bao ra
+ * (xem chu thich dau tep) — mot video khong doi chieu duoc khong duoc phep lam
+ * mat ca tin giao bai.
+ */
+async function nhanTepDaTai(
   goi: GoiTinZalo,
   ngay: string
 ): Promise<{ tep: TepZaloDaLuu[]; boQua: TepBoQua[] }> {
   const tep: TepZaloDaLuu[] = [];
   const boQua: TepBoQua[] = [];
-  if (goi.dinh_kem.length === 0) return { tep, boQua };
-  if (!hasBlob && process.env.VERCEL) {
-    for (const [i, t] of goi.dinh_kem.entries()) {
-      boQua.push({ ten: t.ten || `#${i + 1}`, ly_do: 'chua-bat-kho-tep' });
-    }
-    return { tep, boQua };
-  }
-
   const hanXoa = congNgay(ngay, SO_NGAY_GIU_TEP_ZALO);
+
   for (const [i, t] of goi.dinh_kem.entries()) {
+    const tenHien = t.ten || `#${i + 1}`;
     const kind = loaiTepZalo(t.loai);
     // `docGoiTin` da loc loai roi; giu lai day lam lop cuoi cho moi nguoi goi
     // khac, va de mot dot doi luat o mot ben khong lam ro ri sang ben kia.
     if (!kind) {
-      boQua.push({ ten: t.ten || `#${i + 1}`, ly_do: 'loai-khong-nhan', chi_tiet: t.loai });
+      boQua.push({ ten: tenHien, ly_do: 'loai-khong-nhan', chi_tiet: t.loai });
       continue;
     }
-    const ten = tenTepZalo(t.ten, kind, i);
-    try {
-      const noiDung = Buffer.from(t.noi_dung_base64, 'base64');
-      const url = hasBlob
-        ? (await put(duongDanBlobZalo(goi.nguon_id, ngay, ten), noiDung, {
-            access: 'public',
-            contentType: t.loai,
-            // Cung ly do voi /api/upload: tep cua lop co the co mat va ten tre em
-            // khac, duong dan khong duoc doan hay liet ke duoc tu ben ngoai.
-            addRandomSuffix: true,
-          })).url
-        : await ghiTepCucBo(noiDung, ten);
-      tep.push({
-        ten, loai: t.loai, kind, url,
-        bytes: noiDung.byteLength, gui_luc: t.gui_luc, han_xoa: hanXoa,
-      });
-    } catch (e) {
-      boQua.push({
-        ten, ly_do: 'tai-len-hong',
-        chi_tiet: e instanceof Error ? e.message : String(e),
-      });
+    if (!urlTepNhanDuoc(t.url, goi.nguon_id)) {
+      boQua.push({ ten: tenHien, ly_do: 'url-khong-nhan', chi_tiet: t.url.slice(0, 200) });
+      continue;
     }
+    const tuKho = await soByteTrenKho(t.url);
+    if (tuKho === null) {
+      boQua.push({ ten: tenHien, ly_do: 'khong-thay-trong-kho', chi_tiet: t.url.slice(0, 200) });
+      continue;
+    }
+    const bytes = tuKho ?? t.kich_thuoc;
+    if (bytes > MAX_BYTES_MOI_TEP) {
+      boQua.push({ ten: tenHien, ly_do: 'qua-nang', chi_tiet: String(bytes) });
+      continue;
+    }
+    tep.push({
+      ten: tenTepZalo(t.ten, kind, i),
+      loai: t.loai,
+      kind,
+      url: t.url,
+      bytes,
+      gui_luc: t.gui_luc,
+      han_xoa: hanXoa,
+    });
   }
   return { tep, boQua };
+}
+
+/**
+ * Anh cua tin, doc VE TU KHO de dua cho bo tach bai.
+ *
+ * Tep khong con di trong than request nen byte cua anh khong san o day nua; ma
+ * bo tach van can chung (co doi khi chup lai to worksheet — hop dong captain:
+ * "voi nguyen_van kem anh neu co"). Tai ve tung anh, bo qua cai nao hong: mot
+ * anh khong tai duoc chi lam ban tach kem hon, khong duoc phep lam hong ca tin.
+ * Chi goi khi THAT SU co AI — khong thi day la vai MB tai ve de vut di.
+ */
+async function anhChoAI(tep: TepZaloDaLuu[]): Promise<{ base64: string; mimeType: string }[]> {
+  const ra: { base64: string; mimeType: string }[] = [];
+  for (const t of tep) {
+    if (t.kind !== 'image' || !t.url.startsWith('https://')) continue;
+    try {
+      const res = await fetch(t.url);
+      if (!res.ok) continue;
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.byteLength === 0 || buf.byteLength > MAX_BYTES_MOI_TEP) continue;
+      ra.push({ base64: buf.toString('base64'), mimeType: t.loai });
+    } catch {
+      // Anh nay thoi; bo tach van chay tren nguyen van tin.
+    }
+  }
+  return ra;
 }
 
 /**
@@ -437,19 +492,17 @@ async function taiTepLenKho(
  * (`POST /api/extract`): AI truoc, `splitByRule` khi khong goi duoc, va cuoi
  * cung mot bai tho giu nguyen van neu ca hai khong ra bai nao.
  *
- * Anh trong goi duoc dua kem cho AI (co doi khi chup lai to worksheet); video
- * va ghi am thi khong — model la thi giac-ngon ngu, khong doc duoc chung.
+ * Anh trong goi duoc dua kem cho AI; video va ghi am thi khong — model la thi
+ * giac-ngon ngu, khong doc duoc chung.
  */
 async function tachBai(
   goi: GoiTinZalo,
+  tep: TepZaloDaLuu[],
   ngonNguNha: NgonNgu,
   T: T
 ): Promise<{ drafts: DraftAssignment[]; nguonTach: 'ai' | 'rule' | 'nguyen-van'; canhBao?: string }> {
-  const anh = goi.dinh_kem
-    .filter((t) => loaiTepZalo(t.loai) === 'image')
-    .map((t) => ({ base64: t.noi_dung_base64, mimeType: t.loai }));
-
   if (hasAI) {
+    const anh = await anhChoAI(tep);
     try {
       const drafts = await extractAssignments({ text: goi.nguyen_van, images: anh }, ngonNguNha);
       if (drafts.length > 0) return { drafts, nguonTach: 'ai' };
@@ -487,12 +540,12 @@ function tepDinhVaoBai(tep: TepZaloDaLuu[]): AttachedMedia[] {
  * tung con cua nguon.
  *
  * THU TU la hop dong, khong phai sap xep cho gon (xem chu thich dau tep):
- *   1. Mot `SELECT` ngan mach tren (nguon_id, ma_tin): tin da co thi DUNG NGAY,
- *      TRUOC khi tai tep. Day khong phai hang rao chong dua — no la hang rao
- *      DUNG LUONG: zalo-agent quet lai moi 30 phut, khong co buoc nay thi moi
- *      luot lai ghi them mot ban cua ca bo tep (`addRandomSuffix` nen khong de
- *      len nhau) ma khong dong `dinh_kem` nao tro toi, tuc khong `han_xoa`,
- *      khong luot don nao thu hoi duoc — tren mot kho 1GB da dung 219MB.
+ *   1. `tinZaloDaCo` ngan mach: tin da co thi DUNG NGAY. Day khong phai hang rao
+ *      chong dua — no la hang rao DUNG LUONG, va cua phat ve tep hoi CUNG mot
+ *      cau hoi truoc do mot buoc, de zalo-agent (quet lai moi 30 phut) khong tai
+ *      len lai ca bo tep cua mot tin da nhan: moi ban do se khong co dong
+ *      `dinh_kem` nao tro toi, tuc khong `han_xoa` va khong luot don nao thu hoi
+ *      duoc — tren mot kho 1GB da dung 219MB.
  *   2. `INSERT ... ON CONFLICT DO NOTHING RETURNING` tren chi muc UNIQUE
  *      (nguon_id, ma_tin) — khong tra ve dong nao nghia la tin da co, DUNG NGAY
  *      va khong tao gi. Hang rao THAT chong dua nam o CSDL chu khong o code:
@@ -507,15 +560,11 @@ export async function nhanTinZalo(goi: GoiTinZalo): Promise<KetQuaNhanTin> {
   if (!nguon.dangBat) return { ok: false, loi: 'nguon-tat' };
   if (nguon.childIds.length === 0) return { ok: false, loi: 'nguon-chua-co-con' };
 
-  const daCo = await queryOne<{ id: string }>(
-    `SELECT id FROM bai_tu_zalo WHERE nguon_id = $1 AND ma_tin = $2`,
-    [nguon.id, goi.ma_tin]
-  );
-  if (daCo) return { ok: false, loi: 'trung-ma-tin' };
+  if (await tinZaloDaCo(nguon.id, goi.ma_tin)) return { ok: false, loi: 'trung-ma-tin' };
 
   const homNay = todayISO();
   const ngayTep = goi.ngay_trong_tin ?? homNay;
-  const { tep, boQua } = await taiTepLenKho(goi, ngayTep);
+  const { tep, boQua } = await nhanTepDaTai(goi, ngayTep);
   const tepBoQua = [...goi.bo_qua, ...boQua];
   if (tepBoQua.length > 0) {
     // Log may chu: mot ban deploy thieu BLOB_READ_WRITE_TOKEN bo SACH tep cua
@@ -558,7 +607,7 @@ export async function nhanTinZalo(goi: GoiTinZalo): Promise<KetQuaNhanTin> {
   const ngonNgu = ngonNguOf(nha?.ui_locale);
   const T = taoT(ngonNgu);
 
-  const { drafts, nguonTach, canhBao } = await tachBai(goi, ngonNgu, T);
+  const { drafts, nguonTach, canhBao } = await tachBai(goi, tep, ngonNgu, T);
   const dueDate = hanNopBai(goi.ngay_trong_tin, goi.gui_luc, homNay);
 
   const created = await saveSubmission({
@@ -707,8 +756,15 @@ export async function cauHinhChoAgent(): Promise<{
     mau_nhan_dien: string[]; cua_so_dinh_kem_phut: number;
     con: { id: string; ten: string }[];
   }[];
-  /** Tran cua cua nhan, de zalo-agent biet TRUOC thay vi gui len roi bi bo. */
-  gioi_han: { loai_tep: string[]; toi_da_mb: number; toi_da_tep_moi_goi: number };
+  /**
+   * Tran cua cua nhan + CACH dua tep vao, de zalo-agent biet TRUOC thay vi gui
+   * len roi bi bo. `cach_tai` / `duong_token` la phan hop dong doi khi bo duong
+   * base64: agent xin ve o `duong_token` roi tai thang len kho.
+   */
+  gioi_han: {
+    loai_tep: string[]; toi_da_mb: number; toi_da_tep_moi_goi: number;
+    cach_tai: string; duong_token: string;
+  };
 }> {
   const rows = await query<NguonRow & { con: unknown }>(
     `SELECT ${NGUON_SELECT},
@@ -737,6 +793,8 @@ export async function cauHinhChoAgent(): Promise<{
       loai_tep: [...LOAI_TEP_NHAN],
       toi_da_mb: MAX_MB_MOI_TEP,
       toi_da_tep_moi_goi: MAX_TEP_MOI_GOI,
+      cach_tai: CACH_TAI_TEP,
+      duong_token: DUONG_TOKEN_TEP,
     },
   };
 }

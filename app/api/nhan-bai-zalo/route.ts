@@ -32,10 +32,15 @@ export const maxDuration = 60;
  * goc cua tin da nam trong CSDL va bo me van co bai nhap tho de sua. Chi mot
  * loi CSDL that su moi ra 500, va luc do zalo-agent thu lai an toan nho 409.
  *
- * Cung mot luat cho TEP: mot tep sai loai (.docx) hay qua 25MB khong lam hong
- * ca tin — no bi bo rieng va bao ra trong `tep_bo_qua` cua than 201. Danh sach
- * loai tep nhan + tran dung luong nam o `gioi_han` cua GET cau-hinh, de
- * zalo-agent biet TRUOC chu khong phai doan.
+ * TEP KHONG DI TRONG THAN REQUEST (Vercel chan o 4.5MB — xem lib/zalo.ts):
+ * zalo-agent xin ve o `POST /api/nhan-bai-zalo/tep-token` roi tai thang len
+ * kho, va `dinh_kem[]` o day chi mang `{ ten, loai, kich_thuoc, gui_luc, url }`.
+ *
+ * Cung mot luat cho TEP: mot tep sai loai (.docx), qua 25MB, hay `url` khong
+ * phai tep cua kho minh khong lam hong ca tin — no bi bo rieng va bao ra trong
+ * `tep_bo_qua` cua than 201. Danh sach loai tep nhan, tran dung luong va CACH
+ * tai nam o `gioi_han` cua GET cau-hinh, de zalo-agent biet TRUOC chu khong
+ * phai doan.
  */
 export async function POST(req: Request) {
   const xac = xacThucZalo(req);

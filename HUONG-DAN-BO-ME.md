@@ -185,10 +185,10 @@ Mỗi tin hiện đủ để bố mẹ yên tâm:
 - **Nguyên văn tin của cô**, y như trên Zalo, giữ nguyên xuống dòng. Tin dài thì
   thu gọn lại, bấm **"Xem cả tin"** để đọc hết.
 - **Tệp cô gửi kèm** — ảnh xem được, phim và ghi âm bấm là phát ngay tại đây.
-- Nếu có tệp nào app **không nhận được** (cô gửi tệp Word, hoặc phim nặng quá),
-  app nói thẳng: *"1 tệp cô gửi không vào được — worksheet.docx — loại tệp app
-  không nhận"*. Bài của cô vẫn vào đủ, chỉ thiếu đúng tệp đó; cần thì mở Zalo
-  tải về rồi bấm **"Sửa kỹ"** để đính kèm vào bài.
+- Nếu có tệp nào app **không nhận được** (cô gửi tệp Word, phim nặng quá, hoặc
+  máy ở nhà tải lên dở dang), app nói thẳng: *"1 tệp cô gửi không vào được —
+  worksheet.docx — loại tệp app không nhận"*. Bài của cô vẫn vào đủ, chỉ thiếu
+  đúng tệp đó; cần thì mở Zalo tải về rồi bấm **"Sửa kỹ"** để đính kèm vào bài.
 - **Danh sách bài app đã tách sẵn, theo từng con**, xếp đúng thứ tự cô viết để
   bố mẹ dò cho nhanh.
 

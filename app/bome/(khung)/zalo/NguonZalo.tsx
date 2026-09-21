@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import type { NguonZalo as Nguon } from '@/lib/nhanBaiZalo';
+// Hang so lay tu lib/zalo.ts (tep thuan) chu KHONG tu lib/nhanBaiZalo.ts: tep do
+// import @vercel/blob, ./db, ./store, ./ai o top level, nen lay gia tri tu no la
+// keo ca tang may chu vao goi trinh duyet chi de lay may con so.
 import {
   CUA_SO_DINH_KEM_MAC_DINH, MAU_NHAN_DIEN_MAC_DINH, MAX_CHU_TEN_CO, MAX_CHU_TEN_NHOM,
   MAX_CUA_SO_DINH_KEM_PHUT,
-} from '@/lib/nhanBaiZalo';
+} from '@/lib/zalo';
 import type { Child } from '@/lib/types';
 import { gioNha } from '@/lib/ngay';
 import { useT } from '@/lib/i18n/client';
@@ -52,6 +55,39 @@ function ChonCon({ value, onChange, busy, cacCon }: {
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Hang chip cua MOT nguon da co.
+ *
+ * Giu lua chon CUC BO chu khong ve thang tu `n.childIds`: bo me bo not con cuoi
+ * cung thi phai THAY cau "Chọn ít nhất một con học lớp này." — API tu choi tap
+ * rong (mot nhom Zalo LA mot lop), nen ve theo gia tri may chu la cu bam do roi
+ * vao hu vo, khong request, khong doi gi, y nhu may khong nhan. Form them nguon
+ * moi da lam dung the tu dau; day la cho con lai.
+ */
+function ChonConCuaNguon({ n, busy, cacCon, onLuu }: {
+  n: Nguon; busy: boolean; cacCon: Child[];
+  onLuu: (n: Nguon, patch: Partial<Nguon>) => void;
+}) {
+  const [chon, setChon] = useState(n.childIds);
+  // May chu tra ve danh sach moi (luu xong, hoac bo me sua o tab khac) thi theo no.
+  const [daBiet, setDaBiet] = useState(n.childIds);
+  if (daBiet !== n.childIds) {
+    setDaBiet(n.childIds);
+    setChon(n.childIds);
+  }
+  return (
+    <ChonCon
+      value={chon}
+      onChange={(childIds) => {
+        setChon(childIds);
+        if (childIds.length > 0) onLuu(n, { childIds });
+      }}
+      busy={busy}
+      cacCon={cacCon}
+    />
   );
 }
 
@@ -180,12 +216,7 @@ export default function NguonZalo({ initial, cacCon }: { initial: Nguon[]; cacCo
               </label>
             </div>
 
-            <ChonCon
-              value={n.childIds}
-              onChange={(childIds) => { if (childIds.length > 0) sua(n, { childIds }); }}
-              busy={busy}
-              cacCon={cacCon}
-            />
+            <ChonConCuaNguon n={n} busy={busy} cacCon={cacCon} onLuu={sua} />
 
             {/* MA NHOM chi doc: bo me khai nguon bang TEN nhom (thu ho nhin thay
                 tren Zalo), con ma la thu chi may o nha doc duoc sau khi mo dung

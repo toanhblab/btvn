@@ -15,8 +15,10 @@
  *      25MB, base64 hong) thi bo rieng tep do va tin VAN vao: co gui kem mot to
  *      .docx la tin giao bai do bi khoa vinh vien, vi zalo-agent gui lai moi 30
  *      phut va lan nao cung 400.
- *   2. So byte cua tep tinh TU CHUOI base64, khong decode — mot goi 200MB
- *      khong duoc phep thanh Buffer trong ham serverless truoc khi bi tu choi.
+ *   2. `url` cua tep phai la tep CUA KHO MINH va dung ho `zalo/<nguon>/<ngay>/`.
+ *      Tep khong con di trong than request (Vercel chan o 4.5MB) nen `url` la
+ *      dau vao tu ben ngoai: no phai chan duoc tep cua nguon khac, `nop-bai/`
+ *      cua video con nop, va dia chi ngoai.
  *   3. Han nop = ngay trong tin + 1, va KHONG BAO GIO la ngay qua khu.
  *   4. `congNgay` chay tren lich UTC: may dev +07 va ham Vercel TZ=UTC phai ra
  *      cung mot ngay (cung lop loi voi issue #75).
@@ -28,8 +30,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  MAX_BYTES_MOI_TEP, MAX_TEP_MOI_GOI, bytesCuaBase64, congNgay, docGoiTin, docNhanDien,
-  duongDanBlobZalo, hanNopBai, laNgayISO, loaiTepZalo, matCoNhanDien, tenTepZalo,
+  MAX_BYTES_MOI_TEP, MAX_TEP_MOI_GOI, congNgay, docGoiTin, docNhanDien, duongDanBlobZalo,
+  hanNopBai, laDuongDanTepZalo, laNgayISO, laUrlBlobZaloCuaNguon, loaiTepZalo,
+  matCoNhanDien, tenTepZalo,
 } from './zalo.ts';
 import { ngayNhaISO } from './muiGio.ts';
 
@@ -46,7 +49,17 @@ export const TIN_NGAY_40 =
   '*Góc xem phim (quan trọng): con tiếp tục xem bộ phim “The Pet Lovers Club” mà cô đã gửi trong nhóm film\n' +
   'Cô cảm ơn bố mẹ!';
 
-/** Goi zalo-agent gui len cho tin tren — hai video den sau tin 4 giay. */
+/** Host kho tep — tep da nam san tren do truoc khi goi tin duoc gui. */
+export const KHO = 'https://kho.public.blob.vercel-storage.com';
+
+/**
+ * Goi zalo-agent gui len cho tin tren — hai video den sau tin 4 giay.
+ *
+ * Tep KHONG di trong than goi nua: agent xin ve o `/api/nhan-bai-zalo/tep-token`
+ * roi tai thang len kho, va goi tin chi mang `url` + so byte no khai. Duong
+ * base64 cu lam chinh goi nay (2.18MB + 1.29MB video, ~4.63MB sau base64) bi
+ * Vercel tu choi o 413 truoc khi ham chay.
+ */
 export const GOI_MAU = {
   nguon_id: 'nzl_cambridge',
   ma_tin: 'bb_msg_id_1789736597562',
@@ -60,14 +73,16 @@ export const GOI_MAU = {
     {
       ten: '2026-09-18-1789736601713.mp4',
       loai: 'video/mp4',
+      kich_thuoc: 2_284_512,
       gui_luc: '2026-09-18T20:03:21+07:00',
-      noi_dung_base64: Buffer.from('video mau 1').toString('base64'),
+      url: `${KHO}/zalo/nzl_cambridge/2026-09-18/2026-09-18-1789736601713-abc123.mp4`,
     },
     {
       ten: '2026-09-18-1789736601724.mp4',
       loai: 'video/mp4',
+      kich_thuoc: 1_352_704,
       gui_luc: '2026-09-18T20:03:21+07:00',
-      noi_dung_base64: Buffer.from('video mau 2').toString('base64'),
+      url: `${KHO}/zalo/nzl_cambridge/2026-09-18/2026-09-18-1789736601724-def456.mp4`,
     },
   ],
 };
@@ -88,6 +103,8 @@ test('goi mau that (ngay hoc thu 40, hai video): doc ra du moi truong', () => {
   assert.equal(g.ngay_hoc_so, 40);
   assert.equal(g.ngay_trong_tin, '2026-09-18');
   assert.equal(g.dinh_kem.length, 2);
+  assert.equal(g.bo_qua.length, 0);
+  assert.ok(g.dinh_kem.every((t) => laUrlBlobZaloCuaNguon(t.url, 'nzl_cambridge')), 'url cua goi mau');
   // Xuong dong PHAI giu nguyen: man bo me ve nguyen van bang whitespace-pre-wrap
   // de doi chieu voi danh sach bai da tach — do thang thanh mot doan la hong
   // dung viec man do sinh ra de lam.
@@ -110,11 +127,16 @@ test('thieu truong bat buoc -> ma loi ro, khong doan bua', () => {
   assert.deepEqual(doc(null), { loi: 'thieu-nguon-id' });
 });
 
+const tepMau = (them: Record<string, unknown> = {}) => ({
+  ten: 'x.mp4',
+  loai: 'video/mp4',
+  kich_thuoc: 1024,
+  url: `${KHO}/zalo/nzl_cambridge/2026-09-18/x-abc.mp4`,
+  ...them,
+});
+
 test('loai tep nhan: anh / am thanh / video / pdf; loai khac bi BO RIENG, tin van vao', () => {
-  const goi = (loai: string) => doc({
-    ...GOI_MAU,
-    dinh_kem: [{ ten: 'x', loai, noi_dung_base64: Buffer.from('x').toString('base64') }],
-  });
+  const goi = (loai: string) => doc({ ...GOI_MAU, dinh_kem: [tepMau({ ten: 'x', loai })] });
   for (const ok of ['image/jpeg', 'image/heic', 'audio/mpeg', 'audio/x-m4a', 'video/quicktime', 'application/pdf']) {
     const kq = goi(ok);
     assert.ok('goi' in kq && kq.goi.dinh_kem.length === 1 && kq.goi.bo_qua.length === 0, ok);
@@ -134,8 +156,10 @@ test('.docx cua co khong lam mat tin: bai van tach duoc, chi rieng tep bi bo', (
     ...GOI_MAU,
     dinh_kem: [
       GOI_MAU.dinh_kem[0],
-      { ten: 'worksheet.docx', loai: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        noi_dung_base64: Buffer.from('doc').toString('base64') },
+      tepMau({
+        ten: 'worksheet.docx',
+        loai: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      }),
     ],
   });
   assert.ok('goi' in kq, JSON.stringify(kq));
@@ -148,28 +172,28 @@ test('.docx cua co khong lam mat tin: bai van tach duoc, chi rieng tep bi bo', (
   }]);
 });
 
-test('tep qua 25MB bi bo rieng, va so byte tinh tu CHUOI base64 chu khong decode', () => {
-  // 4 ky tu base64 = 3 byte; khong co dau '=' nen khong tru gi
-  assert.equal(bytesCuaBase64('AAAA'), 3);
-  assert.equal(bytesCuaBase64('AAA='), 2);
-  assert.equal(bytesCuaBase64('AA=='), 1);
-  // Chuoi dai hon tran ma KHONG can dung mot Buffer nao
-  const soKyTu = Math.ceil(((MAX_BYTES_MOI_TEP + 1024) * 4) / 3);
-  const to = 'A'.repeat(soKyTu);
-  assert.ok(bytesCuaBase64(to) > MAX_BYTES_MOI_TEP);
-  const kq = doc({ ...GOI_MAU, dinh_kem: [{ ten: 'to.mp4', loai: 'video/mp4', noi_dung_base64: to }] });
+test('agent KHAI qua 25MB thi bo ngay o day, khong phai doi hoi kho tep', () => {
+  const kq = doc({
+    ...GOI_MAU,
+    dinh_kem: [tepMau({ ten: 'to.mp4', kich_thuoc: MAX_BYTES_MOI_TEP + 1 })],
+  });
   assert.ok('goi' in kq, JSON.stringify(kq).slice(0, 120));
   assert.equal(kq.goi.dinh_kem.length, 0);
   assert.equal(kq.goi.bo_qua[0].ly_do, 'qua-nang');
   assert.equal(kq.goi.bo_qua[0].ten, 'to.mp4');
+  // Khai thieu / khai bua thi KHONG an duoc gi: tep van vao, so that do kho tra
+  const khaiBua = doc({ ...GOI_MAU, dinh_kem: [tepMau({ kich_thuoc: 'to lam' })] });
+  assert.ok('goi' in khaiBua);
+  assert.equal(khaiBua.goi.dinh_kem.length, 1);
+  assert.equal(khaiBua.goi.dinh_kem[0].kich_thuoc, 0);
 });
 
-test('tep rong -> bo rieng voi ly do tep-hong; QUA NHIEU TEP van hong ca goi', () => {
-  const rong = doc({ ...GOI_MAU, dinh_kem: [{ ten: 'x.mp4', loai: 'video/mp4', noi_dung_base64: '' }] });
+test('thieu url -> bo rieng voi ly do tep-hong; QUA NHIEU TEP van hong ca goi', () => {
+  const rong = doc({ ...GOI_MAU, dinh_kem: [tepMau({ url: '' })] });
   assert.ok('goi' in rong);
   assert.deepEqual(rong.goi.bo_qua, [{ ten: 'x.mp4', ly_do: 'tep-hong' }]);
   // Tep khong co ten van phai co gi do de bo me doc
-  const khongTen = doc({ ...GOI_MAU, dinh_kem: [{ loai: 'video/mp4', noi_dung_base64: '' }] });
+  const khongTen = doc({ ...GOI_MAU, dinh_kem: [tepMau({ ten: '', url: '' })] });
   assert.ok('goi' in khongTen);
   assert.equal(khongTen.goi.bo_qua[0].ten, '#1');
   // Mot goi 200 tep la mot goi SAI, khong phai mot tin co vai tep hong
@@ -270,6 +294,46 @@ test('thu muc Blob la zalo/<nguon>/<ngay>/ va KHONG cham nop-bai/ cua video con 
   const hiem = duongDanBlobZalo('../../evil', '2026-09-18', '../../../etc/passwd');
   assert.ok(!hiem.includes('..'), hiem);
   assert.equal(hiem.split('/').length, 4, hiem);
+});
+
+test('url cua tep phai la tep CUA KHO MINH, dung ho zalo/<nguon>/<ngay>/', () => {
+  const ok = `${KHO}/zalo/nzl_cambridge/2026-09-18/video-abc123.mp4`;
+  assert.ok(laUrlBlobZaloCuaNguon(ok, 'nzl_cambridge'));
+  // Ten tep bi `addRandomSuffix` doi van phai qua — ve chi chot THU MUC
+  assert.ok(laUrlBlobZaloCuaNguon(`${KHO}/zalo/nzl_cambridge/2026-09-18/x-9f2.pdf`, 'nzl_cambridge'));
+
+  for (const xau of [
+    // Nguon KHAC: mot khoa hop le khong duoc tro sang ho cua lop khac
+    `${KHO}/zalo/nzl_starters/2026-09-18/video.mp4`,
+    // Ho cua video con nop — hai ho tep khong bao gio duoc dam vao nhau
+    `${KHO}/nop-bai/be-na.mp4`,
+    // Dia chi ngoai: trinh duyet cua bo me se tai no ve khi mo muc cho duyet
+    'https://evil.example.com/zalo/nzl_cambridge/2026-09-18/video.mp4',
+    // Host gan giong
+    'https://blob.vercel-storage.com.evil.com/zalo/nzl_cambridge/2026-09-18/v.mp4',
+    // Khong phai https
+    `${KHO.replace('https', 'http')}/zalo/nzl_cambridge/2026-09-18/video.mp4`,
+    // Thu muc long nhau / thieu ngay / ngay khong co that
+    `${KHO}/zalo/nzl_cambridge/2026-09-18/them/video.mp4`,
+    `${KHO}/zalo/nzl_cambridge/video.mp4`,
+    `${KHO}/zalo/nzl_cambridge/2026-02-30/video.mp4`,
+    // Lach ra ngoai thu muc cua nguon
+    `${KHO}/zalo/nzl_cambridge/../nzl_starters/video.mp4`,
+    '', 'khong-phai-url', null, 123,
+  ]) {
+    assert.ok(!laUrlBlobZaloCuaNguon(xau, 'nzl_cambridge'), String(xau));
+  }
+});
+
+test('cua phat ve va cua nhan tin chot duong dan bang CUNG mot ham', () => {
+  // `duongDanBlobZalo` sinh ra duong dan ma `laDuongDanTepZalo` phai nhan —
+  // lech nhau la agent xin ve cho mot duong dan roi gui len mot duong dan khac.
+  const d = duongDanBlobZalo('nzl_cambridge', '2026-09-18', 'video mẫu (1).mp4');
+  assert.ok(laDuongDanTepZalo(d, 'nzl_cambridge'), d);
+  assert.ok(!laDuongDanTepZalo(d, 'nzl_starters'), d);
+  // Dang co dau '/' dau (pathname cua URL) cung phai nhan
+  assert.ok(laDuongDanTepZalo(`/${d}`, 'nzl_cambridge'));
+  assert.ok(!laDuongDanTepZalo('nop-bai/x.mp4', 'nzl_cambridge'));
 });
 
 test('ten tep tu Zalo khong co duoi thi dat theo loai + thu tu', () => {

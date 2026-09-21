@@ -28,6 +28,14 @@ export interface CauHinhTaiTep {
   maxBytes: number;
   /** Loai tep Vercel Blob duoc phep nhan khi cap ve cho client. */
   allowedContentTypes: string[];
+  /**
+   * Duong dan tep tren kho co duoc phep khong. KHONG truyen thi khong chan gi —
+   * hai route cu (/api/upload-media, /api/nop-video) goi tu TRINH DUYET cua
+   * nguoi da xac thuc va tu dat tien to trong lib/media.ts, nen chung giu nguyen
+   * hanh vi. Cua cua zalo-agent thi can: `nguon_id` nam trong chinh duong dan,
+   * nen khong chan o day la mot khoa hop le ghi duoc tep vao ho cua nguon khac.
+   */
+  kiemDuongDan?: (pathname: string) => boolean;
   loi: {
     chuaXacThuc: string;
     chuaBatBlobTrenVercel: string;
@@ -39,6 +47,8 @@ export interface CauHinhTaiTep {
     chuaBatBlob: string;
     /** Body cap ve khong doc duoc. */
     duLieuHong: string;
+    /** Duong dan khong qua `kiemDuongDan` (chi can khi co truyen hook do). */
+    saiDuongDan?: string;
   };
 }
 
@@ -104,11 +114,18 @@ export async function xuLyTaiTep(req: Request, cau: CauHinhTaiTep) {
     const res = await handleUpload({
       request: req,
       body,
-      onBeforeGenerateToken: async () => ({
-        allowedContentTypes: cau.allowedContentTypes,
-        maximumSizeInBytes: cau.maxBytes,
-        addRandomSuffix: true,
-      }),
+      onBeforeGenerateToken: async (pathname) => {
+        // Nem chu khong tra loi: handleUpload bat va bien thanh 400 o duoi, va
+        // quan trong hon la KHONG co ve nao duoc ky khi duong dan sai.
+        if (cau.kiemDuongDan && !cau.kiemDuongDan(pathname)) {
+          throw new Error(cau.loi.saiDuongDan ?? cau.loi.saiLoai);
+        }
+        return {
+          allowedContentTypes: cau.allowedContentTypes,
+          maximumSizeInBytes: cau.maxBytes,
+          addRandomSuffix: true,
+        };
+      },
       onUploadCompleted: async () => {
         // URL chi duoc ghi vao DB khi bo me bam Luu / con bam "Gửi bài" —
         // o thoi diem nay chua co gi de luu.

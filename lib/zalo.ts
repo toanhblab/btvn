@@ -23,20 +23,42 @@ import type { DraftAssignment } from './types';
 /* ---------------- Tep dinh kem ---------------- */
 
 /**
- * Tran MOI TEP, khong phai tran ca goi. 25MB theo hop dong captain chot —
- * rong hon hai video mau that cua co (2.2MB va 1.3MB) mot bac lon, ma van du
- * chat de mot goi hong khong nuot het bo nho cua ham serverless.
+ * Tran MOI TEP. 25MB theo hop dong captain chot — rong hon hai video mau that
+ * cua co (2.2MB va 1.3MB) mot bac lon.
  *
- * KHAC voi MAX_MEDIA_BYTES (100MB, lib/media.ts): tep o day di qua THAN
- * REQUEST duoi dang base64, ma Vercel chan than request o 4.5MB — nen tran
- * 25MB chi la hang rao cuoi, con han thuc te chat hon nhieu va do zalo-agent
- * phai biet. Duong bo me dinh kem tay van la duong upload thang len Blob
- * (lib/upload-route.ts), khong dung tran nay.
+ * Con so nay la tran THAT va zalo-agent doc duoc no o `gioi_han` cua GET
+ * cau-hinh, vi tep KHONG di qua than request: agent xin ve o
+ * `POST /api/nhan-bai-zalo/tep-token` roi tai THANG len Vercel Blob, y het
+ * duong tep bo me dinh kem va video con nop (lib/media.ts + lib/upload-route.ts).
+ * Duong base64-trong-than-request da BO HAN: Vercel chan than request o 4.5MB
+ * nen goi mau THAT cua scout (2.18MB + 1.29MB video -> ~4.63MB sau base64) bi
+ * 413 TRUOC khi ham chay — khong dong `bai_tu_zalo`, khong ban nhap, khong log,
+ * va agent gui lai moi 30 phut mai mai.
  */
 export const MAX_BYTES_MOI_TEP = 25 * 1024 * 1024;
 
 /** So tep toi da mot goi — do duoc: mot tin giao bai co nhieu nhat 2 video. */
 export const MAX_TEP_MOI_GOI = 10;
+
+/* ---------------- Cau hinh nguon (hang so dung chung) ---------------- */
+
+/**
+ * Nam hang so nay o DAY chu khong o lib/nhanBaiZalo.ts vi man bo me
+ * (`app/bome/(khung)/zalo/NguonZalo.tsx`, mot component `'use client'`) can
+ * CHUNG duoi dang GIA TRI. lib/nhanBaiZalo.ts import `@vercel/blob`, `./db`
+ * (-> `@neondatabase/serverless`, `@electric-sql/pglite`, `node:fs`), `./store`
+ * va `./ai` o top level, nen lay gia tri tu do la keo ca tang may chu vao goi
+ * trinh duyet chi de lay may con so. Tep nay khong import gi ngoai lib/muiGio.ts.
+ * lib/nhanBaiZalo.ts xuat lai chung de phia may chu khong phai doi cho import.
+ */
+/** Ten nhom / ten co dai hon thi tran the tren man dien thoai cua bo me. */
+export const MAX_CHU_TEN_NHOM = 80;
+export const MAX_CHU_TEN_CO = 40;
+/** So mau nhan dien toi da — nhieu hon thi khong con la "mau", ma la mot bo loc. */
+export const MAX_MAU_NHAN_DIEN = 8;
+export const MAU_NHAN_DIEN_MAC_DINH = ['bai tap ve nha', 'ngay hoc thu'];
+export const CUA_SO_DINH_KEM_MAC_DINH = 90;
+export const MAX_CUA_SO_DINH_KEM_PHUT = 1440;
 
 /**
  * Loai tep nhan: anh, am thanh, video, pdf (hop dong captain chot). Do theo
@@ -55,6 +77,14 @@ export const LOAI_TEP_NHAN = ['image/*', 'audio/*', 'video/*', 'application/pdf'
 
 /** Cung mot tran voi `MAX_BYTES_MOI_TEP`, don vi MB — dang zalo-agent doc. */
 export const MAX_MB_MOI_TEP = MAX_BYTES_MOI_TEP / (1024 * 1024);
+
+/**
+ * Cach zalo-agent dua tep vao, va duong xin ve — hai truong cua `gioi_han`
+ * trong GET cau-hinh. Ghi RA THANH GIA TRI chu khong de agent doan: doi cach
+ * tai la doi hop dong, va agent phai thay no doi.
+ */
+export const CACH_TAI_TEP = 'blob-client-token';
+export const DUONG_TOKEN_TEP = '/api/nhan-bai-zalo/tep-token';
 
 export function loaiTepZalo(mime: unknown): LoaiTepZalo | null {
   if (typeof mime !== 'string') return null;
@@ -190,15 +220,19 @@ export function matCoNhanDien(nd: NhanDienZalo | null): MatCoNhanDien | null {
 export interface TepTrongGoi {
   ten: string;
   loai: string;
+  /** So byte zalo-agent KHAI. Chi de bao truoc; so that lay tu kho tep. */
+  kich_thuoc: number;
   gui_luc: string | null;
-  noi_dung_base64: string;
+  /** URL tep da nam tren kho cua CHINH app nay (xem `laUrlBlobZaloCuaNguon`). */
+  url: string;
 }
 
 /**
  * Mot tep KHONG duoc giu lai, kem ly do — MOT danh sach duy nhat cho ca hai cho
- * co the bo tep: luc doc goi (sai loai / qua nang / base64 hong) va luc tai len
- * kho (chua bat kho tep, `put` nem). Luu cung dong `bai_tu_zalo` va hien o muc
- * cho duyet, de bo me biet co mot tep cua co khong vao duoc chu khong phai doan.
+ * co the bo tep: luc doc goi (sai loai, agent khai qua 25MB, thieu url) va luc
+ * doi chieu voi kho tep (url khong phai cua kho minh / sai tien to cua nguon,
+ * hoac kho bao khong co tep do). Luu cung dong `bai_tu_zalo` va hien o muc cho
+ * duyet, de bo me biet co mot tep cua co khong vao duoc chu khong phai doan.
  *
  * `ly_do` la MA MAY DOC: cua nay do zalo-agent goi nen than 201 khong qua lop
  * dich; man bo me tu chon cau cho tung ma.
@@ -207,8 +241,8 @@ export type LyDoBoTep =
   | 'loai-khong-nhan'
   | 'qua-nang'
   | 'tep-hong'
-  | 'chua-bat-kho-tep'
-  | 'tai-len-hong';
+  | 'url-khong-nhan'
+  | 'khong-thay-trong-kho';
 
 export interface TepBoQua {
   ten: string;
@@ -262,28 +296,22 @@ function mocISO(v: unknown): string | null {
 }
 
 /**
- * So byte THAT cua mot chuoi base64, khong phai do dai chuoi. Tinh truoc khi
- * decode de mot goi 200MB khong bao gio duoc dung thanh Buffer trong ham
- * serverless — `Buffer.from(...)` roi do `.length` la da tra gia roi.
- */
-export function bytesCuaBase64(s: string): number {
-  const sach = s.replace(/[\r\n\s]/g, '');
-  const dem = sach.endsWith('==') ? 2 : sach.endsWith('=') ? 1 : 0;
-  return Math.floor((sach.length * 3) / 4) - dem;
-}
-
-/**
  * Doc goi tin tu than request. KHONG cham CSDL va khong decode tep — chi lam
  * sach va chan o cac tran; nguoi goi decode sau khi da qua day.
  *
  * Tra ve `{ loi }` thay vi nem: cua nhan phai phan biet duoc "goi hong" (400)
  * voi "tach bai hong" (van 201, luu ban goc — xem app/api/nhan-bai-zalo).
  *
- * MOT TEP LA KHONG DUOC LAM HONG CA TIN. Tep sai loai (.docx cua co), qua 25MB
- * hay base64 hong thi BO RIENG tep do va ghi vao `bo_qua`; tin van vao va bo me
- * van co bai de duyet. Truoc day day tra 400 cho ca goi, ma zalo-agent gui lai
- * moi 30 phut nen mot to worksheet .docx dinh kem la KHOA VINH VIEN tin giao
- * bai do: khong co ban nhap, khong co muc cho duyet, khong ai biet vi sao.
+ * MOT TEP LA KHONG DUOC LAM HONG CA TIN. Tep sai loai (.docx cua co), agent tu
+ * khai qua 25MB hay thieu `url` thi BO RIENG tep do va ghi vao `bo_qua`; tin van
+ * vao va bo me van co bai de duyet. Truoc day day tra 400 cho ca goi, ma
+ * zalo-agent gui lai moi 30 phut nen mot to worksheet .docx dinh kem la KHOA
+ * VINH VIEN tin giao bai do: khong co ban nhap, khong co muc cho duyet, khong
+ * ai biet vi sao.
+ *
+ * `url` chi duoc kiem HINH DANG o day (co mat, khong qua dai). Kiem "tep nay co
+ * phai cua kho minh khong" nam o lib/nhanBaiZalo.ts, vi no phai biet may chu da
+ * bat Vercel Blob hay chua.
  */
 export function docGoiTin(
   body: unknown
@@ -313,21 +341,25 @@ export function docGoiTin(
       boQua.push({ ten: tenHien, ly_do: 'loai-khong-nhan', chi_tiet: loai || '?' });
       continue;
     }
-    const b64 = typeof o.noi_dung_base64 === 'string' ? o.noi_dung_base64 : '';
-    const bytes = b64 ? bytesCuaBase64(b64) : 0;
-    if (bytes <= 0) {
+    const url = chuoi(o.url, 2048);
+    if (!url) {
       boQua.push({ ten: tenHien, ly_do: 'tep-hong' });
       continue;
     }
-    if (bytes > MAX_BYTES_MOI_TEP) {
-      boQua.push({ ten: tenHien, ly_do: 'qua-nang', chi_tiet: String(bytes) });
+    // So agent khai chi de BAO TRUOC. Khai lo thi bo ngay o day cho re; khai
+    // thieu thi khong an duoc gi — lib/nhanBaiZalo.ts hoi lai kho tep.
+    const khai = Math.round(Number(o.kich_thuoc));
+    const kichThuoc = Number.isFinite(khai) && khai > 0 ? khai : 0;
+    if (kichThuoc > MAX_BYTES_MOI_TEP) {
+      boQua.push({ ten: tenHien, ly_do: 'qua-nang', chi_tiet: String(kichThuoc) });
       continue;
     }
     dinhKem.push({
       ten,
       loai,
+      kich_thuoc: kichThuoc,
       gui_luc: mocISO(o.gui_luc),
-      noi_dung_base64: b64,
+      url,
     });
   }
 
@@ -357,13 +389,66 @@ export function docGoiTin(
  * (lib/donVideo.ts) chi nhan `nop-bai/` nen mot luot don video khong bao gio
  * cham vao tep o day. Doi tien to nay la phai xem lai ca hai ben.
  */
+// Ten tep tu Zalo la chuoi tu do (co giao dat), nen chi giu bo ky tu an toan
+// va GOP moi day dau cham lai thanh mot: `/` da bi thay roi nhung de nguyen
+// `..` trong mot doan duong dan la mot thu khong ai muon phai suy nghi lai.
+const sachDoan = (s: string) =>
+  s.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/\.{2,}/g, '.').replace(/^[-.]+|[-.]+$/g, '') || 'tep';
+
 export function duongDanBlobZalo(nguonId: string, ngay: string, ten: string): string {
-  // Ten tep tu Zalo la chuoi tu do (co giao dat), nen chi giu bo ky tu an toan
-  // va GOP moi day dau cham lai thanh mot: `/` da bi thay roi nhung de nguyen
-  // `..` trong mot doan duong dan la mot thu khong ai muon phai suy nghi lai.
-  const sach = (s: string) =>
-    s.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/\.{2,}/g, '.').replace(/^[-.]+|[-.]+$/g, '') || 'tep';
-  return `zalo/${sach(nguonId)}/${ngay}/${sach(ten)}`;
+  return `${thuMucBlobZalo(nguonId, ngay)}${sachDoan(ten)}`;
+}
+
+/** `zalo/<nguon>/<yyyy-mm-dd>/` — thu muc cua mot nguon trong mot ngay. */
+export function thuMucBlobZalo(nguonId: string, ngay: string): string {
+  return `zalo/${sachDoan(nguonId)}/${ngay}/`;
+}
+
+/**
+ * Duong dan nay co nam dung trong ho tep cua nguon nay khong?
+ *
+ * Dung o HAI CHO va phai la MOT luat: cua phat ve (`POST
+ * /api/nhan-bai-zalo/tep-token` chan pathname truoc khi ky) va cua nhan tin
+ * (doi chieu `url` cua tung tep trong goi). Lech nhau la agent xin ve cho mot
+ * duong dan roi gui len mot duong dan khac.
+ *
+ * `zalo/<nguon>/<yyyy-mm-dd>/<mot doan ten>` — dung mot doan cuoi, khong thu muc
+ * long nhau, va NGAY phai la ngay lich that: khong thi `zalo/<nguon>/../..` hay
+ * mot cay thu muc do agent tu dat se lot qua.
+ */
+export function laDuongDanTepZalo(duongDan: unknown, nguonId: string): boolean {
+  if (typeof duongDan !== 'string' || !duongDan) return false;
+  const doan = duongDan.replace(/^\/+/, '').split('/');
+  if (doan.length !== 4) return false;
+  const [goc, nguon, ngay, ten] = doan;
+  return goc === 'zalo' && nguon === sachDoan(nguonId) && laNgayISO(ngay) && ten.length > 0;
+}
+
+/**
+ * URL nay co phai MOT TEP TREN KHO CUA APP MINH, dung ho cua nguon nay khong?
+ *
+ * Cua nhan khong co cookie va `url` do zalo-agent gui len, nen day la thu duy
+ * nhat chan viec mot goi tro `url` sang chu khac: tep cua nha khac (`zalo/<nguon
+ * khac>/`), video con nop (`nop-bai/`), hay mot dia chi ngoai ma trinh duyet cua
+ * bo me se tai ve khi mo muc cho duyet. Cung tinh than voi `laUrlTepAppCap`
+ * (lib/media.ts) o duong PATCH cua con: chot DANG URL vi khong chot duoc nguoi goi.
+ */
+export function laUrlBlobZaloCuaNguon(url: unknown, nguonId: string): boolean {
+  if (typeof url !== 'string' || !url || url.length > 2048) return false;
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return false;
+  }
+  if (u.protocol !== 'https:' || !/(^|\.)blob\.vercel-storage\.com$/.test(u.hostname)) return false;
+  let duongDan = u.pathname;
+  try {
+    duongDan = decodeURIComponent(duongDan);
+  } catch {
+    return false;
+  }
+  return laDuongDanTepZalo(duongDan, nguonId);
 }
 
 /** Duoi tep mac dinh khi ten tu Zalo khong co duoi nhan ra duoc. */

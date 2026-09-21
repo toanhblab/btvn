@@ -277,10 +277,20 @@ dịch — cùng tinh thần với `/api/don-video`.
 ```bash
 KHOA=... ; URL=http://localhost:3000
 
-# Nguồn đang bật, để zalo-agent biết quét nhóm nào (kèm `gioi_han` của cửa nhận)
+# 1. Nguồn đang bật, để zalo-agent biết quét nhóm nào (kèm `gioi_han` của cửa nhận)
 curl -s "$URL/api/nhan-bai-zalo/cau-hinh" -H "Authorization: Bearer $KHOA"
 
-# Một tin giao bài
+# 2. Có tệp kèm thì xin vé rồi tải THẲNG lên kho, TRƯỚC khi gửi tin.
+#    Thân gói vé đúng giao thức @vercel/blob/client; đường dẫn bắt buộc nằm dưới
+#    zalo/<nguon_id>/<yyyy-mm-dd>/ và `ma_tin` đã nhận rồi thì trả 409 ngay.
+curl -s -X POST "$URL/api/nhan-bai-zalo/tep-token?nguon_id=nzl_cambridge&ma_tin=bb_msg_id_1" \
+  -H "Authorization: Bearer $KHOA" -H 'Content-Type: application/json' \
+  -d '{"type":"blob.generate-client-token",
+       "payload":{"pathname":"zalo/nzl_cambridge/2026-09-18/video-mau.mp4",
+                  "callbackUrl":"'"$URL"'/api/nhan-bai-zalo/tep-token",
+                  "clientPayload":null,"multipart":false}}'
+
+# 3. Một tin giao bài — `dinh_kem` chỉ mang URL tệp đã nằm trên kho
 curl -s -X POST "$URL/api/nhan-bai-zalo" \
   -H "Authorization: Bearer $KHOA" -H 'Content-Type: application/json' \
   -d '{"nguon_id":"nzl_cambridge","ma_tin":"bb_msg_id_1","gui_luc":"2026-09-18T20:03:17+07:00",
@@ -288,9 +298,15 @@ curl -s -X POST "$URL/api/nhan-bai-zalo" \
        "ma_nhom":"g6948518348545773767",
        "ngay_hoc_so":40,"ngay_trong_tin":"2026-09-18","nguyen_van":"Cô Huyền thân gửi …",
        "nhan_dien":{"luat":true,"jev_xac_suat":0.96},
-       "dinh_kem":[{"ten":"video-mau.mp4","loai":"video/mp4",
-                    "gui_luc":"2026-09-18T20:03:21+07:00","noi_dung_base64":"…"}]}'
+       "dinh_kem":[{"ten":"video-mau.mp4","loai":"video/mp4","kich_thuoc":2284512,
+                    "gui_luc":"2026-09-18T20:03:21+07:00",
+                    "url":"https://<kho>.public.blob.vercel-storage.com/zalo/nzl_cambridge/2026-09-18/video-mau-abc123.mp4"}]}'
 ```
+
+Máy dev **chưa bật Blob** thì bước 2 là `POST` multipart (`file=@…`) vào cùng
+đường đó và trả `{ "url": "/api/tep/<tên>" }` — đúng khuôn chế độ 2 của
+`lib/upload-route.ts`; cửa nhận tin chấp nhận dạng URL đó **chỉ khi** máy chủ
+thật sự chưa có `BLOB_READ_WRITE_TOKEN`.
 
 Mã trả về — **hợp đồng**, đổi là đổi cả hai bên:
 
@@ -302,6 +318,11 @@ Mã trả về — **hợp đồng**, đổi là đổi cả hai bên:
 | `404` | `nguon_id` không có, nguồn đang tắt, hoặc nguồn chưa gắn con nào |
 | `409` | `ma_tin` đã có cho nguồn đó — **không tạo gì**. zalo-agent chạy lại mỗi 30 phút nên đây là đường bình thường, không phải lỗi |
 | `503` | Máy chủ **chưa đặt `ZALO_INTAKE_SECRET`** |
+
+`POST /api/nhan-bai-zalo/tep-token?nguon_id=&ma_tin=` dùng **cùng khoá** đó và
+thêm hai mã: `400 sai-duong-dan` (đường dẫn ra ngoài `zalo/<nguon_id>/<ngày>/`),
+`409 trung-ma-tin` (tin đã nhận rồi — **không phát vé**, để agent khỏi tải lại
+cả bộ tệp của một tin đã có).
 
 `503` cố ý **khác** `401`: gộp hai cái vào nhau thì một bản deploy thiếu biến
 sẽ báo "sai khoá" và người ta đi soi Keychain trong khi lỗi nằm ở Vercel.
@@ -317,14 +338,15 @@ thêm một bản của cả bộ tệp mà không dòng `dinh_kem` nào trỏ t
 `SELECT` ngắn mạch đó.
 
 **Một tệp lạ không làm hỏng cả tin.** Tệp sai loại (cô đính kèm một tờ `.docx`),
-quá 25MB hay base64 hỏng thì **bỏ riêng tệp đó** và ghi vào `tep_bo_qua`
-(`[{ ten, ly_do, chi_tiet? }]`, `ly_do` ∈ `loai-khong-nhan` / `qua-nang` /
-`tep-hong` / `chua-bat-kho-tep` / `tai-len-hong`) — tin vẫn vào, bố mẹ vẫn có
-bài để duyệt, và mục chờ duyệt **hiện** danh sách tệp bị bỏ để họ không tưởng là
-cô quên gửi. Trước đây cả gói trả 400, mà agent gửi lại mỗi 30 phút nên một tờ
-`.docx` là khoá vĩnh viễn tin giao bài đó. Cột `bai_tu_zalo.tep_bo_qua`
-(migration 022) giữ danh sách; thân `201` trả cùng danh sách đó và máy chủ ghi
-một dòng `console.warn`.
+agent tự khai quá 25MB, thiếu `url`, `url` không phải tệp của kho mình / sai họ
+`zalo/<nguồn>/`, hay kho báo không có tệp đó — thì **bỏ riêng tệp đó** và ghi vào
+`tep_bo_qua` (`[{ ten, ly_do, chi_tiet? }]`, `ly_do` ∈ `loai-khong-nhan` /
+`qua-nang` / `tep-hong` / `url-khong-nhan` / `khong-thay-trong-kho`) — tin vẫn
+vào, bố mẹ vẫn có bài để duyệt, và mục chờ duyệt **hiện** danh sách tệp bị bỏ để
+họ không tưởng là cô quên gửi. Trước đây cả gói trả 400, mà agent gửi lại mỗi 30
+phút nên một tờ `.docx` là khoá vĩnh viễn tin giao bài đó. Cột
+`bai_tu_zalo.tep_bo_qua` (migration 022) giữ danh sách; thân `201` trả cùng danh
+sách đó và máy chủ ghi một dòng `console.warn`.
 
 ### Bài NHÁP nằm trong chính bảng `assignments`
 
@@ -342,15 +364,41 @@ cả ngày. Hồi quy ghim ở `lib/nhan-bai-zalo.test.ts`.
 
 ### Tệp kèm
 
+**Tệp không đi trong thân request.** Vercel chặn thân request ở **4,5MB**, mà
+chính gói mẫu thật của scout (hai video 2,18MB + 1,29MB → ~4,63MB sau base64)
+đã vượt: nền tảng trả 413 **trước khi** hàm chạy, nên không hàng rào nào trong
+mã chạy — không dòng `bai_tu_zalo`, không bài nháp, không `tep_bo_qua`, không
+log, và agent gửi lại mỗi 30 phút mãi mãi. Đây đúng là lý do `lib/media.ts` đã
+chọn đường tải thẳng cho video con nộp, nên bài từ Zalo đi cùng khuôn đó:
+`POST /api/nhan-bai-zalo/tep-token` phát vé (thân chung `xuLyTaiTep` với
+`/api/upload-media` và `/api/nop-video`), agent tải thẳng lên Blob, rồi gói tin
+chỉ mang `url`.
+
 Chỉ ảnh / âm thanh / video / pdf, tối đa **25MB mỗi tệp**, tối đa 10 tệp một
-gói. Ba con số đó cũng nằm trong `gioi_han` của `GET cau-hinh`
-(`{ loai_tep: ["image/*", "audio/*", "video/*", "application/pdf"], toi_da_mb: 25,
-toi_da_tep_moi_goi: 10 }`) để zalo-agent biết **trước** thay vì gửi lên rồi đọc
-`tep_bo_qua`. Lên Vercel Blob dưới `zalo/<nguồn>/<ngày>/` — tiền tố **riêng**, không
+gói. Cả `gioi_han` của `GET cau-hinh` nói đủ những điều đó **cộng cách tải**, để
+zalo-agent biết **trước** thay vì gửi lên rồi đọc `tep_bo_qua`:
+
+```json
+{ "loai_tep": ["image/*", "audio/*", "video/*", "application/pdf"],
+  "toi_da_mb": 25, "toi_da_tep_moi_goi": 10,
+  "cach_tai": "blob-client-token", "duong_token": "/api/nhan-bai-zalo/tep-token" }
+```
+
+`url` là **đầu vào từ bên ngoài** nên cửa nhận chốt nó hai tầng, và cả hai đều
+cần: `laUrlBlobZaloCuaNguon` (lib/zalo.ts) đòi tệp phải nằm trên host Blob của
+chính mình, đúng họ `zalo/<nguon_id>/<yyyy-mm-dd>/` với **đúng một** đoạn tên
+cuối — chặn tệp của lớp khác, chặn `nop-bai/` của video con nộp, chặn địa chỉ
+ngoài mà trình duyệt bố mẹ sẽ tải về khi mở mục chờ duyệt. Rồi `head()` hỏi lại
+kho: tệp có thật không, và nặng bao nhiêu — **số byte ghi vào CSDL lấy từ kho,
+không lấy từ `kich_thuoc` agent khai**. Cửa phát vé chốt đường dẫn bằng **đúng**
+hàm đó (`laDuongDanTepZalo`), nên không có kẽ "xin vé cho một đường dẫn rồi gửi
+lên một đường dẫn khác". Lên Vercel Blob dưới `zalo/<nguồn>/<ngày>/` — tiền tố **riêng**, không
 chạm `nop-bai/` của video con nộp, nên một lượt dọn video không bao giờ đụng
 vào chúng (`laUrlVideoConNop` trong `lib/donVideo.ts` chỉ nhận `nop-bai/`).
-Dev chưa bật Blob thì ghi `.data/uploads` và trả `/api/tep/<tên>`, cùng khuôn
-với hai đường tải tệp đã có.
+Dev chưa bật Blob thì bước tải là multipart vào cùng đường vé, ghi `.data/uploads`
+và trả `/api/tep/<tên>` — cùng khuôn với hai đường tải tệp đã có. Cửa nhận tin
+chấp nhận dạng URL đó **chỉ khi** máy chủ thật sự chưa có `BLOB_READ_WRITE_TOKEN`,
+để trên Vercel không có lối vòng qua phần kiểm tiền tố.
 
 **Việc dọn thật chưa có.** Mỗi tệp được ghi sẵn `han_xoa` (30 ngày) trong
 `bai_tu_zalo.dinh_kem`, nhưng `lib/donVideo.ts` cố ý chỉ đi theo

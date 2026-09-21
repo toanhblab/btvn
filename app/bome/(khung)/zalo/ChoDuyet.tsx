@@ -114,8 +114,8 @@ function LyDoBoTepChu({ ly_do }: { ly_do: LyDoBoTep }) {
     'loai-khong-nhan': T('loại tệp app không nhận'),
     'qua-nang': T('tệp nặng quá'),
     'tep-hong': T('tệp hỏng'),
-    'chua-bat-kho-tep': T('kho tệp của app chưa sẵn sàng'),
-    'tai-len-hong': T('tải lên không được'),
+    'url-khong-nhan': T('tệp không nằm trong kho của app'),
+    'khong-thay-trong-kho': T('kho tệp không tìm thấy tệp này'),
   };
   return <>{chu[ly_do]}</>;
 }
