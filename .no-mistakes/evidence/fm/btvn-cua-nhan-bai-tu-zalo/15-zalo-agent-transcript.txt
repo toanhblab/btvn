@@ -1,0 +1,118 @@
+
+=== 1. Không khoá -> 401, không lộ lý do ===
+GET  /api/nhan-bai-zalo/cau-hinh        -> 401
+{"loi":"unauthorized"}
+body: 401
+
+=== 2. GET cau-hinh: zalo-agent biết quét nhóm nào, gán cho con nào, giới hạn gì ===
+{
+  "nguon": [
+    {
+      "id": "nzl_cambridge",
+      "nhom_zalo": "Cambridge 1.27 - Smart Kids Education",
+      "ma_nhom": null,
+      "ten_co": "Thu Huyền",
+      "mau_nhan_dien": [
+        "bai tap ve nha",
+        "ngay hoc thu"
+      ],
+      "cua_so_dinh_kem_phut": 90,
+      "con": [
+        {
+          "id": "minh",
+          "ten": "Nguyễn Hoàng Minh Khôi"
+        },
+        {
+          "id": "an",
+          "ten": "Nguyễn Hoàng Bảo Anh"
+        }
+      ]
+    },
+    {
+      "id": "nzl_starters",
+      "nhom_zalo": "Cam Starters 26 - Smart Kids Education",
+      "ma_nhom": null,
+      "ten_co": "hangnga",
+      "mau_nhan_dien": [
+        "bai tap ve nha",
+        "ngay hoc thu"
+      ],
+      "cua_so_dinh_kem_phut": 90,
+      "con": [
+        {
+          "id": "bena",
+          "ten": "Nguyễn Hoàng Bảo Na"
+        },
+        {
+          "id": "khoi",
+          "ten": "Nguyễn Hoàng Gia Khánh"
+        }
+      ]
+    }
+  ],
+  "gioi_han": {
+    "loai_tep": [
+      "image/*",
+      "audio/*",
+      "video/*",
+      "application/pdf"
+    ],
+    "toi_da_mb": 25,
+    "toi_da_tep_moi_goi": 10,
+    "cach_tai": "blob-client-token",
+    "duong_token": "/api/nhan-bai-zalo/tep-token"
+  }
+}
+
+=== 3. Xin vé rồi tải tệp THẲNG lên kho (dev: multipart -> .data/uploads) ===
+video  -> {"url":"/api/tep/c2acd784ce56403997e86c0df5fe1573.mov"}
+ảnh    -> {"url":"/api/tep/3a6feda35da64bf8bdd819ec2edb0921.jpg"}
+
+=== 4. Vé cho tệp gửi NGOÀI cửa sổ 90 phút (tệp nhận xét từng bé, sau tin 4 tiếng) ===
+{"loi":"ngoai-cua-so"}  [422]
+
+=== 5. Vé thiếu mốc giờ -> không phát vé ===
+{"loi":"thieu-gio-gui"}  [422]
+
+=== 6. Vé cho đường dẫn ngoài họ zalo/<nguon>/ (chế độ cấp vé Blob) — dev chưa bật Blob ===
+{"loi":"chua-bat-vercel-blob"}  [501]
+
+=== 7. POST gói tin — ngày CÔ GÕ trong tin là 2026-06-01 (agent quét bù lịch sử nhóm) ===
+{"bai_zalo_id":"bzl_f8904959484a4a5f","so_bai_nhap":20,"con":[{"id":"minh","ten":"Nguyễn Hoàng Minh Khôi"},{"id":"an","ten":"Nguyễn Hoàng Bảo Anh"}],"tep_bo_qua":[{"ten":"nhan-xet-be-Bình.docx","ly_do":"loai-khong-nhan","chi_tiet":"application/vnd.openxmlformats-officedocument.wordprocessingml.document"},{"ten":"video-kho-nguoi-khac.mp4","ly_do":"ngoai-kho","chi_tiet":"https://kholakhac.public.blob.vercel-storage.com/zalo/nzl_cambridge/2026-06-01/x.mp4"}]}
+  [201]
+
+=== 8. zalo-agent quét lại sau 30 phút: cùng ma_tin -> 409 ở CẢ cửa vé lẫn cửa nhận ===
+{"loi":"trung-ma-tin"}  [409]
+{"loi":"trung-ma-tin"}  [409]
+MA_TIN=tin_1790006496
+
+=== Cô gửi 12 ảnh (trần 10 tệp mỗi gói) ===
+{
+ "bai_zalo_id": "bzl_8a7435b43a2e49b5",
+ "so_bai_nhap": 8,
+ "con": [
+  {
+   "id": "bena",
+   "ten": "Nguyễn Hoàng Bảo Na"
+  },
+  {
+   "id": "khoi",
+   "ten": "Nguyễn Hoàng Gia Khánh"
+  }
+ ],
+ "so_tep_giu": 10,
+ "tep_bo_qua": [
+  {
+   "ten": "anh-bang-tu-vung-11.jpg",
+   "ly_do": "qua-nhieu-tep",
+   "chi_tiet": "12"
+  },
+  {
+   "ten": "anh-bang-tu-vung-12.jpg",
+   "ly_do": "qua-nhieu-tep",
+   "chi_tiet": "12"
+  }
+ ]
+}
+  [201]
+
