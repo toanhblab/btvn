@@ -36,6 +36,25 @@ export interface CauHinhTaiTep {
    * nen khong chan o day la mot khoa hop le ghi duoc tep vao ho cua nguon khac.
    */
   kiemDuongDan?: (pathname: string) => boolean;
+  /**
+   * Chay ngay sau `auth`, va CHI o duong xin tep len — cap ve
+   * (`blob.generate-client-token`) hoac multipart cua che do dev. KHONG chay o
+   * su kien `blob.upload-completed`, vi su kien do khong mang tham so cua nguoi
+   * goi va chan no la tep da nam tren kho ma khong bao gio "ha canh".
+   *
+   * Tra ve mot Response la DUNG NGAY voi chinh no; `null` la di tiep. Cua cua
+   * zalo-agent dung cho cac phep kiem cua rieng no (nguon con nhan bai khong,
+   * `ma_tin` da co chua) de chung o dung mot cho voi phep kiem khoa.
+   */
+  kiemTruocKhiNhan?: () => Promise<NextResponse | null>;
+  /**
+   * Ten truong mang ma loi trong than JSON, mac dinh `error`. Hai route cu tra
+   * CAU DA DICH cho NGUOI doc va giao dien cua bo me/con doc dung truong do, nen
+   * chung giu nguyen. Cua cua zalo-agent dat `loi` de ca ba cua
+   * `/api/nhan-bai-zalo*` chi co MOT ten truong: may doc log duoc dung ma no
+   * can nhat thay vi `undefined`.
+   */
+  tenTruongLoi?: string;
   loi: {
     chuaXacThuc: string;
     chuaBatBlobTrenVercel: string;
@@ -54,29 +73,34 @@ export interface CauHinhTaiTep {
 
 export async function xuLyTaiTep(req: Request, cau: CauHinhTaiTep) {
   const ctype = req.headers.get('content-type') ?? '';
+  const truong = cau.tenTruongLoi ?? 'error';
+  const loiJson = (ma: string, status: number) =>
+    NextResponse.json({ [truong]: ma }, { status });
+  /** null = di tiep, Response = dung ngay. */
+  const chan = async () => (cau.kiemTruocKhiNhan ? await cau.kiemTruocKhiNhan() : null);
 
   /* ---- Che do 2: dev chua co Blob, nhan tep truc tiep ---- */
   if (ctype.includes('multipart/form-data')) {
-    if (!(await cau.auth())) {
-      return NextResponse.json({ error: cau.loi.chuaXacThuc }, { status: 401 });
-    }
+    if (!(await cau.auth())) return loiJson(cau.loi.chuaXacThuc, 401);
+    const dung = await chan();
+    if (dung) return dung;
     if (process.env.VERCEL) {
       // Tren Vercel ma roi vao nhanh nay nghia la chua bat Blob — dia serverless
       // khong giu tep qua request nen luu vao dau cung mat, bao thang con hon.
-      return NextResponse.json({ error: cau.loi.chuaBatBlobTrenVercel }, { status: 501 });
+      return loiJson(cau.loi.chuaBatBlobTrenVercel, 501);
     }
 
     const form = await req.formData().catch(() => null);
     const file = form?.get('file');
     if (!(file instanceof File)) {
-      return NextResponse.json({ error: cau.loi.thieuTep }, { status: 400 });
+      return loiJson(cau.loi.thieuTep, 400);
     }
     const duoiMacDinh = cau.duoiMacDinh(file.type);
     if (!duoiMacDinh) {
-      return NextResponse.json({ error: cau.loi.saiLoai }, { status: 400 });
+      return loiJson(cau.loi.saiLoai, 400);
     }
     if (file.size > cau.maxBytes) {
-      return NextResponse.json({ error: cau.loi.quaNang }, { status: 400 });
+      return loiJson(cau.loi.quaNang, 400);
     }
 
     const { mkdirSync, writeFileSync } = await import('node:fs');
@@ -95,19 +119,23 @@ export async function xuLyTaiTep(req: Request, cau: CauHinhTaiTep) {
 
   /* ---- Che do 1: cap ve cho client upload len Vercel Blob ---- */
   if (!hasBlob) {
-    return NextResponse.json({ error: cau.loi.chuaBatBlob }, { status: 501 });
+    return loiJson(cau.loi.chuaBatBlob, 501);
   }
 
   const body = (await req.json().catch(() => null)) as HandleUploadBody | null;
   if (!body) {
-    return NextResponse.json({ error: cau.loi.duLieuHong }, { status: 400 });
+    return loiJson(cau.loi.duLieuHong, 400);
   }
 
-  // Chi buoc xac thuc o buoc xin ve (goi tu trinh duyet, co cookie). Su kien
-  // "upload-completed" do may chu cua Vercel Blob goi ve, khong co cookie —
-  // handleUpload tu kiem chu ky cua no roi.
-  if (body.type === 'blob.generate-client-token' && !(await cau.auth())) {
-    return NextResponse.json({ error: cau.loi.chuaXacThuc }, { status: 401 });
+  // Chi buoc xac thuc VA cac phep kiem rieng cua route o buoc xin ve (goi tu
+  // trinh duyet co cookie, hoac tu zalo-agent co khoa Bearer). Su kien
+  // "upload-completed" do may chu cua Vercel Blob goi ve, khong co cookie va
+  // khong co khoa — no ky bang `x-vercel-signature` va handleUpload tu kiem chu
+  // ky do. Chan no o day la moi tep tai len deu bao loi cho ben tai.
+  if (body.type === 'blob.generate-client-token') {
+    if (!(await cau.auth())) return loiJson(cau.loi.chuaXacThuc, 401);
+    const dung = await chan();
+    if (dung) return dung;
   }
 
   try {
@@ -133,9 +161,6 @@ export async function xuLyTaiTep(req: Request, cau: CauHinhTaiTep) {
     });
     return NextResponse.json(res);
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : cau.loi.taiLoi },
-      { status: 400 }
-    );
+    return loiJson(e instanceof Error ? e.message : cau.loi.taiLoi, 400);
   }
 }

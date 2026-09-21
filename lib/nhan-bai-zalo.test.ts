@@ -23,10 +23,12 @@
  *      zalo-agent van bi 409 chan — khong thi bo me phai bo lai moi 30 phut.
  *   5. TEP. Tep KHONG di trong than request (Vercel chan o 4.5MB): agent xin ve
  *      o `/api/nhan-bai-zalo/tep-token` roi tai thang len kho, goi tin chi mang
- *      `url`. Nen o day kiem: ve chi duoc phat cho `zalo/<nguon>/<ngay>/` va
- *      khong duoc phat khi `ma_tin` da co; goi mang url cua nguon KHAC / ngoai
- *      kho thi tep do bi bo va BAO RA ma tin van vao; so byte lay tu KHO chu
- *      khong tu con so agent khai.
+ *      `url`. Nen o day kiem: ve chi duoc phat cho `zalo/<nguon>/<ngay>/`, chi
+ *      duoc phat cho nhung tin ma cua nhan tin cung nhan (nguon con song,
+ *      `ma_tin` chua co), va su kien `blob.upload-completed` do may chu Vercel
+ *      Blob goi ve KHONG bi chan — no khong mang khoa Bearer; goi mang url cua
+ *      nguon KHAC / ngoai kho thi tep do bi bo va BAO RA ma tin van vao; so byte
+ *      lay tu KHO chu khong tu con so agent khai.
  *   6. KHONG NHIN SANG NHA KHAC. `nguon_id` la thu quyet dinh nha, nen mot
  *      nguon cua nha A khong bao gio tao duoc bai cho con nha B — va nguon cua
  *      NHA DEMO khong bao gio lot vao cua danh cho may.
@@ -58,6 +60,42 @@ mock.module('@vercel/blob', {
       const size = tepTrenKho.get(url);
       if (size === undefined) throw new Error('BlobNotFound');
       return { url, size };
+    },
+  },
+});
+
+/**
+ * Ban gia RAT MONG cua `handleUpload`. Du hai viec: goi lai `onBeforeGenerateToken`
+ * de phep kiem duong dan cua route van chay that, va GHI LAI moi than da toi
+ * duoc tay no. Cai thu hai moi la cai can ghim: su kien `blob.upload-completed`
+ * do may chu cua Vercel Blob goi ve callbackUrl KHONG mang `Authorization:
+ * Bearer` (no ky bang `x-vercel-signature`, va handleUpload that tu kiem chu ky
+ * do), nen mot route tu chan bang 401 o tang tren se lam moi luot tai tep bao
+ * loi ve cho ben tai.
+ */
+const veDaKy: string[] = [];
+const suKienHoanTat: string[] = [];
+mock.module('@vercel/blob/client', {
+  namedExports: {
+    // lib/media.ts (duong tai tep cua TRINH DUYET) cung nam trong cay import cua
+    // hai route nay — gia ca module thi phai gia du ten no xuat, khong thi
+    // module do vo luc nap.
+    upload: async () => { throw new Error('cua Zalo khong di qua upload() cua trinh duyet'); },
+    handleUpload: async ({ body, onBeforeGenerateToken, onUploadCompleted }: {
+      body: { type: string; payload: Record<string, unknown> };
+      onBeforeGenerateToken: (p: string, cp: unknown, id: string | null) => Promise<object>;
+      onUploadCompleted: (a: unknown) => Promise<void>;
+    }) => {
+      if (body.type === 'blob.generate-client-token') {
+        const pathname = String(body.payload.pathname);
+        const cau = await onBeforeGenerateToken(pathname, body.payload.clientPayload ?? null, null);
+        veDaKy.push(pathname);
+        return { type: 'blob.generate-client-token', clientToken: `ve-gia:${pathname}`, ...cau };
+      }
+      const blob = body.payload.blob as { pathname?: string } | undefined;
+      suKienHoanTat.push(String(blob?.pathname ?? ''));
+      await onUploadCompleted({ body });
+      return { type: 'blob.upload-completed', response: 'ok' };
     },
   },
 });
@@ -177,6 +215,8 @@ before(async () => {
 
 beforeEach(async () => {
   daHoiKho.length = 0;
+  veDaKy.length = 0;
+  suKienHoanTat.length = 0;
   tepTrenKho.clear();
   datTepLenKho(GOI_MAU);
   process.env.ZALO_INTAKE_SECRET = KHOA;
@@ -678,8 +718,11 @@ test('cua phat ve CHI ky cho zalo/<nguon>/<ngay>/ — khoa hop le khong ghi sang
   ]) {
     const res = await xinVe(tham, thanXinVe(duongDan));
     assert.equal(res.status, 400, duongDan);
-    assert.equal((await res.json()).error, 'sai-duong-dan', duongDan);
+    // MOT ten truong loi cho ca ba cua danh cho may, ke ca ma do than chung
+    // `xuLyTaiTep` sinh: agent doc log bang dung mot khoa.
+    assert.deepEqual(await res.json(), { loi: 'sai-duong-dan' }, duongDan);
   }
+  assert.deepEqual(veDaKy, [], 'duong dan sai thi KHONG duoc ky ve nao');
 });
 
 test('cua phat ve: 404 nguon la, 400 thieu tham so, 409 khi ma_tin DA CO', async () => {
@@ -696,6 +739,60 @@ test('cua phat ve: 404 nguon la, 400 thieu tham so, 409 khi ma_tin DA CO', async
   const trung = await xinVe(`nguon_id=${NGUON}&ma_tin=${GOI_MAU.ma_tin}`, thanXinVe(duongDan));
   assert.equal(trung.status, 409);
   assert.equal((await trung.json()).loi, 'trung-ma-tin');
+});
+
+test('cua phat ve tu choi DUNG nhung tin ma cua nhan tin se tu choi — nguon tat, nguon chua gan con', async () => {
+  // Bo me tat nguon luc 20h trong khi agent dang chay: ve ky duoc o day la hai
+  // video cua co nam mai tren kho ma khong dong `dinh_kem` nao tro toi, tuc
+  // khong `han_xoa` va khong luot don nao thu hoi duoc.
+  const veTat = await xinVe(
+    `nguon_id=${NGUON_TAT}&ma_tin=tin_chua_co`,
+    thanXinVe(`zalo/${NGUON_TAT}/2026-09-18/video.mp4`));
+  assert.equal(veTat.status, 404);
+  assert.equal((await veTat.json()).loi, 'nguon-tat');
+  assert.equal((await goiCua({ ...GOI_MAU, ma_tin: 'tin_chua_co', nguon_id: NGUON_TAT })).status, 404);
+
+  await db.query(
+    `INSERT INTO nguon_zalo (id, family_id, ten_nhom, ten_co) VALUES ('nzl_trong', $1, 'Lớp trống', 'Cô X')`,
+    [FAM]);
+  const veTrong = await xinVe(
+    'nguon_id=nzl_trong&ma_tin=tin_chua_co',
+    thanXinVe('zalo/nzl_trong/2026-09-18/video.mp4'));
+  assert.equal(veTrong.status, 404);
+  assert.equal((await veTrong.json()).loi, 'nguon-chua-co-con');
+  await db.query(`DELETE FROM nguon_zalo WHERE id = 'nzl_trong'`);
+
+  assert.deepEqual(veDaKy, [], 'khong ve nao duoc ky cho hai nguon do');
+
+  // Nguon con song thi ve VAN duoc ky — cong chung khong chan nham duong that
+  const duongDan = `zalo/${NGUON}/2026-09-18/video.mp4`;
+  const ok = await xinVe(`nguon_id=${NGUON}&ma_tin=tin_chua_co`, thanXinVe(duongDan));
+  assert.equal(ok.status, 200);
+  assert.deepEqual(veDaKy, [duongDan]);
+});
+
+test('cua phat ve KHONG chan su kien "tep da len kho" cua Vercel Blob — no khong mang khoa Bearer', async () => {
+  const duongDan = `zalo/${NGUON}/2026-09-18/video-mau-abc123.mp4`;
+  const suKien = {
+    type: 'blob.upload-completed',
+    payload: { blob: { pathname: duongDan, url: `${KHO}/${duongDan}` }, tokenPayload: null },
+  };
+
+  // Dung hinh dang may chu cua Vercel Blob goi ve `callbackUrl`: khong khoa
+  // Bearer, khong tham so truy van. Mot 401 o day la ve da ky, tep da len kho,
+  // roi @vercel/blob bao loi ve cho ben tai — agent coi nhu that bai va gui lai
+  // moi 30 phut mai mai.
+  const res = await xinVe('', suKien, null);
+  assert.equal(res.status, 200);
+  assert.deepEqual(suKienHoanTat, [duongDan], 'su kien phai toi duoc handleUpload');
+
+  // Con MOT YEU CAU XIN VE khong khoa thi van 401 — phep kiem khoa chi chuyen
+  // cho chu khong bi bo.
+  const xinVeKhongKhoa = await xinVe(
+    `nguon_id=${NGUON}&ma_tin=tin_chua_co`, thanXinVe(duongDan), null);
+  assert.equal(xinVeKhongKhoa.status, 401);
+  assert.deepEqual(await xinVeKhongKhoa.json(), { loi: 'unauthorized' });
+  assert.deepEqual(veDaKy, []);
 });
 
 /* ---------------- 6. Khong nhin sang nha khac ---------------- */

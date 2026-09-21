@@ -307,11 +307,10 @@ export async function getBaiTuZalo(familyId: string, id: string): Promise<BaiTuZ
 }
 
 /**
- * Tin nay da nhan roi chua? MOT ban duy nhat cho hai cho hoi: cua phat ve
- * (`/api/nhan-bai-zalo/tep-token`, hoi TRUOC khi agent tai tep) va `nhanTinZalo`
- * (hoi TRUOC khi doi chieu tep va ghi dong). Ca hai deu la hang rao DUNG LUONG /
- * cong suc, khong phai hang rao chong dua — cai do la chi muc UNIQUE
- * (nguon_id, ma_tin) o `INSERT ... ON CONFLICT DO NOTHING`.
+ * Tin nay da nhan roi chua? Chi `moCuaNhanTin` goi, va ca hai cua danh cho may
+ * di qua no. Day la hang rao DUNG LUONG / cong suc, khong phai hang rao chong
+ * dua — cai do la chi muc UNIQUE (nguon_id, ma_tin) o
+ * `INSERT ... ON CONFLICT DO NOTHING`.
  *
  * KHONG loc theo nha, va do la co y: nguoi goi la may, `nguon_id` la thu quyet
  * dinh nha (xem chu thich dau tep).
@@ -373,7 +372,36 @@ export type KetQuaNhanTin =
       /** Tep cua goi khong giu duoc — rong la moi tep deu vao. */
       tepBoQua: TepBoQua[];
     }
-  | { ok: false; loi: 'khong-co-nguon' | 'nguon-tat' | 'trung-ma-tin' | 'nguon-chua-co-con' };
+  | { ok: false; loi: LoiCuaNhanTin };
+
+/** Ly do mot tin bi tu choi. `trung-ma-tin` -> 409, ba cai con lai -> 404. */
+export type LoiCuaNhanTin =
+  | 'khong-co-nguon' | 'nguon-tat' | 'nguon-chua-co-con' | 'trung-ma-tin';
+
+/**
+ * MOT cong duy nhat cho ca hai cua danh cho may: cua phat ve tep
+ * (`/api/nhan-bai-zalo/tep-token`) hoi TRUOC khi agent tai tep len, `nhanTinZalo`
+ * hoi lai TRUOC khi ghi dong.
+ *
+ * Phai la MOT ham chu khong phai hai ban chep dieu kien. Cua phat ve chi co ich
+ * khi no tu choi DUNG nhung tin ma cua nhan tin cung se tu choi; lech mot dieu
+ * kien la hong ca ly do ton tai cua no, va lech lang le. Vi du sot `nguon-tat`:
+ * bo me tat nguon luc 20h, agent van ky duoc ve va day hai video cua co len kho,
+ * den buoc gui tin moi an 404 — luc do khong dong `bai_tu_zalo` nao tro toi bo
+ * tep vua tai, tuc khong `han_xoa` va khong luot don nao thu hoi duoc, tren mot
+ * kho 1GB da dung 219MB.
+ */
+export async function moCuaNhanTin(
+  nguonId: string,
+  maTin: string
+): Promise<{ ok: true; nguon: NguonZalo } | { ok: false; loi: LoiCuaNhanTin }> {
+  const nguon = await getNguonZaloChoCuaNhan(nguonId);
+  if (!nguon) return { ok: false, loi: 'khong-co-nguon' };
+  if (!nguon.dangBat) return { ok: false, loi: 'nguon-tat' };
+  if (nguon.childIds.length === 0) return { ok: false, loi: 'nguon-chua-co-con' };
+  if (await tinZaloDaCo(nguon.id, maTin)) return { ok: false, loi: 'trung-ma-tin' };
+  return { ok: true, nguon };
+}
 
 /**
  * URL nay co phai mot tep app minh dang giu, dung ho cua nguon nay khong?
@@ -540,12 +568,13 @@ function tepDinhVaoBai(tep: TepZaloDaLuu[]): AttachedMedia[] {
  * tung con cua nguon.
  *
  * THU TU la hop dong, khong phai sap xep cho gon (xem chu thich dau tep):
- *   1. `tinZaloDaCo` ngan mach: tin da co thi DUNG NGAY. Day khong phai hang rao
- *      chong dua — no la hang rao DUNG LUONG, va cua phat ve tep hoi CUNG mot
- *      cau hoi truoc do mot buoc, de zalo-agent (quet lai moi 30 phut) khong tai
- *      len lai ca bo tep cua mot tin da nhan: moi ban do se khong co dong
- *      `dinh_kem` nao tro toi, tuc khong `han_xoa` va khong luot don nao thu hoi
- *      duoc — tren mot kho 1GB da dung 219MB.
+ *   1. `moCuaNhanTin` ngan mach: nguon la / dang tat / chua gan con, hoac tin da
+ *      co thi DUNG NGAY. Day khong phai hang rao chong dua — no la hang rao
+ *      DUNG LUONG, va cua phat ve tep goi CHINH ham do truoc do mot buoc, de
+ *      zalo-agent (quet lai moi 30 phut) khong tai len ca bo tep cua mot tin ma
+ *      buoc nay se tu choi: moi ban do se khong co dong `dinh_kem` nao tro toi,
+ *      tuc khong `han_xoa` va khong luot don nao thu hoi duoc — tren mot kho
+ *      1GB da dung 219MB.
  *   2. `INSERT ... ON CONFLICT DO NOTHING RETURNING` tren chi muc UNIQUE
  *      (nguon_id, ma_tin) — khong tra ve dong nao nghia la tin da co, DUNG NGAY
  *      va khong tao gi. Hang rao THAT chong dua nam o CSDL chu khong o code:
@@ -555,12 +584,9 @@ function tepDinhVaoBai(tep: TepZaloDaLuu[]): AttachedMedia[] {
  *      an toan roi.
  */
 export async function nhanTinZalo(goi: GoiTinZalo): Promise<KetQuaNhanTin> {
-  const nguon = await getNguonZaloChoCuaNhan(goi.nguon_id);
-  if (!nguon) return { ok: false, loi: 'khong-co-nguon' };
-  if (!nguon.dangBat) return { ok: false, loi: 'nguon-tat' };
-  if (nguon.childIds.length === 0) return { ok: false, loi: 'nguon-chua-co-con' };
-
-  if (await tinZaloDaCo(nguon.id, goi.ma_tin)) return { ok: false, loi: 'trung-ma-tin' };
+  const cong = await moCuaNhanTin(goi.nguon_id, goi.ma_tin);
+  if (!cong.ok) return { ok: false, loi: cong.loi };
+  const nguon = cong.nguon;
 
   const homNay = todayISO();
   const ngayTep = goi.ngay_trong_tin ?? homNay;

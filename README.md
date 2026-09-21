@@ -308,7 +308,11 @@ Máy dev **chưa bật Blob** thì bước 2 là `POST` multipart (`file=@…`) 
 `lib/upload-route.ts`; cửa nhận tin chấp nhận dạng URL đó **chỉ khi** máy chủ
 thật sự chưa có `BLOB_READ_WRITE_TOKEN`.
 
-Mã trả về — **hợp đồng**, đổi là đổi cả hai bên:
+Mã trả về — **hợp đồng**, đổi là đổi cả hai bên. Mã lỗi luôn nằm ở trường
+**`loi`** của thân JSON, ở **cả ba** cửa và kể cả những mã do thân chung
+`xuLyTaiTep` sinh ra (`tenTruongLoi`): agent đọc log bằng đúng một khoá. Hai
+route tải tệp của người (`/api/upload-media`, `/api/nop-video`) vẫn trả `error`
+kèm câu đã dịch — giao diện bố mẹ/con đọc trường đó.
 
 | Mã | Khi nào |
 | --- | --- |
@@ -319,10 +323,22 @@ Mã trả về — **hợp đồng**, đổi là đổi cả hai bên:
 | `409` | `ma_tin` đã có cho nguồn đó — **không tạo gì**. zalo-agent chạy lại mỗi 30 phút nên đây là đường bình thường, không phải lỗi |
 | `503` | Máy chủ **chưa đặt `ZALO_INTAKE_SECRET`** |
 
-`POST /api/nhan-bai-zalo/tep-token?nguon_id=&ma_tin=` dùng **cùng khoá** đó và
-thêm hai mã: `400 sai-duong-dan` (đường dẫn ra ngoài `zalo/<nguon_id>/<ngày>/`),
-`409 trung-ma-tin` (tin đã nhận rồi — **không phát vé**, để agent khỏi tải lại
-cả bộ tệp của một tin đã có).
+`POST /api/nhan-bai-zalo/tep-token?nguon_id=&ma_tin=` dùng **cùng khoá** đó,
+thêm `400 sai-duong-dan` (đường dẫn ra ngoài `zalo/<nguon_id>/<ngày>/`), và trả
+lời **đúng như cửa nhận tin** cho bốn trường hợp còn lại: `404` khi nguồn không
+có / đang tắt / chưa gắn con, `409 trung-ma-tin` khi tin đã nhận rồi. Một hàm
+duy nhất (`moCuaNhanTin`) gác cả hai cửa, vì vé chỉ có ích khi nó từ chối **đúng**
+những tin mà bước sau cũng từ chối — lệch một điều kiện là agent tải xong cả bộ
+tệp rồi mới ăn 404, và mớ tệp đó không dòng `dinh_kem` nào trỏ tới nên không
+`han_xoa`, không lượt dọn nào thu hồi được.
+
+Phép kiểm khoá của cửa vé nằm ở **bước xin vé**, không ở đầu route: sự kiện
+`blob.upload-completed` do máy chủ của Vercel Blob gọi về `callbackUrl` mang
+`x-vercel-signature` chứ **không** mang `Authorization: Bearer`, và
+`handleUpload` tự kiểm chữ ký đó (đúng khuôn `/api/upload-media` và
+`/api/nop-video`). Chặn nó bằng 401 thì tệp lên kho xong vẫn báo lỗi về cho bên
+tải, và agent gửi lại mỗi 30 phút mãi mãi. Riêng `503` vẫn ở đầu route — đó là
+lỗi của bản deploy, ai gọi cũng phải biết.
 
 `503` cố ý **khác** `401`: gộp hai cái vào nhau thì một bản deploy thiếu biến
 sẽ báo "sai khoá" và người ta đi soi Keychain trong khi lỗi nằm ở Vercel.
