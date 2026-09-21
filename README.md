@@ -323,13 +323,16 @@ kèm câu đã dịch — giao diện bố mẹ/con đọc trường đó.
 | `401` | Thiếu hoặc sai khoá — **không nói là cái nào** |
 | `404` | `nguon_id` không có, nguồn đang tắt, hoặc nguồn chưa gắn con nào |
 | `409` | `ma_tin` đã có cho nguồn đó — **không tạo gì**. zalo-agent chạy lại mỗi 30 phút nên đây là đường bình thường, không phải lỗi |
-| `422` | **Chỉ cửa vé**: `thieu-gio-gui` (thiếu `tin_gui_luc` hoặc `tep_gui_luc`) hoặc `ngoai-cua-so` (tệp gửi ngoài `cua_so_dinh_kem_phut` của nguồn) — không phát vé, để agent khỏi tải lên thứ cửa nhận tin sẽ bỏ |
+| `422` | **Chỉ cửa vé**: `thieu-gio-gui` (thiếu **hoặc không đọc được** `tin_gui_luc` / `tep_gui_luc`) hoặc `ngoai-cua-so` (tệp gửi ngoài `cua_so_dinh_kem_phut` của nguồn) — không phát vé, để agent khỏi tải lên thứ cửa nhận tin sẽ bỏ |
 | `503` | Máy chủ **chưa đặt `ZALO_INTAKE_SECRET`** |
 
 `POST /api/nhan-bai-zalo/tep-token?nguon_id=&ma_tin=&tin_gui_luc=&tep_gui_luc=`
 dùng **cùng khoá** đó. **Cả bốn tham số đều bắt buộc** — `tin_gui_luc` là giờ gửi
 của TIN, `tep_gui_luc` là giờ gửi của chính tệp sắp tải lên (ISO 8601, nhớ
-percent-encode dấu `+` của múi giờ thành `%2B`).
+percent-encode dấu `+` của múi giờ thành `%2B`). Mốc **không đọc được** cũng là
+`422 thieu-gio-gui`, không phải "cứ cho qua": quên `%2B` thì `URLSearchParams`
+đổi dấu `+` thành khoảng trắng và mốc thành vô nghĩa, mà thân gói tin (JSON) lại
+đúng — cho qua ở đây là tệp lên kho rồi mới bị cửa nhận tin bỏ.
 
 Cửa vé thêm `400 sai-duong-dan` (đường dẫn ra ngoài `zalo/<nguon_id>/<ngày>/`) và
 `422` (`thieu-gio-gui` / `ngoai-cua-so`); còn lại nó trả lời **đúng như cửa nhận
@@ -338,10 +341,17 @@ tin đã nhận rồi.
 
 **Hai cửa phải từ chối đúng cùng một tập tệp**, nên mỗi luật chỉ có **một** bản:
 `moCuaNhanTin` gác nguồn và `ma_tin`, `kiemCuaSoDinhKem` gác giờ (cửa vé gọi qua
-`kiemCuaSoChoVe`, chỉ thêm đúng điều kiện "phải khai đủ hai mốc"). Lệch một điều
-kiện là agent tải xong cả bộ tệp rồi mới bị từ chối ở bước sau, và mớ tệp đó
-không dòng `dinh_kem` nào trỏ tới nên không `han_xoa`, không lượt dọn nào thu hồi
-được — trên một kho 1GB đã dùng 219MB.
+`kiemCuaSoChoVe`, chỉ thêm đúng điều kiện "phải khai hai mốc **đánh giá được**").
+Lệch một điều kiện là agent tải xong cả bộ tệp rồi mới bị từ chối ở bước sau, và
+mớ tệp đó không dòng `dinh_kem` nào trỏ tới nên không `han_xoa`, không lượt dọn
+nào thu hồi được — trên một kho 1GB đã dùng 219MB.
+
+Bất biến là **một chiều**: vé `200` ⇒ cửa nhận tin không bỏ tệp đó vì lý do giờ.
+Cửa vé **chặt hơn** ở đúng một chỗ, và đó là chủ ý: mốc hỏng thì cửa vé từ chối,
+còn cửa nhận tin vẫn nhận tệp của một tin không có mốc đọc được — biến "không
+biết giờ" thành "bỏ hết tệp" ở đó là mất video của cô vì một mốc thời gian hỏng.
+Hỏng theo chiều này chỉ bắt agent sửa lời khai; hỏng theo chiều kia mới sinh tệp
+mồ côi. Đừng "sửa lại cho cân".
 
 Phép kiểm khoá của cửa vé nằm ở **bước xin vé**, không ở đầu route: sự kiện
 `blob.upload-completed` do máy chủ của Vercel Blob gọi về `callbackUrl` mang

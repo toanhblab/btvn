@@ -443,25 +443,40 @@ export function kiemCuaSoDinhKem(
 }
 
 /**
- * Cung phep kiem, o CUA VE — noi zalo-agent phai KHAI ca hai moc.
+ * Cung phep so gio, o CUA VE — noi zalo-agent phai KHAI ca hai moc.
  *
- * Khac duy nhat mot dieu, va no la dieu kien TIEN QUYET chu khong phai mot ban
- * sao cua luat gio: cua ve doi du `tin_gui_luc` lan `tep_gui_luc`. Thieu bat ky
- * cai nao la KHONG BIET tep co vao duoc khong, ma "khong biet" o day khong duoc
- * phep thanh "cu phat ve": ve da ky la tep len kho, roi cua nhan tin moi bo no
- * (`thieu-gio-gui`) — luc do khong dong `dinh_kem` nao tro toi, tuc khong
- * `han_xoa` va khong luot don nao thu hoi duoc, tren mot kho 1GB da dung 219MB.
+ * Khac dung mot dieu, va no la dieu kien TIEN QUYET chu khong phai mot ban sao
+ * cua luat gio: cua ve doi mot LOI KHAI DANH GIA DUOC. Thieu moc, hoac moc gui
+ * len ma `Date.parse` khong doc duoc, deu la KHONG BIET tep co vao duoc khong —
+ * va o day "khong biet" KHONG duoc phep thanh "cu phat ve": ve da ky la tep len
+ * kho, roi cua nhan tin moi bo no, luc do khong dong `dinh_kem` nao tro toi, tuc
+ * khong `han_xoa` va khong luot don nao thu hoi duoc, tren mot kho 1GB da dung
+ * 219MB. Moc hong KHONG phai chuyen hiem: tham so di trong QUERY STRING, ma
+ * `URLSearchParams` doi '+' cua mui gio thanh KHOANG TRANG — mot agent quen
+ * percent-encode la moi moc deu thanh NaN.
  *
- * Phep so gio VAN la `kiemCuaSoDinhKem` — chi co MOT ban, de cua ve va cua nhan
- * tin khong bao gio lech nhau: tin nao qua duoc day thi cua nhan tin cung khong
- * bo no vi ly do gio.
+ * Phep so gio VAN la `kiemCuaSoDinhKem`, chi co MOT ban.
+ *
+ * HAI CUA LECH NHAU O DUNG CHO NAY LA CO Y, va lech ve phia AN TOAN — dung "sua
+ * lai cho can":
+ *   - Bat bien da chot la MOT CHIEU: ve 200 => cua nhan tin khong bo tep do vi
+ *     ly do gio. Cua ve CHAT HON khong pha bat bien do.
+ *   - `kiemCuaSoDinhKem` dung thu NaN LA CO CHU DINH cho cua nhan tin: tin khong
+ *     co moc doc duoc thi khong co co so tinh cua so, nen van nhan tep. Bien
+ *     "khong biet gio" thanh "bo het tep" o do la mat video cua co vi mot moc
+ *     thoi gian hong.
+ *   - Hong theo chieu nay: agent bi bao di sua loi khai roi moi tai duoc — khong
+ *     sinh tep mo coi. Hong theo chieu kia (ve de hon cua nhan tin) moi dung la
+ *     cai lo tep mo coi khong thu hoi duoc ma ca hang rao nay dung ra de bit.
  */
 export function kiemCuaSoChoVe(
   tinGuiLuc: string,
   tepGuiLuc: string,
   cuaSoPhut: number
 ): KetQuaCuaSo {
-  if (!tinGuiLuc || !tepGuiLuc) return 'thieu-gio-gui';
+  if (Number.isNaN(Date.parse(tinGuiLuc)) || Number.isNaN(Date.parse(tepGuiLuc))) {
+    return 'thieu-gio-gui';
+  }
   return kiemCuaSoDinhKem(tinGuiLuc, tepGuiLuc, cuaSoPhut);
 }
 

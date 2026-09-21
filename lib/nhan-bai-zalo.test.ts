@@ -527,8 +527,16 @@ test('BAT BIEN: ve nao duoc ky (200) thi cua nhan tin KHONG bo tep do vi ly do g
   // bi bo: khong dong `dinh_kem` nao tro toi, tuc khong `han_xoa` va khong luot
   // don nao thu hoi duoc. Nen doi chieu HAI CUA tren CUNG mot bo du lieu, chu
   // khong kiem tung ca roi.
+  //
+  // `veTin` / `veTep` la thu agent KHAI o query string cua cua ve, khi no khac
+  // voi thu nam trong than goi tin. Do dung la ca that cua moc hong: query string
+  // di qua `URLSearchParams`, ma no doi '+' cua mui gio thanh khoang trang, con
+  // than goi tin la JSON nen khong dinh gi.
   const LY_DO_GIO = ['ngoai-cua-so', 'thieu-gio-gui'];
-  const bang = [
+  const bang: {
+    nhan: string; tin: string | null; tep: string | null;
+    veTin?: string | null; veTep?: string | null;
+  }[] = [
     { nhan: 'trong cua so (video mau sau tin 4 giay)',
       tin: GOI_MAU.gui_luc, tep: '2026-09-18T20:03:21+07:00' },
     { nhan: 'dung giay cuoi cua cua so 90 phut',
@@ -539,7 +547,16 @@ test('BAT BIEN: ve nao duoc ky (200) thi cua nhan tin KHONG bo tep do vi ly do g
       tin: GOI_MAU.gui_luc, tep: '2026-09-18T20:03:16+07:00' },
     { nhan: 'thieu gio cua TEP', tin: GOI_MAU.gui_luc, tep: null },
     { nhan: 'thieu gio cua TIN', tin: null, tep: '2026-09-18T20:03:21+07:00' },
-  ] as const;
+    // Agent quen percent-encode '+': moc toi cua ve thanh '...T20:03:17 07:00',
+    // `Date.parse` doc khong ra. Than goi tin van dung, va tep do NGOAI cua so —
+    // nen phat ve o day la tep len kho roi moi bi bo, khong thu hoi duoc.
+    { nhan: 'moc cua ve hong vi quen percent-encode dau +',
+      tin: GOI_MAU.gui_luc, tep: '2026-09-19T00:15:00+07:00',
+      veTin: '2026-09-18T20:03:17 07:00', veTep: '2026-09-19T00:15:00 07:00' },
+    { nhan: 'moc cua ve la chuoi rac',
+      tin: GOI_MAU.gui_luc, tep: '2026-09-19T00:15:00+07:00',
+      veTin: 'hom qua', veTep: 'luc nay' },
+  ];
 
   for (const [i, ca] of bang.entries()) {
     const ten = `tep-${i}.mp4`;
@@ -548,8 +565,10 @@ test('BAT BIEN: ve nao duoc ky (200) thi cua nhan tin KHONG bo tep do vi ly do g
     tepTrenKho.set(url, 1024);
     veDaKy.length = 0;
 
+    const veTin = ca.veTin === undefined ? ca.tin : ca.veTin;
+    const veTep = ca.veTep === undefined ? ca.tep : ca.veTep;
     const ve = await xinVe(
-      [`nguon_id=${NGUON}&ma_tin=tin_bat_bien_${i}`, gioVe(ca.tin, ca.tep)].filter(Boolean).join('&'),
+      [`nguon_id=${NGUON}&ma_tin=tin_bat_bien_${i}`, gioVe(veTin, veTep)].filter(Boolean).join('&'),
       thanXinVe(duongDan));
 
     const nhan = await goiCua({
