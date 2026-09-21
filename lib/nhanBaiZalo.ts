@@ -236,6 +236,12 @@ export async function updateNguonZalo(
 
 export type TrangThaiBaiZalo = 'nhap' | 'da_duyet' | 'bo';
 
+/** Buoc 3 (tach bai + tao ban nhap) da xong hay hong. */
+export type TrangThaiTach = 'xong' | 'loi';
+
+/** Toi da cho thong diep loi ghi vao `ket_qua_tach` — du de lan ra, khong hon. */
+export const MAX_CHU_LOI_TACH = 300;
+
 export interface BaiTuZalo {
   id: string;
   nguonId: string;
@@ -251,6 +257,14 @@ export interface BaiTuZalo {
   tepBoQua: TepBoQua[];
   nhanDien: NhanDienZalo | null;
   trangThai: TrangThaiBaiZalo;
+  /**
+   * Buoc 3 da xong chua. `null` = chua co ghi nhan nao (dong cu). Man cho duyet
+   * chi canh bao khi `'loi'`, va do la thu duy nhat no can tu `ket_qua_tach` —
+   * ban tach day du (`nguon` / `canhBao` / `bai`) o lai trong CSDL.
+   */
+  trangThaiTach: TrangThaiTach | null;
+  /** Thong diep loi cua buoc 3, khi `trangThaiTach === 'loi'`. */
+  loiTach: string | null;
   createdAt: string;
 }
 
@@ -266,8 +280,16 @@ interface BaiRow {
   nguoi_gui: string; nhom_zalo: string; ngay_hoc_so: number | string | null;
   ngay_trong_tin: string | Date | null; nguyen_van: string;
   dinh_kem: unknown; tep_bo_qua: unknown; nhan_dien: unknown; trang_thai: string;
+  ket_qua_tach: unknown;
   created_at: string | Date;
 }
+
+const docKetQuaTach = (v: unknown): { trangThai: TrangThaiTach | null; loi: string | null } => {
+  const o = (v ?? {}) as Record<string, unknown>;
+  const tt = o.trang_thai;
+  if (tt !== 'xong' && tt !== 'loi') return { trangThai: null, loi: null };
+  return { trangThai: tt, loi: typeof o.loi === 'string' ? o.loi : null };
+};
 
 const toBai = (r: BaiRow): BaiTuZalo => ({
   id: r.id,
@@ -289,12 +311,14 @@ const toBai = (r: BaiRow): BaiTuZalo => ({
   tepBoQua: Array.isArray(r.tep_bo_qua) ? (r.tep_bo_qua as TepBoQua[]) : [],
   nhanDien: docNhanDien(r.nhan_dien),
   trangThai: r.trang_thai as TrangThaiBaiZalo,
+  trangThaiTach: docKetQuaTach(r.ket_qua_tach).trangThai,
+  loiTach: docKetQuaTach(r.ket_qua_tach).loi,
   createdAt: new Date(r.created_at).toISOString(),
 });
 
 const BAI_COLS = `b.id, b.nguon_id, b.ma_tin, b.gui_luc, b.nguoi_gui, b.nhom_zalo,
        b.ngay_hoc_so, b.ngay_trong_tin, b.nguyen_van, b.dinh_kem, b.tep_bo_qua,
-       b.nhan_dien, b.trang_thai, b.created_at`;
+       b.nhan_dien, b.trang_thai, b.ket_qua_tach, b.created_at`;
 
 /** Tra null neu tin thuoc nha khac — lop kiem tra so huu cua man duyet. */
 export async function getBaiTuZalo(familyId: string, id: string): Promise<BaiTuZalo | null> {
@@ -544,7 +568,7 @@ async function anhChoAI(tep: TepZaloDaLuu[]): Promise<{ base64: string; mimeType
  * giac-ngon ngu, khong doc duoc chung.
  */
 async function tachBai(
-  goi: GoiTinZalo,
+  nguyenVan: string,
   tep: TepZaloDaLuu[],
   ngonNguNha: NgonNgu,
   T: T
@@ -552,19 +576,19 @@ async function tachBai(
   if (hasAI) {
     const anh = await anhChoAI(tep);
     try {
-      const drafts = await extractAssignments({ text: goi.nguyen_van, images: anh }, ngonNguNha);
+      const drafts = await extractAssignments({ text: nguyenVan, images: anh }, ngonNguNha);
       if (drafts.length > 0) return { drafts, nguonTach: 'ai' };
     } catch (e) {
-      const drafts = splitByRule(goi.nguyen_van, T);
+      const drafts = splitByRule(nguyenVan, T);
       if (drafts.length > 0) {
         return { drafts, nguonTach: 'rule', canhBao: e instanceof Error ? e.message : String(e) };
       }
     }
   }
-  const drafts = splitByRule(goi.nguyen_van, T);
+  const drafts = splitByRule(nguyenVan, T);
   if (drafts.length > 0) return { drafts, nguonTach: 'rule' };
   return {
-    drafts: [baiNhapTho(goi.nguyen_van, T('Khác'), iconFor('Khác'))],
+    drafts: [baiNhapTho(nguyenVan, T('Khác'), iconFor('Khác'))],
     nguonTach: 'nguyen-van',
   };
 }
@@ -645,6 +669,35 @@ export async function nhanTinZalo(goi: GoiTinZalo): Promise<KetQuaNhanTin> {
     [nguon.id, goi.ma_nhom]
   );
 
+  let soBaiNhap = 0;
+  let con: { id: string; ten: string }[] = [];
+  try {
+    soBaiNhap = await tachVaTaoBaiNhap(
+      { id: baiId, nguyenVan: goi.nguyen_van, ngayTrongTin: goi.ngay_trong_tin,
+        guiLuc: goi.gui_luc, tep },
+      nguon
+    );
+    con = await conCuaNguon(nguon.childIds);
+  } catch (e) {
+    await ghiTachLoi(baiId, e);
+  }
+
+  return { ok: true, baiZaloId: baiId, soBaiNhap, con, tepBoQua };
+}
+
+/**
+ * BUOC 3 tach rieng, vi no co HAI nguoi goi va chung phai chay y het nhau:
+ * `nhanTinZalo` luc tin vao, va `tachLaiBaiZalo` khi bo me bam "Tách lại". Hai
+ * ban chep la hai luat tach bai khac nhau ma khong ai thay.
+ *
+ * Doc tu DONG `bai_tu_zalo` chu khong tu goi tin: luc bo me bam "Tách lại" thi
+ * goi tin khong con nua, dong do la ban duy nhat con lai.
+ */
+async function tachVaTaoBaiNhap(
+  tin: { id: string; nguyenVan: string; ngayTrongTin: string | null;
+         guiLuc: string | null; tep: TepZaloDaLuu[] },
+  nguon: NguonZalo
+): Promise<number> {
   // Ngon ngu cua NHA (families.ui_locale) — ten mon do bo tach dat phai theo no,
   // giong duong bo me nhap tay (`POST /api/extract` doc `ngonNguHienTai`). O day
   // khong co cookie nen doc thang tu nguon -> nha.
@@ -653,39 +706,61 @@ export async function nhanTinZalo(goi: GoiTinZalo): Promise<KetQuaNhanTin> {
   const ngonNgu = ngonNguOf(nha?.ui_locale);
   const T = taoT(ngonNgu);
 
-  const { drafts, nguonTach, canhBao } = await tachBai(goi, tep, ngonNgu, T);
-  const dueDate = hanNopBai(goi.ngay_trong_tin, goi.gui_luc, homNay);
+  const { drafts, nguonTach, canhBao } = await tachBai(tin.nguyenVan, tin.tep, ngonNgu, T);
+  const dueDate = hanNopBai(tin.ngayTrongTin, tin.guiLuc, todayISO());
 
   const created = await saveSubmission({
     familyId: nguon.familyId,
-    rawText: goi.nguyen_van,
-    imageUrls: tep.filter((t) => t.kind === 'image').map((t) => t.url),
+    rawText: tin.nguyenVan,
+    imageUrls: tin.tep.filter((t) => t.kind === 'image').map((t) => t.url),
     childIds: nguon.childIds,
     dueDate,
     source: inferSource(drafts),
     // Tep khong phai anh (video mau, ghi am cua co) di kem TUNG BAI nhap duoi
     // dang dinh kem, y nhu bo me tu dinh tay: con mo bai la xem duoc video mau
     // ngay tren man cua minh. saveSubmission tu ghi mot ban rieng cho moi con.
-    drafts: drafts.map((d) => ({ ...d, media: tepDinhVaoBai(tep) })),
-    zaloBaiId: baiId,
+    drafts: drafts.map((d) => ({ ...d, media: tepDinhVaoBai(tin.tep) })),
+    zaloBaiId: tin.id,
   });
 
   await query(
     `UPDATE bai_tu_zalo SET ket_qua_tach = $2::jsonb WHERE id = $1`,
-    [baiId, JSON.stringify({ nguon: nguonTach, canhBao: canhBao ?? null, bai: drafts })]
+    [tin.id, JSON.stringify({
+      trang_thai: 'xong', loi: null, nguon: nguonTach, canhBao: canhBao ?? null, bai: drafts,
+    })]
   );
+  return created.length;
+}
 
+const conCuaNguon = async (childIds: string[]): Promise<{ id: string; ten: string }[]> => {
   const con = await query<{ id: string; name: string }>(
     `SELECT id, name FROM children WHERE id = ANY($1::text[]) ORDER BY sort_order, id`,
-    [nguon.childIds]
+    [childIds]
   );
-  return {
-    ok: true,
-    baiZaloId: baiId,
-    soBaiNhap: created.length,
-    con: con.map((c) => ({ id: c.id, ten: c.name })),
-    tepBoQua,
-  };
+  return con.map((c) => ({ id: c.id, ten: c.name }));
+};
+
+/**
+ * Buoc 3 hong thi GHI LAI, dung nem ra ngoai.
+ *
+ * Dong `bai_tu_zalo` da commit truoc do, va `moCuaNhanTin` se tra 409 cho moi
+ * lan zalo-agent quet lai — de loi thoat ra thanh 500 la tin do ket VINH VIEN o
+ * mot bo bai nhap do dang, khong con duong nao dua no vao lai. Nen thay vao do:
+ * danh dau tach = 'loi' ngay tren dong da co, van tra 201, va bo me bam "Tách
+ * lại" o muc cho duyet de chay lai buoc 3.
+ */
+async function ghiTachLoi(baiId: string, e: unknown): Promise<void> {
+  console.error('[nhan-bai-zalo] tach bai loi', baiId, e);
+  const loi = (e instanceof Error ? e.message : String(e)).slice(0, MAX_CHU_LOI_TACH);
+  try {
+    await query(
+      `UPDATE bai_tu_zalo SET ket_qua_tach = $2::jsonb WHERE id = $1`,
+      [baiId, JSON.stringify({ trang_thai: 'loi', loi })]
+    );
+  } catch (e2) {
+    // Ghi nhan that bai cung that bai: khong con gi lam duoc, va van KHONG nem.
+    console.error('[nhan-bai-zalo] khong ghi noi trang thai tach', baiId, e2);
+  }
 }
 
 /* ---------------- Bo me duyet / bo ---------------- */
@@ -770,14 +845,72 @@ export async function boBaiZalo(
   );
   if (chot.length === 0) return { ok: false, loi: 'da-xu-ly' };
 
+  const xoa = await xoaBaiNhapCuaTin(familyId, id);
+  return { ok: true, soBai: xoa };
+}
+
+/**
+ * Xoa cac ban NHAP cua mot tin. Hai dieu kien di CUNG NHAU va khong duoc bo cai
+ * nao: `trang_thai_duyet = 'nhap'` (mot dong da thanh bai THAT la bai con dang
+ * lam — khong bao gio duoc xoa o day) va loc theo nha.
+ */
+async function xoaBaiNhapCuaTin(familyId: string, baiZaloId: string): Promise<number> {
   const xoa = await query<{ id: string }>(
     `DELETE FROM assignments a
       WHERE a.zalo_bai_id = $1 AND a.trang_thai_duyet = 'nhap'
         AND a.child_id IN (SELECT id FROM children WHERE family_id = $2)
       RETURNING a.id`,
-    [id, familyId]
+    [baiZaloId, familyId]
   );
-  return { ok: true, soBai: xoa.length };
+  return xoa.length;
+}
+
+/**
+ * "Tách lại": chay lai BUOC 3 cho mot tin da vao nhung tach hong.
+ *
+ * Duong cua NGUOI (can PIN bo me), khac ba cua `/api/nhan-bai-zalo*` danh cho
+ * may. Ly do no ton tai: dong `bai_tu_zalo` da vao thi `moCuaNhanTin` tra 409
+ * mai mai, nen neu buoc 3 hong giua chung thi khong con duong nao khac dua tin
+ * do vao lai.
+ *
+ * BA HANG RAO:
+ *   a. CHI chay khi tin dang o `'nhap'`. Tach lai mot tin DA DUYET la dung lai
+ *      ban nhap cua nhung bai con dang lam; tach lai mot tin DA BO la dung lai
+ *      dung thu bo me vua vut di.
+ *   b. Xoa qua `xoaBaiNhapCuaTin` — dieu kien `'nhap'` + loc nha, y nhu
+ *      `boBaiZalo`.
+ *   c. IDEMPOTENT nho xoa-roi-tao-lai: goi hai lan ra cung mot ket qua, khong
+ *      nhan doi bai. (a) va (b) la thu giu cho phep xoa do luon an toan.
+ */
+export async function tachLaiBaiZalo(
+  familyId: string,
+  id: string
+): Promise<
+  | { ok: true; soBai: number; baiNhap: Assignment[] }
+  | { ok: false; loi: 'khong-thay' | 'da-xu-ly' | 'tach-loi' }
+> {
+  const bai = await getBaiTuZalo(familyId, id);
+  if (!bai) return { ok: false, loi: 'khong-thay' };
+  if (bai.trangThai !== 'nhap') return { ok: false, loi: 'da-xu-ly' };
+
+  const nguon = await getNguonZalo(familyId, bai.nguonId);
+  if (!nguon) return { ok: false, loi: 'khong-thay' };
+
+  await xoaBaiNhapCuaTin(familyId, id);
+  try {
+    const soBai = await tachVaTaoBaiNhap(
+      { id, nguyenVan: bai.nguyenVan, ngayTrongTin: bai.ngayTrongTin,
+        guiLuc: bai.guiLuc, tep: bai.dinhKem },
+      nguon
+    );
+    const baiNhap = await listAssignments(familyId, {
+      keCaNhap: true, zaloBaiId: id, includeChores: true,
+    });
+    return { ok: true, soBai, baiNhap };
+  } catch (e) {
+    await ghiTachLoi(id, e);
+    return { ok: false, loi: 'tach-loi' };
+  }
 }
 
 /**

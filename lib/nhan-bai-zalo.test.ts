@@ -115,7 +115,24 @@ mock.module('@vercel/blob/client', {
 
 const { chayMigrations } = await import('../scripts/db.mjs');
 const { query, queryTx } = await import('./db.ts');
+
+/**
+ * `saveSubmission` la buoc CUOI cua cua nhan tin, chay SAU khi dong `bai_tu_zalo`
+ * da commit. Dat mot loi vao day de dung lai dung ca do: mot cu hong CSDL thoang
+ * qua giua chung, sau diem khong quay lai duoc. Khong gia duoc thi khong kiem
+ * duoc rang tin van 201 va van co duong "Tách lại".
+ */
+let saveSubmissionNem: Error | null = null;
 const store = await import('./store.ts');
+mock.module('./store.ts', {
+  namedExports: {
+    ...store,
+    saveSubmission: async (input: Parameters<typeof store.saveSubmission>[0]) => {
+      if (saveSubmissionNem) throw saveSubmissionNem;
+      return store.saveSubmission(input);
+    },
+  },
+});
 const zaloStore = await import('./nhanBaiZalo.ts');
 const { veTrenManCuaCon } = await import('./nhomNhiemVu.ts');
 const { GOI_MAU, KHO } = await import('./zalo.test.ts');
@@ -237,6 +254,7 @@ before(async () => {
 beforeEach(async () => {
   daHoiKho.length = 0;
   khoNemLoi = null;
+  saveSubmissionNem = null;
   veDaKy.length = 0;
   suKienHoanTat.length = 0;
   tepTrenKho.clear();
@@ -1015,6 +1033,73 @@ test('cua phat ve KHONG chan su kien "tep da len kho" cua Vercel Blob — no kho
   assert.equal(xinVeKhongKhoa.status, 401);
   assert.deepEqual(await xinVeKhongKhoa.json(), { loi: 'unauthorized' });
   assert.deepEqual(veDaKy, []);
+});
+
+/* ---------------- 5d. Tach bai hong giua chung ---------------- */
+
+test('buoc tach hong GIUA CHUNG: tin van 201, dong o lai, va duoc danh dau de tach lai', async () => {
+  saveSubmissionNem = new Error('neon: connection reset');
+  const res = await goiCua(GOI_MAU);
+
+  // 500 o day la tin ket VINH VIEN: dong `bai_tu_zalo` da commit nen moi lan
+  // zalo-agent quet lai chi nhan 409.
+  assert.equal(res.status, 201, 'tin da vao CSDL roi thi khong duoc thoat ra thanh 500');
+  const than = await res.json();
+  assert.ok(than.bai_zalo_id);
+  assert.equal(than.so_bai_nhap, 0);
+
+  const [muc] = await zaloStore.listBaiChoDuyet(FAM);
+  assert.equal(muc.bai.trangThaiTach, 'loi');
+  assert.match(muc.bai.loiTach ?? '', /connection reset/);
+  assert.equal(muc.baiNhap.length, 0);
+  assert.equal(muc.bai.nguyenVan, GOI_MAU.nguyen_van, 'nguyen van tin phai con de bo me doc');
+
+  // Va dung la agent khong dua lai duoc — nen "Tách lại" la duong DUY NHAT
+  saveSubmissionNem = null;
+  assert.equal((await goiCua(GOI_MAU)).status, 409);
+});
+
+test('"Tách lại" dung du bai nhap cho MOI con cua nguon, va goi hai lan khong nhan doi', async () => {
+  saveSubmissionNem = new Error('neon: connection reset');
+  const { bai_zalo_id } = await (await goiCua(GOI_MAU)).json();
+  saveSubmissionNem = null;
+
+  const lan1 = await zaloStore.tachLaiBaiZalo(FAM, bai_zalo_id);
+  assert.ok(lan1.ok, JSON.stringify(lan1));
+  assert.ok(lan1.soBai > 0);
+  assert.deepEqual([...new Set(lan1.baiNhap.map((b) => b.childId))].sort(), [CON_B, CON_A].sort());
+
+  const [muc1] = await zaloStore.listBaiChoDuyet(FAM);
+  assert.equal(muc1.bai.trangThaiTach, 'xong', 'canh bao phai biet mat sau khi tach lai');
+  assert.equal(muc1.bai.loiTach, null);
+  assert.equal(muc1.baiNhap.length, lan1.baiNhap.length);
+
+  // Idempotent: xoa-roi-tao-lai, khong cong don
+  const lan2 = await zaloStore.tachLaiBaiZalo(FAM, bai_zalo_id);
+  assert.ok(lan2.ok, JSON.stringify(lan2));
+  assert.equal(lan2.baiNhap.length, lan1.baiNhap.length, 'tach lai hai lan khong duoc nhan doi bai');
+  assert.equal((await zaloStore.listBaiChoDuyet(FAM))[0].baiNhap.length, lan1.baiNhap.length);
+});
+
+test('"Tách lại" bi tu choi tren tin DA DUYET / DA BO, va bai THAT cua tin da duyet con nguyen', async () => {
+  const { bai_zalo_id } = await (await goiCua(GOI_MAU)).json();
+  await zaloStore.duyetBaiZalo(FAM, bai_zalo_id);
+  const truoc = await store.listAssignments(FAM, { from: '2000-01-01' });
+  assert.ok(truoc.length > 0);
+
+  // Tach lai mot tin da duyet la dung lai ban nhap cua nhung bai con DANG LAM
+  assert.deepEqual(await zaloStore.tachLaiBaiZalo(FAM, bai_zalo_id), { ok: false, loi: 'da-xu-ly' });
+  const sau = await store.listAssignments(FAM, { from: '2000-01-01' });
+  assert.deepEqual(sau.map((b) => b.id).sort(), truoc.map((b) => b.id).sort());
+
+  // Tach lai mot tin da bo la dung lai dung thu bo me vua vut di
+  const { bai_zalo_id: id2 } = await (await goiCua({ ...GOI_MAU, ma_tin: 'tin_da_bo' })).json();
+  await zaloStore.boBaiZalo(FAM, id2);
+  assert.deepEqual(await zaloStore.tachLaiBaiZalo(FAM, id2), { ok: false, loi: 'da-xu-ly' });
+
+  // Va nha khac khong voi toi duoc
+  assert.deepEqual(
+    await zaloStore.tachLaiBaiZalo(FAM_KHAC, bai_zalo_id), { ok: false, loi: 'khong-thay' });
 });
 
 /* ---------------- 6. Khong nhin sang nha khac ---------------- */

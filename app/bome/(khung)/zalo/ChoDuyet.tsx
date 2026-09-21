@@ -268,6 +268,27 @@ export default function ChoDuyet({
     }
   }
 
+  /**
+   * Buoc tach bai hong giua chung thi tin van vao (khong 500), va day la duong
+   * duy nhat dua no vao lai: `moCuaNhanTin` tra 409 cho moi lan zalo-agent quet
+   * lai, nen khong co nut nay thi bo me chi con cach go tay lai tung bai.
+   */
+  async function tachLai(baiZaloId: string) {
+    const data = await goi(`/api/bai-zalo/${baiZaloId}`, {
+      method: 'POST',
+      body: JSON.stringify({ hanhDong: 'tach-lai' }),
+    });
+    if (!data) return;
+    setMuc((ms) =>
+      ms.map((m) =>
+        m.bai.id === baiZaloId
+          ? { ...m, bai: { ...m.bai, trangThaiTach: 'xong', loiTach: null }, baiNhap: data.baiNhap }
+          : m
+      )
+    );
+    router.refresh();
+  }
+
   async function xuLyMuc(baiZaloId: string, hanhDong: 'duyet' | 'bo') {
     const data = await goi(`/api/bai-zalo/${baiZaloId}`, {
       method: 'POST',
@@ -355,6 +376,26 @@ export default function ChoDuyet({
               <NguyenVan chu={m.bai.nguyenVan} />
               <TepKem tep={m.bai.dinhKem} />
               <TepBiBo tep={m.bai.tepBoQua} />
+
+              {m.bai.trangThaiTach === 'loi' && (
+                <div className="bg-error-container rounded-card p-3 flex flex-col gap-2">
+                  <p className="text-p-body-sm text-on-error-container font-bold">
+                    {T('Tách bài chưa xong')}
+                  </p>
+                  <p className="text-p-body-sm text-on-error-container">
+                    {T('Tin của cô đã vào đủ, nhưng app chưa tách xong thành từng bài. Bấm "Tách lại" rồi xem lại danh sách bên dưới.')}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => tachLai(m.bai.id)}
+                    disabled={busy}
+                    className="self-start rounded-card min-h-p-tap px-4 bg-surface-container-lowest
+                               text-on-surface text-p-body-sm font-bold disabled:opacity-60"
+                  >
+                    {T('Tách lại')}
+                  </button>
+                </div>
+              )}
 
               {/* Bai da tach, theo tung con */}
               {theoCon.length === 0 ? (

@@ -42,7 +42,10 @@ export default function SuaBai({
   const [driveUrl, setDriveUrl] = useState('');
   const [driveError, setDriveError] = useState('');
 
-  const back = `/bome/con/${assignment.childId}`;
+  // Bai NHAP chi song o man cho duyet: `/bome/con/<id>` loc dong nhap ra
+  // (`CHI_BAI_THAT`) nen tra bo me ve day la tra ve mot man khong the hien chinh
+  // bai vua sua. Bai that thi giu nguyen duong cu — day khong phai luong Zalo.
+  const back = assignment.laNhap ? '/bome/zalo' : `/bome/con/${assignment.childId}`;
 
   // Link Google Drive (issue #28) khong tai len nhu tep — luu thang url voi kind
   // 'video', hien phan biet o luc render bang linkDriveTu. Tu issue #60 con bam
@@ -123,6 +126,12 @@ export default function SuaBai({
           )}
         </div>
       </header>
+
+      {assignment.laNhap && (
+        <p className="bg-tertiary-fixed text-on-tertiary-fixed rounded-card p-3 mb-4 text-p-body-sm">
+          {T('Bài này đang chờ duyệt, con chưa thấy.')}
+        </p>
+      )}
 
       <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4 flex flex-col gap-3">
         <div>
