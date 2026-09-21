@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { moCuaNhanTin } from '@/lib/nhanBaiZalo';
-import { kiemCuaSoDinhKem, laDuongDanTepZalo, LOAI_TEP_NHAN, MAX_BYTES_MOI_TEP } from '@/lib/zalo';
+import { kiemCuaSoChoVe, laDuongDanTepZalo, LOAI_TEP_NHAN, MAX_BYTES_MOI_TEP } from '@/lib/zalo';
 import { xuLyTaiTep } from '@/lib/upload-route';
 import { xacThucZalo } from '@/lib/xacThucZalo';
 
@@ -8,8 +8,9 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 /**
- * POST /api/nhan-bai-zalo/tep-token?nguon_id=<id>&ma_tin=<ma> — ve cho
- * zalo-agent tai tep cua co THANG len kho tep.
+ * POST /api/nhan-bai-zalo/tep-token?nguon_id=<id>&ma_tin=<ma>&tin_gui_luc=<moc>
+ * &tep_gui_luc=<moc> — ve cho zalo-agent tai tep cua co THANG len kho tep.
+ * CA BON tham so deu BAT BUOC.
  *
  * MAY GOI, KHONG PHAI NGUOI — cung khoa Bearer va cung "chuoi may doc" voi hai
  * cua kia trong thu muc nay.
@@ -35,12 +36,13 @@ export const maxDuration = 60;
  *      no tu choi DUNG tap tin ma buoc sau cung tu choi: mot bo tep ky duoc ve
  *      roi bi 404 o buoc gui tin la tep mo coi khong `han_xoa`, khong luot don
  *      nao thu hoi duoc (kho 1GB da dung 219MB).
- *   3. CUA SO NHAN TEP. Goi kem `tin_gui_luc` + `tep_gui_luc` thi tep nam ngoai
- *      `cua_so_dinh_kem_phut` cua nguon bi tu choi 422 — cung ly do voi 409 o
- *      tren: dung de agent tai len mot tep ma cua nhan tin se bo. THIEU hai tham
- *      so do thi giu hanh vi cu, de mot ban zalo-agent cu khong vo; cua nhan tin
- *      van kiem lai bang CHINH `kiemCuaSoDinhKem`, nen bo qua o day khong mo
- *      duoc duong nao.
+ *   3. CUA SO NHAN TEP. `tin_gui_luc` va `tep_gui_luc` la tham so BAT BUOC:
+ *      thieu mot cai la khong biet tep co vao duoc khong, va "khong biet" o day
+ *      khong duoc thanh "cu phat ve" — 422 `thieu-gio-gui`. Tep ngoai
+ *      `cua_so_dinh_kem_phut` cua nguon cung 422. Luat gio nam o MOT ham
+ *      (`kiemCuaSoChoVe` -> `kiemCuaSoDinhKem`, lib/zalo.ts) ma cua nhan tin
+ *      cung goi, nen hai cua khong lech nhau duoc: tep nao duoc ky ve thi cua
+ *      nhan tin khong bo no vi ly do gio.
  *
  * MOT TEN TRUONG LOI: `loi`, giong hai cua kia — ke ca nhung ma do than chung
  * `xuLyTaiTep` sinh ra (`tenTruongLoi`). Cua nay la cua cho MAY, ma may thi doc
@@ -61,7 +63,7 @@ export const maxDuration = 60;
  *   401  xin ve ma thieu hoac sai khoa (khong noi la cai nao)
  *   404  nguon_id khong co, nguon dang tat, hoac nguon chua gan con nao
  *   409  `ma_tin` da co cho nguon do
- *   422  tep gui ngoai cua so nhan tep cua nguon
+ *   422  thieu `tin_gui_luc` / `tep_gui_luc`, hoac tep gui ngoai cua so cua nguon
  *   501  chua bat Vercel Blob (tren Vercel), hoac che do dev khong dung duoc
  *   503  may chu chua dat ZALO_INTAKE_SECRET
  */
@@ -89,11 +91,9 @@ export async function POST(req: Request) {
           { status: cong.loi === 'trung-ma-tin' ? 409 : 404 }
         );
       }
-      if (tinGuiLuc && tepGuiLuc) {
-        const cuaSo = kiemCuaSoDinhKem(tinGuiLuc, tepGuiLuc, cong.nguon.cuaSoDinhKemPhut);
-        if (cuaSo !== 'trong-cua-so') {
-          return NextResponse.json({ loi: cuaSo }, { status: 422 });
-        }
+      const cuaSo = kiemCuaSoChoVe(tinGuiLuc, tepGuiLuc, cong.nguon.cuaSoDinhKemPhut);
+      if (cuaSo !== 'trong-cua-so') {
+        return NextResponse.json({ loi: cuaSo }, { status: 422 });
       }
       return null;
     },

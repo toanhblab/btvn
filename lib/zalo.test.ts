@@ -32,7 +32,7 @@ import assert from 'node:assert/strict';
 import {
   MAX_BYTES_MOI_TEP, MAX_TEP_MOI_GOI, congNgay, docGoiTin, docNhanDien, hanNopBai,
   kiemCuaSoDinhKem, laDuongDanTepZalo, laNgayISO, laUrlBlobZaloCuaNguon, loaiTepZalo,
-  matCoNhanDien, tenTepZalo,
+  matCoNhanDien, tenHienTep, tenTepZalo,
 } from './zalo.ts';
 import { ngayNhaISO } from './muiGio.ts';
 
@@ -170,6 +170,23 @@ test('.docx cua co khong lam mat tin: bai van tach duoc, chi rieng tep bi bo', (
     ly_do: 'loai-khong-nhan',
     chi_tiet: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   }]);
+  // `thu_tu` la vi tri trong goi THO, khong phai trong mang da loc — mot khong
+  // gian chi so duy nhat cho ca ten hien lan ten tep luu.
+  assert.deepEqual(kq.goi.dinh_kem.map((t) => t.thu_tu), [0]);
+});
+
+test('thu_tu giu vi tri trong goi THO, nen hai tep khong ten khong bao gio trung nhan', () => {
+  const kq = doc({
+    ...GOI_MAU,
+    dinh_kem: [
+      tepMau({ ten: '', loai: 'application/zip' }),   // bi bo ngay o day, vi tri 0
+      tepMau({ ten: '', loai: 'video/mp4' }),         // qua duoc, van phai la vi tri 1
+    ],
+  });
+  assert.ok('goi' in kq, JSON.stringify(kq));
+  assert.deepEqual(kq.goi.bo_qua.map((t) => t.ten), ['#1']);
+  assert.deepEqual(kq.goi.dinh_kem.map((t) => t.thu_tu), [1]);
+  assert.deepEqual(kq.goi.dinh_kem.map((t) => tenHienTep(t.ten, t.thu_tu)), ['#2']);
 });
 
 test('agent KHAI qua 25MB thi bo ngay o day, khong phai doi hoi kho tep', () => {

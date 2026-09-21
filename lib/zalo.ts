@@ -225,7 +225,25 @@ export interface TepTrongGoi {
   gui_luc: string | null;
   /** URL tep da nam tren kho cua CHINH app nay (xem `laUrlBlobZaloCuaNguon`). */
   url: string;
+  /**
+   * Vi tri trong goi THO — MOT khong gian chi so duy nhat, di tu `docGoiTin`
+   * den luc dat ten tep va den luc bao `tep_bo_qua`.
+   *
+   * Phai mang theo chu khong dem lai: mang nay DA LOC, nen dem lai la hai tep
+   * khac nhau cung ra `#1` trong danh sach "tep co gui khong vao duoc" cua bo me
+   * — mot tep bi `docGoiTin` bo o vi tri tho 0, mot tep bi `nhanTepDaTai` bo o vi
+   * tri 0 cua mang con lai. Do dung la thu ma cai ten thay the sinh ra de phan
+   * biet.
+   */
+  thu_tu: number;
 }
+
+/**
+ * Ten de HIEN cho bo me khi tep khong co ten. Tep tu Zalo hay khong co ten
+ * (bong bong video chi co key), nen so thu tu la thu duy nhat phan biet chung.
+ * MOT ban duy nhat, doc `thu_tu` cua goi tho — xem `TepTrongGoi.thu_tu`.
+ */
+export const tenHienTep = (ten: string, thuTu: number): string => ten || `#${thuTu + 1}`;
 
 /**
  * Mot tep KHONG duoc giu lai, kem ly do — MOT danh sach duy nhat cho ba cho co
@@ -339,7 +357,7 @@ export function docGoiTin(
     // Tep tu Zalo hay KHONG CO TEN (bong bong video chi co key) — dat ten theo
     // thu tu de man bo me co gi de hien; duoi tep do loai quyet dinh.
     const ten = chuoi(o.ten, 200);
-    const tenHien = ten || `#${i + 1}`;
+    const tenHien = tenHienTep(ten, i);
     if (!loaiTepZalo(loai)) {
       boQua.push({ ten: tenHien, ly_do: 'loai-khong-nhan', chi_tiet: loai || '?' });
       continue;
@@ -363,6 +381,7 @@ export function docGoiTin(
       kich_thuoc: kichThuoc,
       gui_luc: mocISO(o.gui_luc),
       url,
+      thu_tu: i,
     });
   }
 
@@ -421,6 +440,29 @@ export function kiemCuaSoDinhKem(
   const cua = tepGuiLuc ? Date.parse(tepGuiLuc) : NaN;
   if (Number.isNaN(cua)) return 'thieu-gio-gui';
   return cua >= moc && cua <= moc + cuaSoPhut * 60_000 ? 'trong-cua-so' : 'ngoai-cua-so';
+}
+
+/**
+ * Cung phep kiem, o CUA VE — noi zalo-agent phai KHAI ca hai moc.
+ *
+ * Khac duy nhat mot dieu, va no la dieu kien TIEN QUYET chu khong phai mot ban
+ * sao cua luat gio: cua ve doi du `tin_gui_luc` lan `tep_gui_luc`. Thieu bat ky
+ * cai nao la KHONG BIET tep co vao duoc khong, ma "khong biet" o day khong duoc
+ * phep thanh "cu phat ve": ve da ky la tep len kho, roi cua nhan tin moi bo no
+ * (`thieu-gio-gui`) — luc do khong dong `dinh_kem` nao tro toi, tuc khong
+ * `han_xoa` va khong luot don nao thu hoi duoc, tren mot kho 1GB da dung 219MB.
+ *
+ * Phep so gio VAN la `kiemCuaSoDinhKem` — chi co MOT ban, de cua ve va cua nhan
+ * tin khong bao gio lech nhau: tin nao qua duoc day thi cua nhan tin cung khong
+ * bo no vi ly do gio.
+ */
+export function kiemCuaSoChoVe(
+  tinGuiLuc: string,
+  tepGuiLuc: string,
+  cuaSoPhut: number
+): KetQuaCuaSo {
+  if (!tinGuiLuc || !tepGuiLuc) return 'thieu-gio-gui';
+  return kiemCuaSoDinhKem(tinGuiLuc, tepGuiLuc, cuaSoPhut);
 }
 
 // Ten tep tu Zalo la chuoi tu do (co giao dat), nen chi giu bo ky tu an toan

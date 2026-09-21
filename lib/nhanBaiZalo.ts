@@ -48,7 +48,7 @@ import { taoT, type T } from './i18n/chu';
 import { ngonNguOf, type NgonNgu } from './i18n/ngonNgu';
 import {
   baiNhapTho, docNhanDien, hanNopBai, kiemCuaSoDinhKem, laUrlBlobZaloCuaNguon, loaiTepZalo,
-  tenTepZalo,
+  tenHienTep, tenTepZalo,
   CACH_TAI_TEP, DUONG_TOKEN_TEP, LOAI_TEP_NHAN, MAX_BYTES_MOI_TEP, MAX_MB_MOI_TEP,
   MAX_TEP_MOI_GOI, SO_NGAY_GIU_TEP_ZALO, congNgay,
   type GoiTinZalo, type NhanDienZalo, type TepBoQua, type TepZaloDaLuu,
@@ -468,8 +468,8 @@ async function nhanTepDaTai(
   const boQua: TepBoQua[] = [];
   const hanXoa = congNgay(ngay, SO_NGAY_GIU_TEP_ZALO);
 
-  for (const [i, t] of goi.dinh_kem.entries()) {
-    const tenHien = t.ten || `#${i + 1}`;
+  for (const t of goi.dinh_kem) {
+    const tenHien = tenHienTep(t.ten, t.thu_tu);
     const kind = loaiTepZalo(t.loai);
     // `docGoiTin` da loc loai roi; giu lai day lam lop cuoi cho moi nguoi goi
     // khac, va de mot dot doi luat o mot ben khong lam ro ri sang ben kia.
@@ -497,7 +497,7 @@ async function nhanTepDaTai(
       continue;
     }
     tep.push({
-      ten: tenTepZalo(t.ten, kind, i),
+      ten: tenTepZalo(t.ten, kind, t.thu_tu),
       loai: t.loai,
       kind,
       url: t.url,

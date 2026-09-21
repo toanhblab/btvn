@@ -283,7 +283,9 @@ curl -s "$URL/api/nhan-bai-zalo/cau-hinh" -H "Authorization: Bearer $KHOA"
 # 2. Có tệp kèm thì xin vé rồi tải THẲNG lên kho, TRƯỚC khi gửi tin.
 #    Thân gói vé đúng giao thức @vercel/blob/client; đường dẫn bắt buộc nằm dưới
 #    zalo/<nguon_id>/<yyyy-mm-dd>/ và `ma_tin` đã nhận rồi thì trả 409 ngay.
-curl -s -X POST "$URL/api/nhan-bai-zalo/tep-token?nguon_id=nzl_cambridge&ma_tin=bb_msg_id_1" \
+#    CẢ BỐN tham số đều BẮT BUỘC: thiếu `tin_gui_luc` hay `tep_gui_luc` là 422.
+curl -s -X POST "$URL/api/nhan-bai-zalo/tep-token?nguon_id=nzl_cambridge&ma_tin=bb_msg_id_1\
+&tin_gui_luc=2026-09-18T20:03:17%2B07:00&tep_gui_luc=2026-09-18T20:03:21%2B07:00" \
   -H "Authorization: Bearer $KHOA" -H 'Content-Type: application/json' \
   -d '{"type":"blob.generate-client-token",
        "payload":{"pathname":"zalo/nzl_cambridge/2026-09-18/video-mau.mp4",
@@ -321,17 +323,25 @@ kèm câu đã dịch — giao diện bố mẹ/con đọc trường đó.
 | `401` | Thiếu hoặc sai khoá — **không nói là cái nào** |
 | `404` | `nguon_id` không có, nguồn đang tắt, hoặc nguồn chưa gắn con nào |
 | `409` | `ma_tin` đã có cho nguồn đó — **không tạo gì**. zalo-agent chạy lại mỗi 30 phút nên đây là đường bình thường, không phải lỗi |
-| `422` | **Chỉ cửa vé**: tệp gửi ngoài `cua_so_dinh_kem_phut` của nguồn — không phát vé, để agent khỏi tải lên thứ cửa nhận tin sẽ bỏ |
+| `422` | **Chỉ cửa vé**: `thieu-gio-gui` (thiếu `tin_gui_luc` hoặc `tep_gui_luc`) hoặc `ngoai-cua-so` (tệp gửi ngoài `cua_so_dinh_kem_phut` của nguồn) — không phát vé, để agent khỏi tải lên thứ cửa nhận tin sẽ bỏ |
 | `503` | Máy chủ **chưa đặt `ZALO_INTAKE_SECRET`** |
 
-`POST /api/nhan-bai-zalo/tep-token?nguon_id=&ma_tin=` dùng **cùng khoá** đó,
-thêm `400 sai-duong-dan` (đường dẫn ra ngoài `zalo/<nguon_id>/<ngày>/`), và trả
-lời **đúng như cửa nhận tin** cho bốn trường hợp còn lại: `404` khi nguồn không
-có / đang tắt / chưa gắn con, `409 trung-ma-tin` khi tin đã nhận rồi. Một hàm
-duy nhất (`moCuaNhanTin`) gác cả hai cửa, vì vé chỉ có ích khi nó từ chối **đúng**
-những tin mà bước sau cũng từ chối — lệch một điều kiện là agent tải xong cả bộ
-tệp rồi mới ăn 404, và mớ tệp đó không dòng `dinh_kem` nào trỏ tới nên không
-`han_xoa`, không lượt dọn nào thu hồi được.
+`POST /api/nhan-bai-zalo/tep-token?nguon_id=&ma_tin=&tin_gui_luc=&tep_gui_luc=`
+dùng **cùng khoá** đó. **Cả bốn tham số đều bắt buộc** — `tin_gui_luc` là giờ gửi
+của TIN, `tep_gui_luc` là giờ gửi của chính tệp sắp tải lên (ISO 8601, nhớ
+percent-encode dấu `+` của múi giờ thành `%2B`).
+
+Cửa vé thêm `400 sai-duong-dan` (đường dẫn ra ngoài `zalo/<nguon_id>/<ngày>/`) và
+`422` (`thieu-gio-gui` / `ngoai-cua-so`); còn lại nó trả lời **đúng như cửa nhận
+tin**: `404` khi nguồn không có / đang tắt / chưa gắn con, `409 trung-ma-tin` khi
+tin đã nhận rồi.
+
+**Hai cửa phải từ chối đúng cùng một tập tệp**, nên mỗi luật chỉ có **một** bản:
+`moCuaNhanTin` gác nguồn và `ma_tin`, `kiemCuaSoDinhKem` gác giờ (cửa vé gọi qua
+`kiemCuaSoChoVe`, chỉ thêm đúng điều kiện "phải khai đủ hai mốc"). Lệch một điều
+kiện là agent tải xong cả bộ tệp rồi mới bị từ chối ở bước sau, và mớ tệp đó
+không dòng `dinh_kem` nào trỏ tới nên không `han_xoa`, không lượt dọn nào thu hồi
+được — trên một kho 1GB đã dùng 219MB.
 
 Phép kiểm khoá của cửa vé nằm ở **bước xin vé**, không ở đầu route: sự kiện
 `blob.upload-completed` do máy chủ của Vercel Blob gọi về `callbackUrl` mang
