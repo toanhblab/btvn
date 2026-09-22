@@ -309,11 +309,14 @@ app/bome/       màn của bố mẹ: PIN, tạo nhà, tổng quan, thêm bài, 
                 nhập tay, sửa bài, thêm con, chi tiết theo con, danh sách,
                 thưởng (duyệt đổi thưởng + danh sách phần thưởng + trừ ⭐ của
                 con), cài đặt, nhiệm vụ hàng ngày (trang riêng: giao cho con
-                nào, mấy ⭐, nhóm)
+                nào, mấy ⭐, nhóm), sách của các con (trang riêng: khai sách /
+                vở / nguồn bài tập làm ngữ cảnh cho AI tách bài theo cuốn)
 app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
-                nha (gắn máy), extract (Nous Portal), upload (ảnh đề bài),
+                nha (gắn máy), extract (Nous Portal, nhận childIds để lấy sách
+                của đúng nhóm con), upload (ảnh đề bài),
                 upload-media (tệp bố mẹ đính kèm), nop-video (video con nộp),
                 viec-nha (cấu hình nhiệm vụ hàng ngày của bố mẹ, cần PIN),
+                sach (sách của các con, cần PIN),
                 phan-thuong (bố mẹ đặt phần thưởng, cần PIN), tru-diem (bố mẹ
                 trừ ⭐ của con, cần PIN), doi-thuong (con xin đổi — không cần
                 PIN; bố mẹ duyệt — cần PIN), tep (đọc tệp đã ghi ở
@@ -368,14 +371,144 @@ thật** của `HW_SOURCES` nên tự nhận nguồn mới. Nhãn hiển thị �
 "Khác" — đó là lựa chọn của con người, máy đoán ra thì bố mẹ mất dấu bài thật sự
 đến từ đâu.
 
+**Tách theo cuốn sách, không theo dòng (issue #64).** Captain phản ánh "Toán trang
+41, 42, 43 sách Poth Math" bị tách thành ba bài. Nguyên tắc nằm trong `PROMPT` của
+`lib/ai.ts`: **một cuốn sách / vở / phiếu = một bài**, số trang / số bài đi vào
+`note` (và nhắc gọn trong `content`); hai cuốn khác nhau thì hai bài kể cả cùng môn;
+việc không gắn cuốn nào (quay video, vẽ, thể dục) mỗi việc một bài. Luật này **không
+phụ thuộc** nhà đã khai sách hay chưa — nhà chưa khai gì thì lời nhắc y như trước,
+chỉ khác luật gộp. Ví dụ "Ex 1, Ex 2, Ex 3" trong prompt cũng đổi theo: một phiếu =
+một bài, không còn tách ra ba mục.
+
+**Sách của các con** (bảng `books`, migration 021) là ngữ cảnh thêm cho AI: bố mẹ
+khai tên sách / vở / phiếu ở **Cài đặt → "Sách của các con"** (`/bome/sach`, cũng có
+dòng dẫn ngay dưới ô dán nội dung ở màn Thêm bài), mỗi cuốn có môn (tuỳ chọn, là
+**khoá** trong `SUBJECTS`, hiện bằng `T(...)`) và "sách của" (cả nhà hay từng con —
+`child_ids`, cùng khuôn `daily_chores`; hai bé sinh đôi dùng chung sách nên treo vào
+**nhà**, không nhân bản theo từng con). Màn Thêm bài gửi `childIds` lên `POST
+/api/extract`; route lấy `listBooks(familyId, { childIds })` — sách cả nhà + sách
+của đúng nhóm con đó — rồi ghép khối "SÁCH / VỞ / NGUỒN BÀI TẬP BỐ MẸ ĐÃ KHAI" sau
+prompt (`khoiSachChoAI`), chặn trên `MAX_SACH_TRONG_PROMPT` = 30 cuốn, tên cắt ở
+`MAX_CHU_TEN_SACH` = 60. AI dùng danh sách để nhận tên sách viết tắt / sai chính tả
+và đoán môn; prompt nói rõ **không bịa bài từ danh sách**. Bỏ một cuốn là **đánh dấu
+bỏ** (`archived_at`, không DELETE — lý do ở đầu migration 021): biến khỏi màn cài
+đặt và khỏi lời nhắc; bài đã giao không mất gì vì tên sách đã nằm trong `note`.
+Bảng sách chỉ đọc được qua route có PIN; không đọc được bảng (thiếu migration) thì
+`/api/extract` coi như chưa khai, không chặn tách bài. Xoá một con thì id đó bị gỡ
+khỏi `child_ids` của sách (như nhiệm vụ hàng ngày).
+
+**Hai cuốn đang dùng không được trùng tên** (không phân biệt hoa/thường, bỏ khoảng
+trắng thừa). Phép kiểm trong mã (`bookTrungTen`) chỉ để trả câu "Nhà mình đã có cuốn
+này rồi."; hàng rào thật là **chỉ mục duy nhất một phần** `books_family_name_uniq`
+(migration 022, `WHERE archived_at IS NULL` nên bỏ rồi khai lại vẫn được) — cùng tiền
+lệ với `score_events` và `video_cleanups`. Hai lần thêm chen nhau (bấm Enter hai nhịp,
+hai máy cùng mở màn sách) thì cái sau vẫn ra 400 quen thuộc chứ không sinh dòng thứ
+hai: hai dòng giống hệt nhau thì bố mẹ không phân biệt được, cùng chiếm chỗ trong lời
+nhắc AI, và từ đó không đổi tên dòng nào được nữa. Tên đi vào chỉ mục phải qua
+`lamSachTenSach` (NFC + gom khoảng trắng) vì Postgres không chuẩn hoá Unicode hộ.
+
+**Đường lùi tách thô** (`splitByRule`) theo cùng nguyên tắc ở mức nó làm được:
+tách theo dòng như cũ rồi **gộp các dòng liền nhau cùng cuốn**. Bảng điều kiện đầy
+đủ nằm ở chú thích `cungCuon` (`lib/ai.ts`) — mỗi dòng của bảng có một bài kiểm
+hành vi trong `lib/tach-theo-sach.test.ts`; tóm tắt:
+
+- **Cả hai dòng nhắc một cuốn đã khai**: gộp khi **cùng một cuốn** *và* **môn không
+  chọi nhau** *và* không bên nào là việc độc lập. Cùng một quyển vở không có nghĩa
+  là cùng một môn — *"Vở ô ly: chép bài toán trang 3"* và *"Vở ô ly: viết chính tả
+  trang 4"* ra **hai** thẻ. Nhưng **"Khác" nghĩa là chưa đoán ra môn, không phải
+  môn khác**: *"Vở ô ly trang 4"* không lộ môn nào cả nên nó gộp vào dòng cùng cuốn,
+  và thẻ gộp mang **môn đã biết** (dòng "Khác" đứng trước hay sau đều vậy). Bằng
+  chứng "cùng cuốn" chỉ bỏ qua đúng một thứ: **ngôn ngữ** đoán được (*"Poth Math
+  tr. 44"* không dấu nên bị đoán là tiếng Anh). Nhánh này không đòi dấu hiệu trang
+  — tên cuốn đã là mốc.
+- **Nhận tên cuốn theo TỪ, không theo chuỗi con** (`sachTrongDong`): tên sách phải
+  là một chuỗi từ liền nhau trong dòng. Bỏ dấu là để nhận ra chữ cô gõ không dấu
+  (*"tieng viet tap 1"*), nhưng bỏ dấu rồi thì hai từ khác nhau có thể thành một —
+  cuốn *"Toán"* và chữ *"toàn"* đều ra `toan` — nên một từ chỉ khớp khi **đúng
+  nguyên dạng có dấu**, hoặc khi **chính nó không có dấu nào**. Vì thế *"đọc toàn bộ
+  câu chuyện"* không bị gán cuốn *"Toán"*. Bỏ sót một cách nhắc lỏng lẻo chỉ là
+  không gộp được; gán nhầm cuốn là con lấy sai quyển ra làm. Phép so chịu được
+  **dòng bài tập** viết không dấu, nhưng **không** chịu được **tên sách bố mẹ khai**
+  thiếu dấu (khai *"Vo o ly"* thì không khớp dòng *"Vở ô ly trang 4"*) —
+  `HUONG-DAN-BO-ME.md` nhắc bố mẹ gõ tên có dấu như trên bìa; **màn khai sách chưa
+  có dòng nhắc đó**, thêm thì thêm ở `app/bome/(khung)/sach/`. Hai bên đều ép về
+  **NFC** trước khi so: chữ dán từ Zalo / bàn phím tiếng Việt thường là NFD, nhìn
+  giống hệt mà `===` trả false.
+- **Không dòng nào nhắc cuốn nào**: gộp khi cùng môn (khác "Khác"), **cả hai** đều
+  chỉ trang / số bài (`DAU_HIEU_TRANG`: "trang 41", "tr. 5", "bài 3", "page 12",
+  "Ex 2"…) và cùng ngôn ngữ đoán được.
+- **Một dòng có tên sách, dòng kia không** → không gộp.
+
+Bài gộp phải quay video nếu **một** trong các dòng đòi ("đọc to"), và đọc giọng Việt
+nếu có dòng tiếng Việt. Dòng nhắc cuốn đã khai lấy
+môn của cuốn và ghi tên cuốn vào `note`. Hai chỗ đi theo đúng luật của đường AI:
+(1) **việc độc lập không bị nuốt** — dòng đòi quay / đọc to mà không chỉ trang nào
+(`viecDocLap`) giữ bài riêng kể cả khi nhắc đúng cuốn đang gộp, vì prompt cũng để
+mỗi việc như vậy ra một bài; (2) **thời lượng cộng theo số dòng đã gộp** — mỗi dòng
+tính `DURATION_DEFAULT` rồi `clampDuration` (trần 60), nên ba trang gộp làm một thẻ
+ra 30 phút chứ không phải 10.
+**Giới hạn cố ý:** không có AI thì không biết "Toán trang 30" và "Toán trang 12" là
+một hay hai cuốn khi cô không ghi tên — coi là một; một dòng có tên sách, dòng sau
+chỉ ghi trang thì **không** gộp. Cả hai chiều đều sửa được một chạm ở màn Kiểm tra
+lại: "Gộp với bài trên" có từ trước, **"✂️ Tách bài này"** thêm ở lần này — cắt tại
+con trỏ trong ô đề bài (bố mẹ chạm vào chỗ muốn cắt rồi bấm), con trỏ ở đầu / cuối
+thì thẻ mới để trống; thẻ mới chép môn / ghi chú / giọng / thời lượng, tệp đính kèm
+ở lại thẻ gốc (`lib/banNhap.ts`, hai hàm thuần). Chiều gộp giữ **đủ
+của cả hai thẻ**: đề bài nối lại, **ghi chú ghép bằng " · "** (trùng nhau thì một
+lần, cả hai trống thì `null`), tệp lấy hợp, cờ video là HOẶC. Ghi chú là chỗ ghi
+tên sách + số trang, mà từ khi AI đã tự gộp các dòng cùng một cuốn thì hai thẻ bố
+mẹ gộp tay thường là **hai cuốn khác nhau** — bỏ một bên là bỏ hẳn một quyển con
+phải lấy ra.
+
+**Thời lượng khi gộp / tách:** sai theo hướng **thừa** còn hơn sai theo hướng
+**thiếu** — thiếu thì đồng hồ ở màn của con reo giữa chừng và con mất +1 "xong sớm"
+cho một bài nó làm đúng hạn, còn thừa thì chỉ là đồng hồ còn dư giờ. Vì thế **gộp
+thì cộng** hai số, còn **tách thì chép** nguyên số sang cả hai nửa, không chia tỉ
+lệ: không biết con trỏ cắt vào chỗ nặng hay nhẹ, mà chép là sai theo hướng thừa.
+Bố mẹ sửa lại số phút ngay tại dòng đó.
+
+**Cờ 🎥 đi ngược chiều với thời lượng**, đừng lấy nhầm: thừa giờ thì vô hại, còn
+thừa cờ là con **mất hẳn nút "Đã làm xong"** (màn của con chỉ cho nộp bằng video)
+cho tới khi bố mẹ vào bỏ tick. Nên **gộp thì HOẶC** hai cờ, còn **tách thì không
+chép** cờ sang cả hai nửa — cờ được **chia** theo chữ của từng nửa, bằng
+`coDauHieuVideo` (`lib/dauHieuVideo.ts` — cùng một lưới với đường lùi tách thô, một
+bản duy nhất cho cả máy chủ lẫn màn Kiểm tra lại).
+
+**Thứ bậc, đừng sửa một vế mà quên vế kia:** lưới khớp chữ đó **cố ý hẹp hơn** danh
+sách dấu hiệu trong `PROMPT` của AI (nó bỏ "kể lại … cho bố mẹ nghe", "thuyết
+trình", "hát"), nên nó chỉ đủ thẩm quyền **thu hẹp** một cờ **đang bật**, không bao
+giờ đủ để **tự bật** một cờ đang tắt. Cụ thể: thẻ **tắt** cờ (AI đã quyết, hoặc bố
+mẹ vừa bỏ tick) thì **cả hai nửa đều tắt**, không đọc lại chữ; thẻ **bật** cờ thì
+nửa nào dính dấu hiệu giữ cờ (cả hai dính thì cả hai giữ), **không nửa nào** dính
+thì giữ ở **nửa đầu** và bỏ ở nửa sau. Nhờ vậy thẻ gộp vì một nửa "đọc to" tách ra
+thì nửa trang giấy hết cờ, mà quyết định bố mẹ đã bấm thì không bị lật lại sau lưng.
+
+Hai **trần khác nhau**, đừng dùng lẫn: ước lượng do **máy** sinh ra (AI và
+`gopDong` của đường lùi) kẹp ở `clampDuration`, trần 60; số **bố mẹ tự gõ** ở màn
+Kiểm tra lại đi theo trần của chính ô nhập, `sanitizeDuration` = 180, nên "Gộp với
+bài trên" cộng 45 + 30 ra **75** chứ không phải 60 — kẹp về 60 ở đó chính là tự làm
+thiếu. Cả hai phép cộng đều không hạ xuống thấp hơn số đang có trên một trong hai
+thẻ.
+
+Hồi quy: `lib/tach-theo-sach.test.ts` (prompt, khối
+sách, fetch giả, splitByRule), `lib/banNhap.test.ts` (gộp / tách),
+`lib/sach.test.ts` (PGlite + route: lọc theo nhà,
+theo con, đánh dấu bỏ, và ca **nhà chưa khai sách** cho ra đúng `splitByRule(text)`
+cũ).
+
 **Giọng đọc.** Mỗi bài có trường `lang` (`vi`/`en`) quyết định giọng đọc thành
 tiếng. Bé 4 tuổi chưa đọc được chữ nào nên nút 🔊 gần như là cách duy nhất để
 biết phải làm gì — đọc đề tiếng Anh bằng giọng Việt thì bé nghe không hiểu.
 Bố mẹ sửa được trường này ở màn "Kiểm tra lại".
 
-**Đồng hồ làm bài.** Mỗi bài có `duration_minutes` — AI ước 5–15 phút theo độ
-phức tạp (kẹp trong khoảng đó), bố mẹ sửa được ở màn "Kiểm tra lại" / "Sửa bài
-tập" / "Nhập tay" (sửa tay thì được ra ngoài khoảng, tối đa 180 phút). Ở màn của
+**Đồng hồ làm bài.** Mỗi bài có `duration_minutes` — AI ước 5–60 phút theo độ
+phức tạp (kẹp trong khoảng đó bằng `clampDuration`), bố mẹ sửa được ở màn "Kiểm
+tra lại" / "Sửa bài tập" / "Nhập tay" (sửa tay thì được ra ngoài khoảng, tối đa
+180 phút). Trần của AI là 60 chứ không phải 15 vì từ issue #64 **một cuốn sách là
+một bài**: ba trang toán ~8 phút mỗi trang là một thẻ ~24 phút thật, nên lời nhắc
+bắt AI **cộng** ước lượng của từng phần cho toàn bộ bài đã gộp — kẹp về 15 thì
+chuông reo giữa chừng và +1 "xong sớm" thành không thể đạt được đúng ở những bài
+mà luật gộp vừa làm to ra. Ở màn của
 con, bấm "Bắt đầu làm" là đếm ngược: vòng tiến độ đổi màu xanh → vàng → đỏ nhạt,
 giọng nói nhắc mỗi 5 phút và phút cuối, hết giờ chuông dịu + đếm quá giờ màu xám
 (không phạt), xong khi còn giờ thì confetti + lời khen. Mốc bắt đầu lưu trong
@@ -557,7 +690,8 @@ hơn giá và nếu chỉ đọc số dư thì app sẽ mời bố mẹ đi từ
 điểm không đụng vào ba luật cộng.
 
 **Không bao giờ để bố mẹ bị kẹt.** AI hỏng, hết quota hay chưa có key thì vẫn
-tách tạm theo dòng kèm cảnh báo, và luôn có đường "Nhập tay từng bài".
+tách tạm theo dòng (rồi gộp các dòng liền nhau cùng cuốn — xem **Tách theo cuốn
+sách**) kèm cảnh báo, và luôn có đường "Nhập tay từng bài".
 
 **PIN trên iPad.** Ô "Nhớ trên thiết bị này" mặc định **không** tick. iPad là máy
 dùng chung của các con — nhớ PIN ở đó thì PIN mất tác dụng. Không tick thì phiên bố

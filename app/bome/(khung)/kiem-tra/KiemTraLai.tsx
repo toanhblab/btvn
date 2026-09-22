@@ -1,10 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Child, DraftAssignment, HwSource } from '@/lib/types';
 import { DURATION_DEFAULT, HW_SOURCES, HW_SOURCE_DEFAULT, SUBJECTS, hwSourceOf, iconFor, subjectsFor } from '@/lib/types';
+import {
+  dinhTepVaoBanNhap, goTepKhoiBanNhap, gopLenBanNhap, maBanNhapMoi, tachBanNhap, viTriBanNhap,
+  type BanNhap,
+} from '@/lib/banNhap';
 import { useNgonNgu, useT } from '@/lib/i18n/client';
 import { giaTriGiong, luaChonGiong } from '@/lib/speech';
 import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
@@ -22,9 +26,25 @@ interface Payload {
 }
 
 // Giu dang chuoi de bo me xoa trong o roi go so moi; luu thi rong = mac dinh
-type Draft = DraftAssignment & { durationStr: string };
+type Draft = BanNhap;
 
-/** Man kiem tra lai — nen tu stitch-parent 08. Ban nhap se KHONG luu neu bo me chua bam. */
+/**
+ * Man kiem tra lai — nen tu stitch-parent 08. Ban nhap se KHONG luu neu bo me chua bam.
+ *
+ * LUAT CUA MAN NAY: moi thao tac cham vao MOT the deu tra the do theo MA cua no
+ * (`BanNhap.ma`, xem lib/banNhap.ts), khong bao gio theo cho dung trong mang. Cho
+ * dung doi ngay duoi tay bo me: "Gop voi bai tren" bot mot the, "✂️ Tach bai nay"
+ * chen them mot the. Thao tac nao co mot cho doi (`await` tai tep len) ma bat lay
+ * chi so truoc roi dung lai sau thi dinh tep vao bai KHAC — im lang, va bo me chi
+ * thay khi bai da luu xong. Cung ly do voi o de bai tra theo ma o `oDeBai`.
+ *
+ * Tra theo ma chi cuu duoc the CON NAM DO. Gop lam BIEN mot ma (the bi gop vao
+ * the tren), xoa cung vay, nen mot tep dang tai cho the do se khong con cho ma ve:
+ * bo di thi mat tep im lang, ma dinh sang the khac thi sai han. Vi the trong luc
+ * tai tep, moi thao tac DOI CAU TRUC danh sach — Gop, Tach, Xoa the, va ca viec
+ * bat dau MOT lan tai nua (`uploadingMa` chi giu duoc mot) — deu bi khoa, cung
+ * khuon voi nut Luu. Cho doi vai giay, khong mat gi.
+ */
 export default function KiemTraLai({
   children: kids,
   blobEnabled,
@@ -40,8 +60,13 @@ export default function KiemTraLai({
   const [hwSource, setHwSource] = useState<HwSource>(HW_SOURCE_DEFAULT);
   const [busy, setBusy] = useState(false);
   // Bai nao dang tai tep len — de khoa nut Luu va hien "Đang tải…" dung cho
-  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [uploadingMa, setUploadingMa] = useState<string | null>(null);
   const [error, setError] = useState('');
+  // O de bai cua tung the, tra theo MA ban nhap — de "Tach bai nay" doc vi tri
+  // con tro (selectionStart giu nguyen sau khi textarea mat focus vi bo me bam
+  // sang nut). Tra theo chi so thi sau mot lan gop, con tro cu cua the nay bi doc
+  // thanh con tro cua ban nhap khac.
+  const oDeBai = useRef<Record<string, HTMLTextAreaElement>>({});
 
   useEffect(() => {
     const raw = sessionStorage.getItem('btvn:draft');
@@ -52,6 +77,7 @@ export default function KiemTraLai({
     setDrafts(
       p.drafts.map((d) => ({
         ...d,
+        ma: maBanNhapMoi(),
         media: d.media ?? [],
         durationStr: String(d.durationMinutes ?? DURATION_DEFAULT),
         requiresVideo: d.requiresVideo ?? false,
@@ -65,15 +91,18 @@ export default function KiemTraLai({
 
   const chosenNames = kids.filter((c) => payload.childIds.includes(c.id)).map((c) => c.name);
 
-  const patch = (i: number, k: keyof Draft, v: unknown) =>
-    setDrafts((ds) => ds.map((d, j) => (j === i ? { ...d, [k]: v } : d)));
+  const dangTaiTep = uploadingMa !== null;
 
-  const remove = (i: number) => setDrafts((ds) => ds.filter((_, j) => j !== i));
+  const patch = (ma: string, k: keyof Draft, v: unknown) =>
+    setDrafts((ds) => ds.map((d) => (d.ma === ma ? { ...d, [k]: v } : d)));
+
+  const remove = (ma: string) => setDrafts((ds) => ds.filter((d) => d.ma !== ma));
 
   const addBlank = () =>
     setDrafts((ds) => [
       ...ds,
       {
+        ma: maBanNhapMoi(),
         subject: T('Khác'), icon: iconFor('Khác'), content: '', note: null, lang: 'vi',
         confidence: 1, media: [], durationStr: String(DURATION_DEFAULT),
         requiresVideo: false,
@@ -81,57 +110,37 @@ export default function KiemTraLai({
     ]);
 
   /** Tai tep len va dinh vao DUNG MOT bai — vi du video phat am cho bai tieng Anh. */
-  async function addMedia(i: number, files: FileList | null) {
+  async function addMedia(ma: string, files: FileList | null) {
     if (!files?.length) return;
-    setUploadingIdx(i);
+    setUploadingMa(ma);
     setError('');
     try {
       for (const file of Array.from(files)) {
         const m = await uploadMediaFile(file, blobEnabled, T);
-        setDrafts((ds) =>
-          ds.map((d, j) => (j === i ? { ...d, media: [...(d.media ?? []), m] } : d))
-        );
+        setDrafts((ds) => dinhTepVaoBanNhap(ds, ma, m));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : T('Không tải được tệp.'));
     } finally {
-      setUploadingIdx(null);
+      setUploadingMa(null);
     }
   }
 
-  const removeMedia = (i: number, url: string) =>
-    setDrafts((ds) =>
-      ds.map((d, j) => (j === i ? { ...d, media: (d.media ?? []).filter((m) => m.url !== url) } : d))
-    );
+  const removeMedia = (ma: string, url: string) =>
+    setDrafts((ds) => goTepKhoiBanNhap(ds, ma, url));
 
   /** Gop bai nay vao bai ngay tren — AI hay tach nham mot bai thanh hai dong. */
-  const mergeUp = (i: number) =>
+  const mergeUp = (ma: string) => setDrafts((ds) => gopLenBanNhap(ds, viTriBanNhap(ds, ma)));
+
+  /** Tach bai nay lam hai tai con tro trong O DE BAI CUA CHINH the do. */
+  const splitAt = (ma: string) =>
     setDrafts((ds) =>
-      ds.reduce<Draft[]>((acc, d, j) => {
-        if (j === i && acc.length) {
-          const prev = acc[acc.length - 1];
-          // Tep dinh kem lay hop cua hai bai, khong nhan doi tep trung URL
-          const media = [
-            ...(prev.media ?? []),
-            ...(d.media ?? []).filter((m) => !(prev.media ?? []).some((x) => x.url === m.url)),
-          ];
-          acc[acc.length - 1] = {
-            ...prev,
-            content: `${prev.content} ${d.content}`.trim(),
-            media,
-            // Mot trong hai nua co yeu cau quay video thi bai gop van phai quay
-            requiresVideo: Boolean(prev.requiresVideo || d.requiresVideo),
-          };
-          return acc;
-        }
-        return [...acc, d];
-      }, [])
-    );
+      tachBanNhap(ds, viTriBanNhap(ds, ma), oDeBai.current[ma]?.selectionStart ?? null));
 
   async function save() {
     const clean = drafts
       .filter((d) => d.content.trim())
-      .map(({ durationStr, ...d }) => ({
+      .map(({ durationStr, ma, ...d }) => ({
         ...d,
         durationMinutes: durationStr === '' ? DURATION_DEFAULT : Number(durationStr),
       }));
@@ -225,11 +234,13 @@ export default function KiemTraLai({
 
       <div className="flex flex-col gap-p-tight mb-4">
         {drafts.map((d, i) => (
-          <div key={i}>
+          <div key={d.ma}>
             {i > 0 && (
               <button
-                onClick={() => mergeUp(i)}
-                className="text-p-body-sm text-primary py-1 px-2 min-h-p-tap w-full text-left"
+                onClick={() => mergeUp(d.ma)}
+                disabled={dangTaiTep}
+                className="text-p-body-sm text-primary py-1 px-2 min-h-p-tap w-full text-left
+                           disabled:opacity-40"
               >
                 + {T('Gộp với bài trên')}
               </button>
@@ -239,16 +250,21 @@ export default function KiemTraLai({
 
               <div className="flex items-start gap-2">
                 <textarea
+                  ref={(el) => {
+                    if (el) oDeBai.current[d.ma] = el;
+                    else delete oDeBai.current[d.ma];
+                  }}
                   value={d.content}
-                  onChange={(e) => patch(i, 'content', e.target.value)}
+                  onChange={(e) => patch(d.ma, 'content', e.target.value)}
                   rows={2}
                   placeholder={T('Đề bài…')}
                   className="flex-1 bg-transparent text-p-body text-on-surface resize-y outline-none
                              border-b border-dashed border-outline-variant pb-1"
                 />
                 <button
-                  onClick={() => remove(i)}
-                  className="text-outline hover:text-error min-h-p-tap px-1"
+                  onClick={() => remove(d.ma)}
+                  disabled={dangTaiTep}
+                  className="text-outline hover:text-error min-h-p-tap px-1 disabled:opacity-40"
                   aria-label={T('Xoá bài')}
                 >
                   <span className="material-symbols-outlined">delete</span>
@@ -259,8 +275,8 @@ export default function KiemTraLai({
                 <select
                   value={d.subject}
                   onChange={(e) => {
-                    patch(i, 'subject', e.target.value);
-                    patch(i, 'icon', iconFor(e.target.value));
+                    patch(d.ma, 'subject', e.target.value);
+                    patch(d.ma, 'icon', iconFor(e.target.value));
                   }}
                   className="text-p-body-sm rounded-full bg-surface-container px-3 py-1.5 text-on-surface"
                 >
@@ -272,7 +288,7 @@ export default function KiemTraLai({
                 {/* Ngon ngu quyet dinh giong doc o man cua con — phai sua duoc (PRD 4.2) */}
                 <select
                   value={giaTriGiong(ngonNgu, d.lang)}
-                  onChange={(e) => patch(i, 'lang', e.target.value)}
+                  onChange={(e) => patch(d.ma, 'lang', e.target.value)}
                   className="text-p-body-sm rounded-full bg-surface-container px-3 py-1.5 text-on-surface"
                 >
                   {luaChonGiong(ngonNgu, T).map((o) => (
@@ -280,7 +296,7 @@ export default function KiemTraLai({
                   ))}
                 </select>
 
-                {/* Dong ho o man cua con dem nguoc tu so nay. AI uoc 5-15 phut;
+                {/* Dong ho o man cua con dem nguoc tu so nay. AI uoc 5-60 phut;
                     bo me sua tay thi duoc ghi ngoai khoang do (toi da 180). */}
                 <label className="inline-flex items-center gap-1 text-p-body-sm rounded-full bg-surface-container px-3 py-1.5 text-on-surface">
                   <span className="material-symbols-outlined text-base">timer</span>
@@ -290,7 +306,7 @@ export default function KiemTraLai({
                     min={1}
                     max={180}
                     value={d.durationStr}
-                    onChange={(e) => patch(i, 'durationStr', e.target.value)}
+                    onChange={(e) => patch(d.ma, 'durationStr', e.target.value)}
                     className="w-12 bg-transparent outline-none text-right"
                     aria-label={T('Thời lượng (phút)')}
                   />
@@ -301,7 +317,7 @@ export default function KiemTraLai({
                     rong de doc duoc ca ten sach, khong chi so trang */}
                 <input
                   value={d.note ?? ''}
-                  onChange={(e) => patch(i, 'note', e.target.value || null)}
+                  onChange={(e) => patch(d.ma, 'note', e.target.value || null)}
                   placeholder={T('sách, trang…')}
                   className="text-p-body-sm rounded-full bg-surface-container px-3 py-1.5 text-on-surface
                              placeholder:text-outline flex-1 min-w-[10rem]"
@@ -310,7 +326,7 @@ export default function KiemTraLai({
                 {/* AI tu danh dau bai phai quay video (doc to, doc thuoc long...);
                     danh nham hay sot thi bo me bam chip nay de bat/tat lai */}
                 <button
-                  onClick={() => patch(i, 'requiresVideo', !d.requiresVideo)}
+                  onClick={() => patch(d.ma, 'requiresVideo', !d.requiresVideo)}
                   aria-pressed={d.requiresVideo ?? false}
                   className={`text-p-body-sm rounded-full px-3 py-1.5 border transition-colors ${
                     d.requiresVideo
@@ -319,6 +335,18 @@ export default function KiemTraLai({
                   }`}
                 >
                   🎥 {d.requiresVideo ? T('Cần quay video') : T('Không cần video')}
+                </button>
+
+                {/* Chieu nguoc cua "Gộp với bài trên": AI gop theo cuon sach (#64)
+                    nen gop nham thi bo me cham vao cho muon cat trong o de bai roi
+                    bam nut nay (splitAt) */}
+                <button
+                  onClick={() => splitAt(d.ma)}
+                  disabled={dangTaiTep}
+                  className="text-p-body-sm rounded-full px-3 py-1.5 border border-transparent
+                             bg-surface-container text-on-surface-variant disabled:opacity-40"
+                >
+                  ✂️ {T('Tách bài này')}
                 </button>
 
                 {/* Chi con ban tach tho theo dong (0.3) moi roi xuong duoi nguong */}
@@ -343,7 +371,7 @@ export default function KiemTraLai({
                     <span className="material-symbols-outlined text-base shrink-0">{MEDIA_ICON[m.kind]}</span>
                     <span className="truncate">{m.name}</span>
                     <button
-                      onClick={() => removeMedia(i, m.url)}
+                      onClick={() => removeMedia(d.ma, m.url)}
                       className="min-h-p-tap px-1 flex items-center"
                       aria-label={T('Bỏ tệp {name}', { name: m.name })}
                     >
@@ -351,22 +379,28 @@ export default function KiemTraLai({
                     </button>
                   </span>
                 ))}
+                {/* Khoa trong luc dang tai: the DOM bi khoa thi bam nhan khong mo
+                    duoc hop chon tep, nen nhan phai TRONG nhu da khoa — khong thi
+                    bo me bam mai vao mot chip nhin y het chip chay duoc. */}
                 <label
-                  className="inline-flex items-center gap-1 text-p-body-sm rounded-full px-3 py-1.5
-                             border border-dashed border-outline-variant text-on-surface-variant cursor-pointer"
+                  aria-disabled={dangTaiTep}
+                  className={`inline-flex items-center gap-1 text-p-body-sm rounded-full px-3 py-1.5
+                             border border-dashed border-outline-variant text-on-surface-variant
+                             ${dangTaiTep ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   <input
                     type="file"
                     accept={MEDIA_ACCEPT}
                     multiple
+                    disabled={dangTaiTep}
                     className="hidden"
                     onChange={(e) => {
-                      addMedia(i, e.target.files);
+                      addMedia(d.ma, e.target.files);
                       e.target.value = ''; // chon lai cung mot tep van phai chay
                     }}
                   />
                   <span className="material-symbols-outlined text-base">attach_file</span>
-                  {uploadingIdx === i ? T('Đang tải…') : T('Video / ghi âm / ảnh')}
+                  {uploadingMa === d.ma ? T('Đang tải…') : T('Video / ghi âm / ảnh')}
                 </label>
               </div>
             </div>
@@ -394,7 +428,7 @@ export default function KiemTraLai({
         </Link>
         <button
           onClick={save}
-          disabled={busy || uploadingIdx !== null}
+          disabled={busy || dangTaiTep}
           className="flex-[2] flex items-center justify-center gap-2 bg-success text-white rounded-card
                      h-14 min-h-p-tap text-p-body font-bold card-shadow disabled:opacity-60"
         >

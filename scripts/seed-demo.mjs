@@ -99,7 +99,7 @@ export async function goiLenhNhaDemo(lang, pinHash) {
 
   // 2. Xoa sach ben trong nha demo — CHI theo family_id cua nha demo (CASCADE keo
   //    theo assignments, score_events, reward_redemptions, score_penalties).
-  for (const bang of ['children', 'daily_chores', 'rewards', 'submissions']) {
+  for (const bang of ['children', 'daily_chores', 'books', 'rewards', 'submissions']) {
     q(`DELETE FROM ${bang} WHERE family_id = $1`, [fam]);
   }
 

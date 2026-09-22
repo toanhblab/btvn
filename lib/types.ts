@@ -196,15 +196,23 @@ export interface DraftAssignment {
 /* ---------------- Thoi luong lam bai ----------------
  *
  * AI uoc luong theo do phuc tap nhung bi KEP trong [MIN, MAX] — LLM doi khi
- * phong dai ("bai kho, 45 phut") trong khi tre 4-6 tuoi khong ngoi qua 15 phut.
- * Bo me sua tay thi chi can so duong hop ly, duoc phep ra ngoai khoang cua AI.
+ * phong dai ("bai kho, 45 phut") cho mot viec nho.
+ *
+ * Tran cua AI la 60 chu khong con la 15 (issue #64): tu khi mot CUON SACH la
+ * mot bai, mot the co the la ba trang toan ~8 phut moi trang = ~24 phut that.
+ * Kep ve 15 thi dong ho reo giua chung va +1 "xong som" (lib/diem.ts) thanh
+ * khong the dat duoc DUNG o nhung bai ma luat gop vua lam to ra. Loi nhac cua
+ * AI (lib/ai.ts) vi the phai CONG uoc luong tung phan cua bai da gop.
+ *
+ * Bo me sua tay thi chi can so duong hop ly, duoc phep ra ngoai khoang cua AI
+ * (sanitizeDuration, toi da 180) — tran do KHONG doi.
  */
 
 export const DURATION_MIN = 5;
-export const DURATION_MAX = 15;
+export const DURATION_MAX = 60;
 export const DURATION_DEFAULT = 10;
 
-/** Kep uoc luong cua AI vao [5, 15]; gia tri hong -> mac dinh 10. */
+/** Kep uoc luong cua AI vao [5, 60]; gia tri hong -> mac dinh 10. */
 export function clampDuration(v: unknown): number {
   const n = Math.round(Number(v));
   if (!Number.isFinite(n) || n <= 0) return DURATION_DEFAULT;
@@ -232,8 +240,17 @@ export const SUBJECTS = {
   'Khác': '📝',
 } satisfies Partial<Record<Key, string>>;
 
-type TenMon = keyof typeof SUBJECTS;
+export type TenMon = keyof typeof SUBJECTS;
 const SUBJECT_KEYS = Object.keys(SUBJECTS) as TenMon[];
+const TAP_TEN_MON = new Set<string>(SUBJECT_KEYS);
+
+/**
+ * Chuoi nay co phai KHOA mon that khong (giong hwSourceOf: hoi mot Set, khong hoi
+ * `v in SUBJECTS`). `in` di ca chuoi nguyen mau nen 'constructor', 'toString',
+ * '__proto__', 'hasOwnProperty' deu tra true — mot than JSON go tay la lot vao DB
+ * mot "mon" nhu vay, roi no len loi nhac cua AI va len the bai cua con.
+ */
+export const laTenMon = (v: unknown): v is TenMon => typeof v === 'string' && TAP_TEN_MON.has(v);
 
 /** Danh sach mon theo ngon ngu cua nha: { ten hien thi (= ten luu DB) -> icon }. */
 export function subjectsFor(T: T = T_VI): Record<string, string> {
@@ -251,6 +268,53 @@ const ICON_THEO_TEN_MON: Record<string, string> = Object.fromEntries([
 
 export function iconFor(subject: string): string {
   return ICON_THEO_TEN_MON[subject] ?? SUBJECTS['Khác'];
+}
+
+/* ---------------- Sach / vo / nguon bai tap cua cac con (issue #64) ----------------
+ *
+ * Bo me khai bao o /bome/sach; AI tach bai nhan danh sach nay lam ngu canh de
+ * nhan dung ten sach (viet tat, sai chinh ta) va doan dung mon, roi GOP moi viec
+ * trong cung mot cuon thanh MOT bai. Danh sach chi la goi y: nha chua khai cuon
+ * nao thi AI van gop theo sach dua vao chinh chu trong tin nhan (luat nam trong
+ * PROMPT o lib/ai.ts, khong phu thuoc bang nay).
+ *
+ * Luoc do + ly do (treo vao nha kem child_ids, bo la danh dau) o
+ * migrations/021_sach_cua_nha.sql. Man cua con KHONG doc bang nay: ten sach da
+ * nam trong assignments.note tu luc tach bai.
+ */
+
+export interface Book {
+  id: string;
+  name: string;
+  /**
+   * Mon cua sach — KHOA (ten mon tieng Viet trong SUBJECTS), hien thi thi boc
+   * T(subject). null = bo me chua chon / sach nhieu mon.
+   */
+  subject: TenMon | null;
+  /** Sach cua con nao: null = CA NHA, hoac danh sach id con (nhu DailyChore.childIds). */
+  childIds: string[] | null;
+}
+
+/** Ten sach — dai hon thi tran o "sach, trang" tren the bai cua con. */
+export const MAX_CHU_TEN_SACH = 60;
+
+/**
+ * Lam sach ten sach bo me go, TRUOC khi so trung va truoc khi luu — POST va PATCH
+ * dung chung mot ham de hai duong khong lech nhau.
+ *
+ * Ep NFC la phan quan trong nhat: "ở" go tren ban phim tieng Viet cua macOS la
+ * "o" + dau roi (NFD), con chu dan tu Zalo thuong la mot ky tu (NFC). Hai chuoi do
+ * hien ra giong het nhau ma Postgres `lower(...) = lower(...)` trong bookTrungTen
+ * coi la khac, nen khong ep thi nha co hai dong "Vở ô ly" khong the phan biet tren
+ * man hinh, va ca hai cung di vao loi nhac cua AI. Phep khop ten sach luc tach bai
+ * (chuanHoaNFC trong lib/ai.ts) cung ep NFC — hai ben phai cung mot dang.
+ */
+export const lamSachTenSach = (s: string): string =>
+  s.normalize('NFC').replace(/\s+/g, ' ').trim();
+
+/** Loc mon cua sach tu ngoai vao (API body, DB): phai la khoa trong SUBJECTS, khong thi null. */
+export function monSachOf(v: unknown): TenMon | null {
+  return laTenMon(v) ? v : null;
 }
 
 /* ---------------- Nhiem vu hang ngay ("viec nha") ----------------

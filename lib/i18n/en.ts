@@ -582,6 +582,33 @@ export const EN = {
     'Tap "Add". On first launch, if the app asks which family this device belongs to, enter the family PIN once.',
   'Trên Android hoặc máy tính dùng Chrome: bấm menu ⋮ rồi chọn "Cài đặt ứng dụng" (hoặc "Thêm vào Màn hình chính").':
     'On Android or a computer with Chrome: open the ⋮ menu and choose "Install app" (or "Add to Home screen").',
+
+  /* ---- Sach cua cac con (issue #64): /bome/sach, the dan o Cai dat, dong dan o Them bai, nut Tach o Kiem tra lai ---- */
+  'Sách của các con': "The kids' books",
+  'Khai sách, vở, nguồn bài tập': 'List books, notebooks and worksheet sources',
+  '{n} cuốn': '{n} books',
+  'Chưa khai cuốn nào': 'No books listed yet',
+  'để máy tách bài theo đúng cuốn sách': 'so the app splits homework by the right book',
+  'Khai tên sách, vở, phiếu bài tập các con đang dùng. Khi bố mẹ chụp tin nhắn của cô, máy dùng danh sách này để nhận đúng tên sách (kể cả khi cô viết tắt), đoán đúng môn, và gộp mọi trang / số bài trong cùng một cuốn thành MỘT bài. Chưa khai cuốn nào thì máy vẫn gộp theo sách dựa vào chữ trong tin nhắn.': "List the books, notebooks and worksheets your kids use. When you snap the teacher's message, the app uses this list to recognise book names (even abbreviated ones), pick the right subject, and merge every page / exercise from the same book into ONE task. With no books listed, the app still groups by book from the message text alone.",
+  'Tên sách': 'Book name',
+  'Môn của sách': 'Subject of the book',
+  'Môn:': 'Subject:',
+  'Chưa rõ môn': 'Subject not set',
+  'Sách của:': 'Used by:',
+  'Bỏ cuốn “{name}”?': 'Remove “{name}”?',
+  'Cuốn này biến mất khỏi danh sách và từ lần tách bài sau máy không dùng nó để nhận tên sách nữa. Bài đã giao vẫn giữ nguyên tên sách trong ghi chú.': 'This book disappears from the list, and from the next split onwards the app no longer uses it to recognise book names. Homework already assigned keeps the book name in its note.',
+  'Bỏ cuốn này': 'Remove this book',
+  'Chưa có cuốn nào. Thêm sách, vở, phiếu bài tập các con đang dùng để máy tách bài chuẩn hơn.': 'No books yet. Add the books, notebooks and worksheets your kids use so the app splits homework more accurately.',
+  'Tên sách, vở, phiếu bài tập…': 'Book, notebook or worksheet name…',
+  'Thêm sách': 'Add book',
+  'Chưa nhập tên sách.': 'Enter a book name first.',
+  'Tên sách dài quá, để ngắn thôi.': 'The book name is too long. Keep it short.',
+  'Nhà mình đã có cuốn này rồi.': 'This book is already on the list.',
+  'Không tìm thấy cuốn sách này.': 'Book not found.',
+  'Máy gộp mọi trang / số bài trong cùng một cuốn sách thành một bài.': 'The app merges every page / exercise from the same book into one task.',
+  'Khai sách của các con': "List your kids' books",
+  'để máy nhận đúng tên sách.': 'so it recognises book names correctly.',
+  'Tách bài này': 'Split this task',
 } as const;
 
 export type Key = keyof typeof EN;

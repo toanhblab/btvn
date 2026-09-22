@@ -75,7 +75,7 @@ export async function POST(req: Request) {
       note: d.note || null,
       lang: d.lang === 'en' ? 'en' : 'vi',
       confidence: d.confidence ?? 1,
-      // Bo me da duyet o man Kiem tra lai nen chi lam sach, khong kep lai 5-15
+      // Bo me da duyet o man Kiem tra lai nen chi lam sach, khong kep lai 5-60
       durationMinutes: sanitizeDuration(d.durationMinutes),
       requiresVideo: d.requiresVideo === true,
       // Tep dinh kem: chi giu phan tu co url that; kind la thi khong doan bua,

@@ -66,7 +66,7 @@ Hệ quả thiết kế (quan trọng, quyết định UI):
 ### 4.2 Tự động tách bài tập
 
 - Với ảnh: đọc chữ trong ảnh (OCR / AI vision) → ra text.
-- Với text: tách thành từng bài riêng biệt (theo môn, theo số bài, theo dòng gạch đầu dòng…).
+- Với text: tách thành từng bài riêng biệt **theo cuốn sách / vở / nguồn bài tập** — mọi trang, số bài trong cùng một cuốn là MỘT bài, không tách theo dòng hay theo trang (issue #64). Phụ huynh khai danh sách sách của các con ở phần cài đặt để AI nhận đúng tên sách và môn; chưa khai thì vẫn gộp theo sách dựa vào nội dung.
 - Mỗi bài tập tách ra gồm: **môn học**, **nội dung/đề bài**, **ghi chú** (ví dụ "trang 34, bài 3"), **hạn hoàn thành**, **ngôn ngữ của đề (`vi` | `en`)**, **thời lượng làm bài** (phút, AI ước theo độ phức tạp — xem mục 4.3).
 - Ngôn ngữ do AI tự nhận biết (đề của lớp tiếng Anh thường là tiếng Anh hoặc lẫn Việt–Anh) và phụ huynh sửa lại được. Trường này quyết định giọng đọc ở mục 4.3.
 - Bài **phải quay video nộp lại** ("đọc to", "đọc thuộc lòng", "quay video gửi cô", thể dục/biểu diễn) được AI gắn cờ ngay khi tách bài; phụ huynh bật/tắt lại cờ này theo từng bài ở bản nháp và sau khi lưu. Xem cách con nộp ở mục 4.3.
@@ -82,7 +82,7 @@ Thiết kế cho trẻ 4–6 tuổi, chưa đọc thạo, dùng iPad:
 - Mở một bài → ảnh gốc chiếm phần lớn màn hình (zoom được) + đề bài chữ to + **nút loa 🔊 "Nghe đề bài"**.
 - Giọng đọc theo ngôn ngữ của bài: đề tiếng Việt đọc giọng `vi-VN`, đề tiếng Anh đọc giọng `en-US`. Bài lẫn hai thứ tiếng thì đọc từng đoạn theo đúng giọng của đoạn đó.
 - Nút **"Đã làm xong"** rất to, có phản hồi vui (âm thanh / hiệu ứng nhỏ). Tick sai thì bỏ tick được.
-- **Đồng hồ làm bài:** mỗi bài có thời lượng ước tính (AI ước 5–15 phút theo độ phức tạp, bố mẹ sửa được). Con bấm "Bắt đầu làm" → đếm ngược to rõ kèm vòng tiến độ đổi màu (xanh → vàng → đỏ nhạt) và 🚀 bay theo vòng; giọng nói nhắc mỗi 5 phút và ở phút cuối. Hết giờ chỉ có chuông dịu + lời động viên, đồng hồ đếm quá giờ màu xám — không phạt. Xong khi còn giờ thì bắn confetti + lời khen.
+- **Đồng hồ làm bài:** mỗi bài có thời lượng ước tính (AI ước 5–60 phút theo độ phức tạp, bài gộp cả cuốn thì cộng ước lượng từng phần, bố mẹ sửa được). Con bấm "Bắt đầu làm" → đếm ngược to rõ kèm vòng tiến độ đổi màu (xanh → vàng → đỏ nhạt) và 🚀 bay theo vòng; giọng nói nhắc mỗi 5 phút và ở phút cuối. Hết giờ chỉ có chuông dịu + lời động viên, đồng hồ đếm quá giờ màu xám — không phạt. Xong khi còn giờ thì bắn confetti + lời khen.
 - Bài gắn cờ **phải quay video** (mục 4.2) thì không có nút tick: con quay ngay trong trang (xem trước, quay lại được, tối đa 10 phút) — đây là đường quay duy nhất, và **gửi video chính là hành động hoàn thành bài**. Mỗi bài giữ một video mới nhất; phụ huynh phát lại được ở màn của mình (mục 4.4).
 - Tiến độ dạng hình, không dạng số: 5 ô vuông, làm xong ô nào thì ô đó sáng lên (kèm chữ `3/5` cho bố mẹ nhìn).
 - Vùng bấm tối thiểu ~64px cho ngón tay trẻ con; không có menu ẩn, không có cử chỉ swipe phức tạp.
