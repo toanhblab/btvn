@@ -263,7 +263,7 @@ vào btvn. btvn lưu **nguyên văn** tin, chạy bộ tách bài sẵn có, và
 **NHÁP** cho từng con của nguồn. Bố mẹ đọc, sửa nếu cần, bấm **Duyệt** —
 lúc đó con mới thấy bài. Captain chốt 2026-09-20: *"cần bố mẹ duyệt"*.
 
-Lược đồ và lý do từng bảng ở `migrations/021_nhan_bai_tu_zalo.sql`; phần thuần
+Lược đồ và lý do từng bảng ở `migrations/023_nhan_bai_tu_zalo.sql`; phần thuần
 (đọc gói tin, luật hạn nộp, luật tệp) ở `lib/zalo.ts`; phần chạm CSDL và kho
 tệp ở `lib/nhanBaiZalo.ts`.
 
@@ -387,7 +387,7 @@ agent tự khai quá 25MB, thiếu `url`, `url` không phải tệp của kho m�
 vào, bố mẹ vẫn có bài để duyệt, và mục chờ duyệt **hiện** danh sách tệp bị bỏ để
 họ không tưởng là cô quên gửi. Trước đây cả gói trả 400, mà agent gửi lại mỗi 30
 phút nên một tờ `.docx` là khoá vĩnh viễn tin giao bài đó. Cột
-`bai_tu_zalo.tep_bo_qua` (migration 022) giữ danh sách; thân `201` trả cùng danh
+`bai_tu_zalo.tep_bo_qua` (migration 024) giữ danh sách; thân `201` trả cùng danh
 sách đó và máy chủ ghi một dòng `console.warn`.
 
 ### Bài NHÁP nằm trong chính bảng `assignments`

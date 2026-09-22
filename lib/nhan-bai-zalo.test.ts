@@ -1,5 +1,5 @@
 /**
- * Cua nhan bai tu Zalo (migration 021) — chay THAT tren PGlite trong RAM, qua
+ * Cua nhan bai tu Zalo (migration 023) — chay THAT tren PGlite trong RAM, qua
  * CHINH hai route handler (`app/api/nhan-bai-zalo/*`) va CHINH lib/store.ts,
  * khong mo phong lai SQL. Duoc vay nho scripts/test-hook.mjs (resolve import
  * khong duoi) + BTVN_PGLITE_DIR=memory://, giong lib/nha-demo.test.ts; goi route
@@ -964,6 +964,38 @@ test('bai nhap giu DUNG THU TU co giao viet, khong bi sap lai theo ten mon', asy
   const [tay] = await db.query(
     `SELECT zalo_thu_tu FROM assignments WHERE zalo_bai_id IS NULL AND child_id = $1`, [CON_A]);
   assert.equal(tay.zalo_thu_tu, null);
+});
+
+test('tach bai tu Zalo dung NGU CANH SACH cua nha, y nhu duong bo me nhap tay', async () => {
+  // Issue #64 dua `sach` vao CA HAI duong tach (`extractAssignments`/`splitByRule`),
+  // nhung duong Zalo vao sau nen rat de quen truyen — va quen thi KHONG co loi
+  // kieu nao: tham so la tuy chon, tsc im, tin van vao 201. Cai vo la CUNG MOT
+  // tin nhan bi tach hai kieu khac nhau tuy no vao app bang duong nao: bo me dan
+  // anh thi gop theo cuon, co dang Zalo thi khong.
+  //
+  // Hai dong duoi CHI gop duoc khi biet "Vở ô ly" la mot cuon cua nha: co go
+  // khong dau o dong tren, co dau o dong duoi. Khong co ngu canh sach thi chung
+  // la hai bai "Khác" roi nhau.
+  await db.query(
+    `INSERT INTO books (id, family_id, name, subject, child_ids)
+     VALUES ('bok_oly', $1, 'Vở ô ly', 'Tiếng Việt', $2)`, [FAM, [CON_A, CON_B]]);
+  try {
+    const res = await goiCua(goiHanHomNay({
+      ma_tin: 'tin-ngu-canh-sach',
+      nguyen_van: 'Vo o ly trang 5\nVở ô ly trang 6',
+      dinh_kem: [],
+    }));
+    assert.equal(res.status, 201);
+
+    const bai = await store.listAssignments(FAM, { keCaNhap: true, from: '2000-01-01', childId: CON_A });
+    assert.equal(bai.length, 1, 'hai dong cung mot cuon phai thanh MOT bai');
+    assert.equal(bai[0].subject, 'Tiếng Việt', 'mon phai lay tu cuon sach da khai');
+    assert.equal(bai[0].note, 'Vở ô ly');
+    assert.ok(bai[0].content.includes('trang 5') && bai[0].content.includes('trang 6'),
+      bai[0].content);
+  } finally {
+    await db.query(`DELETE FROM books WHERE id = 'bok_oly'`);
+  }
 });
 
 /* ---------------- 5. Tep dinh kem ---------------- */

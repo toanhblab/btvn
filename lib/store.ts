@@ -328,7 +328,7 @@ const ASSIGNMENT_FROM = `assignments a
      LEFT JOIN daily_chores dc ON dc.id = a.chore_id`;
 
 /**
- * Dong NHAP tu Zalo (migration 021) — bai cua co giao vua vao, bo me CHUA duyet.
+ * Dong NHAP tu Zalo (migration 023) — bai cua co giao vua vao, bo me CHUA duyet.
  *
  * Bai nhap nam trong CHINH bang assignments de bo me sua no bang dung cac duong
  * sua bai da co, nhung no KHONG duoc coi la bai cua con o bat ky dau: khong hien
@@ -339,7 +339,7 @@ const ASSIGNMENT_FROM = `assignments a
  * Nen MOI cau doc assignments o tep nay deu phai noi RO no muon gi, cung khuon
  * voi `includeChores` (issue #36): mac dinh la KHONG thay dong nhap, chi hai
  * duong cua bo me (man duyet, va duong sua/xoa mot bai theo id) xin ro. Danh
- * sach day du cac cho doc — ke ca ngoai tep nay — o PR cua migration 021.
+ * sach day du cac cho doc — ke ca ngoai tep nay — o PR cua migration 023.
  *
  * `$`-free: chen vao WHERE duoc o moi cau, khong an tham so nao.
  */
@@ -401,7 +401,7 @@ export async function listAssignments(
      */
     keCaBaiChuaXongTruocDo?: boolean;
     /**
-     * Bai NHAP tu Zalo chua duyet (migration 021) — mac dinh loai het, xem
+     * Bai NHAP tu Zalo chua duyet (migration 023) — mac dinh loai het, xem
      * `CHI_BAI_THAT`. CHI man "Bài cô vừa giao, chờ duyệt" cua bo me xin true.
      */
     keCaNhap?: boolean;
@@ -444,7 +444,7 @@ export async function listAssignments(
   // do la thu tu duy nhat do chieu duoc. CO Y dat truoc `subject`: dat sau thi
   // ten mon lai xao tung dung cai thu tu vua giu. Doi lai, mot ngay co ca bai bo
   // me go tay lan bai tu Zalo thi nhom Zalo len dau — chap nhan, khong con so
-  // nao doi theo. Xem migrations/021.
+  // nao doi theo. Xem migrations/023.
   const rows = await query<AssignmentRow>(
     `SELECT ${ASSIGNMENT_SELECT} FROM ${ASSIGNMENT_FROM}
      WHERE ${where.join(' AND ')}
@@ -486,7 +486,7 @@ export async function getAssignment(
  * childIds duoc loc lai theo nha truoc khi ghi: neu goi API voi id con nha khac
  * thi bai do khong duoc tao ra.
  *
- * Duong bai tu Zalo (migration 021) dung CHINH ham nay, chi khac `zaloBaiId`:
+ * Duong bai tu Zalo (migration 023) dung CHINH ham nay, chi khac `zaloBaiId`:
  * mot tin cua co la mot "dot nhap" y het mot lan bo me chup anh dan vao, va viec
  * nhan MOT dot ra N bai x M con thi giong het. Truyen `zaloBaiId` thi ca dot ghi
  * o trang thai NHAP (khong ai thay ngoai man duyet) va moi bai tro ve dong
@@ -1425,7 +1425,7 @@ export async function daCongDiemNgay(familyId: string, childId: string, date: st
  * (PATCH cua bo me, xet cho ngay CU). Khong co no thi ngay con lam xong that
  * nhung dong cuoi bi bo me xoa se khong bao gio duoc cong.
  *
- * Bai NHAP tu Zalo (migration 021) bi loai khoi cau doc: no la dong 'todo' ma
+ * Bai NHAP tu Zalo (migration 023) bi loai khoi cau doc: no la dong 'todo' ma
  * KHONG AI TICK DUOC (man cua con khong ve), nen dem no vao la khoa vinh vien
  * +10 cua ca ngay do — mot tin cua co vao luc 20h ma bo me chua kip duyet se am
  * tham cuop mat 10 ⭐ cua ca hai con. Duyet xong thi dong thanh that va vao dem

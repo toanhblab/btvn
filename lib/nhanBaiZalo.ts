@@ -1,7 +1,7 @@
 /**
  * Cua nhan bai co giao dang tren nhom Zalo — phan cham CSDL va kho tep.
  *
- * Luoc do + ly do tung bang o `migrations/021_nhan_bai_tu_zalo.sql`; phan thuan
+ * Luoc do + ly do tung bang o `migrations/023_nhan_bai_tu_zalo.sql`; phan thuan
  * (doc goi tin, luat han nop, luat tep) o `lib/zalo.ts`; hop dong HTTP o
  * `app/api/nhan-bai-zalo/*`.
  *
@@ -39,10 +39,10 @@
 import { BlobNotFoundError, head } from '@vercel/blob';
 import { query, queryOne } from './db';
 import {
-  listAssignments, newId, saveSubmission, taoNhiemVuNgayNeuChuaQua, todayISO,
+  listAssignments, listBooks, newId, saveSubmission, taoNhiemVuNgayNeuChuaQua, todayISO,
 } from './store';
 import { extractAssignments, hasAI, inferSource, splitByRule } from './ai';
-import { iconFor, type Assignment, type AttachedMedia, type DraftAssignment } from './types';
+import { iconFor, type Assignment, type AttachedMedia, type Book, type DraftAssignment } from './types';
 import { boDau, laUrlTepAppCap } from './media';
 import { taoT, type T } from './i18n/chu';
 import { ngonNguOf, type NgonNgu } from './i18n/ngonNgu';
@@ -611,26 +611,33 @@ async function anhChoAI(tep: TepZaloDaLuu[]): Promise<{ base64: string; mimeType
  *
  * Anh trong goi duoc dua kem cho AI; video va ghi am thi khong — model la thi
  * giac-ngon ngu, khong doc duoc chung.
+ *
+ * `sach` la ngu canh tach bai theo CUON (issue #64) — CA HAI duong tach deu
+ * nhan no, y nhu `/api/extract`. Tin cua co la dung cho luat "mot cuon = mot
+ * bai" dat gia nhat ("trang 41, 42, 43 sach Poth Math"), nen bo tham so nay ra
+ * la cung mot tin nhan bi tach hai kieu khac nhau tuy no vao app bang duong
+ * nao — bo me dan anh thi gop theo sach, co dang Zalo thi khong.
  */
 async function tachBai(
   nguyenVan: string,
   tep: TepZaloDaLuu[],
   ngonNguNha: NgonNgu,
-  T: T
+  T: T,
+  sach: Book[]
 ): Promise<{ drafts: DraftAssignment[]; nguonTach: 'ai' | 'rule' | 'nguyen-van'; canhBao?: string }> {
   if (hasAI) {
     const anh = await anhChoAI(tep);
     try {
-      const drafts = await extractAssignments({ text: nguyenVan, images: anh }, ngonNguNha);
+      const drafts = await extractAssignments({ text: nguyenVan, images: anh, sach }, ngonNguNha);
       if (drafts.length > 0) return { drafts, nguonTach: 'ai' };
     } catch (e) {
-      const drafts = splitByRule(nguyenVan, T);
+      const drafts = splitByRule(nguyenVan, T, sach);
       if (drafts.length > 0) {
         return { drafts, nguonTach: 'rule', canhBao: e instanceof Error ? e.message : String(e) };
       }
     }
   }
-  const drafts = splitByRule(nguyenVan, T);
+  const drafts = splitByRule(nguyenVan, T, sach);
   if (drafts.length > 0) return { drafts, nguonTach: 'rule' };
   return {
     drafts: [baiNhapTho(nguyenVan, T('Khác'), iconFor('Khác'))],
@@ -707,7 +714,7 @@ export async function nhanTinZalo(goi: GoiTinZalo): Promise<KetQuaNhanTin> {
 
   // `ma_nhom` chi DIEN VAO CHO TRONG, khong bao gio de len: bo me khai nguon
   // bang TEN nhom (thu ho nhin thay tren Zalo) con ma la thu chi zalo-agent doc
-  // duoc sau khi mo dung nhom (migration 021). `WHERE ma_nhom IS NULL` la ca
+  // duoc sau khi mo dung nhom (migration 023). `WHERE ma_nhom IS NULL` la ca
   // luat, dat trong CHINH cau UPDATE — mot nguon da co ma ma bi ghi de la moi
   // tin sau do chay sang nham nhom ma khong ai thay.
   await query(
@@ -754,7 +761,17 @@ async function tachVaTaoBaiNhap(
   const ngonNgu = ngonNguOf(nha?.ui_locale);
   const T = taoT(ngonNgu);
 
-  const { drafts, nguonTach, canhBao } = await tachBai(tin.nguyenVan, tin.tep, ngonNgu, T);
+  // Sach cua DUNG nhom con hoc lop nay (issue #64), y khuon `/api/extract`:
+  // "co thi tot" — bang chua co (SKIP_MIGRATIONS=1) hay DB truc trac thi coi nhu
+  // nha chua khai cuon nao, KHONG duoc chan ca tin giao bai vi mot bang ngu canh.
+  let sach: Book[] = [];
+  try {
+    sach = await listBooks(nguon.familyId, { childIds: nguon.childIds });
+  } catch (err) {
+    console.error('Khong doc duoc sach cua nha khi tach bai tu Zalo', nguon.familyId, err);
+  }
+
+  const { drafts, nguonTach, canhBao } = await tachBai(tin.nguyenVan, tin.tep, ngonNgu, T, sach);
   const dueDate = hanNopBai(tin.ngayTrongTin, tin.guiLuc, todayISO());
 
   const created = await saveSubmission({

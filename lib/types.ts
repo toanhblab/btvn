@@ -170,7 +170,7 @@ export interface Assignment {
    */
   choreNhom: NhomNhiemVu | null;
   /**
-   * Bai nay den tu tin nao cua co tren Zalo (migration 021) — null neu bo me
+   * Bai nay den tu tin nao cua co tren Zalo (migration 023) — null neu bo me
    * nhap tay. Van khac null sau khi bo me da duyet: no la duong lan nguoc ve
    * nguyen van tin de doi chieu.
    */

@@ -191,7 +191,7 @@ for (const [icon, name, cost] of rewards) {
   );
 }
 
-// 8. Hai nhom Zalo cua lop (migration 021). Id CO DINH, khong ngau nhien nhu
+// 8. Hai nhom Zalo cua lop (migration 023). Id CO DINH, khong ngau nhien nhu
 //     cac bang khac: cua nhan bai nhan `nguon_id` trong than goi, nen kiem tay
 //     bang curl / chay thu zalo-agent phai go duoc id ma khong phai tra DB truoc.
 //     Ten nhom + ten co lay dung hai lop that cua captain; con thi map sang ba be
@@ -202,7 +202,7 @@ const nguonZalo = [
 ];
 for (const g of nguonZalo) {
   // mau_nhan_dien / cua_so_dinh_kem_phut / dang_bat lay DEFAULT cua DB
-  // (migrations/021) dung nhu mot nguon bo me vua them o man /bome/zalo.
+  // (migrations/023) dung nhu mot nguon bo me vua them o man /bome/zalo.
   await query(
     `INSERT INTO nguon_zalo (id, family_id, ten_nhom, ten_co) VALUES ($1,$2,$3,$4)`,
     [g.id, familyId, g.ten, g.co]

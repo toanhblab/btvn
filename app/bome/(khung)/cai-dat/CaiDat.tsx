@@ -259,7 +259,7 @@ export default function CaiDat({
       </Link>
       </section>
 
-      {/* ---- Bai tu Zalo (migration 021): cung khuon dong dan voi the tren.
+      {/* ---- Bai tu Zalo (migration 023): cung khuon dong dan voi the tren.
           Trang chu da co the nhac khi CO tin cho duyet, nhung the do bien mat
           khi khong con tin nao — bo me van phai co mot loi vao co dinh de khai
           nhom moi hay xem lai cau hinh. ---- */}

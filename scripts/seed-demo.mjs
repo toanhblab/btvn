@@ -204,7 +204,7 @@ export async function goiLenhNhaDemo(lang, pinHash) {
      VALUES ($1,$2,$3,$4,$5,$6,'pending')`,
     [id('rdm_cho'), conB, id('rwd_1'), d.phanThuong[1][1], d.phanThuong[1][0], d.phanThuong[1][2]]);
 
-  // 9b. Hai nhom Zalo cua lop (migration 021) — de man /bome/zalo co gi de xem
+  // 9b. Hai nhom Zalo cua lop (migration 023) — de man /bome/zalo co gi de xem
   //     khi demo. Ten nhom va ten co giu nguyen tieng Viet o CA BA nha demo: do
   //     la ten THAT cua hai lop, thuoc loai "chu bo me tu go" (giong de bai) nen
   //     khong dich — va con la thu captain doi chieu voi Zalo tren may.

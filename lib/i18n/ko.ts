@@ -586,7 +586,7 @@ export const KO: Record<Key, string> = {
   'để máy nhận đúng tên sách.': '하면 교재 이름을 정확히 알아봅니다.',
   'Tách bài này': '이 숙제 나누기',
 
-  /* ---- Bai tu Zalo (migration 021) ---- */
+  /* ---- Bai tu Zalo (migration 023) ---- */
   'Bài từ Zalo': 'Zalo에서 온 숙제',
   'Về Trang chủ': '홈으로',
   'Cô đăng bài lên nhóm Zalo của lớp thì bài tự vào đây, kèm nguyên văn tin cô gửi. Bố mẹ đọc, sửa nếu cần, rồi bấm Duyệt — lúc đó các con mới thấy bài trên máy của mình.':

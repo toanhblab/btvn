@@ -38,7 +38,7 @@ export default async function BangDieuKhien() {
     }),
     // So yeu cau doi thuong dang cho — hien the nhac ngay duoi ba o tinh trang
     countPendingRedemptions(familyId),
-    // So tin cua co tu Zalo dang cho bo me duyet (migration 021). Chi la MOT
+    // So tin cua co tu Zalo dang cho bo me duyet (migration 023). Chi la MOT
     // con so dan sang /bome/zalo, khong phai mot con so tom tat cua man cua con
     // — bai nhap chua phai bai cua ai ca nen no khong chiu phep thu ve-0
     // (AGENTS.md); no dem TIN, khong dem bai.

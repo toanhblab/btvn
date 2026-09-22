@@ -455,7 +455,7 @@ test('laDuongDanTepZalo: khuon zalo/<nguon>/<ngay>/<mot doan> — btvn chi DUYET
 
 test('cua so nhan tep: video mau sau tin 4 GIAY thi nhan, tep nhan xet sau 4 TIENG thi khong', () => {
   const tin = '2026-09-18T20:03:17+07:00';
-  // Hai ca THAT do tren tin cua co (migration 021)
+  // Hai ca THAT do tren tin cua co (migration 023)
   assert.equal(kiemCuaSoDinhKem(tin, '2026-09-18T20:03:21+07:00', 90), 'trong-cua-so');
   assert.equal(kiemCuaSoDinhKem(tin, '2026-09-19T00:15:00+07:00', 90), 'ngoai-cua-so');
 

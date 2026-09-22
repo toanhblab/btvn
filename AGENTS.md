@@ -379,7 +379,7 @@ Link Google Drive bố mẹ dán vào bài (#28/#60, và ở màn Kiểm tra l�
 hình dạng dữ liệu; thêm chỗ dán thứ ba thì lặp đúng khuôn đó, đừng mở rộng sang
 link http bất kỳ hay thêm kind/migration. Hồi quy ở `lib/link-drive-kiem-tra-lai.test.ts`.
 
-Bài cô giao trên nhóm Zalo (migration 021, `lib/zalo.ts` + `lib/nhanBaiZalo.ts`,
+Bài cô giao trên nhóm Zalo (migration 023, `lib/zalo.ts` + `lib/nhanBaiZalo.ts`,
 chi tiết ở README mục "Bài từ Zalo") vào app ở trạng thái **NHÁP** — bố mẹ duyệt
 một chạm rồi con mới thấy. Bốn điều phải biết TRƯỚC khi đụng vào mã:
 
@@ -420,7 +420,7 @@ một chạm rồi con mới thấy. Bốn điều phải biết TRƯỚC khi đ
   không lượt dọn nào thu hồi được. Rào chống đua thật vẫn là
   `ON CONFLICT (nguon_id, ma_tin) DO NOTHING` — đừng thay.
   Ngược lại, MỘT TỆP lạ (sai loại, quá 25MB, url không phải của kho mình) KHÔNG
-  được làm hỏng cả tin: bỏ riêng tệp đó vào `tep_bo_qua` (migration 022, hiện ở
+  được làm hỏng cả tin: bỏ riêng tệp đó vào `tep_bo_qua` (migration 024, hiện ở
   mục chờ duyệt) chứ không 400 — agent gửi lại mãi thì 400 là khoá vĩnh viễn tin
   giao bài đó.
 
@@ -436,7 +436,7 @@ nhầm nhất là (1) **chạy thử là mặc định** — `DON_VIDEO_CHAY_THA
 `del()`, vì sau khi tệp biến mất thì sổ cái là bản sao duy nhất của đường dẫn;
 (3) `laUrlVideoConNop` **chặt hơn** `laUrlTepAppCap` có chủ ý (chỉ host Blob +
 thư mục `nop-bai/`) — bỏ sót chỉ là không dọn được, nới ra là xoá nhầm link
-Drive / ảnh / nhà demo / **tệp cô gửi ở `zalo/`** (migration 021 ghi sẵn
+Drive / ảnh / nhà demo / **tệp cô gửi ở `zalo/`** (migration 023 ghi sẵn
 `han_xoa` cho chúng nhưng CHƯA có lượt dọn nào; dọn là một lượt quét KHÁC, đừng
 nới thư mục của lượt này ra để tiện). Chống cron gọi trùng nằm ở **chỉ mục UNIQUE từng phần**
 `(run_date) WHERE che_do = 'that'`, không ở code. `lib/donVideo.test.ts` ghim cả

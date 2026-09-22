@@ -610,7 +610,7 @@ export const EN = {
   'để máy nhận đúng tên sách.': 'so it recognises book names correctly.',
   'Tách bài này': 'Split this task',
 
-  /* ---- Bai tu Zalo (migration 021) ---- */
+  /* ---- Bai tu Zalo (migration 023) ---- */
   'Bài từ Zalo': 'Homework from Zalo',
   'Về Trang chủ': 'Back to Home',
   'Cô đăng bài lên nhóm Zalo của lớp thì bài tự vào đây, kèm nguyên văn tin cô gửi. Bố mẹ đọc, sửa nếu cần, rồi bấm Duyệt — lúc đó các con mới thấy bài trên máy của mình.':
