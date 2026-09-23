@@ -11,7 +11,7 @@ import {
 } from '@/lib/banNhap';
 import { useNgonNgu, useT } from '@/lib/i18n/client';
 import { giaTriGiong, luaChonGiong } from '@/lib/speech';
-import { MEDIA_ACCEPT, MEDIA_ICON, uploadMediaFile } from '@/lib/media';
+import { MEDIA_ACCEPT, MEDIA_ICON, linkDriveTu, uploadMediaFile } from '@/lib/media';
 
 interface Payload {
   drafts: DraftAssignment[];
@@ -67,6 +67,10 @@ export default function KiemTraLai({
   // sang nut). Tra theo chi so thi sau mot lan gop, con tro cu cua the nay bi doc
   // thanh con tro cua ban nhap khac.
   const oDeBai = useRef<Record<string, HTMLTextAreaElement>>({});
+  // O dan link Google Drive cua TUNG the, cung tra theo ma — moi the mot o, loi
+  // bao ngay duoi the do chu khong bao chung ca man.
+  const [linkDrive, setLinkDrive] = useState<Record<string, string>>({});
+  const [linkDriveLoi, setLinkDriveLoi] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const raw = sessionStorage.getItem('btvn:draft');
@@ -129,6 +133,48 @@ export default function KiemTraLai({
   const removeMedia = (ma: string, url: string) =>
     setDrafts((ds) => goTepKhoiBanNhap(ds, ma, url));
 
+  /**
+   * Dan link Google Drive vao DUNG MOT bai (captain 2026-09-23: "o man hinh sau
+   * khi tach bai tap hay cho phep dan link film - google drive"). Cung mot duong
+   * voi man Sua bai (issue #28/#60): linkDriveTu chot ten mien, luu vao media
+   * voi kind 'video' va ten "Link Google Drive"; man cua con nhan ra link Drive
+   * bang chinh URL va mo sang Drive. Khong tai gi len nen khong can khoa theo
+   * uploadingMa, va cung tra the theo ma nhu addMedia.
+   */
+  const LOI_LINK_DRIVE = T('Link chưa đúng — phải là link Google Drive (drive.google.com/…).');
+
+  function ganLinkDrive(ds: Draft[], ma: string, link: string): Draft[] {
+    const d = ds.find((x) => x.ma === ma);
+    // Dan lai cung mot link thi khong them chip thu hai — key cua chip la url
+    if (d?.media?.some((m) => m.url === link)) return ds;
+    return dinhTepVaoBanNhap(ds, ma, { url: link, name: T('Link Google Drive'), kind: 'video' });
+  }
+
+  function themLinkDrive(ma: string) {
+    const link = linkDriveTu((linkDrive[ma] ?? '').trim());
+    if (!link) {
+      setLinkDriveLoi((l) => ({ ...l, [ma]: LOI_LINK_DRIVE }));
+      return;
+    }
+    setDrafts((ds) => ganLinkDrive(ds, ma, link));
+    setLinkDrive((l) => ({ ...l, [ma]: '' }));
+    setLinkDriveLoi((l) => ({ ...l, [ma]: '' }));
+  }
+
+  /** Link da dan ma chua bam "Them" thi luc luu coi nhu da bam. */
+  function ganLinkDriveDangDan(): { ds: Draft[]; loi: Record<string, string> } {
+    let ds = drafts;
+    const loi: Record<string, string> = {};
+    for (const d of drafts) {
+      const dan = (linkDrive[d.ma] ?? '').trim();
+      if (!dan) continue;
+      const link = linkDriveTu(dan);
+      if (link) ds = ganLinkDrive(ds, d.ma, link);
+      else loi[d.ma] = LOI_LINK_DRIVE;
+    }
+    return { ds, loi };
+  }
+
   /** Gop bai nay vao bai ngay tren — AI hay tach nham mot bai thanh hai dong. */
   const mergeUp = (ma: string) => setDrafts((ds) => gopLenBanNhap(ds, viTriBanNhap(ds, ma)));
 
@@ -138,7 +184,17 @@ export default function KiemTraLai({
       tachBanNhap(ds, viTriBanNhap(ds, ma), oDeBai.current[ma]?.selectionStart ?? null));
 
   async function save() {
-    const clean = drafts
+    const { ds, loi } = ganLinkDriveDangDan();
+    if (Object.keys(loi).length > 0) {
+      setLinkDriveLoi((l) => ({ ...l, ...loi }));
+      return;
+    }
+    if (ds !== drafts) {
+      setDrafts(ds);
+      setLinkDrive({});
+      setLinkDriveLoi({});
+    }
+    const clean = ds
       .filter((d) => d.content.trim())
       .map(({ durationStr, ma, ...d }) => ({
         ...d,
@@ -362,14 +418,26 @@ export default function KiemTraLai({
                   anh bang chu cai... Tai o day chu khong phai man truoc, de khong
                   bao gio co chuyen video phat am dinh nham vao bai Toan. */}
               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                {(d.media ?? []).map((m) => (
+                {(d.media ?? []).map((m) => {
+                  // Link Drive dan tay (kind 'video' + URL Drive, nhu man Sua bai):
+                  // ten chip bam duoc de bo me mo thu, chac la dan dung link
+                  const drive = m.kind === 'video' ? linkDriveTu(m.url) : null;
+                  return (
                   <span
                     key={m.url}
                     className="inline-flex items-center gap-1 text-p-body-sm rounded-full pl-3 pr-1 py-1
                                bg-tertiary-fixed text-on-tertiary-fixed max-w-full"
                   >
-                    <span className="material-symbols-outlined text-base shrink-0">{MEDIA_ICON[m.kind]}</span>
-                    <span className="truncate">{m.name}</span>
+                    <span className="material-symbols-outlined text-base shrink-0">
+                      {drive ? 'open_in_new' : MEDIA_ICON[m.kind]}
+                    </span>
+                    {drive ? (
+                      <a href={drive} target="_blank" rel="noopener noreferrer" className="truncate underline">
+                        {m.name}
+                      </a>
+                    ) : (
+                      <span className="truncate">{m.name}</span>
+                    )}
                     <button
                       onClick={() => removeMedia(d.ma, m.url)}
                       className="min-h-p-tap px-1 flex items-center"
@@ -378,7 +446,8 @@ export default function KiemTraLai({
                       <span className="material-symbols-outlined text-base">close</span>
                     </button>
                   </span>
-                ))}
+                  );
+                })}
                 {/* Khoa trong luc dang tai: the DOM bi khoa thi bam nhan khong mo
                     duoc hop chon tep, nen nhan phai TRONG nhu da khoa — khong thi
                     bo me bam mai vao mot chip nhin y het chip chay duoc. */}
@@ -403,6 +472,40 @@ export default function KiemTraLai({
                   {uploadingMa === d.ma ? T('Đang tải…') : T('Video / ghi âm / ảnh')}
                 </label>
               </div>
+
+              {/* Phim co giao gui thuong nam tren Google Drive, khong phai tep tren
+                  may — dan link o day, cung duong voi man Sua bai (#28/#60). Enter
+                  cung them duoc vi tren dien thoai ban phim che mat nut. */}
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="url"
+                  inputMode="url"
+                  value={linkDrive[d.ma] ?? ''}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setLinkDrive((l) => ({ ...l, [d.ma]: v }));
+                    setLinkDriveLoi((l) => ({ ...l, [d.ma]: '' }));
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); themLinkDrive(d.ma); }
+                  }}
+                  placeholder={T('Dán link Google Drive — phim hoặc thư mục ảnh')}
+                  aria-label={T('Dán link Google Drive — phim hoặc thư mục ảnh')}
+                  className="flex-1 min-w-0 text-p-body-sm rounded-full bg-surface-container px-3 py-1.5
+                             text-on-surface placeholder:text-outline outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => themLinkDrive(d.ma)}
+                  className="px-4 min-h-p-tap rounded-full bg-surface-container-high text-on-surface-variant
+                             text-p-body-sm font-bold shrink-0"
+                >
+                  {T('Thêm')}
+                </button>
+              </div>
+              {linkDriveLoi[d.ma] && (
+                <p className="text-p-body-sm text-error mt-1">{linkDriveLoi[d.ma]}</p>
+              )}
             </div>
           </div>
         ))}

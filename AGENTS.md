@@ -371,6 +371,14 @@ số mảng thì sau một lần gộp, "Tách bài này" cắt nhầm thẻ kh�
 Hàng chip "Giao cho" / "Sách của" dùng chung `app/bome/(khung)/GiaoCho.tsx`.
 Bằng chứng màn hình ở `docs/bang-chung/tach-theo-sach/`.
 
+Link Google Drive bố mẹ dán vào bài (#28/#60, và ở màn Kiểm tra lại từ 2026-09-23)
+**không có `kind` riêng — cố ý, captain chốt**: ghi vào `assignment_media` với
+`kind: 'video'` + tên "Link Google Drive", màn của con nhận ra bằng chính URL qua
+`linkDriveTu` (chỉ host `drive.google.com`) và mở tab mới. Hai chỗ dán (`KiemTraLai`
+→ `themLinkDrive`, `SuaBai` → `addDriveLink`) dùng cùng hàm, cùng chuỗi, cùng
+hình dạng dữ liệu; thêm chỗ dán thứ ba thì lặp đúng khuôn đó, đừng mở rộng sang
+link http bất kỳ hay thêm kind/migration. Hồi quy ở `lib/link-drive-kiem-tra-lai.test.ts`.
+
 Dọn video quá hạn (`lib/donVideo.ts`, cron `vercel.json` → `/api/don-video`) là
 đường **XOÁ TỆP THẬT, KHÔNG LÙI ĐƯỢC** duy nhất trong repo — trước đó app không
 xoá gì bao giờ. Luật: xoá khi **cả hai** đúng — quá `SO_NGAY_GIU_VIDEO` (5) ngày
