@@ -169,6 +169,77 @@ Bỏ một cuốn (nút thùng rác, app hỏi lại một nhịp) thì cuốn �
 và từ lần tách sau app không dùng nó nữa; bài đã giao vẫn giữ nguyên tên sách trong
 ghi chú. Danh sách này chỉ bố mẹ thấy, các con không thấy.
 
+### Bài cô đăng trên Zalo tự vào app
+
+Cô giáo đăng bài tập lên nhóm Zalo của lớp thì bài **tự vào app**, bố mẹ không
+phải chụp ảnh hay dán lại nữa. Nhưng bài đó **chưa hiện cho con ngay**: nó nằm
+chờ ở mục **"Bài cô vừa giao, chờ duyệt"**, bố mẹ đọc rồi bấm **Duyệt** thì con
+mới thấy.
+
+Khi có tin mới, **Trang chủ** hiện một thẻ tím *"1 tin cô giao bài, chờ duyệt"*.
+Bấm vào đó, hoặc vào **Cài đặt → "Nhóm Zalo của lớp"** bất cứ lúc nào.
+
+Mỗi tin hiện đủ để bố mẹ yên tâm:
+
+- **Tên nhóm Zalo, tên cô, ngày giờ cô gửi** — nhìn là biết đúng lớp, đúng cô.
+- **Nguyên văn tin của cô**, y như trên Zalo, giữ nguyên xuống dòng. Tin dài thì
+  thu gọn lại, bấm **"Xem cả tin"** để đọc hết.
+- **Tệp cô gửi kèm** — ảnh xem được, phim và ghi âm bấm là phát ngay tại đây.
+- Nếu có tệp nào app **không nhận được** (cô gửi tệp Word, phim nặng quá, cô
+  gửi nhiều tệp hơn mức app nhận, hoặc máy ở nhà tải lên dở dang), app nói
+  thẳng: *"1 tệp cô gửi không vào được — worksheet.docx — loại tệp app không
+  nhận"*. Bài của cô vẫn vào đủ, chỉ thiếu
+  đúng tệp đó; cần thì mở Zalo tải về rồi bấm **"Sửa kỹ"** để đính kèm vào bài.
+- **Danh sách bài app đã tách sẵn, theo từng con**, xếp đúng thứ tự cô viết để
+  bố mẹ dò cho nhanh.
+
+Bốn việc bố mẹ làm được:
+
+- **Sửa đề bài ngay tại chỗ** — gõ vào ô rồi bấm ra ngoài là lưu.
+- **"Sửa kỹ"** — mở màn sửa bài đầy đủ (đổi môn, hạn, giọng đọc, đính kèm),
+  giống hệt sửa một bài bình thường. Màn đó có dòng *"Bài này đang chờ duyệt,
+  con chưa thấy"* để bố mẹ biết mình đang sửa một bản nháp; bấm Lưu là quay về
+  đúng mục chờ duyệt. Thùng rác bên cạnh để bỏ riêng một bài app tách nhầm.
+- **"Duyệt N bài cho các con"** — một chạm, tất cả bài của tin đó thành bài thật
+  và hiện ngay trên máy các con.
+- **"Không phải bài"** — cô nhắn chuyện khác (nhắc nộp tiền, thông báo nghỉ)?
+  Bấm nút này, các bài nháp bị bỏ đi và app không đưa lại tin đó nữa.
+
+> Chưa bấm Duyệt thì con **không thấy gì cả** — không hiện trên máy con, không
+> tính vào "Đang chờ" ở Trang chủ, và không ảnh hưởng gì tới ⭐ của con.
+
+**Nếu app báo "Tách bài chưa xong".** Thỉnh thoảng tin của cô vào đủ nhưng app
+chưa kịp cắt nó ra thành từng bài (mạng lỗi giữa lúc đang lưu). Lúc đó mục đó
+hiện một khung đỏ **"Tách bài chưa xong"** kèm nút **"Tách lại"** — bấm nút đó
+là app làm lại, rồi danh sách bài hiện ra như thường. Bấm được nhiều lần, không
+sợ bài bị nhân đôi.
+
+> **Đừng bấm "Không phải bài" trong trường hợp này.** Nút đó nói với app rằng
+> tin này không phải bài tập, nên từ đó **máy ở nhà sẽ không đưa tin đó vào lại
+> nữa** — muốn có bài thì chỉ còn cách tự gõ tay. Nguyên văn tin của cô vẫn nằm
+> ngay trên khung đỏ, nên cứ **"Tách lại"** trước đã.
+
+**Khai nhóm Zalo của lớp.** Vào **Cài đặt → "Nhóm Zalo của lớp"**, kéo xuống mục
+**"Nhóm Zalo"** rồi bấm **"Thêm nhóm Zalo"**:
+
+- **Tên nhóm** — gõ **đúng như trên Zalo**, kể cả dấu và khoảng trắng.
+- **Tên cô giáo** — đúng tên hiển thị của cô trên Zalo.
+- **Con học lớp này** — bấm chọn một hay nhiều con. Hai con học cùng lớp thì
+  chọn cả hai, mỗi con vẫn nhận một bản bài riêng để tự tick.
+- Ô **"90 phút"** là khoảng thời gian sau tin mà app còn nhận tệp cô gửi thêm.
+  Để nguyên 90 là hợp với hầu hết lớp: video mẫu cô gửi ngay sau tin, còn file
+  nhận xét từng bé thì mấy tiếng sau — 90 phút tách đúng hai loại. App **thật sự
+  bỏ** tệp cô gửi ngoài khoảng đó: nó vẫn hiện trong ô "tệp không vào được" với
+  lý do *"cô gửi ngoài khoảng thời gian nhận tệp"*, để bố mẹ biết mà nới số phút
+  lên nếu lớp của con hay gửi muộn.
+
+Mỗi nhóm có một **công tắc bật/tắt**, một dòng **"Mã nhóm"** và một dòng
+**"Nhận bài gần nhất"**. Mã nhóm bố mẹ **không phải gõ** — máy ở nhà tự điền khi
+nhận bài lần đầu; nó chỉ để phân biệt hai lớp lỡ trùng tên nhóm. Hai dòng đó là
+cách biết nhóm còn chạy hay đã hỏng: mã nhóm mãi vẫn "chưa có", hoặc "Nhận bài
+gần nhất" mấy hôm liền không đổi mà lớp vẫn có bài, thì gọi người cài giúp. Nghỉ hè hay chuyển lớp thì **tắt** nhóm đi, đừng lo
+mất — tin cũ vẫn giữ nguyên, bật lại lúc nào cũng được.
+
 ### Xem con làm tới đâu
 
 Màn **Trang chủ** cho biết ngay: **Hoàn thành / Đang chờ / Quá hạn** trong khối

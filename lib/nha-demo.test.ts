@@ -60,6 +60,11 @@ const BANG_THEO_NHA: Record<string, string> = {
   score_events: `SELECT e.* FROM score_events e JOIN children c ON c.id = e.child_id WHERE c.family_id = $1 ORDER BY e.id`,
   reward_redemptions: `SELECT r.* FROM reward_redemptions r JOIN children c ON c.id = r.child_id WHERE c.family_id = $1 ORDER BY r.id`,
   score_penalties: `SELECT p.* FROM score_penalties p JOIN children c ON c.id = p.child_id WHERE c.family_id = $1 ORDER BY p.id`,
+  // Migration 021: nguon Zalo treo theo family_id, con `bai_tu_zalo` thi qua
+  // nguon. Cho vao day de phep "nha that giu nguyen tung byte" va phep "nap lai
+  // khong sinh ban trung" phu ca hai bang moi — seed demo co insert vao chung.
+  nguon_zalo: `SELECT * FROM nguon_zalo WHERE family_id = $1 ORDER BY id`,
+  bai_tu_zalo: `SELECT b.* FROM bai_tu_zalo b JOIN nguon_zalo n ON n.id = b.nguon_id WHERE n.family_id = $1 ORDER BY b.id`,
 };
 async function chupNha(familyId: string) {
   const anh: Record<string, unknown[]> = {};

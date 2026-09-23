@@ -15,6 +15,7 @@ export default function CaiDat({
   family,
   soNhiemVu,
   soSach,
+  soNguonZalo,
   hasAI,
   hasBlob,
 }: {
@@ -23,6 +24,8 @@ export default function CaiDat({
   soNhiemVu: number;
   /** So sach / vo / nguon bai tap bo me da khai (issue #64) — hien o the dan sang /bome/sach. */
   soSach: number;
+  /** So nhom Zalo da khai (ca nhom dang tat) — cung muc dich voi soNhiemVu. */
+  soNguonZalo: number;
   hasAI: boolean;
   hasBlob: boolean;
 }) {
@@ -250,6 +253,30 @@ export default function CaiDat({
           <span className="block text-p-body text-on-surface font-bold">{T('Khai sách, vở, nguồn bài tập')}</span>
           <span className="block text-p-body-sm text-on-surface-variant">
             {soSach > 0 ? T('{n} cuốn', { n: soSach }) : T('Chưa khai cuốn nào')} · {T('để máy tách bài theo đúng cuốn sách')}
+          </span>
+        </span>
+        <span className="material-symbols-outlined text-outline">chevron_right</span>
+      </Link>
+      </section>
+
+      {/* ---- Bai tu Zalo (migration 023): cung khuon dong dan voi the tren.
+          Trang chu da co the nhac khi CO tin cho duyet, nhung the do bien mat
+          khi khong con tin nao — bo me van phai co mot loi vao co dinh de khai
+          nhom moi hay xem lai cau hinh. ---- */}
+      <section className={THE}>
+      <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Bài từ Zalo')}</h2>
+      <Link
+        href="/bome/zalo"
+        className="w-full bg-surface-container-lowest rounded-card card-shadow p-3 flex items-center gap-3
+                   min-h-p-tap text-left mb-4 xl:shadow-none xl:p-0 xl:mb-0"
+      >
+        <span className="w-9 h-9 rounded-lg bg-primary-fixed flex items-center justify-center shrink-0 text-lg">
+          💬
+        </span>
+        <span className="flex-1">
+          <span className="block text-p-body text-on-surface font-bold">{T('Nhóm Zalo của lớp')}</span>
+          <span className="block text-p-body-sm text-on-surface-variant">
+            {soNguonZalo > 0 ? T('{n} nhóm', { n: soNguonZalo }) : T('Chưa khai nhóm nào')} · {T('bài cô đăng tự vào đây, bố mẹ duyệt rồi con mới thấy')}
           </span>
         </span>
         <span className="material-symbols-outlined text-outline">chevron_right</span>

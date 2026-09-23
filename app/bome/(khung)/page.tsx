@@ -5,6 +5,7 @@ import { SO_NGAY_QUET_GAN_DAY, ngayGanNhatCoBai } from '@/lib/ngay';
 import {
   countPendingRedemptions, getFamilyById, listAssignments, progressUpcoming, todayISO,
 } from '@/lib/store';
+import { demBaiChoDuyet } from '@/lib/nhanBaiZalo';
 import { HW_SOURCES, trangThaiVideo } from '@/lib/types';
 import { chu } from '@/lib/i18n/server';
 
@@ -20,7 +21,7 @@ export default async function BangDieuKhien() {
   const T = await chu();
 
   const today = todayISO();
-  const [family, rows, homNay, ganDay, choDuyet] = await Promise.all([
+  const [family, rows, homNay, ganDay, choDuyet, zaloChoDuyet] = await Promise.all([
     getFamilyById(familyId),
     progressUpcoming(familyId),
     // Dung hai cho: danh sach "Bai hom nay" (chi co o co Macbook) va nut
@@ -37,6 +38,11 @@ export default async function BangDieuKhien() {
     }),
     // So yeu cau doi thuong dang cho — hien the nhac ngay duoi ba o tinh trang
     countPendingRedemptions(familyId),
+    // So tin cua co tu Zalo dang cho bo me duyet (migration 023). Chi la MOT
+    // con so dan sang /bome/zalo, khong phai mot con so tom tat cua man cua con
+    // — bai nhap chua phai bai cua ai ca nen no khong chiu phep thu ve-0
+    // (AGENTS.md); no dem TIN, khong dem bai.
+    demBaiChoDuyet(familyId),
   ]);
 
   const baiTiengAnh = homNay.filter((a) => a.source === 'english_class');
@@ -145,6 +151,31 @@ export default async function BangDieuKhien() {
             </span>
           </span>
           <span className="material-symbols-outlined text-outline shrink-0">chevron_right</span>
+        </Link>
+      )}
+
+      {/* Co vua giao bai tren Zalo: nhac ngay o trang chu, bam la sang man duyet.
+          Dat TREN the doi thuong vi no co gio — bai cua toi nay ma sang mai moi
+          duyet la con mat mot ngay. Khong hien khi khong co gi cho. */}
+      {zaloChoDuyet > 0 && (
+        <Link
+          href="/bome/zalo"
+          className="bg-primary-fixed rounded-card card-shadow flex items-center gap-3
+                     p-3 mb-6 min-h-p-tap xl:p-6 xl:mb-10"
+        >
+          <span className="flex items-center justify-center w-11 h-11 rounded-full bg-surface-container-lowest
+                           shrink-0 xl:w-14 xl:h-14 text-2xl">
+            💬
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-p-body text-on-primary-fixed font-bold">
+              {T('{n} tin cô giao bài, chờ duyệt', { n: zaloChoDuyet })}
+            </span>
+            <span className="block text-p-body-sm text-on-primary-fixed">
+              {T('Duyệt thì các con mới thấy bài')}
+            </span>
+          </span>
+          <span className="material-symbols-outlined text-on-primary-fixed shrink-0">chevron_right</span>
         </Link>
       )}
 

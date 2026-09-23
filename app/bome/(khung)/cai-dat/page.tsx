@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
 import { getFamilyById, listBooks, listChildren, listChores, todayISO, trangThaiDonVideo } from '@/lib/store';
+import { listNguonZalo } from '@/lib/nhanBaiZalo';
 import type { LanDonVideo } from '@/lib/store';
 import { hasNeon } from '@/lib/db';
 import { SO_NGAY_GIU_VIDEO, SO_VIDEO_MOI_NHAT_GIU_LAI, laNhaDemo, lauKhongDon } from '@/lib/donVideo';
@@ -23,12 +24,13 @@ export default async function Page() {
   const familyId = await parentFamilyId();
   if (!familyId) redirect('/bome/pin');
 
-  const [children, family, chores, books, lanDon] = await Promise.all([
+  const [children, family, chores, books, lanDon, nguonZalo] = await Promise.all([
     listChildren(familyId),
     getFamilyById(familyId),
     listChores(familyId),
     listBooks(familyId),
     trangThaiDonVideo(familyId),
+    listNguonZalo(familyId),
   ]);
   if (!family) redirect('/bome/pin');
   const T = await chu();
@@ -218,6 +220,7 @@ export default async function Page() {
             family={family}
             soNhiemVu={chores.length}
             soSach={books.length}
+            soNguonZalo={nguonZalo.length}
             hasAI={Boolean(process.env.NOUS_API_KEY)}
             hasBlob={Boolean(process.env.BLOB_READ_WRITE_TOKEN)}
           />

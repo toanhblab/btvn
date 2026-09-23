@@ -64,8 +64,14 @@ const KY_TU_DIEU_KHIEN = /[\u0000-\u0008\u000e-\u001f\u007f]/g;
  *
  * Ghep lai NFC o cuoi: NFD tach mot chu Han (Hangul) thanh cac jamo roi, nhin thi
  * y het nhung la chuoi khac — ten tep dang tach roi la thu hay lam hong cho nhan.
+ *
+ * Export vi con MOT cho nua can dung PHEP BO DAU NAY: mau nhan dien tin Zalo
+ * (`docMauNhanDien` trong lib/nhanBaiZalo.ts) — zalo-agent so sanh tin voi mau
+ * tren chuoi da fold, nen mau phai duoc fold bang dung phep nay luc ghi. Chep
+ * mot ban thu hai thi hai ben lech nhau la khong ai thay (mau co dau se khong
+ * bao gio khop ma cung khong bao loi).
  */
-function boDau(s: string): string {
+export function boDau(s: string): string {
   return s
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')

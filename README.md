@@ -244,6 +244,7 @@ bằng AI là chưa hoạt động. Đặt vào `.env.local`:
 | `PIN_SECRET` | Dùng chuỗi mặc định — **phải đổi trước khi deploy** | Tự đặt |
 | `BTVN_PGLITE_DIR` | PGlite ở `.data/pg` | Chỉ để test / thử trên DB tạm (`memory://` = trong RAM) |
 | `CRON_SECRET` | `/api/don-video` trả 401 cho mọi request, tức **việc dọn video không chạy** | Tự đặt, ≥16 ký tự; Vercel tự gửi nó trong header `Authorization` khi gọi cron |
+| `ZALO_INTAKE_SECRET` | Ba cửa `/api/nhan-bai-zalo*` trả **503** cho mọi request, tức **bài từ Zalo không vào được** | Tự đặt, ≥24 ký tự; nạp cùng chuỗi đó vào Keychain của zalo-agent — xem "Bài từ Zalo" |
 | `DON_VIDEO_CHAY_THAT` | Việc dọn video **chỉ chạy thử**: liệt kê ra log, không xoá gì | Đặt `1` để bật xoá thật — xem "Dọn video quá hạn" |
 | `DON_VIDEO_MAX_MOI_LUOT` | Tối đa 20 tệp mỗi lượt | Hạ xuống được, không nâng lên được; đặt mà không phải số nguyên dương thì `/api/don-video` trả **400 và không dọn gì** (đọc không ra thì từ chối, không lùi về trần mặc định) |
 
@@ -253,6 +254,264 @@ nữa) và mọi thiết bị bị đăng xuất.
 
 Đổi `DATABASE_URL` là chuyển hẳn sang Neon, không phải sửa dòng code nào —
 các migration chạy được trên cả hai.
+
+## Bài từ Zalo
+
+Cô giáo đăng bài tập lên nhóm Zalo của lớp. `zalo-agent` (kho riêng
+`toanhblab/zalo-agent`, chạy trên Mac mini ở nhà) đọc tin cùng tệp kèm rồi gọi
+vào btvn. btvn lưu **nguyên văn** tin, chạy bộ tách bài sẵn có, và tạo bài
+**NHÁP** cho từng con của nguồn. Bố mẹ đọc, sửa nếu cần, bấm **Duyệt** —
+lúc đó con mới thấy bài. Captain chốt 2026-09-20: *"cần bố mẹ duyệt"*.
+
+Lược đồ và lý do từng bảng ở `migrations/023_nhan_bai_tu_zalo.sql`; phần thuần
+(đọc gói tin, luật hạn nộp, luật tệp) ở `lib/zalo.ts`; phần chạm CSDL và kho
+tệp ở `lib/nhanBaiZalo.ts`.
+
+### Ba cửa cho máy, không cho người
+
+Cả ba dùng `Authorization: Bearer <ZALO_INTAKE_SECRET>` (biến **riêng**,
+không dùng chung `CRON_SECRET`: hai bên gọi là hai hệ khác nhau, lộ một khoá
+không được kéo theo cái kia). Chuỗi trả về là chuỗi **máy đọc**, không qua lớp
+dịch — cùng tinh thần với `/api/don-video`.
+
+```bash
+KHOA=... ; URL=http://localhost:3000
+
+# 1. Nguồn đang bật, để zalo-agent biết quét nhóm nào (kèm `gioi_han` của cửa nhận)
+curl -s "$URL/api/nhan-bai-zalo/cau-hinh" -H "Authorization: Bearer $KHOA"
+
+# 2. Có tệp kèm thì xin vé rồi tải THẲNG lên kho, TRƯỚC khi gửi tin.
+#    Thân gói vé đúng giao thức @vercel/blob/client; đường dẫn bắt buộc nằm dưới
+#    zalo/<nguon_id>/<yyyy-mm-dd>/ và `ma_tin` đã nhận rồi thì trả 409 ngay.
+#    CẢ BỐN tham số đều BẮT BUỘC: thiếu `tin_gui_luc` hay `tep_gui_luc` là 422.
+curl -s -X POST "$URL/api/nhan-bai-zalo/tep-token?nguon_id=nzl_cambridge&ma_tin=bb_msg_id_1\
+&tin_gui_luc=2026-09-18T20:03:17%2B07:00&tep_gui_luc=2026-09-18T20:03:21%2B07:00" \
+  -H "Authorization: Bearer $KHOA" -H 'Content-Type: application/json' \
+  -d '{"type":"blob.generate-client-token",
+       "payload":{"pathname":"zalo/nzl_cambridge/2026-09-18/video-mau.mp4",
+                  "callbackUrl":"'"$URL"'/api/nhan-bai-zalo/tep-token",
+                  "clientPayload":null,"multipart":false}}'
+
+# 3. Một tin giao bài — `dinh_kem` chỉ mang URL tệp đã nằm trên kho
+curl -s -X POST "$URL/api/nhan-bai-zalo" \
+  -H "Authorization: Bearer $KHOA" -H 'Content-Type: application/json' \
+  -d '{"nguon_id":"nzl_cambridge","ma_tin":"bb_msg_id_1","gui_luc":"2026-09-18T20:03:17+07:00",
+       "nguoi_gui":"Thu Huyền","nhom_zalo":"Cambridge 1.27 - Smart Kids Education",
+       "ma_nhom":"g6948518348545773767",
+       "ngay_hoc_so":40,"ngay_trong_tin":"2026-09-18","nguyen_van":"Cô Huyền thân gửi …",
+       "nhan_dien":{"luat":true,"jev_xac_suat":0.96},
+       "dinh_kem":[{"ten":"video-mau.mp4","loai":"video/mp4","kich_thuoc":2284512,
+                    "gui_luc":"2026-09-18T20:03:21+07:00",
+                    "url":"https://<kho>.public.blob.vercel-storage.com/zalo/nzl_cambridge/2026-09-18/video-mau-abc123.mp4"}]}'
+```
+
+Máy dev **chưa bật Blob** thì bước 2 là `POST` multipart (`file=@…`) vào cùng
+đường đó và trả `{ "url": "/api/tep/<tên>" }` — đúng khuôn chế độ 2 của
+`lib/upload-route.ts`; cửa nhận tin chấp nhận dạng URL đó **chỉ khi** máy chủ
+thật sự chưa có `BLOB_READ_WRITE_TOKEN`.
+
+Mã trả về — **hợp đồng**, đổi là đổi cả hai bên. Mã lỗi luôn nằm ở trường
+**`loi`** của thân JSON, ở **cả ba** cửa và kể cả những mã do thân chung
+`xuLyTaiTep` sinh ra (`tenTruongLoi`): agent đọc log bằng đúng một khoá. Hai
+route tải tệp của người (`/api/upload-media`, `/api/nop-video`) vẫn trả `error`
+kèm câu đã dịch — giao diện bố mẹ/con đọc trường đó.
+
+| Mã | Khi nào |
+| --- | --- |
+| `201` | Xong. `{ bai_zalo_id, so_bai_nhap, con: [{ id, ten }], tep_bo_qua: [{ ten, ly_do }] }` |
+| `400` | Gói hỏng: **thiếu trường bắt buộc** (`nguon_id` / `ma_tin` / `nguyen_van`) — chỉ ba mã này, không còn mã nào liên quan tới tệp |
+| `401` | Thiếu hoặc sai khoá — **không nói là cái nào** |
+| `404` | `nguon_id` không có, nguồn đang tắt, hoặc nguồn chưa gắn con nào |
+| `409` | `ma_tin` đã có cho nguồn đó — **không tạo gì**. zalo-agent chạy lại mỗi 30 phút nên đây là đường bình thường, không phải lỗi |
+| `422` | **Chỉ cửa vé**: `thieu-gio-gui` (thiếu **hoặc không đọc được** `tin_gui_luc` / `tep_gui_luc`) hoặc `ngoai-cua-so` (tệp gửi ngoài `cua_so_dinh_kem_phut` của nguồn) — không phát vé, để agent khỏi tải lên thứ cửa nhận tin sẽ bỏ |
+| `503` | Máy chủ **chưa đặt `ZALO_INTAKE_SECRET`** |
+
+`POST /api/nhan-bai-zalo/tep-token?nguon_id=&ma_tin=&tin_gui_luc=&tep_gui_luc=`
+dùng **cùng khoá** đó, và thêm `501 kho-khong-doc-duoc` khi máy chủ có
+`BLOB_READ_WRITE_TOKEN` nhưng **không rút được mã kho** từ nó: lúc đó cửa nhận
+tin từ chối mọi url Blob, nên ký vé chỉ để agent đẩy tệp lên kho rồi bước sau bỏ
+sạch với `ngoai-kho` và 409 khoá vĩnh viễn. Cả hai cửa hỏi **cùng một hàm**
+(`trangThaiKhoZalo`), không chép lại điều kiện. **Cả bốn tham số đều bắt buộc** — `tin_gui_luc` là giờ gửi
+của TIN, `tep_gui_luc` là giờ gửi của chính tệp sắp tải lên (ISO 8601, nhớ
+percent-encode dấu `+` của múi giờ thành `%2B`). Mốc **không đọc được** cũng là
+`422 thieu-gio-gui`, không phải "cứ cho qua": quên `%2B` thì `URLSearchParams`
+đổi dấu `+` thành khoảng trắng và mốc thành vô nghĩa, mà thân gói tin (JSON) lại
+đúng — cho qua ở đây là tệp lên kho rồi mới bị cửa nhận tin bỏ.
+
+Cửa vé thêm `400 sai-duong-dan` (đường dẫn ra ngoài `zalo/<nguon_id>/<ngày>/`) và
+`422` (`thieu-gio-gui` / `ngoai-cua-so`); còn lại nó trả lời **đúng như cửa nhận
+tin**: `404` khi nguồn không có / đang tắt / chưa gắn con, `409 trung-ma-tin` khi
+tin đã nhận rồi.
+
+**Hai cửa phải từ chối đúng cùng một tập tệp**, nên mỗi luật chỉ có **một** bản:
+`moCuaNhanTin` gác nguồn và `ma_tin`, `kiemCuaSoDinhKem` gác giờ (cửa vé gọi qua
+`kiemCuaSoChoVe`, chỉ thêm đúng điều kiện "phải khai hai mốc **đánh giá được**").
+Lệch một điều kiện là agent tải xong cả bộ tệp rồi mới bị từ chối ở bước sau, và
+mớ tệp đó không dòng `dinh_kem` nào trỏ tới nên không `han_xoa`, không lượt dọn
+nào thu hồi được — trên một kho 1GB đã dùng 219MB.
+
+Bất biến là **một chiều**: vé `200` ⇒ cửa nhận tin không bỏ tệp đó vì lý do giờ.
+Cửa vé **chặt hơn** ở đúng một chỗ, và đó là chủ ý: mốc hỏng thì cửa vé từ chối,
+còn cửa nhận tin vẫn nhận tệp của một tin không có mốc đọc được — biến "không
+biết giờ" thành "bỏ hết tệp" ở đó là mất video của cô vì một mốc thời gian hỏng.
+Hỏng theo chiều này chỉ bắt agent sửa lời khai; hỏng theo chiều kia mới sinh tệp
+mồ côi. Đừng "sửa lại cho cân".
+
+Phép kiểm khoá của cửa vé nằm ở **bước xin vé**, không ở đầu route: sự kiện
+`blob.upload-completed` do máy chủ của Vercel Blob gọi về `callbackUrl` mang
+`x-vercel-signature` chứ **không** mang `Authorization: Bearer`, và
+`handleUpload` tự kiểm chữ ký đó (đúng khuôn `/api/upload-media` và
+`/api/nop-video`). Chặn nó bằng 401 thì tệp lên kho xong vẫn báo lỗi về cho bên
+tải, và agent gửi lại mỗi 30 phút mãi mãi. Riêng `503` vẫn ở đầu route — đó là
+lỗi của bản deploy, ai gọi cũng phải biết.
+
+`503` cố ý **khác** `401`: gộp hai cái vào nhau thì một bản deploy thiếu biến
+sẽ báo "sai khoá" và người ta đi soi Keychain trong khi lỗi nằm ở Vercel.
+
+**Không bao giờ 500 tay không.** Bản gốc của tin được ghi vào `bai_tu_zalo`
+*trước* khi gọi bộ tách bài, nên bộ tách hỏng (hết quota, mạng lỗi) vẫn còn
+nguyên văn cho bố mẹ đọc và ít nhất một bài nháp thô để sửa. Thứ tự là hợp
+đồng: **409 trước, lưu sau, tách sau cùng**. Và 409 đi trước cả việc **tải
+tệp**: zalo-agent quét lại mỗi 30 phút, không chặn từ đầu thì mỗi lượt lại ghi
+thêm một bản của cả bộ tệp mà không dòng `dinh_kem` nào trỏ tới — tức không
+`han_xoa`, không lượt dọn nào thu hồi được. Rào chống đua thật vẫn là chỉ mục
+`UNIQUE (nguon_id, ma_tin)` + `ON CONFLICT DO NOTHING`, không phải phép
+`SELECT` ngắn mạch đó.
+
+**Một tệp lạ không làm hỏng cả tin.** Tệp sai loại (cô đính kèm một tờ `.docx`),
+agent tự khai quá 25MB, thiếu `url`, `url` không phải tệp của kho mình / sai họ
+`zalo/<nguồn>/`, hay kho báo không có tệp đó — thì **bỏ riêng tệp đó** và ghi vào
+`tep_bo_qua` (`[{ ten, ly_do, chi_tiet? }]`, `ly_do` ∈ `loai-khong-nhan` /
+`qua-nang` / `tep-hong` / `url-khong-nhan` / `khong-thay-trong-kho` /
+`ngoai-cua-so` / `thieu-gio-gui` / `ngoai-kho` / `qua-nhieu-tep`) — tin vẫn
+vào, bố mẹ vẫn có bài để duyệt, và mục chờ duyệt **hiện** danh sách tệp bị bỏ để
+họ không tưởng là cô quên gửi. Trước đây cả gói trả 400, mà agent gửi lại mỗi 30
+phút nên một tờ `.docx` là khoá vĩnh viễn tin giao bài đó. Cột
+`bai_tu_zalo.tep_bo_qua` (migration 024) giữ danh sách; thân `201` trả cùng danh
+sách đó và máy chủ ghi một dòng `console.warn`.
+
+### Bài NHÁP nằm trong chính bảng `assignments`
+
+Để bố mẹ sửa bài nháp bằng **đúng** đường sửa bài đã có (`PATCH
+/api/assignments/:id`, màn `/bome/bai/<id>`) chứ không phải một bộ CRUD thứ
+hai. Cột `trang_thai_duyet` mặc định `'that'` nên mọi dòng cũ và mọi câu
+`INSERT` cũ không phải sửa một chữ.
+
+Đổi lại, **mọi câu ĐỌC `assignments` phải nói rõ nó muốn gì**. Hàng rào là
+`CHI_BAI_THAT` trong `lib/store.ts` (mặc định loại dòng nháp, nơi gọi phải xin
+rõ mới thấy) — cùng khuôn với `includeChores` của issue #36. Cái dễ bỏ sót
+nhất: dòng nháp `'todo'` **không được** đếm vào `congDiemNgayNeuXong`, không
+thì một tin của cô lúc 20h mà bố mẹ chưa kịp duyệt sẽ âm thầm khoá mất +10 của
+cả ngày. Hồi quy ghim ở `lib/nhan-bai-zalo.test.ts`.
+
+### Tệp kèm
+
+**Tệp không đi trong thân request.** Vercel chặn thân request ở **4,5MB**, mà
+chính gói mẫu thật của scout (hai video 2,18MB + 1,29MB → ~4,63MB sau base64)
+đã vượt: nền tảng trả 413 **trước khi** hàm chạy, nên không hàng rào nào trong
+mã chạy — không dòng `bai_tu_zalo`, không bài nháp, không `tep_bo_qua`, không
+log, và agent gửi lại mỗi 30 phút mãi mãi. Đây đúng là lý do `lib/media.ts` đã
+chọn đường tải thẳng cho video con nộp, nên bài từ Zalo đi cùng khuôn đó:
+`POST /api/nhan-bai-zalo/tep-token` phát vé (thân chung `xuLyTaiTep` với
+`/api/upload-media` và `/api/nop-video`), agent tải thẳng lên Blob, rồi gói tin
+chỉ mang `url`.
+
+Chỉ ảnh / âm thanh / video / pdf, tối đa **25MB mỗi tệp**, tối đa 10 tệp một
+gói — và **quá 10 tệp KHÔNG làm hỏng cả tin**: mười tệp đầu (sau khi đã loại
+tệp sai loại / thiếu `url` / quá nặng) vào bình thường, phần dư báo trong
+`tep_bo_qua` với `ly_do: 'qua-nhieu-tep'`. Một tin cô gửi 12 tấm ảnh là tin
+**hợp lệ** có nhiều tệp hơn mức app xử, không phải gói sai; mà từ khi tệp được
+tải lên **trước** qua vé thì một `400` ở đây còn tệ hơn — agent đẩy hết 12 tệp
+lên kho rồi mới biết, không dòng `dinh_kem` nào trỏ tới chúng nên không
+`han_xoa`, và 30 phút sau nó tải lại cả 12 tệp rồi lại ăn `400`. Cả `gioi_han` của `GET cau-hinh` nói đủ những điều đó **cộng cách tải**, để
+zalo-agent biết **trước** thay vì gửi lên rồi đọc `tep_bo_qua`:
+
+```json
+{ "loai_tep": ["image/*", "audio/*", "video/*", "application/pdf"],
+  "toi_da_mb": 25, "toi_da_tep_moi_goi": 10,
+  "cach_tai": "blob-client-token", "duong_token": "/api/nhan-bai-zalo/tep-token" }
+```
+
+`url` là **đầu vào từ bên ngoài** nên cửa nhận chốt nó hai tầng, và cả hai đều
+cần: `phanLoaiUrlBlobZalo` (lib/zalo.ts) đòi tệp phải nằm trên **kho Blob của
+chính mình** — ghim theo mã kho rút từ `BLOB_READ_WRITE_TOKEN`
+(`vercel_blob_rw_<maKho>_…`, xem `maKhoBlob`), vì
+`*.blob.vercel-storage.com` là tên miền **chung** của mọi kho Vercel Blob chứ
+không phải của riêng mình; url của kho khác bị bỏ với lý do `ngoai-kho`, và token
+sai khuôn thì coi như **không có kho hợp lệ** nên mọi url Blob đều bị từ chối
+(đọc không ra nghĩa là từ chối, cùng tinh thần với `tranNguoiDat`). Rồi đúng họ
+`zalo/<nguon_id>/<yyyy-mm-dd>/` với **đúng một** đoạn tên cuối — chặn tệp của lớp khác, chặn `nop-bai/` của video con nộp, chặn địa chỉ
+ngoài mà trình duyệt bố mẹ sẽ tải về khi mở mục chờ duyệt. Rồi `head()` hỏi lại
+kho: tệp có thật không, và nặng bao nhiêu — **số byte ghi vào CSDL lấy từ kho,
+không lấy từ `kich_thuoc` agent khai**. Cửa phát vé chốt đường dẫn bằng **đúng**
+hàm đó (`laDuongDanTepZalo`), nên không có kẽ "xin vé cho một đường dẫn rồi gửi
+lên một đường dẫn khác". Lên Vercel Blob dưới `zalo/<nguồn>/<ngày>/` — tiền tố **riêng**, không
+chạm `nop-bai/` của video con nộp, nên một lượt dọn video không bao giờ đụng
+vào chúng (`laUrlVideoConNop` trong `lib/donVideo.ts` chỉ nhận `nop-bai/`).
+Dev chưa bật Blob thì bước tải là multipart vào cùng đường vé, ghi `.data/uploads`
+và trả `/api/tep/<tên>` — cùng khuôn với hai đường tải tệp đã có. Cửa nhận tin
+chấp nhận dạng URL đó **chỉ khi** máy chủ thật sự chưa có `BLOB_READ_WRITE_TOKEN`,
+để trên Vercel không có lối vòng qua phần kiểm tiền tố.
+
+**Việc dọn thật chưa có.** Mỗi tệp được ghi sẵn `han_xoa` (30 ngày kể từ **ngày
+nhận**, không phải `ngay_trong_tin` — cùng bậc với video con nộp, vốn đo từ lúc
+tệp vào kho) trong `bai_tu_zalo.dinh_kem`, nhưng `lib/donVideo.ts` cố ý chỉ đi
+theo `assignments.submitted_video_url` và chỉ nhận thư mục `nop-bai/` — nới cái đó
+ra là tháo hàng rào 3 của một đường xoá không lùi được. Dọn tệp Zalo là một
+lượt quét **khác**, việc sau.
+
+### Cấu hình nguồn
+
+btvn là **nguồn sự thật duy nhất**: zalo-agent đọc lại
+`GET /api/nhan-bai-zalo/cau-hinh` mỗi lần chạy, nên thêm một lớp mới chỉ cần
+gõ ở màn bố mẹ (**Cài đặt → Nhóm Zalo của lớp**, hoặc `/bome/zalo`), không
+phải sửa mã hay deploy bên nào. Captain nhấn mạnh 2026-09-21: nhóm, con, cô
+giáo **phải config được**, không ghi cứng.
+
+**Ba nhà demo bị loại khỏi cửa này**, bằng đúng hàng rào 9 của `lib/donVideo.ts`
+(`family_id NOT LIKE 'fam\_demo\_%'`). `scripts/seed-demo.mjs` chạy trong
+`npm run build` và seed mỗi nhà demo hai nguồn mang **đúng tên nhóm và tên cô
+của lớp thật** — mà tên nhóm là khoá duy nhất zalo-agent đối chiếu được. Không
+lọc thì một tin của cô ra bốn nguồn không phân biệt nổi: hoặc agent gửi bài (và
+tệp có mặt các cháu) vào cả ba nhà ai cũng mở được bằng PIN demo, hoặc nó chọn
+một nguồn và nhà **thật** không bao giờ nhận được bài. Lọc ở `cauHinhChoAgent`
+chứ không ở chỗ seed (`dang_bat = FALSE`): công tắc bật/tắt nằm ngay trên màn
+bố mẹ của nhà demo, ai bật lên là hở lại — và nhờ vậy màn bố mẹ **vẫn** thấy hai
+nguồn mẫu khi captain đi demo, chỉ cửa dành cho **máy** là không.
+
+`ma_nhom` (mã nhóm của Zalo, `g694851…`) bố mẹ **không phải gõ**: họ khai bằng
+**tên** nhóm, còn mã thì zalo-agent gửi kèm trong gói tin và btvn **điền vào chỗ
+trống** — `WHERE ma_nhom IS NULL`, không bao giờ ghi đè, vì một nguồn đã có mã mà
+bị ghi đè là mọi tin sau đó chạy sang nhầm nhóm mà không ai thấy. Thẻ nguồn ở
+màn bố mẹ hiện mã đó (chỉ đọc); "chưa có" kéo dài là dấu hiệu máy ở nhà chưa vào
+được nhóm.
+
+`mau_nhan_dien` là danh sách chuỗi **không dấu** zalo-agent đối chiếu với tin
+(mặc định `["bai tap ve nha", "ngay hoc thu"]`, đo trên 686 tin thật). Bỏ dấu
+và hạ chữ thường ngay lúc ghi (`docMauNhanDien` dùng chung `boDau` của
+`lib/media.ts`) — một mẫu gõ có dấu sẽ **không bao giờ khớp mà không báo gì**.
+
+`cua_so_dinh_kem_phut` (mặc định 90) là khoảng sau tin mà tệp gửi trong đó
+được coi là tệp của bài: video mẫu tới sau tin 4 giây, còn tệp nhận xét từng
+bé tới sau ~4 tiếng — cửa sổ 90 phút tách đúng hai loại. Cửa sổ được kiểm ở
+**cả hai phía**: zalo-agent lọc trước (nó là bên duy nhất nhìn thấy dòng thời
+gian của Zalo), rồi btvn kiểm lại bằng `kiemCuaSoDinhKem` (lib/zalo.ts) — cửa
+vé trả `422` để agent khỏi tải lên, cửa nhận tin bỏ riêng tệp đó vào
+`tep_bo_qua` với lý do `ngoai-cua-so`. Ba biên có chủ ý, ghi ở chú thích của
+hàm đó: tin **không có** `gui_luc` thì bỏ qua phép kiểm và nhận tệp (đừng biến
+"không biết" thành "bỏ hết"); tệp không có `gui_luc` thì `thieu-gio-gui`; tệp
+gửi **trước** tin cũng là ngoài cửa sổ.
+
+**Không có nút xoá nguồn**, có ý: một nguồn đã nhận bài là cha của những dòng
+giữ nguyên văn tin của cô — bản sao duy nhất của chúng. Muốn dừng thì **tắt**.
+
+### Cờ nhận diện
+
+zalo-agent nhận diện tin giao bài bằng hai lớp (luật, rồi model Jev chấm xác
+suất) và gửi kèm `nhan_dien: { luat, jev_xac_suat }`. btvn chỉ **lưu** và
+**hiện** một cờ nhỏ ở mục chờ duyệt ("Luật khớp" / "Jev cho là giao bài (xx%),
+luật không khớp — soi kỹ" / "Chưa qua Jev"); **không có logic nào đọc nó**,
+vì mọi sai lệch đã dừng ở bước bố mẹ duyệt rồi. Thiếu trường thì không hiện cờ.
 
 ## Dọn video quá hạn
 
@@ -310,7 +569,8 @@ app/bome/       màn của bố mẹ: PIN, tạo nhà, tổng quan, thêm bài, 
                 thưởng (duyệt đổi thưởng + danh sách phần thưởng + trừ ⭐ của
                 con), cài đặt, nhiệm vụ hàng ngày (trang riêng: giao cho con
                 nào, mấy ⭐, nhóm), sách của các con (trang riêng: khai sách /
-                vở / nguồn bài tập làm ngữ cảnh cho AI tách bài theo cuốn)
+                vở / nguồn bài tập làm ngữ cảnh cho AI tách bài theo cuốn),
+                bài từ Zalo (zalo/: duyệt tin cô giao + khai nhóm Zalo của lớp)
 app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 nha (gắn máy), extract (Nous Portal, nhận childIds để lấy sách
                 của đúng nhóm con), upload (ảnh đề bài),
@@ -321,7 +581,10 @@ app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 trừ ⭐ của con, cần PIN), doi-thuong (con xin đổi — không cần
                 PIN; bố mẹ duyệt — cần PIN), tep (đọc tệp đã ghi ở
                 .data/uploads khi dev), don-video (cron dọn video quá hạn, xác
-                thực bằng CRON_SECRET)
+                thực bằng CRON_SECRET), nhan-bai-zalo + nhan-bai-zalo/cau-hinh
+                + nhan-bai-zalo/tep-token (ba cửa cho zalo-agent, xác thực bằng
+                ZALO_INTAKE_SECRET — KHÔNG đi qua PIN/cookie), nguon-zalo (bố mẹ
+                khai nhóm, cần PIN), bai-zalo (bố mẹ duyệt / bỏ một tin, cần PIN)
 app/_components/ BanPhimPin — bàn phím số dùng chung cho 4 chỗ nhập PIN
 lib/i18n/       lớp dịch: ngonNgu (bộ ngôn ngữ + PIN demo), chu (T), en/ja/ko (từ
                 điển, khoá = câu tiếng Việt), server (chu()), client (useT)
@@ -333,7 +596,10 @@ lib/            db (Neon|PGlite), store (truy vấn theo familyId), auth (PIN +
                 + trừ điểm + duyệt đổi thưởng, dùng chung với test), ngay (mốc
                 ngày + múi giờ nhà), donVideo (luật + hàng rào dọn video quá
                 hạn), media + upload-route (giới hạn tệp, tên/URL tệp, thân
-                chung hai route tải lên), avatar, ai, types
+                chung ba route tải lên), zalo (hợp đồng gói tin từ Zalo — hàm
+                thuần, không import gì lúc chạy), nhanBaiZalo (nguồn + tin +
+                duyệt), xacThucZalo (khoá của ba cửa nhận bài), avatar, ai,
+                types
 proxy.ts        chặn /bome/* khi chưa nhập PIN
 migrations/     từng bước thay đổi lược đồ, chạy theo thứ tự tên tệp (bám PRD mục 7)
 scripts/        db.mjs (kết nối + bộ chạy migration), migrate.mjs (CLI, chạy khi
@@ -342,7 +608,9 @@ scripts/        db.mjs (kết nối + bộ chạy migration), migrate.mjs (CLI, 
                 nạp `.ts` bằng import() động để lỗi demo không hỏng build),
                 quet-chu-viet.mjs (`npm run quet:chu-viet`, quét mã nguồn),
                 don-video.mjs (gọi tay một lượt dọn video qua chính route của
-                cron, mặc định chạy thử), test-hook.mjs (node --test resolve
+                cron, mặc định chạy thử), du-lieu-xau-nhat.mjs (bôi DB dev
+                thành dữ liệu XẤU NHẤT — 4 con, tên dài, ⭐ ba chữ số — trước
+                khi chụp ảnh bố cục), test-hook.mjs (node --test resolve
                 import không đuôi)
 stitch/         bản Stitch gốc của phần trẻ (đối chiếu)
 stitch-parent/  bản Stitch gốc của phần bố mẹ + design system
@@ -720,3 +988,7 @@ chung.
 4. Kiểm tra trên **iPad thật** (giọng `vi-VN` có sẵn không, vùng bấm có vừa
    ngón tay trẻ con không, quay video trong trang có ra mp4 và phát lại được
    không) và **điện thoại thật**. Không thay thế được bằng máy tính.
+5. Muốn bài từ Zalo chạy: đặt `ZALO_INTAKE_SECRET` trên Vercel rồi Redeploy, và
+   nạp **cùng chuỗi đó** vào Keychain `com.toanhblab.zalo-agent` account
+   `btvn-intake-secret` trên Mac mini. Thiếu biến thì ba cửa
+   `/api/nhan-bai-zalo*` trả 503 và zalo-agent báo ngay, không âm thầm hỏng.

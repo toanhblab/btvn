@@ -379,6 +379,51 @@ Link Google Drive bố mẹ dán vào bài (#28/#60, và ở màn Kiểm tra l�
 hình dạng dữ liệu; thêm chỗ dán thứ ba thì lặp đúng khuôn đó, đừng mở rộng sang
 link http bất kỳ hay thêm kind/migration. Hồi quy ở `lib/link-drive-kiem-tra-lai.test.ts`.
 
+Bài cô giao trên nhóm Zalo (migration 023, `lib/zalo.ts` + `lib/nhanBaiZalo.ts`,
+chi tiết ở README mục "Bài từ Zalo") vào app ở trạng thái **NHÁP** — bố mẹ duyệt
+một chạm rồi con mới thấy. Bốn điều phải biết TRƯỚC khi đụng vào mã:
+
+- **Dòng nháp nằm trong CHÍNH bảng `assignments`** (`trang_thai_duyet`, DEFAULT
+  `'that'` nên mọi dòng và mọi câu INSERT cũ không phải sửa), để bố mẹ sửa nó
+  bằng đúng đường sửa bài đã có. Đổi lại, **mọi câu ĐỌC `assignments` phải nói rõ
+  nó muốn gì**: hàng rào là `CHI_BAI_THAT` trong `lib/store.ts`, mặc định loại
+  dòng nháp, nơi gọi phải xin `keCaNhap` mới thấy — cùng khuôn `includeChores`
+  của #36. Chỗ dễ sót nhất KHÔNG phải màn con mà là `congDiemNgayNeuXong`: một
+  dòng nháp `'todo'` không ai tick được sẽ âm thầm khoá +10 của cả ngày. Thêm
+  một câu đọc mới thì hỏi nó thuộc bên nào, đừng để mặc định của SQL trả lời.
+- **`nguon_id` là thứ quyết định NHÀ.** Cửa nhận không có cookie (zalo-agent gọi
+  bằng khoá `ZALO_INTAKE_SECRET`, không phải trình duyệt) nên familyId suy ra từ
+  nguồn; mọi đường ghi sau đó đi qua `saveSubmission`, vốn tự lọc childIds theo
+  nhà. Thêm một cửa máy-gọi nào nữa thì giữ đúng khuôn này, đừng nhận familyId
+  từ thân request. Thiếu biến trên máy chủ trả **503 chứ không 401** — gộp hai
+  cái là một bản deploy thiếu biến sẽ báo "sai khoá".
+- **TỆP KHÔNG ĐI TRONG THÂN REQUEST.** Vercel chặn thân request ở 4,5MB nên
+  đường base64 cũ làm chính gói mẫu thật của scout (2,18MB + 1,29MB video →
+  ~4,63MB) bị 413 TRƯỚC khi hàm chạy: không hàng rào nào trong mã chạy, và agent
+  gửi lại mỗi 30 phút mãi mãi. Khuôn đúng là khuôn `lib/media.ts` đã chọn cho
+  video con nộp — `POST /api/nhan-bai-zalo/tep-token` phát vé (thân chung
+  `xuLyTaiTep`), agent tải thẳng lên Blob, gói tin chỉ mang `url`. Đổi lại `url`
+  là đầu vào ngoài: `phanLoaiUrlBlobZalo` đòi ĐÚNG mã kho Blob của mình (rút từ
+  `BLOB_READ_WRITE_TOKEN`; `*.blob.vercel-storage.com` là tên miền CHUNG của mọi
+  kho Vercel) + đúng họ `zalo/<nguon_id>/<ngày>/`, rồi `head()` hỏi kho xem tệp
+  có thật và nặng bao nhiêu — số byte vào CSDL lấy TỪ KHO, không từ số agent
+  khai. Cửa phát vé chốt
+  đường dẫn bằng ĐÚNG hàm đó (`laDuongDanTepZalo`), đừng để hai bên lệch nhau.
+- **Cửa dành cho MÁY thì hẹp hơn màn của người, ở hai chỗ.** (1) `GET cau-hinh`
+  loại BA NHÀ DEMO bằng đúng hàng rào 9 của `lib/donVideo.ts`
+  (`family_id NOT LIKE 'fam\_demo\_%'`): `seed-demo.mjs` chạy trong `npm run
+  build` và seed mỗi nhà demo hai nguồn mang ĐÚNG tên nhóm của lớp thật, mà tên
+  nhóm là khoá duy nhất zalo-agent đối chiếu được — màn bố mẹ của nhà demo vẫn
+  thấy chúng, chỉ máy là không. (2) Cả cửa phát vé lẫn `POST` hỏi `tinZaloDaCo`
+  TRƯỚC (409), để agent quét lại mỗi 30 phút không tải lại cả bộ tệp của một tin
+  đã nhận — mỗi bản đó không `dinh_kem` nào trỏ tới, tức không `han_xoa` và
+  không lượt dọn nào thu hồi được. Rào chống đua thật vẫn là
+  `ON CONFLICT (nguon_id, ma_tin) DO NOTHING` — đừng thay.
+  Ngược lại, MỘT TỆP lạ (sai loại, quá 25MB, url không phải của kho mình) KHÔNG
+  được làm hỏng cả tin: bỏ riêng tệp đó vào `tep_bo_qua` (migration 024, hiện ở
+  mục chờ duyệt) chứ không 400 — agent gửi lại mãi thì 400 là khoá vĩnh viễn tin
+  giao bài đó.
+
 Dọn video quá hạn (`lib/donVideo.ts`, cron `vercel.json` → `/api/don-video`) là
 đường **XOÁ TỆP THẬT, KHÔNG LÙI ĐƯỢC** duy nhất trong repo — trước đó app không
 xoá gì bao giờ. Luật: xoá khi **cả hai** đúng — quá `SO_NGAY_GIU_VIDEO` (5) ngày
@@ -391,7 +436,9 @@ nhầm nhất là (1) **chạy thử là mặc định** — `DON_VIDEO_CHAY_THA
 `del()`, vì sau khi tệp biến mất thì sổ cái là bản sao duy nhất của đường dẫn;
 (3) `laUrlVideoConNop` **chặt hơn** `laUrlTepAppCap` có chủ ý (chỉ host Blob +
 thư mục `nop-bai/`) — bỏ sót chỉ là không dọn được, nới ra là xoá nhầm link
-Drive / ảnh / nhà demo. Chống cron gọi trùng nằm ở **chỉ mục UNIQUE từng phần**
+Drive / ảnh / nhà demo / **tệp cô gửi ở `zalo/`** (migration 023 ghi sẵn
+`han_xoa` cho chúng nhưng CHƯA có lượt dọn nào; dọn là một lượt quét KHÁC, đừng
+nới thư mục của lượt này ra để tiện). Chống cron gọi trùng nằm ở **chỉ mục UNIQUE từng phần**
 `(run_date) WHERE che_do = 'that'`, không ở code. `lib/donVideo.test.ts` ghim cả
 luật lẫn chín hàng rào, tên bài mang đúng số của hàng rào; bài "sổ cái ghi trước
 khi phá" kiểm bằng cách cho `del()` giả đọc thẳng CSDL ngay lúc nó bị gọi — sửa

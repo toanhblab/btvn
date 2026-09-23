@@ -169,6 +169,18 @@ export interface Assignment {
    * con (chore_id ve NULL) thi cung la null — luc do no da la bai that.
    */
   choreNhom: NhomNhiemVu | null;
+  /**
+   * Bai nay den tu tin nao cua co tren Zalo (migration 023) — null neu bo me
+   * nhap tay. Van khac null sau khi bo me da duyet: no la duong lan nguoc ve
+   * nguyen van tin de doi chieu.
+   */
+  zaloBaiId: string | null;
+  /**
+   * Bai NHAP: tu Zalo vao, bo me chua bam duyet. Man cua con khong bao gio thay
+   * dong nay va moi con so tom tat deu bo qua no — hang rao nam o lib/store.ts
+   * (`CHI_BAI_THAT`), co nay chi de MAN DUYET cua bo me ve cho dung.
+   */
+  laNhap: boolean;
 }
 
 /** Mot bai do AI tach ra, chua luu — bo me con phai duyet o man "Kiem tra lai". */

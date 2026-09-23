@@ -99,7 +99,10 @@ export async function goiLenhNhaDemo(lang, pinHash) {
 
   // 2. Xoa sach ben trong nha demo — CHI theo family_id cua nha demo (CASCADE keo
   //    theo assignments, score_events, reward_redemptions, score_penalties).
-  for (const bang of ['children', 'daily_chores', 'books', 'rewards', 'submissions']) {
+  //    `nguon_zalo` cung treo theo family_id (migration 023) nen CASCADE cua
+  //    `children` khong keo no di — phai xoa tuong minh, khong thi nap lai lan
+  //    hai la sinh ban trung (lib/nha-demo.test.ts dem so dong moi bang).
+  for (const bang of ['children', 'daily_chores', 'books', 'rewards', 'submissions', 'nguon_zalo']) {
     q(`DELETE FROM ${bang} WHERE family_id = $1`, [fam]);
   }
 
@@ -201,7 +204,26 @@ export async function goiLenhNhaDemo(lang, pinHash) {
      VALUES ($1,$2,$3,$4,$5,$6,'pending')`,
     [id('rdm_cho'), conB, id('rwd_1'), d.phanThuong[1][1], d.phanThuong[1][0], d.phanThuong[1][2]]);
 
-  // 9. Mot lan bo me tru ⭐ (con nho, 2 ⭐, co ly do — con doc o cua hang)
+  // 9b. Hai nhom Zalo cua lop (migration 023) — de man /bome/zalo co gi de xem
+  //     khi demo. Ten nhom va ten co giu nguyen tieng Viet o CA BA nha demo: do
+  //     la ten THAT cua hai lop, thuoc loai "chu bo me tu go" (giong de bai) nen
+  //     khong dich — va con la thu captain doi chieu voi Zalo tren may.
+  //     CO Y khong seed mot tin dang cho duyet: tin cua co la van ban tieng Viet,
+  //     ma lib/nha-demo.test.ts ghim rang moi bai tap cua nha demo phai la chu
+  //     cua ngon ngu do. Muon xem muc "chờ duyệt" thi gui mot goi that vao cua
+  //     nhan (README ghi lenh curl).
+  //     mau_nhan_dien / cua_so_dinh_kem_phut / dang_bat lay DEFAULT cua DB.
+  [
+    { s: 'cambridge', ten: 'Cambridge 1.27 - Smart Kids Education', co: 'Thu Huyền', con: [conA, conB] },
+    { s: 'starters', ten: 'Cam Starters 26 - Smart Kids Education', co: 'hangnga', con: [conNho] },
+  ].forEach((g) => {
+    q(`INSERT INTO nguon_zalo (id, family_id, ten_nhom, ten_co) VALUES ($1,$2,$3,$4)`,
+      [id(`nzl_${g.s}`), fam, g.ten, g.co]);
+    g.con.forEach((c) => q(
+      `INSERT INTO nguon_zalo_con (nguon_id, child_id) VALUES ($1,$2)`, [id(`nzl_${g.s}`), c]));
+  });
+
+  // 10. Mot lan bo me tru ⭐ (con nho, 2 ⭐, co ly do — con doc o cua hang)
   q(`INSERT INTO score_penalties (id, child_id, points, reason, created_at)
      VALUES ($1, $2, 2, $3, now() - interval '2 days')`, [id('pen_1'), conNho, d.lyDoTru]);
 

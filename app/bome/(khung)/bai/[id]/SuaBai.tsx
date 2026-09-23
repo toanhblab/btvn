@@ -8,40 +8,7 @@ import { DURATION_DEFAULT, HW_SOURCES, iconFor, subjectsFor } from '@/lib/types'
 import { useNgonNgu, useT } from '@/lib/i18n/client';
 import { giaTriGiong, luaChonGiong } from '@/lib/speech';
 import { MEDIA_ACCEPT, MEDIA_ICON, linkDriveTu, uploadMediaFile } from '@/lib/media';
-import { MUI_GIO_NHA } from '@/lib/ngay';
-
-/**
- * Gio nop video hien ra o day duoc SSR (trang la force-dynamic) roi hydrate lai
- * o may bo me. Ham Vercel chay TZ=UTC, iPad cua bo me la +07 — khong chot mui
- * gio thi hai ben ra hai chuoi khac nhau: React bao hydration mismatch va bo me
- * doc phai gio lech 7 tieng o lan ve dau. Chot theo mui gio nha — cung
- * MUI_GIO_NHA ma todayISO() (lib/store.ts, tu issue #75) va cac man in NGAY
- * (dong tru ⭐, doi thuong) dung; dinh nghia o lib/muiGio.ts, re-export qua lib/ngay.
- *
- * Chot mui gio moi la nua chuyen. toLocaleString('vi-VN') con lay THU TU va dau
- * phan cach tu ban CLDR cua chinh may chay: Node moi tra "01:00:51 28/8/2026"
- * (CLDR 42 doi tieng Viet sang gio-truoc) con Safari iPad cu tra "28/8/2026,
- * 01:00:51" — cung mot moc, cung mui gio, hai chuoi khac nhau, hydrate lai la
- * lech. Vi the chi lay TUNG SO qua formatToParts roi tu ghep theo khuon cua
- * minh: khuon nay khong phu thuoc CLDR nen may chu va iPad luon ra giong nhau.
- */
-const SO_GIO_NHA = new Intl.DateTimeFormat('en-US', {
-  timeZone: MUI_GIO_NHA,
-  year: 'numeric', month: '2-digit', day: '2-digit',
-  hour: '2-digit', minute: '2-digit', second: '2-digit',
-  // hour12 co tu doi Intl dau tien va theo spec no de len tren hourCycle. Safari
-  // 14.0 (iPadOS 14.0-14.4) BO QUA hourCycle, quay ve h12 va them phan dayPeriod
-  // — gioNha khong doc phan do nen 19:30 tu nhien thanh 07:30 tren may cua bo me.
-  hour12: false, hourCycle: 'h23',
-});
-
-function gioNha(iso: string): string {
-  const p: Record<string, string> = {};
-  for (const { type, value } of SO_GIO_NHA.formatToParts(new Date(iso))) p[type] = value;
-  // Vai ban ICU cu tra gio '24' cho nua dem thay vi '00'
-  const gio = p.hour === '24' ? '00' : p.hour;
-  return `${p.day}/${p.month}/${p.year} ${gio}:${p.minute}:${p.second}`;
-}
+import { gioNha } from '@/lib/ngay';
 
 /**
  * Form sua mot bai da giao. Bo cuc va ten nhan bam theo man Nhap tay de bo me
@@ -75,7 +42,10 @@ export default function SuaBai({
   const [driveUrl, setDriveUrl] = useState('');
   const [driveError, setDriveError] = useState('');
 
-  const back = `/bome/con/${assignment.childId}`;
+  // Bai NHAP chi song o man cho duyet: `/bome/con/<id>` loc dong nhap ra
+  // (`CHI_BAI_THAT`) nen tra bo me ve day la tra ve mot man khong the hien chinh
+  // bai vua sua. Bai that thi giu nguyen duong cu — day khong phai luong Zalo.
+  const back = assignment.laNhap ? '/bome/zalo' : `/bome/con/${assignment.childId}`;
 
   // Link Google Drive (issue #28) khong tai len nhu tep — luu thang url voi kind
   // 'video', hien phan biet o luc render bang linkDriveTu. Tu issue #60 con bam
@@ -156,6 +126,12 @@ export default function SuaBai({
           )}
         </div>
       </header>
+
+      {assignment.laNhap && (
+        <p className="bg-tertiary-fixed text-on-tertiary-fixed rounded-card p-3 mb-4 text-p-body-sm">
+          {T('Bài này đang chờ duyệt, con chưa thấy.')}
+        </p>
+      )}
 
       <div className="bg-surface-container-lowest rounded-card card-shadow p-3 mb-4 flex flex-col gap-3">
         <div>
@@ -261,7 +237,7 @@ export default function SuaBai({
           <div>
             <label className="text-p-label uppercase text-on-surface-variant block mb-1">
               {T('Video con đã nộp')}
-              {assignment.submittedVideoAt && ` — ${gioNha(assignment.submittedVideoAt)}`}
+              {assignment.submittedVideoAt && ` — ${gioNha(assignment.submittedVideoAt, true)}`}
             </label>
             <video
               src={assignment.submittedVideoUrl}
