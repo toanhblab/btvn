@@ -141,20 +141,38 @@ export default function KiemTraLai({
    * bang chinh URL va mo sang Drive. Khong tai gi len nen khong can khoa theo
    * uploadingMa, va cung tra the theo ma nhu addMedia.
    */
+  const LOI_LINK_DRIVE = T('Link chưa đúng — phải là link Google Drive (drive.google.com/…).');
+
+  function ganLinkDrive(ds: Draft[], ma: string, link: string): Draft[] {
+    const d = ds.find((x) => x.ma === ma);
+    // Dan lai cung mot link thi khong them chip thu hai — key cua chip la url
+    if (d?.media?.some((m) => m.url === link)) return ds;
+    return dinhTepVaoBanNhap(ds, ma, { url: link, name: T('Link Google Drive'), kind: 'video' });
+  }
+
   function themLinkDrive(ma: string) {
     const link = linkDriveTu((linkDrive[ma] ?? '').trim());
     if (!link) {
-      setLinkDriveLoi((l) => ({ ...l, [ma]: T('Link chưa đúng — phải là link Google Drive (drive.google.com/…).') }));
+      setLinkDriveLoi((l) => ({ ...l, [ma]: LOI_LINK_DRIVE }));
       return;
     }
-    setDrafts((ds) => {
-      const d = ds.find((x) => x.ma === ma);
-      // Dan lai cung mot link thi khong them chip thu hai — key cua chip la url
-      if (d?.media?.some((m) => m.url === link)) return ds;
-      return dinhTepVaoBanNhap(ds, ma, { url: link, name: T('Link Google Drive'), kind: 'video' });
-    });
+    setDrafts((ds) => ganLinkDrive(ds, ma, link));
     setLinkDrive((l) => ({ ...l, [ma]: '' }));
     setLinkDriveLoi((l) => ({ ...l, [ma]: '' }));
+  }
+
+  /** Link da dan ma chua bam "Them" thi luc luu coi nhu da bam. */
+  function ganLinkDriveDangDan(): { ds: Draft[]; loi: Record<string, string> } {
+    let ds = drafts;
+    const loi: Record<string, string> = {};
+    for (const d of drafts) {
+      const dan = (linkDrive[d.ma] ?? '').trim();
+      if (!dan) continue;
+      const link = linkDriveTu(dan);
+      if (link) ds = ganLinkDrive(ds, d.ma, link);
+      else loi[d.ma] = LOI_LINK_DRIVE;
+    }
+    return { ds, loi };
   }
 
   /** Gop bai nay vao bai ngay tren — AI hay tach nham mot bai thanh hai dong. */
@@ -166,7 +184,17 @@ export default function KiemTraLai({
       tachBanNhap(ds, viTriBanNhap(ds, ma), oDeBai.current[ma]?.selectionStart ?? null));
 
   async function save() {
-    const clean = drafts
+    const { ds, loi } = ganLinkDriveDangDan();
+    if (Object.keys(loi).length > 0) {
+      setLinkDriveLoi((l) => ({ ...l, ...loi }));
+      return;
+    }
+    if (ds !== drafts) {
+      setDrafts(ds);
+      setLinkDrive({});
+      setLinkDriveLoi({});
+    }
+    const clean = ds
       .filter((d) => d.content.trim())
       .map(({ durationStr, ma, ...d }) => ({
         ...d,
