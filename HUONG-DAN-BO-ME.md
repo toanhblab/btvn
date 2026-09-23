@@ -108,8 +108,10 @@ rồi sửa chỗ nào chưa đúng — chữ đề bài, môn, thời lượng 
 (🇻🇳 tiếng Việt / 🇬🇧 tiếng Anh), và chip 🎥 cho bài phải **quay video** (đọc to,
 đọc thuộc lòng, thể dục...). Bài nào là *xem phim* thì **dán link Google Drive**
 vào ô "Dán link Google Drive…" ngay trên thẻ bài đó rồi bấm **Thêm** — link hiện
-thành chip vàng "Link Google Drive", bấm vào chip để mở thử, bấm ✕ để bỏ. Bấm
-**Lưu** là bài hiện ngay trên máy của con.
+thành chip vàng "Link Google Drive", bấm vào chip để mở thử, bấm ✕ để bỏ. Quên
+bấm **Thêm** cũng không sao: bấm **Lưu** là app tự thêm link đang dán; link không
+phải Google Drive thì app báo ngay dưới thẻ đó và chưa lưu. Bấm **Lưu** là bài
+hiện ngay trên máy của con.
 
 App tách bài **theo cuốn sách**, không theo dòng: cô viết *"Toán trang 41, 42, 43
 sách Poth Math"* thì ra **một** bài, số trang nằm ở dòng ghi chú "sách, trang"; hai
