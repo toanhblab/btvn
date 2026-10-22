@@ -159,6 +159,39 @@ export function linkDriveTu(url: unknown): string | null {
   return u.toString();
 }
 
+/**
+ * Link phim/anh bo me dan tay vao phan Dinh kem — KHONG chi Google Drive nua
+ * (captain 2026-10-22: "co the them link khac khong bat buoc phai la google
+ * drive": YouTube, OneDrive, iCloud, trang cua co...). Tra null neu khong dung.
+ *
+ * Giu nguyen hang rao cua linkDriveTu, chi noi ten mien ra: gia tri tra ve di
+ * thang vao `href` cua <a target="_blank">, nen CHI nhan http/https va CHI tra
+ * chuoi da qua `new URL(...)` — `javascript:`/`data:` bi loai o buoc protocol,
+ * ke ca khi media.url trong CSDL bi sua tay.
+ *
+ * Tep do CHINH APP cap (laUrlTepAppCap: Vercel Blob, /api/tep/...) thi KHONG
+ * phai link ngoai: do la video tai len, man cua con phat ngay trong trang bang
+ * <video>. Phan biet bang hinh dang url nhu truoc, khong them gia tri kind moi.
+ */
+export function linkNgoaiTu(url: unknown): string | null {
+  if (typeof url !== 'string' || !url || url.length > 2048) return null;
+  if (laUrlTepAppCap(url)) return null;
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
+  }
+  if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+  return u.toString();
+}
+
+/** Ten hien tren chip cua link ngoai: Drive thi "Link Google Drive", con lai la ten mien. */
+export function tenLinkNgoai(link: string, tenDrive: string): string {
+  if (linkDriveTu(link)) return tenDrive;
+  return new URL(link).hostname.replace(/^www\./, '');
+}
+
 /** Phan loai theo MIME; khong phai video/audio/anh thi tra null de bao loi som. */
 export function mediaKindOf(mime: string): MediaKind | null {
   if (mime.startsWith('video/')) return 'video';
