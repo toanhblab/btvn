@@ -35,9 +35,8 @@ export async function POST(req: Request) {
  * PATCH { oldPin, newPin } — doi ma PIN cua nha.
  *
  * Khong dang xuat cac thiet bi khac: cookie phien ky theo id cua nha chu khong
- * theo PIN. Nut "Quen PIN tren thiet bi nay" da bo (issue #17) va khong duoc them
- * lai, nen dong phan bo me tren mot may la dong trinh duyet (khi chua tick "Nho")
- * hoac xoa du lieu site cua may do.
+ * theo PIN. Dong phan bo me tren mot may la bam "Dang xuat" tren may do (DELETE
+ * ben duoi).
  */
 export async function PATCH(req: Request) {
   const T = await chu();
@@ -51,7 +50,7 @@ export async function PATCH(req: Request) {
   return NextResponse.json({ ok: true });
 }
 
-/** DELETE — quen PIN tren thiet bi nay (van giu "may nay la cua nha nao"). */
+/** DELETE — dang xuat phan bo me tren thiet bi nay (van giu "may nay la cua nha nao"). */
 export async function DELETE() {
   await signOut();
   return NextResponse.json({ ok: true });
