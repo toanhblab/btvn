@@ -2,8 +2,9 @@
  * Tach bai tap tu anh chup (Zalo, vo, bang) hoac tu text bo me dan vao.
  *
  * Goi qua Nous Portal — API tuong thich OpenAI, nen chi la mot lan fetch, khong
- * can SDK rieng. Mac dinh dung qwen3-vl-32b-instruct: model thi giac-ngon ngu,
- * doc chu tieng Viet co dau trong anh chup tot hon han cac model 3B gia re.
+ * can SDK rieng. Mac dinh dung Claude Sonnet 5.5: model co vision, doc chu tieng
+ * Viet co dau trong anh chup tot va theo dung json_schema strict. (Truoc day la
+ * qwen3-vl-32b-instruct — Nous Portal da go model nay, goi vao tra 404.)
  *
  * LUU Y khi doi model: phai chon model CO VISION. Hermes cua chinh Nous la
  * text->text, dat vao day se khong doc duoc anh — ma chup anh Zalo lai la duong
@@ -29,7 +30,7 @@ const tenMonTheoNha = (subject: string, T: T): string =>
   laTenMon(subject) ? T(subject as Key) : subject;
 
 const BASE_URL = process.env.NOUS_BASE_URL || 'https://inference-api.nousresearch.com/v1';
-const MODEL = process.env.NOUS_MODEL || 'qwen/qwen3-vl-32b-instruct';
+const MODEL = process.env.NOUS_MODEL || 'anthropic/claude-sonnet-5.5';
 
 export const hasAI = Boolean(process.env.NOUS_API_KEY);
 
