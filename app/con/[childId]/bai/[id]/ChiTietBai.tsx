@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { trangThaiVideo, type Assignment, type DiemVuaCong, type Lang } from '@/lib/types';
-import { linkDriveTu } from '@/lib/media';
+import { linkDriveTu, linkNgoaiTu } from '@/lib/media';
 import { GIONG_DOC, TEN_NGON_NGU, pickVoice, splitSpeech } from '@/lib/speech';
 import { useNgonNgu, useT } from '@/lib/i18n/client';
 import Confetti from '../../xong/Confetti';
@@ -330,12 +330,13 @@ export default function ChiTietBai({
                         </div>
                       );
                     }
-                    // Video co the la tep tai len hoac link Drive dan tay (issue #28).
+                    // Video co the la tep tai len hoac link dan tay (issue #28) — Drive
+                    // hay bat ky trang nao khac (YouTube...), tu 2026-10-22.
                     // Link Drive KHONG phat trong app nua (issue #60): con bam la mo
                     // sang Google Drive va xem ben do, nen o day la mot the bam duoc
                     // chu khong phai trinh phat — nhan + icon mui ten noi ro la se mo
                     // sang cho khac, de con khong doi no chay tai cho.
-                    const driveUrl = linkDriveTu(m.url);
+                    const driveUrl = linkNgoaiTu(m.url);
                     return driveUrl ? (
                       <a
                         key={m.url}
@@ -348,7 +349,9 @@ export default function ChiTietBai({
                         <span className="material-symbols-outlined text-5xl text-tertiary icon-fill shrink-0">
                           smart_display
                         </span>
-                        <span className="flex-1 text-k-body">{T('Mở Google Drive để xem')}</span>
+                        <span className="flex-1 text-k-body">
+                          {linkDriveTu(driveUrl) ? T('Mở Google Drive để xem') : T('Mở link để xem')}
+                        </span>
                         <span className="material-symbols-outlined text-4xl text-tertiary shrink-0">
                           open_in_new
                         </span>

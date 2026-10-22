@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { TABS, tabDangChon } from './tabs';
 import { useT } from '@/lib/i18n/client';
+import NutDangXuat from './NutDangXuat';
 
 /**
  * Thanh ben trai — chi hien tu 1280px tro len (bo stitch-parent-macbook).
@@ -77,6 +78,10 @@ export default function ThanhBen({
             </span>
           </span>
         </Link>
+        <NutDangXuat
+          className="w-full flex items-center gap-3 rounded-full px-4 min-h-p-tap mt-1 text-on-surface-variant
+                     hover:bg-error-container hover:text-error disabled:opacity-60"
+        />
       </div>
     </aside>
   );

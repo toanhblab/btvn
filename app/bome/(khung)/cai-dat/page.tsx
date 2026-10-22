@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
  * Ban Stitch co email, "Dang xuat", "Goi dang ky". PRD muc 4.5 chot khong tai
  * khoan / khong email / khong mat khau, va muc 5 de "tai khoan that" ra ngoai
  * pham vi. Nen man nay chuyen thanh: ho so nha, ho so cac con, doi ma PIN, va
- * quen PIN tren thiet bi nay.
+ * "Dang xuat" phan bo me tren thiet bi nay (DELETE /api/pin).
  */
 export default async function Page() {
   const familyId = await parentFamilyId();

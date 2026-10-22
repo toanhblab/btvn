@@ -45,6 +45,11 @@ const MIEN_TRU = {
     // Khuon mau prompt va doan de bai ghep vao prompt: CHU GUI CHO MAY, khong hien.
     /const PROMPT = `[\s\S]*?`;/,
     /`Nội dung bài tập:[^`]*`/,
+    // Luat quay video dung chung cho hai prompt, va loi nhac cua doanQuayVideo:
+    // cung la chu gui cho may.
+    /const QUY_TAC_VIDEO = `[\s\S]*?`;/,
+    /content: `Bạn đọc đề bài tập về nhà[^`]*`/,
+    /`Các đề bài:[^`]*`/,
     // Khoi "sach cua nha" ghep sau prompt (khoiSachChoAI, issue #64): cung la chu
     // gui cho may — ca dong ten sach `(môn …)` lan khuon mau nhieu dong.
     /`- \$\{ten\}\$\{b\.subject \? ` \(môn \$\{b\.subject\}\)` : ''\}`/,

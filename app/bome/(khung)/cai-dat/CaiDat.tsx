@@ -6,6 +6,7 @@ import { PIN_LEN } from '@/lib/pin';
 import Link from 'next/link';
 import type { Family } from '@/lib/store';
 import { useT } from '@/lib/i18n/client';
+import NutDangXuat from '../NutDangXuat';
 
 /** Khung the trang o co Macbook — duoi 1280px khong doi gi so voi ban cu. */
 const THE =
@@ -257,8 +258,15 @@ export default function CaiDat({
       </section>
 
       {/* Khoi "Vung nguy hiem" (nut "Quen PIN tren thiet bi nay") da bo han theo
-          yeu cau cua captain o issue #17. Duong DELETE /api/pin van con nhung
-          khong con giao dien nao goi. */}
+          yeu cau cua captain o issue #17. Thay vao do la nut "Dang xuat" (captain
+          2026-10-22) — cung goi DELETE /api/pin, xem NutDangXuat. */}
+      <section className={THE}>
+      <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Phần của bố mẹ')}</h2>
+      <NutDangXuat
+        className="w-full bg-surface-container-lowest rounded-card card-shadow p-3 flex items-center gap-3
+                   min-h-p-tap text-left text-error disabled:opacity-60 mb-4 xl:shadow-none xl:p-0 xl:mb-0"
+      />
+      </section>
 
       {msg && <p className="text-p-body-sm text-on-surface-variant mt-3">{msg}</p>}
       {error && <p className="text-p-body text-error bg-error-container rounded-card p-3 mt-3">{error}</p>}

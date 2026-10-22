@@ -13,7 +13,10 @@
  * Luoi THO nhan ra bai phai QUAY VIDEO. Chi dung khi KHONG co cau tra loi nao
  * khac de dua vao: duong lui tach tho theo dong (splitByRule), va mot nua the
  * vua bi bo me cat ra (tachBanNhap) — chu de bai cua nua do la thu duy nhat noi
- * len viec do co phai quay video khong. Khi da goi duoc AI thi truong
+ * len viec do co phai quay video khong. Tu 2026-10-22 o nut Tach, ket qua cua
+ * luoi chi la TAM: man Kiem tra lai hoi lai AI (POST /api/doan-video) va thay
+ * bang cau tra loi cua AI — luoi nay bo sot "quay một đoạn video", "ghi hình"...
+ * Khi da goi duoc AI thi truong
  * canQuayVideo cua no la quyet dinh cuoi cung, KHONG OR them regex nay vao:
  * regex bat nham ("viết đoạn văn kể lại...") se chan con tick xong bai. KHONG
  * bat tu "video" tran: "xem video cô gửi" la XEM, khong phai quay.

@@ -36,7 +36,7 @@ mock.module('@vercel/blob/client', {
   },
 });
 
-const { uploadMediaFile, uploadSubmissionVideo, mediaKindOf, linkDriveTu, tenTepNop } =
+const { uploadMediaFile, uploadSubmissionVideo, mediaKindOf, linkDriveTu, linkNgoaiTu, tenLinkNgoai, tenTepNop } =
   await import('./media.ts');
 
 beforeEach(() => {
@@ -109,6 +109,41 @@ test('linkDriveTu: tu choi ten mien gia va url khong dung dang', () => {
 test('linkDriveTu: khong de url kieu javascript: lot vao href', () => {
   assert.equal(linkDriveTu('javascript:alert(1)'), null);
   assert.equal(linkDriveTu('data:text/html,<script>alert(1)</script>'), null);
+});
+
+/**
+ * linkNgoaiTu (2026-10-22): bo me dan duoc MOI link http(s), khong chi Drive —
+ * nhung van chan javascript:/data:, va tep CHINH APP cap thi khong phai link
+ * ngoai (man cua con phat no bang <video>, khong mo sang tab khac).
+ */
+test('linkNgoaiTu: nhan link Drive, YouTube va trang bat ky', () => {
+  const drive = 'https://drive.google.com/file/d/abc123/view?usp=sharing';
+  assert.equal(linkNgoaiTu(drive), drive);
+  assert.equal(linkNgoaiTu('https://www.youtube.com/watch?v=dQw4w9WgXcQ'), 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+  assert.equal(linkNgoaiTu('https://youtu.be/dQw4w9WgXcQ'), 'https://youtu.be/dQw4w9WgXcQ');
+  assert.equal(linkNgoaiTu('http://truongtieuhoc.edu.vn/phim'), 'http://truongtieuhoc.edu.vn/phim');
+});
+
+test('linkNgoaiTu: chan url khong phai http(s) va chuoi khong phai link', () => {
+  assert.equal(linkNgoaiTu('javascript:alert(1)'), null);
+  assert.equal(linkNgoaiTu('data:text/html,<script>alert(1)</script>'), null);
+  assert.equal(linkNgoaiTu('ftp://example.com/phim.mp4'), null);
+  assert.equal(linkNgoaiTu('youtube.com/watch?v=abc'), null, 'thieu https:// thi bao loi de bo me dan lai');
+  assert.equal(linkNgoaiTu('not a url'), null);
+  assert.equal(linkNgoaiTu(''), null);
+  assert.equal(linkNgoaiTu(undefined), null);
+  assert.equal(linkNgoaiTu(`https://example.com/${'a'.repeat(2048)}`), null);
+});
+
+test('linkNgoaiTu: tep chinh app cap KHONG phai link ngoai — con xem ngay trong trang', () => {
+  assert.equal(linkNgoaiTu('https://abc123.public.blob.vercel-storage.com/dinh-kem/x.mp4'), null);
+  assert.equal(linkNgoaiTu('/api/tep/0123456789abcdef0123456789abcdef.mp4'), null);
+});
+
+test('tenLinkNgoai: Drive giu ten "Link Google Drive", con lai la ten mien bo www', () => {
+  assert.equal(tenLinkNgoai('https://drive.google.com/drive/folders/abc', 'Link Google Drive'), 'Link Google Drive');
+  assert.equal(tenLinkNgoai('https://www.youtube.com/watch?v=abc', 'Link Google Drive'), 'youtube.com');
+  assert.equal(tenLinkNgoai('https://onedrive.live.com/x', 'Link Google Drive'), 'onedrive.live.com');
 });
 
 /**

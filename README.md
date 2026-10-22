@@ -240,7 +240,7 @@ bằng AI là chưa hoạt động. Đặt vào `.env.local`:
 | `DATABASE_URL` | Dùng PGlite lưu ở `.data/pg` trên máy | Vercel → Storage → Neon |
 | `BLOB_READ_WRITE_TOKEN` | Ảnh nhúng thẳng vào trang, video/tệp đính kèm ghi vào `.data/uploads` — chỉ chạy khi dev, deploy mà thiếu là con **không nộp video được** | Vercel → Storage → Blob |
 | `NOUS_API_KEY` | Tách bài tạm theo dòng, có cảnh báo rõ cho bố mẹ | portal.nousresearch.com |
-| `NOUS_MODEL` | Dùng `qwen/qwen3-vl-32b-instruct` — **phải là model có vision** | Danh sách ở `/v1/models` |
+| `NOUS_MODEL` | Dùng `anthropic/claude-sonnet-5.5` — **phải là model có vision** | Danh sách ở `/v1/models` |
 | `PIN_SECRET` | Dùng chuỗi mặc định — **phải đổi trước khi deploy** | Tự đặt |
 | `BTVN_PGLITE_DIR` | PGlite ở `.data/pg` | Chỉ để test / thử trên DB tạm (`memory://` = trong RAM) |
 | `CRON_SECRET` | `/api/don-video` trả 401 cho mọi request, tức **việc dọn video không chạy** | Tự đặt, ≥16 ký tự; Vercel tự gửi nó trong header `Authorization` khi gọi cron |
