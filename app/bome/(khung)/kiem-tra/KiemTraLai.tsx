@@ -6,7 +6,7 @@ import Link from 'next/link';
 import type { Child, DraftAssignment, HwSource } from '@/lib/types';
 import { DURATION_DEFAULT, HW_SOURCES, HW_SOURCE_DEFAULT, SUBJECTS, hwSourceOf, iconFor, subjectsFor } from '@/lib/types';
 import {
-  dinhTepVaoBanNhap, goTepKhoiBanNhap, gopLenBanNhap, maBanNhapMoi, tachBanNhap, viTriBanNhap,
+  apDoanVideo, dinhTepVaoBanNhap, goTepKhoiBanNhap, gopLenBanNhap, maBanNhapMoi, tachBanNhap, viTriBanNhap,
   type BanNhap,
 } from '@/lib/banNhap';
 import { useNgonNgu, useT } from '@/lib/i18n/client';
@@ -180,9 +180,33 @@ export default function KiemTraLai({
   const mergeUp = (ma: string) => setDrafts((ds) => gopLenBanNhap(ds, viTriBanNhap(ds, ma)));
 
   /** Tach bai nay lam hai tai con tro trong O DE BAI CUA CHINH the do. */
-  const splitAt = (ma: string) =>
-    setDrafts((ds) =>
-      tachBanNhap(ds, viTriBanNhap(ds, ma), oDeBai.current[ma]?.selectionStart ?? null));
+  async function splitAt(ma: string) {
+    const i = viTriBanNhap(drafts, ma);
+    const goc = drafts[i];
+    if (!goc) return;
+    const ds = tachBanNhap(drafts, i, oDeBai.current[ma]?.selectionStart ?? null);
+    setDrafts(ds);
+    // Co 🎥 tren hai nua luc nay la do luoi chu tho doan TAM (tachBanNhap). The goc
+    // dang bat co thi hoi AI cho tung nua — co viet "quay 1 video", "ghi hình"...
+    // luoi bo sot con AI doan theo nghia. AI loi thi giu ket qua tam, bo me van
+    // bat/tat chip 🎥 bang tay.
+    const dau = ds[i];
+    const sau = ds[i + 1];
+    if (!goc.requiresVideo || !dau?.content.trim() || !sau?.content.trim()) return;
+    try {
+      const res = await fetch('/api/doan-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deBai: [dau.content, sau.content] }),
+      });
+      if (!res.ok) return;
+      const { canQuayVideo } = await res.json();
+      if (!Array.isArray(canQuayVideo) || canQuayVideo.length !== 2) return;
+      setDrafts((hienTai) => apDoanVideo(hienTai, dau, sau, [canQuayVideo[0] === true, canQuayVideo[1] === true]));
+    } catch {
+      // mat mang: giu ket qua tam
+    }
+  }
 
   async function save() {
     const { ds, loi } = ganLinkDriveDangDan();

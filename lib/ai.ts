@@ -34,6 +34,28 @@ const MODEL = process.env.NOUS_MODEL || 'anthropic/claude-sonnet-5.5';
 
 export const hasAI = Boolean(process.env.NOUS_API_KEY);
 
+/**
+ * Luat "bai nay co phai QUAY VIDEO khong" — dung chung cho PROMPT tach bai va
+ * cho doanQuayVideo (nut "Tach bai nay" o man Kiem tra lai). AI DOAN theo NGHIA
+ * cua de bai, khong khop chu cung: co giao viet "quay 1 video", "quay một đoạn
+ * clip", "ghi hình", "quay lại cảnh con..." deu la quay (captain 2026-10-22).
+ * Luoi VIDEO_HINT (lib/dauHieuVideo.ts) chi con la duong lui khi KHONG goi duoc AI.
+ */
+const QUY_TAC_VIDEO = `- "canQuayVideo" = true khi bài yêu cầu con QUAY / GHI HÌNH lại việc mình làm
+  hoặc trình diễn thành tiếng/động tác để người khác kiểm tra. Đoán theo NGHĨA
+  của đề, KHÔNG chỉ dò chữ "quay video": cô viết rất nhiều kiểu — "quay video",
+  "quay 1 video", "quay một đoạn video ngắn", "quay 2 clip", "quay clip gửi cô",
+  "quay lại cảnh con đọc bài", "ghi hình", "nộp video", "gửi video cho cô",
+  "record a video" — tất cả đều là quay. Trình diễn để người khác nghe/xem cũng
+  true: "đọc to", "đọc thuộc lòng", "kể lại câu chuyện cho bố mẹ nghe",
+  "thuyết trình", "hát", "tập thể dục", "biểu diễn"...
+  Bài viết, vẽ, làm vào vở, hay chỉ XEM video cô gửi thì false ("xem video bài
+  giảng", "cô gửi video cho bố mẹ tham khảo", "xem 1 tập phim").
+  QUY TẮC ƯU TIÊN: đề có động từ chỉ việc viết / vẽ / làm vào vở thì LUÔN
+  false, dù trong đề có chữ "kể lại" — trừ khi đề CŨNG bảo quay video.
+  Ví dụ: "Viết đoạn văn kể lại câu chuyện Cây khế vào vở" -> canQuayVideo = false.
+  Ví dụ: "Quay 1 video con kể lại câu chuyện" -> canQuayVideo = true.`;
+
 const PROMPT = `Bạn đọc bài tập về nhà của học sinh tiểu học Việt Nam và tách thành danh sách bài riêng biệt.
 
 Quy tắc:
@@ -84,17 +106,7 @@ Quy tắc:
   Ví dụ: "Làm bài toán trang 41, 42, 43 sách Poth Math" — mỗi trang ~8 phút ->
   duration_minutes = 24, KHÔNG phải 8 và cũng không phải 15.
   Không chắc thì để 10.
-- "canQuayVideo" = true khi bài yêu cầu con QUAY VIDEO hoặc trình diễn thành
-  tiếng/động tác để người khác kiểm tra: "quay video", "quay clip gửi cô",
-  "đọc to", "đọc thuộc lòng", "kể lại câu chuyện cho bố mẹ nghe", "quay video
-  kể lại", "thuyết trình", "hát", "tập thể dục", "biểu diễn"...
-  Bài viết, vẽ, làm vào vở, hay chỉ XEM video cô gửi thì false.
-  Đề đã ghi thẳng "quay video", "quay clip", "nộp video", "gửi video" thì
-  canQuayVideo = true, không cần suy luận thêm — kể cả khi có chữ đệm ở giữa
-  ("quay 1 video kể lại câu chuyện", "quay lại video bài hát").
-  QUY TẮC ƯU TIÊN: đề có động từ chỉ việc viết / vẽ / làm vào vở thì LUÔN
-  false, dù trong đề có chữ "kể lại".
-  Ví dụ: "Viết đoạn văn kể lại câu chuyện Cây khế vào vở" -> canQuayVideo = false.
+${QUY_TAC_VIDEO}
 - Bỏ qua lời chào, lời dặn chung chung của cô giáo, không phải bài tập thì đừng đưa vào.
 - Không bịa thêm bài không có trong nguồn.
 - Chỉ trả về JSON đúng lược đồ, không kèm lời giải thích.`;
@@ -297,6 +309,74 @@ export async function extractAssignments(input: {
   if (!raw) throw new Error('EMPTY_RESPONSE');
 
   return normalize(parseDrafts(raw), T);
+}
+
+/** Toi da bao nhieu de mot lan hoi — nut "Tach bai nay" chi gui 2. */
+export const MAX_DE_DOAN_VIDEO = 10;
+
+const SCHEMA_DOAN_VIDEO = {
+  type: 'object',
+  properties: {
+    ketQua: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { canQuayVideo: { type: 'boolean' } },
+        required: ['canQuayVideo'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['ketQua'],
+  additionalProperties: false,
+};
+
+/**
+ * Hoi AI: tung de bai nay co bat con QUAY VIDEO khong? Cung luat QUY_TAC_VIDEO
+ * voi luc tach bai, nen "quay 1 video", "ghi hình"... deu nhan ra ma khong can
+ * khop chu cung. Dung cho nut "Tach bai nay" o man Kiem tra lai: hai nua cua mot
+ * the duoc hoi lai chu khong do bang luoi VIDEO_HINT nua.
+ *
+ * Nem loi khi khong goi duoc AI hoac AI tra sai so phan tu — ben goi giu nguyen
+ * ket qua cua luoi tho, khong doan bua.
+ */
+export async function doanQuayVideo(deBai: string[]): Promise<boolean[]> {
+  if (!hasAI) throw new Error('NO_API_KEY');
+  if (deBai.length === 0) return [];
+  const danhSach = deBai.map((d, i) => `${i + 1}. ${d.trim()}`).join('\n');
+  const res = await fetch(`${BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.NOUS_API_KEY!}`,
+    },
+    signal: AbortSignal.timeout(20_000),
+    body: JSON.stringify({
+      model: MODEL,
+      temperature: 0,
+      messages: [
+        {
+          role: 'system',
+          content: `Bạn đọc đề bài tập về nhà của học sinh tiểu học Việt Nam và quyết định từng đề có bắt con quay video hay không.\n\n${QUY_TAC_VIDEO}\n\nTrả về "ketQua" có ĐÚNG ${deBai.length} phần tử, theo đúng thứ tự các đề. Chỉ trả JSON đúng lược đồ.`,
+        },
+        { role: 'user', content: `Các đề bài:\n\n${danhSach}` },
+      ],
+      response_format: {
+        type: 'json_schema',
+        json_schema: { name: 'doan_video', strict: true, schema: SCHEMA_DOAN_VIDEO },
+      },
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status}${body ? ` ${body.slice(0, 200)}` : ''}`);
+  }
+  const data = await res.json();
+  const raw: string | undefined = data?.choices?.[0]?.message?.content;
+  if (!raw) throw new Error('EMPTY_RESPONSE');
+  const ketQua = JSON.parse(raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''))?.ketQua;
+  if (!Array.isArray(ketQua) || ketQua.length !== deBai.length) throw new Error('SAI_SO_PHAN_TU');
+  return ketQua.map((k: { canQuayVideo?: unknown }) => k?.canQuayVideo === true);
 }
 
 /**

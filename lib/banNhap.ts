@@ -176,3 +176,27 @@ export function goTepKhoiBanNhap(ds: BanNhap[], ma: string, url: string): BanNha
   return ds.map((d) =>
     (d.ma === ma ? { ...d, media: (d.media ?? []).filter((m) => m.url !== url) } : d));
 }
+
+/**
+ * Ap ket qua AI doan quay video (POST /api/doan-video) vao HAI NUA vua tach boi
+ * tachBanNhap. Luoi VIDEO_HINT trong tachBanNhap chi la ket qua TAM, hien ngay
+ * luc bam; AI tra loi thi thay bang ket qua cua AI (captain 2026-10-22: "dung AI
+ * de doan, vi doi khi co viet la quay 1 video").
+ *
+ * Giu nguyen luat thu bac o dau tep: chi goi khi the goc DANG BAT co, va khong
+ * nua nao duoc AI nhan la quay thi co o lai nua DAU — nua dau la phan o lai the
+ * cu. The nao bo me da sua chu trong luc cho thi KHONG dung toi: cau tra loi cua
+ * AI la cho noi dung cu.
+ */
+export function apDoanVideo(
+  ds: BanNhap[],
+  dau: { ma: string; content: string },
+  sau: { ma: string; content: string },
+  [quayDau, quaySau]: [boolean, boolean],
+): BanNhap[] {
+  return ds.map((d) => {
+    if (d.ma === dau.ma && d.content === dau.content) return { ...d, requiresVideo: quayDau || !quaySau };
+    if (d.ma === sau.ma && d.content === sau.content) return { ...d, requiresVideo: quaySau };
+    return d;
+  });
+}
