@@ -224,10 +224,21 @@ Vào **Thưởng** (thanh dưới).
   **"Từ chối"**. **Chỉ khi bố mẹ duyệt thì sao của con mới bị trừ** — từ chối thì
   con giữ nguyên sao và xin lại được.
 
-### Trừ sao khi con chưa nghe lời
+### Thưởng thêm sao khi con ngoan
 
 Cũng ở màn **Thưởng**, ngay dưới câu giới thiệu là hàng **tên các con kèm số ⭐**.
-Bấm vào tên con là mở ô trừ sao:
+Bấm vào tên con là mở ô có hai nút: **➕ Thưởng ⭐** (đang chọn sẵn) và **➖ Trừ ⭐**.
+
+1. Để nguyên **➕ Thưởng ⭐**, **gõ số ⭐ muốn thưởng** (ví dụ 5).
+2. **Ghi lý do** — không bắt buộc, con sẽ đọc dòng này trong **sổ ⭐** của con. Có
+   sẵn mấy nút bấm một cái là xong: *Ngoan, nghe lời*, *Giúp bố mẹ việc nhà*, *Tự
+   giác học bài*, *Nhường em / chia sẻ*, *Dọn đồ gọn gàng*.
+3. Bấm **"Thưởng 5 ⭐ cho Minh"**. Số ⭐ của con tăng ngay, và mục **"Thưởng / trừ
+   gần đây"** bên dưới ghi lại lần đó (số màu xanh là thưởng, màu đỏ là trừ).
+
+### Trừ sao khi con chưa nghe lời
+
+Mở ô như trên rồi bấm **➖ Trừ ⭐**:
 
 ![Ô trừ sao của bố mẹ: gõ số, chọn lý do, bấm Trừ](huong-dan-anh/bome-tru-sao.png)
 
@@ -237,8 +248,8 @@ Bấm vào tên con là mở ô trừ sao:
    hàng phần thưởng. Có sẵn mấy nút bấm một cái là xong: *Không nghe lời*, *Cãi bố
    mẹ*, *Không dọn đồ*, *Chơi quá giờ*, *Chưa làm bài*, *Nói dối*. Bấm rồi vẫn sửa
    được chữ trong ô. Để trống thì con thấy dòng *"Con hỏi bố mẹ vì sao nhé"*.
-3. Bấm **"Trừ 3 ⭐ của Minh"**. Số ⭐ của con đổi ngay, và bên dưới có mục **"Đã
-   trừ gần đây"** ghi từng lần: trừ mấy sao, vì sao, ngày nào.
+3. Bấm **"Trừ 3 ⭐ của Minh"**. Số ⭐ của con đổi ngay, và bên dưới có mục
+   **"Thưởng / trừ gần đây"** ghi từng lần: mấy sao, vì sao, ngày nào.
 
 Vài điều cần biết:
 
@@ -255,11 +266,20 @@ Vài điều cần biết:
 - Con hết sao thật thì app báo *"Con không còn ⭐ nào để trừ"* khi bố mẹ bấm. Nút
   không tự khoá theo con số đang hiện, vì con số đó có thể đã cũ — cứ bấm, app
   kiểm lại rồi cập nhật số sao ngay tại chỗ.
-- **Chỉ trừ được, không cộng tay được.** Sao chỉ có từ việc con làm (xem mục 5).
 - Trừ sao **không xoá** bài hay nhiệm vụ nào của con; con vẫn làm tiếp và vẫn được
   cộng sao như thường.
 - Con mở **🎁 Đổi thưởng** sẽ thấy mục **"Bố mẹ đã trừ ⭐"** với từng dòng
   *"−3 ⭐ Cãi bố mẹ"* — con biết mình bị trừ vì gì, không phải thấy sao tự tụt.
+  Trong **sổ ⭐** của con (dưới đây) cũng có dòng đó.
+
+### Sổ ⭐ của từng con
+
+Ở màn **"Hôm nay con là ai?"**, viên **⭐ số sao** ngay dưới tên mỗi con là một nút:
+bấm vào là mở **sổ ⭐** của con đó. Sổ ghi **từng lần** số sao thay đổi, mới nhất ở
+trên, chia theo ngày: được sao vì làm xong hết việc trong ngày, xong bài sớm, tick
+nhiệm vụ, bố mẹ thưởng (xanh, dấu +); đổi phần thưởng đã được duyệt, bố mẹ trừ (đỏ,
+dấu −). Cộng hết các dòng lại đúng bằng số sao con đang có ở đầu sổ. Yêu cầu đổi
+thưởng còn đang chờ hay bị từ chối thì không nằm trong sổ, vì chưa đụng tới sao.
 
 ### Video cũ tự dọn bớt
 

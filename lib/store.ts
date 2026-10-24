@@ -3,7 +3,7 @@ import {
   DIEM_NGAY_XONG, DIEM_XONG_SOM, ngayDuocTinhDiem, ngayHoanThanh, xongSom,
 } from './diem';
 import type {
-  Assignment, AttachedMedia, Book, Child, ChildColor, DailyChore, DiemVuaCong, DraftAssignment, HwSource,
+  Assignment, AttachedMedia, Bonus, Book, Child, ChildColor, DailyChore, DiemVuaCong, DraftAssignment, HwSource,
   Lang, MediaKind, NhomNhiemVu, Penalty, Redemption, RedemptionStatus, Reward, Status, TenMon,
 } from './types';
 import { DURATION_DEFAULT, HW_SOURCE_DEFAULT, hwSourceOf, monSachOf, nhomNhiemVuOf } from './types';
@@ -13,8 +13,8 @@ import { ngayNhaISO } from './muiGio';
 import { ngonNguOf, type NgonNgu } from './i18n/ngonNgu';
 import type { Key, Tham } from './i18n/chu';
 import {
-  SQL_DUYET_DOI_THUONG, SQL_KHOA_TRU_DIEM, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON,
-  SQL_TRANG_THAI_DOI_THUONG, SQL_TRU_DIEM, nhanhDuyet,
+  SQL_DUYET_DOI_THUONG, SQL_KHOA_TRU_DIEM, SQL_SO_DIEM_CHI_TIET, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON,
+  SQL_THUONG_DIEM, SQL_TRANG_THAI_DOI_THUONG, SQL_TRU_DIEM, nhanhDuyet, type LoaiDongDiem,
 } from './sqlDiem';
 
 /**
@@ -1292,6 +1292,37 @@ export async function soDiem(familyId: string, childId: string): Promise<number>
   return (await soDiemTheoCon(familyId)).get(childId) ?? 0;
 }
 
+/** Mot dong trong so ⭐ cua con (man /con/[childId]/diem). */
+export interface DongDiem {
+  id: string;
+  loai: LoaiDongDiem;
+  /** Luon duong — dau lay tu chieuDong(loai) (lib/sqlDiem.ts). */
+  points: number;
+  luc: string;
+  /** Noi dung bai / ten phan thuong / ly do tru; null = bai da bi xoa. */
+  ten: string | null;
+  icon: string | null;
+}
+
+/**
+ * So ⭐ cua mot con, moi nhat truoc — SQL_SO_DIEM_CHI_TIET (lib/sqlDiem.ts),
+ * cung ba bang voi so du. Con nha khac thi rong.
+ */
+export async function soDiemChiTiet(familyId: string, childId: string, limit = 200): Promise<DongDiem[]> {
+  const rows = await query<{
+    id: string; loai: LoaiDongDiem; points: number | string; luc: string | Date;
+    ten: string | null; icon: string | null;
+  }>(SQL_SO_DIEM_CHI_TIET, [childId, familyId, limit]);
+  return rows.map((r) => ({
+    id: r.id,
+    loai: r.loai,
+    points: Number(r.points),
+    luc: new Date(r.luc).toISOString(),
+    ten: r.ten,
+    icon: r.icon,
+  }));
+}
+
 /** Ngay nay (due_date) cua con nay da duoc cong 10 diem "ngay xong" chua. */
 export async function daCongDiemNgay(familyId: string, childId: string, date: string): Promise<boolean> {
   const r = await queryOne<{ id: string }>(
@@ -1762,6 +1793,51 @@ export async function truDiem(
     return { ok: false, status: 400, error: '{name} không còn ⭐ nào để trừ.', tham: { name: child.name }, conLai };
   }
   return { ok: true, penalty: toPenalty(ghi[0]), conLai };
+}
+
+/** Nhung lan bo me thuong ⭐ bang tay, moi nhat truoc (score_events kind 'parent_bonus'). */
+export async function listBonuses(
+  familyId: string,
+  opts: { childId?: string; limit?: number } = {}
+): Promise<Bonus[]> {
+  const where: string[] = ['c.family_id = $1', `e.kind = 'parent_bonus'`];
+  const params: unknown[] = [familyId];
+  if (opts.childId) { params.push(opts.childId); where.push(`e.child_id = $${params.length}`); }
+  params.push(opts.limit ?? 50);
+  const rows = await query<PenaltyRow>(
+    `SELECT e.id, e.child_id, e.points, COALESCE(e.reason, '') AS reason, e.created_at
+       FROM score_events e
+       JOIN children c ON c.id = e.child_id
+      WHERE ${where.join(' AND ')}
+      ORDER BY e.created_at DESC, e.id DESC
+      LIMIT $${params.length}`,
+    params
+  );
+  return rows.map(toPenalty);
+}
+
+export type KetQuaThuongDiem =
+  | { ok: true; bonus: Bonus; conLai: number }
+  | { ok: false; status: number; error: Key; conLai: number };
+
+/**
+ * Bo me THUONG ⭐ cho con (CAN PIN o route) — chieu nguoc cua truDiem, ghi MOT
+ * dong score_events 'parent_bonus' (SQL_THUONG_DIEM). Chi cong nen khong can
+ * khoa theo con: khong co luat "khong am" nao de giu. Cung tra `conLai` de man
+ * bo me sua vien ⭐ ngay, nhu truDiem.
+ */
+export async function thuongDiem(
+  familyId: string,
+  childId: string,
+  points: number,
+  reason: string
+): Promise<KetQuaThuongDiem> {
+  const [ghi, soDu] = await queryTx<PenaltyRow & { so_du: number | string }>([
+    { sql: SQL_THUONG_DIEM, params: [newId('sce'), childId, points, reason, todayISO(), familyId] },
+    { sql: SQL_SO_DU_MOT_CON, params: [childId, familyId] },
+  ]);
+  if (ghi.length === 0) return { ok: false, status: 404, error: 'Không tìm thấy con này.', conLai: 0 };
+  return { ok: true, bonus: toPenalty(ghi[0]), conLai: Number(soDu[0]?.so_du ?? 0) };
 }
 
 /* ---------------- Don video qua han (lib/donVideo.ts) ---------------- */

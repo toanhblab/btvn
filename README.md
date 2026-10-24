@@ -304,11 +304,11 @@ Bố mẹ thấy việc này chạy hay không ở **Cài đặt → "Dọn vide
 app/vao/        chọn nhà cho máy chưa gắn nhà nào (nhập PIN / tạo nhà mới)
 app/nha/[slug]/ link gắn iPad vào một nhà (route handler, đặt cookie rồi redirect)
 app/con/        5 màn của trẻ: chọn con → bài hôm nay → chi tiết → chúc mừng,
-                và cửa hàng phần thưởng (thuong/)
+                cửa hàng phần thưởng (thuong/), sổ ⭐ của con (diem/)
 app/bome/       màn của bố mẹ: PIN, tạo nhà, tổng quan, thêm bài, kiểm tra lại,
                 nhập tay, sửa bài, thêm con, chi tiết theo con, danh sách,
-                thưởng (duyệt đổi thưởng + danh sách phần thưởng + trừ ⭐ của
-                con), cài đặt, nhiệm vụ hàng ngày (trang riêng: giao cho con
+                thưởng (duyệt đổi thưởng + danh sách phần thưởng + thưởng /
+                trừ ⭐ của con), cài đặt, nhiệm vụ hàng ngày (trang riêng: giao cho con
                 nào, mấy ⭐, nhóm), sách của các con (trang riêng: khai sách /
                 vở / nguồn bài tập làm ngữ cảnh cho AI tách bài theo cuốn)
 app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
@@ -317,8 +317,8 @@ app/api/        children, assignments, pin, families (tạo nhà/đổi tên),
                 upload-media (tệp bố mẹ đính kèm), nop-video (video con nộp),
                 viec-nha (cấu hình nhiệm vụ hàng ngày của bố mẹ, cần PIN),
                 sach (sách của các con, cần PIN),
-                phan-thuong (bố mẹ đặt phần thưởng, cần PIN), tru-diem (bố mẹ
-                trừ ⭐ của con, cần PIN), doi-thuong (con xin đổi — không cần
+                phan-thuong (bố mẹ đặt phần thưởng, cần PIN), tru-diem /
+                thuong-diem (bố mẹ trừ / thưởng ⭐ của con, cần PIN), doi-thuong (con xin đổi — không cần
                 PIN; bố mẹ duyệt — cần PIN), tep (đọc tệp đã ghi ở
                 .data/uploads khi dev), don-video (cron dọn video quá hạn, xác
                 thực bằng CRON_SECRET)
@@ -656,11 +656,26 @@ mỗi con chỉ có **một** yêu cầu chờ cùng lúc. Số dư = tổng đi
 lần đổi đã duyệt **trừ** các lần bố mẹ trừ (dưới); không có dòng điểm âm nào, và
 con bỏ tick hay bố mẹ xoá bài cũng không làm con mất điểm đã kiếm.
 
+**Thưởng ⭐ bằng tay (migration 023).** Luật cũ "chỉ trừ, không cộng tay" đã bỏ:
+ô ở màn **Thưởng** có hai chế độ, mặc định **➕ Thưởng ⭐** → `POST /api/thuong-diem`
+→ `thuongDiem` (`lib/store.ts`) ghi MỘT dòng `score_events` `kind = 'parent_bonus'`
+kèm `reason` (`SQL_THUONG_DIEM`). Không mở bảng mới: `SQL_SO_DU_CON` đã cộng
+`SUM(score_events)` nên công thức số dư không đổi, và dấu vẫn là thuộc tính của
+bảng. Không có unique index cho kind này (mỗi lần bấm là một lần thưởng), không cần
+khoá theo con (chỉ cộng). Màn "Thưởng / trừ gần đây" trộn `listBonuses` +
+`listPenalties`.
+
+**Sổ ⭐ của con** (`/con/[childId]/diem`, vào từ viên ⭐ dưới tên con ở màn chọn
+con): `SQL_SO_DIEM_CHI_TIET` (`lib/sqlDiem.ts`) đọc ĐÚNG ba bảng của số dư với đúng
+điều kiện của nó, `points` luôn dương, dấu từ `chieuDong(loai)`. Test PGlite ghim
+"cộng mọi dòng theo `chieuDong` = `SQL_SO_DU_CON`" — thêm một số hạng vào công thức
+số dư thì phải thêm một nhánh UNION vào sổ.
+
 **Trừ điểm (issue #43).** Con chưa nghe lời thì bố mẹ trừ ⭐ ngay ở màn **Thưởng**:
 bấm viên ⭐ của con, **gõ số ⭐ muốn trừ** (không gõ "tổng mới"), ghi lý do — không
 bắt buộc, có chip gợi ý viết bằng lời nói được với con vì **con sẽ đọc dòng đó** ở
 cửa hàng ("Bố mẹ đã trừ ⭐": −3 ⭐ · Cãi bố mẹ; để trống thì con thấy "Con hỏi bố mẹ
-vì sao nhé"). Chỉ trừ, **không có đường cộng tay**. Số dư không bao giờ âm, dựa trên
+vì sao nhé"). Cùng ô đó có chế độ **➕ Thưởng ⭐** (dưới). Số dư không bao giờ âm, dựa trên
 hai luật ở **một hàm thuần** `trangThaiTruDiem` (`lib/types.ts`) + `SQL_TRU_DIEM`:
 
 1. **Nút làm đúng những gì nhãn của nó ghi.** `soGui` vừa là con số in trên nhãn vừa

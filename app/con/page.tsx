@@ -76,8 +76,8 @@ export default async function ChonCon() {
         {rows.map(({ child, total, done, points }) => {
           const left = total - done;
           return (
+            <div key={child.id} className="flex flex-col items-center">
             <Link
-              key={child.id}
               href={`/con/${child.id}`}
               className="avatar-tap group flex flex-col items-center transition-all duration-300 rounded-[32px] p-2
                          focus:outline-none focus:ring-4 focus:ring-primary focus:ring-offset-8 focus:ring-offset-background"
@@ -128,15 +128,27 @@ export default async function ChonCon() {
                 <span className={`text-k-headline ${NAME[child.color]}`}>{child.name}</span>
               </div>
 
-              {/* Diem dang co cua con nay — ngay duoi ten, cho con biet minh co bao
-                  nhieu ⭐ truoc ca khi bam vao. Mau ho phach (tertiary-fixed) dung
-                  chung cho MOI cho hien ⭐ trong app de con nhan ra "day la sao". */}
-              <span className="mt-3 inline-flex items-center gap-1.5 bg-tertiary-fixed text-on-tertiary-fixed
-                               text-k-label px-5 py-1.5 rounded-full soft-shadow">
-                <span aria-hidden>⭐</span>
-                {points}
-              </span>
             </Link>
+
+            {/* Diem dang co cua con nay — ngay duoi ten, cho con biet minh co bao
+                nhieu ⭐ truoc ca khi bam vao. Mau ho phach (tertiary-fixed) dung
+                chung cho MOI cho hien ⭐ trong app de con nhan ra "day la sao".
+                Bam vao la mo SO ⭐ cua con (/con/<id>/diem) — mot link RIENG, dung
+                canh link vao man cua con chu khong nam trong no (<a> long <a> la
+                HTML sai). Cao bang min-h-k-tap: chuan cham cua tre (PRD 4.3). */}
+            <Link
+              href={`/con/${child.id}/diem`}
+              aria-label={T('Xem sổ ⭐ của {name}', { name: child.name })}
+              className="mt-1 inline-flex items-center gap-1.5 min-h-k-tap px-6 rounded-full
+                         bg-tertiary-fixed text-on-tertiary-fixed text-k-label soft-shadow
+                         transition-transform hover:scale-105
+                         focus:outline-none focus:ring-4 focus:ring-primary focus:ring-offset-4 focus:ring-offset-background"
+            >
+              <span aria-hidden>⭐</span>
+              {points}
+              <span aria-hidden className="text-on-tertiary-fixed/70">›</span>
+            </Link>
+            </div>
           );
         })}
         </div>

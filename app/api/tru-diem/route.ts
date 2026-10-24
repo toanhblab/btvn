@@ -18,7 +18,7 @@ export async function GET(req: Request) {
 
 /**
  * POST /api/tru-diem { childId, points, reason? } — BO ME tru ⭐ cua con
- * (issue #43). CAN PIN. Chi tru, khong co duong cong tay.
+ * (issue #43). CAN PIN. Chieu cong la /api/thuong-diem (migrations/023).
  *
  *   points   con so TREN NHAN cua nut bo me vua bam (nguyen duong) — MOT duong
  *            duy nhat, ke ca khi nut doc "Tru het N": man hinh gui dung so no in

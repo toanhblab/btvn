@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { parentFamilyId } from '@/lib/auth';
 import { DIEM_NGAY_XONG, DIEM_XONG_SOM } from '@/lib/diem';
 import { ngayNha } from '@/lib/ngay';
-import { listChildren, listPenalties, listRedemptions, listRewards, soDiemTheoCon } from '@/lib/store';
+import { listBonuses, listChildren, listPenalties, listRedemptions, listRewards, soDiemTheoCon } from '@/lib/store';
 import DuyetThuong from './DuyetThuong';
 import PhanThuong from './PhanThuong';
 import TruDiem from './TruDiem';
@@ -16,8 +16,9 @@ export const dynamic = 'force-dynamic';
  * cach cua bo bo me (p-*, rounded-card, card-shadow) giong man Cai dat.
  *
  * Bon phan, tu tren xuong theo muc do can lam ngay:
- *   0. Vien ⭐ tung con — bam mot vien la mo o TRU ⭐ (TruDiem, issue #43): bo me
- *                     go so muon tru + ly do (con se doc). Duoi la "Đã trừ gần đây".
+ *   0. Vien ⭐ tung con — bam mot vien la mo o THUONG / TRU ⭐ (TruDiem; tru tu
+ *                     issue #43, thuong tu migrations/023): bo me go so + ly do
+ *                     (con se doc). Duoi la "Thưởng / trừ gần đây" tron hai bang.
  *   1. Cho duyet    — yeu cau doi thuong cac con vua gui (DuyetThuong). Duyet
  *                     thi diem moi bi tru; tu choi thi con giu diem, xin lai duoc.
  *   2. Da xu ly     — vai lan gan day, de bo me nho da dong y gi.
@@ -32,14 +33,22 @@ export default async function Page() {
   if (!familyId) redirect('/bome/pin');
   const T = await chu();
 
-  const [children, choDuyet, daXuLy, rewards, diem, daTru] = await Promise.all([
+  const [children, choDuyet, daXuLy, rewards, diem, daTru, daThuong] = await Promise.all([
     listChildren(familyId),
     listRedemptions(familyId, { status: 'pending' }),
     listRedemptions(familyId, { limit: 30 }),
     listRewards(familyId),
     soDiemTheoCon(familyId),
     listPenalties(familyId, { limit: 8 }),
+    listBonuses(familyId, { limit: 8 }),
   ]);
+  // Hai bang, mot danh sach: moi nhat truoc, giu 8 dong.
+  const thuongPhat = [
+    ...daThuong.map((d) => ({ ...d, cong: true })),
+    ...daTru.map((d) => ({ ...d, cong: false })),
+  ]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 8);
 
   const conCua = new Map(children.map((c) => [c.id, c]));
   const choDuyetHienThi = choDuyet.map((r) => {
@@ -58,7 +67,7 @@ export default async function Page() {
     <main className="px-p-page pt-4 xl:max-w-lg xl:mx-auto">
       <h1 className="text-p-headline text-on-background mb-1">{T('Thưởng')}</h1>
       <p className="text-p-body-sm text-on-surface-variant mb-2">
-        {T('Ngày có bài tập mà xong hết cả bài lẫn nhiệm vụ: +{ngay} ⭐ (ngày không có bài thì chỉ được ⭐ của từng nhiệm vụ). Mỗi bài làm xong trước khi đồng hồ hết giờ: +{som} ⭐. Mỗi nhiệm vụ hàng ngày tick xong: thêm đúng số ⭐ của nhiệm vụ đó. Các con dùng ⭐ để đổi phần thưởng bố mẹ đặt ở dưới — bố mẹ duyệt thì ⭐ mới bị trừ. Con chưa nghe lời thì bố mẹ trừ ⭐ được, nhưng không bao giờ xuống dưới 0.', { ngay: DIEM_NGAY_XONG, som: DIEM_XONG_SOM })}
+        {T('Ngày có bài tập mà xong hết cả bài lẫn nhiệm vụ: +{ngay} ⭐ (ngày không có bài thì chỉ được ⭐ của từng nhiệm vụ). Mỗi bài làm xong trước khi đồng hồ hết giờ: +{som} ⭐. Mỗi nhiệm vụ hàng ngày tick xong: thêm đúng số ⭐ của nhiệm vụ đó. Các con dùng ⭐ để đổi phần thưởng bố mẹ đặt ở dưới — bố mẹ duyệt thì ⭐ mới bị trừ. Bố mẹ cũng thưởng thêm ⭐ khi con ngoan, hoặc trừ ⭐ khi con chưa nghe lời — trừ thì không bao giờ xuống dưới 0.', { ngay: DIEM_NGAY_XONG, som: DIEM_XONG_SOM })}
       </p>
       {/* Dong dan sang trang cai nhiem vu (issue #42 Q8) — cach kiem ⭐ nam o do */}
       <Link
@@ -71,7 +80,7 @@ export default async function Page() {
       </Link>
 
       {/* Diem tung con — cung con so tren man chon-con va cua hang; bam mot vien
-          la mo o tru ⭐ (issue #43). Chi tru, khong cong tay. */}
+          la mo o thuong / tru ⭐. */}
       {children.length > 0 && (
         <section className="mb-5">
           <TruDiem
@@ -80,20 +89,24 @@ export default async function Page() {
             }))}
           />
           <p className="text-p-body-sm text-on-surface-variant mt-2">
-            {T('Bấm vào tên con để trừ ⭐ khi con chưa nghe lời. Con sẽ thấy dòng bị trừ kèm lý do ở cửa hàng phần thưởng của con.')}
+            {T('Bấm vào tên con để thưởng hoặc trừ ⭐. Con sẽ thấy từng lần kèm lý do trong sổ ⭐ của con.')}
           </p>
         </section>
       )}
 
-      {daTru.length > 0 && (
+      {thuongPhat.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Đã trừ gần đây')}</h2>
+          <h2 className="text-p-label uppercase text-on-surface-variant mb-2">{T('Thưởng / trừ gần đây')}</h2>
           <ul className="bg-surface-container-lowest rounded-card card-shadow divide-y divide-outline-variant/30">
-            {daTru.map((p) => {
+            {thuongPhat.map((p) => {
               const c = conCua.get(p.childId);
               return (
                 <li key={p.id} className="flex items-center gap-3 p-3">
-                  <span className="text-p-body font-bold text-error shrink-0 w-14 text-right">−{p.points} ⭐</span>
+                  <span
+                    className={`text-p-body font-bold shrink-0 w-14 text-right ${p.cong ? 'text-success' : 'text-error'}`}
+                  >
+                    {p.cong ? '+' : '−'}{p.points} ⭐
+                  </span>
                   <span className="flex-1 min-w-0">
                     <span className="block text-p-body text-on-surface truncate">
                       <b>{c?.name ?? '?'}</b>

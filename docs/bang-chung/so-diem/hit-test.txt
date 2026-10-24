@@ -1,0 +1,50 @@
+[iphone 390×844] TRƯỚC (main)
+  kiểm cỡ: innerWidth=390
+  Hôm nay con là ai?: innerWidth=390 scrollWidth=390 ✓ không tràn
+  thẻ vào màn của con: 80/80 điểm trúng (5 phần tử)
+  Bố mẹ › Thưởng (ô đang mở): innerWidth=390 scrollWidth=390 ✓ không tràn
+  nút trong ô thưởng/trừ: 432/432 điểm trúng (27 phần tử)
+[iphone 390×844] SAU (nhánh này)
+  kiểm cỡ: innerWidth=390
+  Hôm nay con là ai?: innerWidth=390 scrollWidth=390 ✓ không tràn
+  thẻ vào màn của con: 80/80 điểm trúng (5 phần tử)
+  viên ⭐ → sổ ⭐: 80/80 điểm trúng (5 phần tử)
+  Bố mẹ › Thưởng (ô đang mở): innerWidth=390 scrollWidth=390 ✓ không tràn
+  nút trong ô thưởng/trừ: 448/448 điểm trúng (28 phần tử)
+  Sổ ⭐ (con tên dài): innerWidth=390 scrollWidth=390 ✓ không tràn
+  Quay lại + Đổi thưởng: 32/32 điểm trúng (2 phần tử)
+  số dòng trong sổ: 4; đầu sổ: arrow_back Sổ ⭐ của Nguyễn Hoàng Bảo Khang Minh Quân Con có 89 ⭐
+[ipad 1180×820] TRƯỚC (main)
+  kiểm cỡ: innerWidth=1180
+  Hôm nay con là ai?: innerWidth=1180 scrollWidth=1180 ✓ không tràn
+  thẻ vào màn của con: 80/80 điểm trúng (5 phần tử)
+  Bố mẹ › Thưởng (ô đang mở): innerWidth=1180 scrollWidth=1180 ✓ không tràn
+  nút trong ô thưởng/trừ: 432/432 điểm trúng (27 phần tử)
+[ipad 1180×820] SAU (nhánh này)
+  kiểm cỡ: innerWidth=1180
+  Hôm nay con là ai?: innerWidth=1180 scrollWidth=1180 ✓ không tràn
+  thẻ vào màn của con: 80/80 điểm trúng (5 phần tử)
+  viên ⭐ → sổ ⭐: 80/80 điểm trúng (5 phần tử)
+  Bố mẹ › Thưởng (ô đang mở): innerWidth=1180 scrollWidth=1180 ✓ không tràn
+  nút trong ô thưởng/trừ: 448/448 điểm trúng (28 phần tử)
+  Sổ ⭐ (con tên dài): innerWidth=1180 scrollWidth=1180 ✓ không tràn
+  Quay lại + Đổi thưởng: 32/32 điểm trúng (2 phần tử)
+  số dòng trong sổ: 4; đầu sổ: arrow_back Sổ ⭐ của Nguyễn Hoàng Bảo Khang Minh Quân Con có 89 ⭐
+[macbook 1440×900] TRƯỚC (main)
+  kiểm cỡ: innerWidth=1440
+  Hôm nay con là ai?: innerWidth=1440 scrollWidth=1440 ✓ không tràn
+  thẻ vào màn của con: 80/80 điểm trúng (5 phần tử)
+[macbook 1440×900] SAU (nhánh này)
+  kiểm cỡ: innerWidth=1440
+  Hôm nay con là ai?: innerWidth=1440 scrollWidth=1440 ✓ không tràn
+  thẻ vào màn của con: 80/80 điểm trúng (5 phần tử)
+  viên ⭐ → sổ ⭐: 80/80 điểm trúng (5 phần tử)
+  Sổ ⭐ (con tên dài): innerWidth=1440 scrollWidth=1440 ✓ không tràn
+  Quay lại + Đổi thưởng: 32/32 điểm trúng (2 phần tử)
+  số dòng trong sổ: 4; đầu sổ: arrow_back Sổ ⭐ của Nguyễn Hoàng Bảo Khang Minh Quân Con có 89 ⭐
+[iphone] LUỒNG: bố mẹ thưởng 5 ⭐ → con mở sổ
+  trước khi thưởng: Trần Ngọc Phương Anh Thư 508 ⭐ edit
+  nhãn nút: Thưởng 5 ⭐ cho Trần Ngọc Phương Anh Thư
+  thông báo: Đã thưởng 5 ⭐ cho Trần Ngọc Phương Anh Thư, giờ con có 513 ⭐. Con sẽ thấy dòng này kèm lý do trong sổ ⭐.
+  sau khi thưởng: Trần Ngọc Phương Anh Thư 513 ⭐ edit
+  dòng đầu sổ của con: 💖 | Giúp bố mẹ việc nhà | Bố mẹ thưởng | +5 ⭐
