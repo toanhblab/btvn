@@ -196,8 +196,13 @@ dòng điểm âm nào, đừng thêm; công thức nằm MỘT chỗ: `SQL_SO_D
 ĐỦ, không chỉ thêm giá trị của mình. Test PGlite trong `lib/tinh-diem.test.ts` mô
 phỏng lại đúng SQL của store — sửa một bên là phải sửa bên kia.
 
-Trừ điểm (`truDiem` trong `lib/store.ts`): CHỈ trừ, không cộng tay (captain chốt);
-lưu đúng số đã trừ mỗi lần, không lưu tổng. "Không âm" chặn hai tầng, tầng dữ liệu
+Bố mẹ CỘNG tay được (luật "chỉ trừ" cũ đã bỏ): `thuongDiem` ghi một dòng
+`score_events` `kind = 'parent_bonus'` + `reason` (migration 023) — không bảng mới,
+không đổi `SQL_SO_DU_CON`. Sổ ⭐ của con (`SQL_SO_DIEM_CHI_TIET`, `lib/sqlDiem.ts`)
+đọc đúng ba bảng của số dư — thêm số hạng vào số dư thì thêm nhánh UNION vào sổ
+(test PGlite ghim tổng sổ = số dư).
+
+Trừ điểm (`truDiem` trong `lib/store.ts`): lưu đúng số đã trừ mỗi lần, không lưu tổng. "Không âm" chặn hai tầng, tầng dữ liệu
 là MỘT transaction `queryTx` (`lib/db.ts` — cách duy nhất trong repo chạy nhiều
 câu trong một transaction; Neon HTTP không tương tác nên gói phải là danh sách cố
 định): khoá `pg_advisory_xact_lock` theo con → `INSERT … SELECT` ghi

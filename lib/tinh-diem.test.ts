@@ -40,6 +40,13 @@
  *      duoi 0; bo va me cung bam Duyet thi ben sau bao "da xu ly roi" (409) chu
  *      khong bao "chua du diem". Kem nut cua o tru ⭐ (trangThaiTruDiem): go qua
  *      so du la moi "Tru het N", khong phai nut khoa.
+ *  11. Bo me THUONG ⭐ (migration 023): mot dong score_events 'parent_bonus' kem
+ *      ly do, cong vao so du khong can sua SQL_SO_DU_CON; moi lan bam mot dong
+ *      (khong "cong mot lan"); nha khac khong thuong duoc; CHECK cua kind van
+ *      chan gia tri la.
+ *  12. SO ⭐ cua con (SQL_SO_DIEM_CHI_TIET): cong cac dong theo chieuDong ra
+ *      DUNG so du SQL_SO_DU_CON — doi thuong dang cho / bi tu choi khong nam
+ *      trong so; nha khac doc ra rong.
  */
 
 import { test, before, after } from 'node:test';
@@ -51,8 +58,8 @@ import {
 } from './diem.ts';
 import { SQL_TAO_NHIEM_VU_NGAY } from './sqlNhiemVu.ts';
 import {
-  SQL_DUYET_DOI_THUONG, SQL_KHOA_TRU_DIEM, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON,
-  SQL_TRANG_THAI_DOI_THUONG, SQL_TRU_DIEM, nhanhDuyet,
+  SQL_DUYET_DOI_THUONG, SQL_KHOA_TRU_DIEM, SQL_SO_DIEM_CHI_TIET, SQL_SO_DU_CON, SQL_SO_DU_MOT_CON,
+  SQL_THUONG_DIEM, SQL_TRANG_THAI_DOI_THUONG, SQL_TRU_DIEM, chieuDong, nhanhDuyet, type LoaiDongDiem,
 } from './sqlDiem.ts';
 import { trangThaiTruDiem } from './types.ts';
 
@@ -1393,4 +1400,100 @@ test('o tru ⭐: nhan nut va so gui luon khop nhau; man khong tu choi, ke ca khi
   for (const s of ['', '0', 'abc']) {
     assert.deepEqual(trangThaiTruDiem(5, s), { nut: null, soGui: null, canhBao: '' }, s);
   }
+});
+
+
+/* ---- 11. Bo me thuong ⭐ (migrations/023) ---- */
+
+const TEP_023 = '023_bo_me_thuong_diem.sql';
+
+/** Mo phong thuongDiem (lib/store.ts): CUNG SQL_THUONG_DIEM + SQL_SO_DU_MOT_CON. */
+async function thuong(childId: string, points: number, reason = '', familyId = 'fam_cu') {
+  const ghi = await rows(SQL_THUONG_DIEM, [id('sce'), childId, points, reason, '2026-10-24', familyId]);
+  const [sd] = await rows(SQL_SO_DU_MOT_CON, [childId, familyId]);
+  return { ghi, conLai: Number(sd?.so_du ?? 0) };
+}
+
+test('023 chay lai duoc; CHECK cua kind giu du bon gia tri va van chan gia tri la', async () => {
+  await db.exec(`DELETE FROM _migrations WHERE name = '${TEP_023}'`);
+  await chayMigrations(boChay);
+  await conMoiCoDiem('con_t1', 0);
+  for (const kind of ['day_complete', 'early_finish', 'task_done', 'parent_bonus']) {
+    await db.query(
+      `INSERT INTO score_events (id, child_id, kind, points, event_date) VALUES ($1, 'con_t1', $2, 1, $3)`,
+      [id('sce'), kind, `2026-10-${10 + dem % 10}`]
+    );
+  }
+  await assert.rejects(
+    db.query(`INSERT INTO score_events (id, child_id, kind, points, event_date) VALUES ($1, 'con_t1', 'cong_tay_am', 1, '2026-10-01')`, [id('sce')]),
+    /check/i
+  );
+});
+
+test('bo me thuong ⭐: cong vao so du, moi lan bam mot dong, giu ly do; nha khac khong thuong duoc', async () => {
+  await conMoiCoDiem('con_t2', 4);
+  const a = await thuong('con_t2', 3, 'Giúp bố mẹ việc nhà');
+  assert.equal(a.ghi.length, 1);
+  assert.equal(a.ghi[0].reason, 'Giúp bố mẹ việc nhà');
+  assert.equal(a.conLai, 7);
+  // Cung so, cung ly do, bam lan nua: van la mot lan thuong rieng
+  assert.equal((await thuong('con_t2', 3, 'Giúp bố mẹ việc nhà')).conLai, 10);
+  assert.equal(await soDu('con_t2'), 10);
+
+  await db.exec(`INSERT INTO families (id, name, slug, parent_pin_hash) VALUES ('fam_la_t', 'Nhà lạ', 'nha-la-t', 'h_thuong_la') ON CONFLICT DO NOTHING`);
+  const la = await thuong('con_t2', 50, '', 'fam_la_t');
+  assert.equal(la.ghi.length, 0);
+  assert.equal(await soDu('con_t2'), 10);
+
+  // Thuong xong van tru duoc binh thuong, va tru khong am
+  assert.equal((await tru('con_t2', 99)).conLai, 0);
+});
+
+/* ---- 12. So ⭐ cua con (SQL_SO_DIEM_CHI_TIET) ---- */
+
+async function soCuaCon(childId: string, familyId = 'fam_cu') {
+  return (await rows(SQL_SO_DIEM_CHI_TIET, [childId, familyId, 500])) as {
+    id: string; loai: LoaiDongDiem; points: number; ten: string | null; icon: string | null;
+  }[];
+}
+
+test('so ⭐: cong cac dong theo chieuDong ra DUNG so du; doi thuong cho / tu choi khong nam trong so', async () => {
+  await conMoiCoDiem('con_s1', 0);
+  const ngay = await ngayTuHomNay(0);
+  // Bai that xong som -> +1 kem ten bai; ca ngay xong -> +10
+  const bai = await themBai('con_s1', ngay, { phut: 30 });
+  await tickXong(bai, Date.now() - 5 * PHUT);
+  await thuong('con_s1', 4, 'Ngoan, nghe lời');
+  await thuong('con_s1', 2);                       // khong ghi ly do
+  await xinDoi('rdm_s1', 'con_s1', 5);
+  assert.equal((await duyet('rdm_s1', 'con_s1')).ketQua, 'duyetDuoc');
+  await xinDoi('rdm_s2', 'con_s1', 1);             // dang cho — chua dong vao so du
+  await tru('con_s1', 3, 'Không dọn đồ');
+
+  const so = await soCuaCon('con_s1');
+  const tong = so.reduce((t, d) => t + chieuDong(d.loai) * Number(d.points), 0);
+  assert.equal(tong, await soDu('con_s1'));
+  assert.equal(tong, DIEM_NGAY_XONG + DIEM_XONG_SOM + 4 + 2 - 5 - 3);
+
+  const loai = so.map((d) => d.loai).sort();
+  assert.deepEqual(loai, ['bi_tru', 'day_complete', 'doi_thuong', 'early_finish', 'parent_bonus', 'parent_bonus']);
+  assert.equal(so.find((d) => d.loai === 'early_finish')?.ten, 'bài', 'dong xong som mang ten bai');
+  assert.equal(so.find((d) => d.loai === 'doi_thuong')?.ten, 'Ăn kem');
+  assert.equal(so.find((d) => d.loai === 'bi_tru')?.ten, 'Không dọn đồ');
+  assert.deepEqual(
+    so.filter((d) => d.loai === 'parent_bonus').map((d) => d.ten).sort(),
+    ['', 'Ngoan, nghe lời']
+  );
+  assert.ok(so.every((d) => Number(d.points) > 0), 'moi dong deu duong — dau la cua loai');
+
+  // Tu choi yeu cau dang cho: so khong doi
+  await db.query(`UPDATE reward_redemptions SET status = 'rejected' WHERE id = 'rdm_s2'`);
+  assert.equal((await soCuaCon('con_s1')).length, so.length);
+
+  // Bo me xoa bai: diem van con, ten thanh NULL
+  await db.query(`DELETE FROM assignments WHERE id = $1`, [bai]);
+  assert.equal((await soCuaCon('con_s1')).find((d) => d.loai === 'early_finish')?.ten, null);
+
+  // Nha khac doc ra rong
+  assert.deepEqual(await soCuaCon('con_s1', 'fam_la_t'), []);
 });

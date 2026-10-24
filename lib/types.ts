@@ -499,7 +499,8 @@ export function lamSachGia(v: unknown): number | null {
  * chot: bo me GO SO ⭐ MUON TRU (moi dong la mot delta duong, khong luu tong sau
  * khi tru), KHONG cho so du am (may chu kep lan tru vao so du con lai, chi tu
  * choi khi con khong con ⭐ nao), ly do KHONG bat buoc, CON NHIN THAY dong tru
- * kem ly do o cua hang, KHONG cong tay.
+ * kem ly do o cua hang. Tu migrations/023 bo me CONG tay duoc nua (Bonus o
+ * duoi) — chu nha doi luat "chi tru".
  */
 
 /** Mot lan bo me tru ⭐ cua con. `points` la so DA TRU lan do (duong). */
@@ -524,6 +525,28 @@ export const LY_DO_TRU_GOI_Y = [
   'Chơi quá giờ',
   'Chưa làm bài',
   'Nói dối',
+] as const satisfies readonly Key[];
+
+/**
+ * Mot lan bo me THUONG ⭐ bang tay (migrations/023, dong score_events kind
+ * 'parent_bonus'). Cung hinh dang voi Penalty de hai danh sach tron chung.
+ */
+export interface Bonus {
+  id: string;
+  childId: string;
+  points: number;
+  /** '' = bo me khong ghi ly do. */
+  reason: string;
+  createdAt: string;
+}
+
+/** Goi y ly do thuong — con doc, nen la loi khen noi voi con. */
+export const LY_DO_THUONG_GOI_Y = [
+  'Ngoan, nghe lời',
+  'Giúp bố mẹ việc nhà',
+  'Tự giác học bài',
+  'Nhường em / chia sẻ',
+  'Dọn đồ gọn gàng',
 ] as const satisfies readonly Key[];
 
 /**

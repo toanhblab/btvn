@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ChildColor } from '@/lib/types';
-import { LY_DO_TRU_GOI_Y, MAX_CHU_LY_DO_TRU, trangThaiTruDiem } from '@/lib/types';
+import { LY_DO_THUONG_GOI_Y, LY_DO_TRU_GOI_Y, MAX_CHU_LY_DO_TRU, lamSachDiemTru, trangThaiTruDiem } from '@/lib/types';
 import { useT } from '@/lib/i18n/client';
 
 export interface ConDeTru {
@@ -16,7 +16,10 @@ export interface ConDeTru {
 }
 
 /**
- * Bo me tru ⭐ cua con khi con chua nghe loi (issue #43): POST /api/tru-diem, CAN PIN.
+ * Bo me THUONG hoac TRU ⭐ cua con, CAN PIN. Hai che do trong cung mot o:
+ *   - Thuong (migrations/023): POST /api/thuong-diem — chi cong, khong co gi de
+ *     kep: so go vao la so gui di.
+ *   - Tru (issue #43): POST /api/tru-diem — moi luat ben duoi ap cho che do nay.
  *
  * Hang vien tung con (avatar + ten + ⭐) chinh la bo chon: bam mot vien la mo o
  * nhap ngay duoi. Bo me GO SO ⭐ MUON TRU (captain chot cach (b) — khong go tong
@@ -51,7 +54,8 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
   const [lyDo, setLyDo] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [vuaTru, setVuaTru] = useState<{ ten: string; so: number; conLai: number } | null>(null);
+  const [cheDo, setCheDo] = useState<'cong' | 'tru'>('cong');
+  const [vuaTru, setVuaTru] = useState<{ cheDo: 'cong' | 'tru'; ten: string; so: number; conLai: number } | null>(null);
 
   const RING: Record<ChildColor, string> = {
     primary: 'ring-primary',
@@ -62,7 +66,11 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
   const soDu = (c: ConDeTru) => vuaDoi[c.id] ?? c.diem;
   const con = initial.find((c) => c.id === chon) ?? null;
   const dangCo = con ? soDu(con) : 0;
-  const { nut, soGui, canhBao } = trangThaiTruDiem(dangCo, so, T);
+  const tru = trangThaiTruDiem(dangCo, so, T);
+  const soCong = lamSachDiemTru(so);
+  // Thuong: khong co tran so du, khong co "het" — go so hop le la gui dung so do.
+  const { nut, soGui, canhBao } =
+    cheDo === 'tru' ? tru : { nut: soCong === null ? null : ('cong' as const), soGui: soCong, canhBao: '' };
 
   function moCon(id: string) {
     setChon((c) => (c === id ? null : id));
@@ -72,12 +80,18 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
     setVuaTru(null);
   }
 
+  function doiCheDo(c: 'cong' | 'tru') {
+    setCheDo(c);
+    setLyDo('');
+    setError('');
+  }
+
   async function gui() {
     if (!con || nut === null) return;
     setBusy(true);
     setError('');
     try {
-      const res = await fetch('/api/tru-diem', {
+      const res = await fetch(cheDo === 'cong' ? '/api/thuong-diem' : '/api/tru-diem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ childId: con.id, points: soGui, reason: lyDo }),
@@ -86,7 +100,8 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
       if (typeof data.conLai === 'number') setVuaDoi((d) => ({ ...d, [con.id]: data.conLai }));
       router.refresh();
       if (!res.ok) throw new Error(data.error ?? T('Không lưu được'));
-      setVuaTru({ ten: con.name, so: data.penalty.points, conLai: data.conLai });
+      const dong = cheDo === 'cong' ? data.bonus : data.penalty;
+      setVuaTru({ cheDo, ten: con.name, so: dong.points, conLai: data.conLai });
       setChon(null);
       setSo('');
       setLyDo('');
@@ -101,7 +116,11 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
     'rounded-lg border border-outline-variant min-h-p-tap px-3 text-p-body bg-surface-container-lowest';
 
   const nhanNut =
-    nut === 'truHet'
+    nut === 'cong' && con
+      ? T('Thưởng {n} ⭐ cho {name}', { n: soGui ?? 0, name: con.name })
+      : cheDo === 'cong'
+        ? T('Thưởng ⭐')
+        : nut === 'truHet'
       ? T('Trừ hết {n} ⭐', { n: soGui ?? 0 })
       : nut === 'tru' && con
         ? T('Trừ {n} ⭐ của {name}', { n: soGui ?? 0, name: con.name })
@@ -119,7 +138,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
               type="button"
               onClick={() => moCon(c.id)}
               aria-pressed={dang}
-              aria-label={T('Trừ ⭐ của {name}', { name: c.name })}
+              aria-label={T('Thưởng / trừ ⭐ của {name}', { name: c.name })}
               className={`inline-flex items-center gap-2 rounded-full card-shadow pl-1 pr-3 py-1
                           text-p-body-sm min-h-p-tap
                           ${dang ? `bg-primary-fixed ring-2 ${RING[c.color]}` : 'bg-surface-container-lowest'}`}
@@ -129,7 +148,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
               <span className="font-bold text-on-surface">{c.name}</span>
               <span className="text-on-tertiary-fixed-variant font-bold">{soDu(c)} ⭐</span>
               <span className="material-symbols-outlined text-on-surface-variant" aria-hidden>
-                {dang ? 'expand_less' : 'remove_circle'}
+                {dang ? 'expand_less' : 'edit'}
               </span>
             </button>
           );
@@ -138,19 +157,39 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
 
       {vuaTru && !con && (
         <p className="mt-2 text-p-body-sm text-on-success-container bg-success-container rounded-card p-3">
-          {T('Đã trừ {n} ⭐ của {name}, còn {conLai} ⭐. Con sẽ thấy dòng này kèm lý do ở cửa hàng phần thưởng.', { n: vuaTru.so, name: vuaTru.ten, conLai: vuaTru.conLai })}
+          {vuaTru.cheDo === 'cong'
+            ? T('Đã thưởng {n} ⭐ cho {name}, giờ con có {conLai} ⭐. Con sẽ thấy dòng này kèm lý do trong sổ ⭐.', { n: vuaTru.so, name: vuaTru.ten, conLai: vuaTru.conLai })
+            : T('Đã trừ {n} ⭐ của {name}, còn {conLai} ⭐. Con sẽ thấy dòng này kèm lý do ở cửa hàng phần thưởng.', { n: vuaTru.so, name: vuaTru.ten, conLai: vuaTru.conLai })}
         </p>
       )}
 
       {con && (
         <div className="mt-2 bg-surface-container-low rounded-card p-3 flex flex-col gap-2">
           <p className="text-p-body text-on-surface">
-            {T('Trừ ⭐ của {name} — con đang có {n} ⭐', { name: con.name, n: dangCo })}
+            {T('{name} đang có {n} ⭐', { name: con.name, n: dangCo })}
           </p>
+
+          {/* Hai che do — thuong dung truoc: khen nhieu hon phat */}
+          <div className="grid grid-cols-2 gap-2" role="group">
+            {(['cong', 'tru'] as const).map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => doiCheDo(c)}
+                aria-pressed={cheDo === c}
+                className={`rounded-card min-h-p-tap text-p-body-sm font-bold
+                            ${cheDo === c
+                              ? c === 'cong' ? 'bg-success text-white' : 'bg-error text-white'
+                              : 'bg-surface-container-lowest text-on-surface'}`}
+              >
+                {c === 'cong' ? T('➕ Thưởng ⭐') : T('➖ Trừ ⭐')}
+              </button>
+            ))}
+          </div>
 
           <div className="flex items-center gap-2">
             <label htmlFor="so-tru" className="text-p-body-sm text-on-surface-variant shrink-0">
-              {T('Trừ')}
+              {cheDo === 'cong' ? T('Thưởng thêm') : T('Trừ')}
             </label>
             <input
               id="so-tru"
@@ -162,7 +201,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
               inputMode="numeric"
               autoFocus
               placeholder={T('số ⭐')}
-              aria-label={T('Số ⭐ muốn trừ')}
+              aria-label={cheDo === 'cong' ? T('Số ⭐ muốn thưởng') : T('Số ⭐ muốn trừ')}
               className={`${oNhap} w-24 text-right ${canhBao ? 'border-error text-error' : ''}`}
             />
             <span className="text-p-body">⭐</span>
@@ -171,7 +210,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
 
           {/* Ly do — con se doc, nen goi y la loi noi voi con */}
           <div className="flex flex-wrap gap-1">
-            {LY_DO_TRU_GOI_Y.map((g) => {
+            {(cheDo === 'cong' ? LY_DO_THUONG_GOI_Y : LY_DO_TRU_GOI_Y).map((g) => {
               const nhan = T(g);
               return (
                 <button
@@ -192,7 +231,7 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
             onChange={(e) => setLyDo(e.target.value)}
             maxLength={MAX_CHU_LY_DO_TRU}
             placeholder={T('Vì sao? (không bắt buộc — con sẽ đọc dòng này)')}
-            aria-label={T('Lý do trừ')}
+            aria-label={cheDo === 'cong' ? T('Lý do thưởng') : T('Lý do trừ')}
             className={`${oNhap} w-full`}
           />
 
@@ -210,8 +249,8 @@ export default function TruDiem({ initial }: { initial: ConDeTru[] }) {
               type="button"
               onClick={gui}
               disabled={busy || nut === null}
-              className="flex-1 rounded-card min-h-p-tap bg-error text-white text-p-body-sm font-bold
-                         disabled:opacity-40"
+              className={`flex-1 rounded-card min-h-p-tap text-white text-p-body-sm font-bold
+                         disabled:opacity-40 ${cheDo === 'cong' ? 'bg-success' : 'bg-error'}`}
             >
               {busy ? T('Đang lưu…') : nhanNut}
             </button>

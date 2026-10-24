@@ -20,6 +20,22 @@ export const SQL_SO_DU_CON = `(
           )`;
 
 /**
+ * Bo me THUONG ⭐ bang tay (migrations/023) — mot dong score_events kind
+ * 'parent_bonus'. Chi CONG nen khong can khoa theo con hay kep so du nhu
+ * SQL_TRU_DIEM: so du chi co the tang. Con phai thuoc nha nay (bang khong co
+ * family_id); khong thuoc thi 0 dong. Ngay cua dong (event_date) la hom nay
+ * theo gio nha — nguoi goi truyen todayISO(), khong dung CURRENT_DATE cua DB
+ * (Neon chay UTC, xem AGENTS.md).
+ *   $1 id newId('sce')   $2 childId   $3 points (nguyen duong)
+ *   $4 reason ('' = khong ghi)   $5 ngay (YYYY-MM-DD)   $6 familyId
+ */
+export const SQL_THUONG_DIEM = `INSERT INTO score_events (id, child_id, kind, points, event_date, reason)
+   SELECT $1, c.id, 'parent_bonus', $3::int, $5::date, $4
+     FROM children c
+    WHERE c.id = $2 AND c.family_id = $6
+   RETURNING id, child_id, points, reason, created_at`;
+
+/**
  * Khoa theo con truoc khi tru — cau DAU TIEN cua transaction tru diem. Hai
  * transaction cung con xep hang o day; cau INSERT ben duoi chay SAU khi lay
  * duoc khoa nen doc so du DA GOM lan tru cua ben truoc (READ COMMITTED: moi cau
@@ -125,4 +141,49 @@ export type NhanhDuyet = 'duyetDuoc' | 'daXuLy' | 'thieuDiem';
 export function nhanhDuyet(soDongDoi: number, trangThai: string | undefined): NhanhDuyet {
   if (soDongDoi > 0) return 'duyetDuoc';
   return trangThai !== 'pending' ? 'daXuLy' : 'thieuDiem';
+}
+
+/**
+ * SO ⭐ cua MOT con — tung lan so du thay doi, moi nhat truoc. Doc tu DUNG ba
+ * bang ma SQL_SO_DU_CON cong tru, voi DUNG dieu kien cua no (doi thuong chi
+ * dong 'approved'), nen cong cac dong theo `chieuDong` ra dung so du — test
+ * PGlite (lib/tinh-diem.test.ts) ghim dieu do. Them mot so hang vao SQL_SO_DU_CON
+ * la phai them mot nhanh UNION o day, khong thi so va so du lech nhau.
+ *
+ * `points` luon DUONG nhu trong bang (dau la thuoc tinh cua bang, AGENTS.md);
+ * dau +/− suy ra tu `loai` bang `chieuDong`, khong tinh trong SQL.
+ * `luc` la luc so du doi: ghi diem / bo me duyet / bo me tru — khong phai
+ * event_date (ngay cua BAI), vi so ke "con duoc ⭐ luc nao".
+ * `ten` / `icon`: noi dung bai (LEFT JOIN — bo me xoa bai thi diem van con,
+ * ten thanh NULL), ly do bo me thuong / tru ('' = khong ghi), ten phan thuong
+ * da chep.
+ *
+ *   $1 childId   $2 familyId (con phai thuoc nha nay)   $3 so dong toi da
+ */
+export const SQL_SO_DIEM_CHI_TIET = `SELECT s.id, s.loai, s.points, s.luc, s.ten, s.icon
+     FROM (
+       SELECT e.id, e.kind AS loai, e.points, e.created_at AS luc, COALESCE(a.content, e.reason) AS ten, a.icon
+         FROM score_events e
+         LEFT JOIN assignments a ON a.id = e.assignment_id
+        WHERE e.child_id = $1
+       UNION ALL
+       SELECT r.id, 'doi_thuong', r.cost, COALESCE(r.decided_at, r.requested_at), r.reward_name, r.reward_icon
+         FROM reward_redemptions r
+        WHERE r.child_id = $1 AND r.status = 'approved'
+       UNION ALL
+       SELECT p.id, 'bi_tru', p.points, p.created_at, p.reason, NULL
+         FROM score_penalties p
+        WHERE p.child_id = $1
+     ) s
+    WHERE EXISTS (SELECT 1 FROM children c WHERE c.id = $1 AND c.family_id = $2)
+    ORDER BY s.luc DESC, s.id DESC
+    LIMIT $3`;
+
+/** `loai` cua mot dong SQL_SO_DIEM_CHI_TIET: bon kind cua score_events + hai bang tru. */
+export type LoaiDongDiem =
+  | 'day_complete' | 'early_finish' | 'task_done' | 'parent_bonus' | 'doi_thuong' | 'bi_tru';
+
+/** Dong nay lam so du tang (+1) hay giam (−1). */
+export function chieuDong(loai: LoaiDongDiem): 1 | -1 {
+  return loai === 'doi_thuong' || loai === 'bi_tru' ? -1 : 1;
 }
